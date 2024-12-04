@@ -1,0 +1,429 @@
+import { Database } from "../tempDB.js";
+
+/**
+ * Classe BaseForm
+ * Gerencia a exibição, ocultação, e interações de um formulário sobre um overlay.
+ */
+export class BaseForm {
+  /**
+   * Construtor da classe BaseForm.
+   * @param {HTMLElement} overlay - O elemento de overlay que contém o formulário.
+   */
+  constructor(overlay) {
+    /**
+     * URL da imagem de fundo para o overlay.
+     * @type {string}
+     */
+    this.imageUrl = './images/lib-background.png';
+
+    /**
+        * O ícone Font Awesome para quando uma entrada é selecionada.
+        * @type {string}
+        * 
+        */
+    this.selectedIcon = 'fas fa-eye';
+
+    /**
+     * Elementos da interface do usuário (UI) associados ao formulário.
+     * @type {{ overlay: HTMLElement, form: HTMLElement, close_btn: HTMLElement, content: HTMLElement, sidebar: HTMLElement }}
+     */
+    this.ui = {
+      overlay: overlay,
+      form: overlay.querySelector('.form-container'),
+      close_btn: overlay.querySelector('.close-button'),
+      content: overlay.querySelector('.form-content'),
+      sidebar: overlay.querySelector('.sidebar'),
+    };
+
+    /**
+     * Indica se o formulário está oculto inicialmente.
+     * @type {boolean}
+     */
+    this.isHidden = this.ui.form.classList.contains('hidden');
+
+    if (!this.isHidden) this.ui.form.classList.add('hidden');
+
+    /**
+     * Referência ao container do formulário.
+     * @type {HTMLElement}
+     */
+    this.form = this.ui.form;
+
+    /**
+     * O identificador da raíz desse formulário.
+     * @type {string}
+     */
+    this.root = this.form.querySelector('.entries')?.id ?? 'article';
+
+    /**
+     * Objeto de controle global para mensagens ao usuário.
+     * @type {object}
+     */
+    this.msgBox = C.msgBox;
+
+    /**
+     * Objeto para exibir tooltips.
+     * @type {object}
+     */
+    this.tooltip = C.tooltip;
+
+    /**
+     * Representa as seleções atuais no formulário.
+     * @type {{ folder: HTMLElement | null, entry: HTMLElement | null }}
+     */
+    this.selection = {
+      folder: null,
+      entry: null,
+    };
+  }
+
+  /**
+   * Exibe o formulário e o overlay associados.
+   */
+  showForm() {
+    this.ui.overlay.classList.remove('hidden');
+    this.ui.form.classList.remove('hidden');
+  }
+
+  /**
+   * Oculta o formulário e o overlay, limpando seu conteúdo.
+   */
+  hideForm() {
+    this.clear();
+    this.ui.form.classList.add('hidden');
+    this.ui.overlay.classList.add('hidden');
+  }
+
+  /**
+   * Remove todos os elementos filhos de um elemento especificado ou do formulário principal.
+   * @param {HTMLElement} [element={}] - O elemento cujos filhos devem ser removidos. Por padrão, é o formulário principal.
+   */
+  clear(element = {}) {
+    if (!element) {
+      while (this.form.firstChild) {
+        this.form.removeChild(this.form.firstChild);
+      }
+    } else {
+      while (element.firstChild) {
+        element.removeChild(element.firstChild);
+      }
+    }
+  }
+
+  /**
+   * Obtém as folders disponíveis para o formulário no banco de dados.
+   * @returns {Object} - Categorias.
+   */
+  getFolders() {    
+      const categoriesObj = Object.entries(Database.categories);
+      return Object.fromEntries(categoriesObj.filter(([key, value]) => (value.root == this.root) && !value.deleted));    
+  }
+
+  /**
+   * Obtém as entradas disponíveis em uma categoria no banco de dados.
+   * @returns {Object} - Categorias.
+   */
+  getEntry(data) {
+    const id = data.entryId;
+    const item = Database.entries[id];
+    return (item.deleted ? null : item);
+  }
+
+  /**
+   * Configura o conteúdo do formulário
+   * @param {HTMLElement} form - O elemento que representa o formulário.
+   */
+  configureContent(form) {
+    this.#configureBaseListeners(form);    
+
+    // Se o formulário possui um sidebar, configure suas entradas.
+    if (this.ui.sidebar) {
+      this.data = this.getFolders();
+      
+      this.loadSidebarList(form);
+      this.configureSidebar(form);
+    }
+  }
+
+  /**
+   * Atualiza o conteúdo do formulário
+   * @param {HTMLElement} form - O elemento que representa o formulário.
+   */
+  updateContent() {
+    // Se o formulário ainda possui um sidebar, reconfigure suas entradas.
+    if (this.ui.sidebar) {
+      this.loadSidebarList(this.form);
+      this.configureSidebar(this.form);
+    }
+  }
+
+  /**
+   * Consulta um seletor CSS dentro do overlay principal.
+   * @param {string} selector - O seletor CSS a ser buscado.
+   * @returns {HTMLElement} O primeiro elemento correspondente.
+   */
+  querySelector(selector) {
+    return this.ui.overlay.querySelector(selector);
+  }
+
+  /**
+   * Consulta todos os elementos correspondentes a um seletor CSS dentro do overlay principal.
+   * @param {string} selector - O seletor CSS a ser buscado.
+   * @returns {NodeList} Uma NodeList com os elementos correspondentes.
+   */
+  querySelectorAll(selector) {
+    return this.ui.overlay.querySelectorAll(selector);
+  }
+
+  /**
+   * Carrega um arquivo HTML usando fetch.
+   * @param {string} filePath - O caminho do arquivo HTML.
+   * @returns {Promise<string>} Uma Promise que resolve para o conteúdo HTML carregado como string.
+   */
+  async _loadHTML(filePath) {
+    let response = await fetch(filePath);
+    let htmlString = await response.text();
+    return htmlString;
+  }
+
+  /**
+   * Configura ouvintes de eventos básicos para o formulário.
+   * @param {HTMLElement} form - O formulário principal.
+   * @private
+   */
+  #configureBaseListeners(form) {
+    this.ui.overlay.addEventListener('click', (event) => {
+      event.stopPropagation();
+      if (!event.target.closest('.form-container') && !event.target.closest('.content')) {
+        this.#handleNavQueueOnClose(event);
+        this.hideForm();
+      }
+    }, { once: true });
+
+    this.ui.close_btn.addEventListener('click', (event) => {
+      event.stopPropagation();
+      this.#handleNavQueueOnClose(event);
+      this.hideForm();
+    }, { once: true });
+  }
+
+  /**
+   * Configura a lista de entradas e seus ouvintes na barra lateral.
+   * @param {HTMLElement} form - O formulário principal.
+   */
+  configureSidebar(form) {
+    const sidebar = form.querySelector('.entries .sidebar');
+    const folders = form.querySelectorAll('#folderList .folder');
+
+    sidebar.addEventListener('click', function (event) {
+      if (event.target.classList.contains('entry-item')) return;
+      folders.forEach(item => {
+        item.classList.remove('selected');
+        const icon = item.querySelector('.fas');
+        icon.classList.remove(...icon.classList);
+        icon.classList.add('fas', 'fa-folder');
+      });
+    });
+  }
+  /**
+   * Carrega a lista de entradas da barra lateral.
+   * @param {HTMLElement} form - O formulário principal.
+   */
+  loadSidebarList(form) {
+    const folderList = form.querySelector('#folderList');
+    folderList.innerHTML = '';    
+
+    for (const [key, value] of Object.entries(this.data)) {
+      const folder = this.createFolderItem(value);
+      folderList.appendChild(folder);
+    }
+
+    const folders = folderList.querySelectorAll('.folder');
+    const items = form.querySelectorAll('.entry-item');
+
+    folders.forEach(item => {
+      const folderHeader = item.querySelector('.folder-header');
+      folderHeader.addEventListener('click', (event) => {
+        this._onFolderClick(event);
+      });
+    });
+
+    items.forEach(item => {
+      item.addEventListener('click', (event) => {
+        this.onEntryItemClick(event);
+      });
+      item.addEventListener('dblclick', (event) => {
+        this.onEntryItemDoubleClick(event);
+      });
+    });
+  }
+
+  /**
+   * Cria uma nova pasta (categoria).
+   * @param {Object} data - Dados da categoria a ser criada.
+   * @returns {HTMLElement} - Elemento de um folder da lista de pastas.
+   */
+  createFolderItem(data) {
+    const folderList = this.form.querySelector('#folderList');
+
+    const folder = document.createElement('li');
+    folder.classList.add('folder', 'created');
+    folder.dataset.id = data.cid ?? data.sid;
+
+    const folderHeader = document.createElement('div');
+    folderHeader.className = 'folder-header flexrow';
+
+    const span = document.createElement('span');
+    span.textContent = data.title;
+    folderHeader.innerHTML = `<i class="fas fa-folder"></i> ${span.outerHTML}`;
+
+    //folderHeader.appendChild(this.createDeleteIcon());
+
+    const folderContent = document.createElement('div');
+    folderContent.className = 'folder-content';
+    const entryList = document.createElement('ul');
+    entryList.className = 'entry-list';
+
+    data.entries.forEach(item => {
+      if (!item.deleted) {
+        const entry = this.getEntry(item);
+        if (entry) {
+          const entryItem = this.createEntryItem(entry);
+          entryList.appendChild(entryItem);
+        }
+      }
+    });
+
+    folderContent.appendChild(entryList);
+    folder.appendChild(folderHeader);
+    folder.appendChild(folderContent);
+    folderList.appendChild(folder);
+
+    return folder;
+  }
+
+  /**
+   * Cria uma nova entrada para uma pasta (categoria) da lista.
+   * @param {Object} data - Dados da entrada a ser criada.
+   * @returns {HTMLElement} - Elemento de uma entrada da lista de pastas.
+   */
+  createEntryItem(data) {
+    const entryItem = document.createElement('li');
+    entryItem.className = 'entry-item flexrow';
+    entryItem.dataset.id = data.entryId;
+
+    const icon = document.createElement('i');
+    icon.className = 'fas fa-file';
+
+    const span = document.createElement('span');
+    span.textContent = data.title;
+
+    entryItem.appendChild(icon);
+    entryItem.appendChild(span);
+
+    return entryItem;
+  }
+
+  /**
+   * Gerencia cliques em pastas.
+   * @param {MouseEvent} event - O evento de clique.
+   * @private
+   */
+  _onFolderClick(event) {
+    event.stopPropagation();
+    const clickedFolder = event.target.closest('.folder');
+    const isSelected = clickedFolder.classList.contains('selected');
+
+    this.#clearFolderList();
+
+    if (!isSelected) {
+      clickedFolder.classList.add('selected');
+      const folderIcon = clickedFolder.querySelector('.fas');
+      folderIcon.classList.remove(...folderIcon.classList);
+      folderIcon.classList.add('fas', 'fa-folder-open');
+    }
+
+    this.selection.folder = clickedFolder;
+  }
+
+  /**
+   * Gerencia cliques simples em itens de entrada.
+   * @param {MouseEvent} event - O evento de clique.
+   * @private
+   */
+  onEntryItemClick(event) {
+    event.stopPropagation();
+    const clickedItem = event.target.closest('.entry-item');
+
+    if (clickedItem !== this.selection.entry) {
+      this.#clearEntryList();
+    }
+  }
+
+  /**
+   * Gerencia cliques duplos em itens de entrada.
+   * @param {MouseEvent} event - O evento de clique duplo.
+   * @private
+   */
+  onEntryItemDoubleClick(event) {
+    event.stopPropagation();
+    const clickedItem = event.target.closest('.entry-item');
+
+    this.#clearEntryList();
+    clickedItem.classList.add('selected');
+    const itemIcon = clickedItem.querySelector('i');
+    itemIcon.classList.remove(...itemIcon.classList);
+    itemIcon.className = this.selectedIcon;
+
+    this.selection.entry = clickedItem;
+  }
+
+  /**
+   * Lida com a fila de navegação ao fechar o formulário.
+   * @param {MouseEvent} event - O evento de clique para fechar.
+   * @private
+   */
+  #handleNavQueueOnClose(event) {
+    const overlay = event.target.closest('.overlay');
+    if (overlay.id === 'formOverlay' || C.navQueue.isFromTimeline()) {
+      C.navQueue.clearQueue();
+    } else if (overlay.id === 'entryFormOverlay') {
+      if (C.navQueue.isFromLibrary()) {
+        const first = C.navQueue.shift();
+        C.navQueue.clearQueue();
+        C.navQueue.push(first);
+      }
+    }
+  }
+
+  /**
+   * Remove a seleção de todas as pastas.
+   * @private
+   */
+  #clearFolderList() {
+    const folderList = this.form.querySelectorAll('.folder');
+    folderList.forEach(item => {
+      item.classList.remove('selected');
+      const folderIcon = item.querySelector('.fas');
+      folderIcon.classList.remove(...folderIcon.classList);
+      folderIcon.classList.add('fas', 'fa-folder');
+    });
+    this.#clearEntryList();
+    this.selection.folder = null;
+  }
+
+  /**
+   * Remove a seleção de todas as entradas.
+   * @private
+   */
+  #clearEntryList() {
+    const itemsList = this.form.querySelectorAll('.entry-item');
+    itemsList.forEach(item => {
+      item.classList.remove('selected');
+      const folderIcon = item.querySelector('i');
+      folderIcon.classList.remove(...folderIcon.classList);
+      folderIcon.classList.add('fas', 'fa-file');
+    });
+    this.selection.entry = null;
+  }
+}

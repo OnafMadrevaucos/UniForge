@@ -1,0 +1,38 @@
+<div class="data-group date">
+    <span class="data-label">Data: </span>
+    <div class="date-input data" id="dateInput">
+      <div class="date-display" id="dateDisplay">Selecione uma data</div>
+      <div class="calendar" id="calendar">
+        <div class="calendar-header">
+          <button id="prevGroup"><i class="fa-solid fa-caret-left"></i></button>
+          <span id="monthYearDisplay"></span>
+          <button id="nextGroup"><i class="fa-solid fa-caret-right"></i></button>
+        </div>              
+        <div class="calendar-view" id="calendarView">
+          <div class="calendar-content" id="calendarContent"></div>
+        </div>              
+      </div>
+    </div>
+</div>
+
+  <div class="data-group check">
+    <span class="data-label">Checkbox: </span>
+    <label class="switch">
+      <input type="checkbox" id="checkbox">
+      <div class="slider"></div>
+    </label>
+  </div>
+
+  <div class="data-group text">
+    <span class="data-label">Text Edit: </span>
+    <input type="text" class="data"/>
+  </div>
+
+  <div class="data-group combo">
+    <span class="data-label"> Calendário: </span>
+    <select id="calendarType" class="data" name="calendarType">
+      <option value="gregorian">Gregorian Calendar</option>
+      <option value="lunar">Lunar Calendar</option>
+      <option value="custom">Custom Calendar (e.g., 8 months/year)</option>
+    </select>
+  </div>

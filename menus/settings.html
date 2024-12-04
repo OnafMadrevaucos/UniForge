@@ -1,0 +1,28 @@
+<div id="settings" class="settings flexcol">
+    <div class="settings-options flexrow">
+        <button id="database" class="flexcol selected" data-panel="databasePanel"><i class="fas fa-database"></i> Banco de Dados</button>
+        <button id="leaflet" class="flexcol" data-panel="leafletPanel"><i class="fas fa-map"></i> Leaflet ®</button>
+    </div>
+    <div class="settings-container">
+        <div id="databasePanel" class="panel">
+            <div class="data-group text flexrow">
+                <span class="data-label">Adicionar Tabela </span>
+                <div class="data-complex flexcol">
+                    <input type="text" class="data"/>
+                    <button id="addTableButton"><i class="fa-solid fa-cloud-arrow-up"></i> Executar</button>
+                </div>                
+            </div>
+            <div class="data-group combo">
+                <span class="data-label">Excluir Tabela </span>
+                <div class="data-complex flexcol">
+                    <select id="tableName" class="data" name="tableName">                        
+                    </select>
+                    <button id="deleteTableButton"><i class="fa-solid fa-cloud-arrow-up"></i> Executar</button>
+                </div>                
+            </div>
+        </div>  
+        <div id="leafletPanel" class="panel hidden">
+            Leaflet Panel
+        </div>
+    </div>
+</div>
