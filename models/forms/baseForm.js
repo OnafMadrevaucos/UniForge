@@ -1,4 +1,4 @@
-import { Database } from "../tempDB.js";
+import { Database } from "../../scripts/tempDB.js";
 
 /**
  * Classe BaseForm
@@ -59,13 +59,13 @@ export class BaseForm {
      * Objeto de controle global para mensagens ao usuário.
      * @type {object}
      */
-    this.msgBox = C.msgBox;
+    this.msgBox = CONFIG.msgBox;
 
     /**
      * Objeto para exibir tooltips.
      * @type {object}
      */
-    this.tooltip = C.tooltip;
+    this.tooltip = CONFIG.tooltip;
 
     /**
      * Representa as seleções atuais no formulário.
@@ -385,13 +385,13 @@ export class BaseForm {
    */
   #handleNavQueueOnClose(event) {
     const overlay = event.target.closest('.overlay');
-    if (overlay.id === 'formOverlay' || C.navQueue.isFromTimeline()) {
-      C.navQueue.clearQueue();
+    if (overlay.id === 'formOverlay' || CONFIG.navQueue.isFromTimeline()) {
+      CONFIG.navQueue.clearQueue();
     } else if (overlay.id === 'entryFormOverlay') {
-      if (C.navQueue.isFromLibrary()) {
-        const first = C.navQueue.shift();
-        C.navQueue.clearQueue();
-        C.navQueue.push(first);
+      if (CONFIG.navQueue.isFromLibrary()) {
+        const first = CONFIG.navQueue.shift();
+        CONFIG.navQueue.clearQueue();
+        CONFIG.navQueue.push(first);
       }
     }
   }

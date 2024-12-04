@@ -1,6 +1,6 @@
-import { Database } from "../tempDB.js";
+import { Database } from "../../scripts/tempDB.js";
 import { BaseForm } from "./baseForm.js";
-import { LibraryManager } from "../managers/libraryManager.js";
+import { LibraryManager } from "../../scripts/managers/libraryManager.js";
 
 export class LibraryForm extends BaseForm {
     constructor(overlay) {

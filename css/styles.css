@@ -102,7 +102,7 @@ body {
     margin: 0;
     background-repeat: no-repeat;
     background-size: cover;
-    background-image: url('./images/background.jpeg');
+    background-image: url('../images/background.jpeg');
     overflow: hidden;
 }
 
@@ -480,7 +480,7 @@ input:checked+.slider::before {
     height: 100vh;
     margin: 0;
     padding: 0;
-    background-image: url('./images/world-background.jpeg');
+    background-image: url('../images/world-background.jpeg');
     box-shadow: var(--default-shadow);
 }
 
@@ -918,26 +918,26 @@ input:checked+.slider::before {
 #atlas {
     background-image:
         linear-gradient(180deg, rgba(255, 255, 255, 0) 45%, rgba(30, 30, 47, 1) 75%),
-        url('./images/maps.jpg');
+        url('../images/maps.jpg');
 }
 
 /* ------ Encyclopedia Form ------ */
 #encyclo {
     background-image:
         linear-gradient(180deg, rgba(255, 255, 255, 0) 35%, rgba(30, 30, 47, 1) 70%),
-        url('./images/library.jpg');
+        url('../images/library.jpg');
 }
 
 #history {
     background-image:
         linear-gradient(180deg, rgba(255, 255, 255, 0) 35%, rgba(30, 30, 47, 1) 70%),
-        url('./images/history.jpg');
+        url('../images/history.jpg');
 }
 
 #politics {
     background-image:
         linear-gradient(180deg, rgba(255, 255, 255, 0) 35%, rgba(30, 30, 47, 1) 70%),
-        url('./images/politics.jpeg');
+        url('../images/politics.jpeg');
 }
 
 /* ------ Library Form ------ */
@@ -948,7 +948,7 @@ input:checked+.slider::before {
 /* ------ Article Type Form ------ */
 .article .article-container {
     /*
-    background-image: url('./images/lib-background.png');
+    background-image: url('../images/lib-background.png');
     background-size: cover;
     background-repeat: no-repeat;
     background-color: #ffe0a1;
@@ -1685,13 +1685,13 @@ folder-list .folder.created.selected .folder-header .fa-trash {
 }
 
 .entries .content.loaded {
-    background-image: url(./images/lib-background.png);
+    background-image: url(../images/lib-background.png);
     visibility: visible;
 }
 
 .entries.timeline .content,
 .entries.article .content {
-    /*background-image: url('./images/lib-background.png');*/
+    /*background-image: url('../images/lib-background.png');*/
     background-size: cover;
     background-repeat: no-repeat;
     background-color: #ffc56e83;

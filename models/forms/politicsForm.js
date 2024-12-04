@@ -1,13 +1,13 @@
-import { DatePickerManager } from "../managers/datePickerManager.js";
+import { DatePickerManager } from "../datePickerManager.js";
 import { EntryForm } from "./entryForm.js";
 
 /**
-  * Formulário para lidar com entradas do tipo histórico.
+  * Formulário para lidar com entradas do tipo político.
   * @class
   * @extends EntryForm
   * 
   */
-export class HistoryForm extends EntryForm {
+export class PoliticsForm extends EntryForm {
     /**
       * Constrói uma instância da classe derivada, inicializando as propriedades e configurando o conteúdo.
       * @class
@@ -29,7 +29,7 @@ export class HistoryForm extends EntryForm {
          * @property {Object} datePickers - Um objeto que gerencia os seletores de data para registro de entradas.
          * Contém duas instâncias de `DatePickerManager` para 'startDate' (data de início) e 'endDate' (data de término).
          */
-        this.datePickers = {
+        this.datePickers = {            
             start: new DatePickerManager('startDate'),
             end: new DatePickerManager('endDate')
         }

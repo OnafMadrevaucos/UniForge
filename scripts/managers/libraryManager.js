@@ -1,4 +1,4 @@
-import { BaseForm } from "../forms/baseForm.js";
+import { BaseForm } from "../../models/forms/baseForm.js";
 import { BaseManager } from "./baseManager.js";
 import { Timeline } from "./timelineManager.js";
 import { Database } from "../tempDB.js";
@@ -19,7 +19,7 @@ export class LibraryManager extends BaseManager {
         this.entry = new Entry(data, this);
 
         // Registra a nova Entrada na fila de entradas para navegação
-        C.navQueue.push(this.entry); 
+        CONFIG.navQueue.push(this.entry); 
         return this.entry;
     }
 }
@@ -27,8 +27,8 @@ export class LibraryManager extends BaseManager {
 // Objeto da responsável por manipular qualquer Entrada.
 export class Entry {
     constructor(data, manager) {
-        this.msgBox = C.msgBox;
-        this.tooltip = C.tooltip;
+        this.msgBox = CONFIG.msgBox;
+        this.tooltip = CONFIG.tooltip;
 
         this.manager = manager;
         this.form = manager.form;
@@ -124,7 +124,7 @@ export class Entry {
         const form = new BaseForm(overlay);
         
         this.entry = new Entry(data, new LibraryManager(form));
-        C.navQueue.push(this.entry);
+        CONFIG.navQueue.push(this.entry);
 
         const newForm = this.entry.addTo('entryFormContent', true);
         newForm.ui.prev_btn.setAttribute('data-tooltip', this._getQueueText());        
@@ -136,11 +136,11 @@ export class Entry {
 
     _onPreviousClick() {                
         // Remove a Entrada atual
-        C.navQueue.pop(); 
+        CONFIG.navQueue.pop(); 
 
-        if(!C.navQueue.isEmpty() && !C.navQueue.hasLastItem()) {
+        if(!CONFIG.navQueue.isEmpty() && !CONFIG.navQueue.hasLastItem()) {
             // Recupera a próxima Entrada
-            this.prev = C.navQueue.last();        
+            this.prev = CONFIG.navQueue.last();        
 
             this.entry = new Entry(this.prev.data, this.manager);
             this.form = this.entry.addTo('entryFormContent');        
@@ -155,13 +155,13 @@ export class Entry {
 
     _getQueueText() {
         let text = '';
-        const last = C.navQueue.last();        
-        const first = C.navQueue.first();
+        const last = CONFIG.navQueue.last();        
+        const first = CONFIG.navQueue.first();
 
-        if(C.navQueue.size() > 2) {
-            const prev = C.navQueue.at(C.navQueue.size() - 2);
-            if(C.navQueue.size() > 3) {                
-                text = `${first.data.title} >(${C.navQueue.size() - 3})> ${prev.data.title} > ${last.data.title}`;
+        if(CONFIG.navQueue.size() > 2) {
+            const prev = CONFIG.navQueue.at(CONFIG.navQueue.size() - 2);
+            if(CONFIG.navQueue.size() > 3) {                
+                text = `${first.data.title} >(${CONFIG.navQueue.size() - 3})> ${prev.data.title} > ${last.data.title}`;
             } else {
                 text = `${first.data.title} > ${prev.data.title} > ${last.data.title}`;
             }
@@ -200,12 +200,12 @@ export class Entry {
             const overlay = document.querySelector('#entryFormOverlay');        
             const content = overlay.querySelector('#entryFormContent');
 
-            if(C.navQueue.isFromLibrary()) {
-                const first = C.navQueue.shift();
-                C.navQueue.clearQueue();
-                C.navQueue.push(first);
+            if(CONFIG.navQueue.isFromLibrary()) {
+                const first = CONFIG.navQueue.shift();
+                CONFIG.navQueue.clearQueue();
+                CONFIG.navQueue.push(first);
             } else {
-                C.navQueue.clearQueue();
+                CONFIG.navQueue.clearQueue();
             }
             
             this.form.hideForm();

@@ -4,8 +4,8 @@ export class BaseManager {
     constructor(form) {
         this.entryId = '';
 
-        this.msgBox = C.msgBox; 
-        this.tooltip = C.tooltip;
+        this.msgBox = CONFIG.msgBox; 
+        this.tooltip = CONFIG.tooltip;
 
         this.form = form;              
     }

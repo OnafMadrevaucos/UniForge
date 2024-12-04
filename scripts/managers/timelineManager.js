@@ -1,4 +1,4 @@
-import { BaseForm } from "../forms/baseForm.js";
+import { BaseForm } from "../../models/forms/baseForm.js";
 import { BaseManager } from "./baseManager.js";
 import { LibraryManager, Entry } from "./libraryManager.js";
 import { Database } from "../tempDB.js";
@@ -23,8 +23,8 @@ export class TimelineManager extends BaseManager {
 
 export class Timeline {
     constructor(data, manager) {
-        this.msgBox = C.msgBox;
-        this.tooltip = C.tooltip;
+        this.msgBox = CONFIG.msgBox;
+        this.tooltip = CONFIG.tooltip;
 
         this.manager = manager;
         this.form = manager.form;
@@ -132,9 +132,9 @@ export class Timeline {
 
         // Criação do elemento <div> com classe "tl-circ"
         const tlCirc = document.createElement('div');
-        tlCirc.classList.add('tl-circ',`${data.importance}`);
-        tlCirc.setAttribute('data-toggle', 'tooltip');
-        tlCirc.setAttribute('title', subjectType.title);
+        tlCirCONFIG.classList.add('tl-circ',`${data.importance}`);
+        tlCirCONFIG.setAttribute('data-toggle', 'tooltip');
+        tlCirCONFIG.setAttribute('title', subjectType.title);
         li.appendChild(tlCirc);
 
         // Criação do elemento <div> com classe "timeline-panel"
@@ -301,9 +301,9 @@ export class Timeline {
 
         // Criação do elemento <div> com classe "tl-circ"
         const tlCirc = document.createElement('div');
-        tlCirc.classList.add('tl-circ', `${data.importance}`);
-        tlCirc.setAttribute('data-toggle', 'tooltip');
-        tlCirc.setAttribute('title', linkTitle);
+        tlCirCONFIG.classList.add('tl-circ', `${data.importance}`);
+        tlCirCONFIG.setAttribute('data-toggle', 'tooltip');
+        tlCirCONFIG.setAttribute('title', linkTitle);
         li.appendChild(tlCirc);
 
         // Criação do elemento <div> com classe "timeline-panel"
@@ -442,7 +442,7 @@ export class Timeline {
         const a = event.target.closest('.anchor');
         const entryId = a.dataset.id;
 
-        C.navQueue.push(this);
+        CONFIG.navQueue.push(this);
 
         document.body.style.cursor = 'wait';
         const overlay = document.getElementById('entryFormOverlay');

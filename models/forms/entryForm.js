@@ -3,8 +3,7 @@
  */
 import { BaseForm } from "./baseForm.js";
 import { Dialog } from "../dialogs/dialog.js";
-import { LinkDialog } from "../dialogs/linkDialog.js";
-import { Database } from "../tempDB.js";
+import { Database } from "../../scripts/tempDB.js";
 
 /**
  * Classe EntryForm estende a funcionalidade da classe BaseForm para gerenciar formulários que manipulem Entradas.
@@ -37,7 +36,7 @@ export class EntryForm extends BaseForm {
     this.ui.dialog = dialog;
 
     /** @type {Object} - Tooltip de interface do usuário. */
-    this.ui.tooltip = C.tooltip;
+    this.ui.tooltip = CONFIG.tooltip;
   }
 
 
@@ -195,9 +194,10 @@ export class EntryForm extends BaseForm {
       tinymce.remove('#textEditor');
     }
 
-    tinymce.init({
+    tinymce.init({      
       selector: 'textarea#textEditor',
       editable_class: 'editable',
+      license_key: 'gpl',
       plugins: ['anchor', 'autolink', 'codesample', 'link', 'lists', 'searchreplace', 'table', 'visualblocks'],
       toolbar: 'undo redo | blocks | bold italic backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | entryLink blockquote',
       forced_root_block: 'p',
@@ -207,7 +207,7 @@ export class EntryForm extends BaseForm {
       resize: false,
       editable_root: false,
       skin: 'oxide-dark',
-      content_css: 'styles.css',
+      content_css: '../../css/styles.css',
       content_style: '@import url("https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css");',
       setup: (editor) => { this._setupTinyMCE(editor); }
     });

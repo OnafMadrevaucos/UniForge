@@ -1,6 +1,5 @@
 import { EntryForm } from "./entryForm.js";
-import { Dialog } from "../dialogs/dialog.js";
-import { Database } from "../tempDB.js";
+import { Database } from "../../scripts/tempDB.js";
 
 /**
  * Classe EncycloForm que estende a classe EntryForm.

@@ -1,6 +1,6 @@
 import { BaseForm } from "./baseForm.js";
-import { Database } from "../tempDB.js";
-import { TimelineManager } from "../managers/timelineManager.js";
+import { Database } from "../../scripts/tempDB.js";
+import { TimelineManager } from "../../scripts/managers/timelineManager.js";
 
 export class TimelineForm extends BaseForm {
     constructor(overlay) {
