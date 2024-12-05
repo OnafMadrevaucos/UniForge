@@ -1,8 +1,8 @@
 /**
  * Importações de módulos necessários.
  */
-import { BaseForm } from "./baseForm.js";
-import { Dialog } from "../dialogs/dialog.js";
+import BaseForm from "./baseForm.js";
+import Dialog from "../dialogs/dialog.js";
 import { Database } from "../../scripts/tempDB.js";
 
 /**
@@ -10,7 +10,7 @@ import { Database } from "../../scripts/tempDB.js";
  * @class
  * @extends BaseForm
  */
-export class EntryForm extends BaseForm {
+export default class EntryForm extends BaseForm {
   /**
    * Construtor da classe EntryForm.
    * @param {HTMLElement} overlay - O elemento de sobreposição para o formulário.
@@ -25,10 +25,16 @@ export class EntryForm extends BaseForm {
     this.selectedIcon = 'fas fa-feather';
 
     /**
+    * O caminho para o arquivo HTML do dialog de nova entrada
+    * @type {string}
+    */
+    this.newEntryDialogPath = '../../menus/partials/dialogs/newEntryDialog.html';
+
+    /**
     * O formulário não é o de Enciclopédia
     * @type {boolean}
     */
-    this.isEncyclopedia = false;
+    this.isEncyclopedia = false;    
 
     /** @type {HTMLElement} - Dialogo de confirmação de nova categoria. */
     const dialog = this.form.querySelector('#confirmDialog');
@@ -207,8 +213,7 @@ export class EntryForm extends BaseForm {
       resize: false,
       editable_root: false,
       skin: 'oxide-dark',
-      content_css: '../../css/styles.css',
-      content_style: '@import url("https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css");',
+      content_css: '/css/styles.css',
       setup: (editor) => { this._setupTinyMCE(editor); }
     });
   }
@@ -332,7 +337,7 @@ export class EntryForm extends BaseForm {
     }
 
     // HTML do corpo
-    const bodyHTML = await this._loadHTML('./menus/partials/dialogs/newEntryDialog.html');
+    const bodyHTML = await this._loadHTML(this.newEntryDialogPath);
 
     // Configuração de botões
     const buttons = [

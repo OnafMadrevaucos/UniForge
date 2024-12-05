@@ -1,4 +1,4 @@
-import { BaseForm } from "../../models/forms/baseForm.js";
+import BaseForm from "../../models/forms/baseForm.js";
 import { BaseManager } from "./baseManager.js";
 import { LibraryManager, Entry } from "./libraryManager.js";
 import { Database } from "../tempDB.js";
@@ -132,9 +132,9 @@ export class Timeline {
 
         // Criação do elemento <div> com classe "tl-circ"
         const tlCirc = document.createElement('div');
-        tlCirCONFIG.classList.add('tl-circ',`${data.importance}`);
-        tlCirCONFIG.setAttribute('data-toggle', 'tooltip');
-        tlCirCONFIG.setAttribute('title', subjectType.title);
+        tlCirc.classList.add('tl-circ',`${data.importance}`);
+        tlCirc.setAttribute('data-toggle', 'tooltip');
+        tlCirc.setAttribute('title', subjectType.title);
         li.appendChild(tlCirc);
 
         // Criação do elemento <div> com classe "timeline-panel"
@@ -301,9 +301,9 @@ export class Timeline {
 
         // Criação do elemento <div> com classe "tl-circ"
         const tlCirc = document.createElement('div');
-        tlCirCONFIG.classList.add('tl-circ', `${data.importance}`);
-        tlCirCONFIG.setAttribute('data-toggle', 'tooltip');
-        tlCirCONFIG.setAttribute('title', linkTitle);
+        tlCirc.classList.add('tl-circ', `${data.importance}`);
+        tlCirc.setAttribute('data-toggle', 'tooltip');
+        tlCirc.setAttribute('title', linkTitle);
         li.appendChild(tlCirc);
 
         // Criação do elemento <div> com classe "timeline-panel"

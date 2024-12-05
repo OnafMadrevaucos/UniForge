@@ -4,7 +4,7 @@ import { Database } from "../../scripts/tempDB.js";
  * Classe BaseForm
  * Gerencia a exibição, ocultação, e interações de um formulário sobre um overlay.
  */
-export class BaseForm {
+export default class BaseForm {
   /**
    * Construtor da classe BaseForm.
    * @param {HTMLElement} overlay - O elemento de overlay que contém o formulário.
@@ -14,7 +14,7 @@ export class BaseForm {
      * URL da imagem de fundo para o overlay.
      * @type {string}
      */
-    this.imageUrl = './images/lib-background.png';
+    this.imageUrl = '../images/lib-background.png';
 
     /**
         * O ícone Font Awesome para quando uma entrada é selecionada.
@@ -114,9 +114,9 @@ export class BaseForm {
    * Obtém as folders disponíveis para o formulário no banco de dados.
    * @returns {Object} - Categorias.
    */
-  getFolders() {    
-      const categoriesObj = Object.entries(Database.categories);
-      return Object.fromEntries(categoriesObj.filter(([key, value]) => (value.root == this.root) && !value.deleted));    
+  getFolders() {
+    const categoriesObj = Object.entries(Database.categories);
+    return Object.fromEntries(categoriesObj.filter(([key, value]) => (value.root == this.root) && !value.deleted));
   }
 
   /**
@@ -134,12 +134,12 @@ export class BaseForm {
    * @param {HTMLElement} form - O elemento que representa o formulário.
    */
   configureContent(form) {
-    this.#configureBaseListeners(form);    
+    this.#configureBaseListeners(form);
 
     // Se o formulário possui um sidebar, configure suas entradas.
     if (this.ui.sidebar) {
       this.data = this.getFolders();
-      
+
       this.loadSidebarList(form);
       this.configureSidebar(form);
     }
@@ -178,12 +178,17 @@ export class BaseForm {
   /**
    * Carrega um arquivo HTML usando fetch.
    * @param {string} filePath - O caminho do arquivo HTML.
-   * @returns {Promise<string>} Uma Promise que resolve para o conteúdo HTML carregado como string.
+   * @returns {Promise<string>|null} Uma Promise que resolve para o conteúdo HTML carregado como string.
    */
   async _loadHTML(filePath) {
-    let response = await fetch(filePath);
-    let htmlString = await response.text();
-    return htmlString;
+    try {
+      let response = await fetch(filePath);
+      let htmlString = await response.text();
+      return htmlString;
+    } catch (err) {
+      this.msgBox.showError(err);
+      return null;
+    }
   }
 
   /**
@@ -231,7 +236,7 @@ export class BaseForm {
    */
   loadSidebarList(form) {
     const folderList = form.querySelector('#folderList');
-    folderList.innerHTML = '';    
+    folderList.innerHTML = '';
 
     for (const [key, value] of Object.entries(this.data)) {
       const folder = this.createFolderItem(value);

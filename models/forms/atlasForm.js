@@ -1,4 +1,4 @@
-import { EntryForm } from "./entryForm.js";
+import EntryForm from "./entryForm.js";
 
 export class AtlasForm extends EntryForm {
     constructor(overlay) {

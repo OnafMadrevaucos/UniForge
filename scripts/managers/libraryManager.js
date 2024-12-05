@@ -1,6 +1,5 @@
-import { BaseForm } from "../../models/forms/baseForm.js";
+import BaseForm from "../../models/forms/baseForm.js";
 import { BaseManager } from "./baseManager.js";
-import { Timeline } from "./timelineManager.js";
 import { Database } from "../tempDB.js";
 
 export class LibraryManager extends BaseManager {

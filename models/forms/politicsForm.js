@@ -1,5 +1,5 @@
 import { DatePickerManager } from "../datePickerManager.js";
-import { EntryForm } from "./entryForm.js";
+import EntryForm from "./entryForm.js";
 
 /**
   * Formulário para lidar com entradas do tipo político.

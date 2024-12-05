@@ -1,17 +1,16 @@
+import { AtlasForm } from "../models/forms/atlasForm.js";
+import { EncycloForm } from "../models/forms/encycloForm.js";
+import { HistoryForm } from "../models/forms/historyForm.js";
+import { LibraryForm } from "../models/forms/libraryForm.js";
+import { PoliticsForm } from "../models/forms/politicsForm.js";
+import { SettingsForm } from "../models/forms/settingsForm.js";
+import { TimelineForm } from "../models/forms/timelineForm.js";
+import { MsgBoxManager } from "../models/msgBoxManager.js";
 
-import { AtlasForm } from "./models/forms/atlasForm.js";
-import { EncycloForm } from "./models/forms/encycloForm.js";
-import { HistoryForm } from "./models/forms/historyForm.js";
-import { LibraryForm } from "./models/forms/libraryForm.js";
-import { PoliticsForm } from "./models/forms/politicsForm.js";
-import { SettingsForm } from "./models/forms/settingsForm.js";
-import { TimelineForm } from "./models/forms/timelineForm.js";
+import { LinkTooltip } from "../scripts/linkTooltip.js";
+import { NavQueue } from "../scripts/navQueue.js";
 
-import { LinkTooltip } from "./scripts/linkTooltip.js";
-import { DBManager } from "./scripts/managers/dbManager.js";
-import { MsgBoxManager } from "./models/msgBoxManager.js";
-import { NavQueue } from "./scripts/navQueue.js";
-
+import DBManager from "../db/dbManager.js";
 
 // Constante Global
 window.CONFIG = {
@@ -94,7 +93,7 @@ function ConfigureLeaflet() {
     map.fitBounds(bounds);
 
     // Adiciona a imagem personalizada como uma camada de tile
-    CONFIG.mapOverlay = L.imageOverlay('./images/map.jpg', bounds, { zIndex: 1 /* Garantir que fique atrás do Layer do Grid */ });
+    CONFIG.mapOverlay = L.imageOverlay('../images/map.jpg', bounds, { zIndex: 1 /* Garantir que fique atrás do Layer do Grid */ });
     CONFIG.mapOverlay.addTo(map);
 
     // Adicionar evento de mousedown ou mousemove para capturar o clique e mover o mapa
@@ -401,7 +400,7 @@ function _fetchForm(targetId) {
 // JavaScript to load partials
 function _loadPartial(id) {
     // Defina o caminho para o arquivo HTML que você deseja carregar
-    const filePath = `./menus/${id}.html`;
+    const filePath = `../menus/${id}.html`;
 
     // Use fetch() para carregar o conteúdo do arquivo
     fetch(filePath)

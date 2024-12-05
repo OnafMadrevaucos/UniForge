@@ -1,4 +1,4 @@
-import { EntryForm } from "./entryForm.js";
+import EntryForm from "./entryForm.js";
 import { Database } from "../../scripts/tempDB.js";
 
 /**

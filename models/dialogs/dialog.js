@@ -1,4 +1,4 @@
-export class Dialog {
+export default class Dialog {
     constructor(title="Dialog", bodyHTML, buttons=[]) {      
       this.bodyHTML = bodyHTML; // Conteúdo do corpo do diálogo
       this.title = title;       // Título do diálogo

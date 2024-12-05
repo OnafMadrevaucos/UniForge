@@ -1,4 +1,5 @@
-import { BaseForm } from "./baseForm.js";
+import BaseForm from "./baseForm.js";
+import DBManager from "../../db/dbManager.js";
 
 /**
   * Formulário de configurações do sistema.
@@ -17,6 +18,12 @@ export class SettingsForm extends BaseForm {
     constructor(overlay) {
         // Chama o construtor da classe pai com o parâmetro overlay.
         super(overlay);
+
+        /**
+        * O objeto de manipulação do Banco de Dados.
+        * @type {DBManager}
+        */
+        this.db = CONFIG.db;
 
         /**
          * Configura o conteúdo do formulário associado a esta instância.
@@ -77,7 +84,7 @@ export class SettingsForm extends BaseForm {
    * @param {HTMLElement} panel - O elemento que representa o panel carregado.
    */
     configureDatabasePanel(panel) {
-        
+        this.db.getEntries();
     }
     /**
    * Configura o conteúdo do panel do módulo do Leaflet®.

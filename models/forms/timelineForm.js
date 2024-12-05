@@ -1,4 +1,4 @@
-import { BaseForm } from "./baseForm.js";
+import BaseForm from "./baseForm.js";
 import { Database } from "../../scripts/tempDB.js";
 import { TimelineManager } from "../../scripts/managers/timelineManager.js";
 
