@@ -1,9 +1,36 @@
-import { Dialog } from "./dialog.js";
+import Dialog from "./dialog.js";
 
 export class LinkDialog extends Dialog {
-    constructor(bodyHTML, buttons=[]){
-        super('Vincular Entrada', bodyHTML, buttons);
-    }
+    constructor(){
+        const body = document.createElement('div');
+        body.className = 'data-group text';
+
+        const input = document.createElement('input');
+        input.id = 'entryTitle';
+        input.type = 'text';
+        input.className = 'data';
+        input.placeholder = 'Título...';
+
+        body.appendChild(input);
+
+        // Configuração de botões
+        const buttons = [
+            {
+                label: "Cancelar",
+                icon: "fas fa-xmark",
+                onClick: () => {
+                    dialog.closeDialog();
+                },
+            },
+            {
+                label: "Confirmar",
+                icon: "fas fa-check",
+                onClick: () => { this.createNewEntry(selectedFolder); },
+            }
+        ];
+
+        super('Vincular Entrada', body.outerHTML, buttons);
+    }    
 
     getLink() {
 

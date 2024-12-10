@@ -11,9 +11,11 @@ import { LinkTooltip } from "../scripts/linkTooltip.js";
 import { NavQueue } from "../scripts/navQueue.js";
 
 import DBManager from "../db/dbManager.js";
+import Utils from "../scripts/utils.js";
 
 // Constante Global
 window.CONFIG = {
+    sql: window.sql,
     db: new DBManager(),
     map: L.map('map', {
         crs: L.CRS.Simple, // Usando o sistema de coordenadas simples do Leaflet para imagens personalizadas
@@ -53,7 +55,8 @@ window.CONFIG = {
             label: '1'
         },
         era: 'd.T.'
-    }
+    },
+    utils: new Utils()
 }
 
 // Inicializa o Mapa, ajustando a visualização com base nas coordenadas de imagem

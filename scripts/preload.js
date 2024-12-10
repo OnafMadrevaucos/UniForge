@@ -9,6 +9,7 @@ contextBridge.exposeInMainWorld('versions', {
 })
 
 contextBridge.exposeInMainWorld('sql', {
-  askForConnect: () => ipcRenderer.invoke('ask-for-connect')
+  query: async (sql, params = []) => ipcRenderer.invoke('db-query', sql, params),
+  exec: async (sql, params = []) => ipcRenderer.invoke('db-exec', sql, params)
 });
 console.log('UniForge: Realizando pré-carregamentos...OK');

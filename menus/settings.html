@@ -4,21 +4,26 @@
         <button id="leaflet" class="flexcol" data-panel="leafletPanel"><i class="fas fa-map"></i> Leaflet ®</button>
     </div>
     <div class="settings-container">
-        <div id="databasePanel" class="panel">
-            <div class="data-group text flexrow">
-                <span class="data-label">Adicionar Tabela </span>
+        <div id="databasePanel" class="panel flexcol">
+            <div class="data-group combo">
+                <span class="data-label">Executar </span>
                 <div class="data-complex flexcol">
-                    <input type="text" class="data"/>
-                    <button id="addTableButton"><i class="fa-solid fa-cloud-arrow-up"></i> Executar</button>
+                    <select id="procedureName" class="data" name="procedureName"></select>
+                    <button id="procedureButton"><i class="fa-solid fa-cloud-arrow-up"></i> Executar</button>
                 </div>                
             </div>
             <div class="data-group combo">
                 <span class="data-label">Excluir Tabela </span>
                 <div class="data-complex flexcol">
-                    <select id="tableName" class="data" name="tableName">                        
-                    </select>
+                    <select id="tableName" class="data" name="tableName"></select>
                     <button id="deleteTableButton"><i class="fa-solid fa-cloud-arrow-up"></i> Executar</button>
                 </div>                
+            </div>
+            <div class="query-input">
+                <textarea id="queryText"></textarea>
+                <div class="query-button flexrow">
+                    <button id="queryButton"><i class="fa-solid fa-cloud-arrow-up"></i> Executar</button>
+                </div>
             </div>
         </div>  
         <div id="leafletPanel" class="panel hidden">

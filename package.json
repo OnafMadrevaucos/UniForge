@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "start": "electron .",
-    "rebuild": "electron-rebuild -f -w better-sqlite3"
+    "rebuild": "electron-rebuild -f -w better-sqlite3",
+    "postinstall": "electron-builder install-app-deps"
   },
   "keywords": [],
   "author": "Lucas Macedo",
@@ -16,6 +17,7 @@
     "better-sqlite3": "^11.6.0",
     "crypto": "^1.0.1",
     "electron": "^33.2.1",
+    "electron-builder": "^25.1.8",
     "fs": "^0.0.1-security",
     "leaflet": "^1.9.4",
     "leaflet-draw": "^1.0.4",

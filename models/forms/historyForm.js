@@ -50,7 +50,7 @@ export class HistoryForm extends EntryForm {
     * @override
     * @param {HTMLElement} form - O elemento que representa o formulário a ser configurado.
     */
-    configureContent(form) {
+    async configureContent(form) {
         // Chama o método de configuração da classe pai para configurar o formulário base.
         super.configureContent(form);
 
@@ -58,7 +58,7 @@ export class HistoryForm extends EntryForm {
         super.configureEntryTypeSelect(form);
 
         // Configura o seletor de calendários usando o método da classe pai.
-        super.configureCalendarSelect(form);
+        await super.configureCalendarSelect(form);
 
         // Configura o editor TinyMCE associado ao formulário.
         super._configureTinyMCE();

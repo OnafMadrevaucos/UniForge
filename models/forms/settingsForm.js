@@ -41,6 +41,19 @@ export class SettingsForm extends BaseForm {
         super.configureContent(form);
 
         this.configureOptions(form);
+
+        const executeProcButton = this.form.querySelector('#procedureButton');
+        executeProcButton.addEventListener('click', (event) => { this.onExecuteProcClick(event); });
+
+        const deleteTableButton = this.form.querySelector('#deleteTableButton');
+        deleteTableButton.addEventListener('click', (event) => { this.onDeleteTableClick(event); });
+
+        const queryButton = this.form.querySelector('#queryButton');
+        queryButton.addEventListener('click', (event) => { this.onExecuteQuery(event); });
+
+        // O panel padrão é sempre o panel de Banco de Dados
+        const panel = this.form.querySelector(`#databasePanel`);
+        this.configureDatabasePanel(panel);
     }
 
     /**
@@ -62,7 +75,7 @@ export class SettingsForm extends BaseForm {
    */
     configurePanel(panel) {
 
-        switch(panel.id) {
+        switch (panel.id) {
             case 'databasePanel': {
                 this.configureDatabasePanel(panel);
             } break;
@@ -75,7 +88,6 @@ export class SettingsForm extends BaseForm {
             }
         }
 
-
         panel.classList.remove('hidden');
     }
 
@@ -83,8 +95,38 @@ export class SettingsForm extends BaseForm {
    * Configura o conteúdo do panel de Banco de Dados.
    * @param {HTMLElement} panel - O elemento que representa o panel carregado.
    */
-    configureDatabasePanel(panel) {
-        this.db.getEntries();
+    async configureDatabasePanel(panel) {
+        const procedures = this.db.storedProcedures;
+        const proceduresSelect = panel.querySelector('#procedureName');
+        proceduresSelect.innerHTML = '';
+
+        let emptyOption = document.createElement('option');
+        emptyOption.innerHTML = '&#8212';
+        proceduresSelect.appendChild(emptyOption);
+
+        Object.values(procedures).forEach(proc => {
+            const option = document.createElement('option');
+            option.dataset.name = proc.name;
+            option.textContent = CONFIG.utils.capitalizeFirstLetter(proc.name);
+
+            proceduresSelect.appendChild(option);
+        });
+
+        const tables = await this.db.getAllTables();
+        const allTablesSelect = panel.querySelector('#tableName');
+        allTablesSelect.innerHTML = '';
+
+        emptyOption = document.createElement('option');
+        emptyOption.innerHTML = '&#8212';
+        allTablesSelect.appendChild(emptyOption);
+
+        tables.forEach(table => {
+            const option = document.createElement('option');
+            option.dataset.name = table.name;
+            option.textContent = CONFIG.utils.capitalizeFirstLetter(table.name);
+
+            allTablesSelect.appendChild(option);
+        });        
     }
     /**
    * Configura o conteúdo do panel do módulo do Leaflet®.
@@ -113,5 +155,59 @@ export class SettingsForm extends BaseForm {
 
         const selectedPanel = this.form.querySelector(`#${selectedButton.dataset.panel}`);
         this.configurePanel(selectedPanel);
+    }
+
+    /**
+   * Configura o event de click para os botões de executar uma Stored Procedure
+   * @param {Event} event - O evento de click do botão.
+   */
+    async onExecuteProcClick(event) {
+        event.stopPropagation();
+        const procedureNameSelect = this.form.querySelector('#procedureName');
+        const selectedOption = procedureNameSelect.selectedOptions[0];
+        const procedure = selectedOption.dataset.name;
+        if (procedure) {  
+            const result = await this.db.storedProcedures[procedure]();
+            const selectedPanel = this.form.querySelector('#databasePanel');
+
+            this.msgBox.showInfo(`Procedure '${procedure}' executada com sucesso.`);
+            this.configurePanel(selectedPanel);
+        }       
+    }
+
+    /**
+   * Configura o event de click para os botões de exclusão de tabela.
+   * @param {Event} event - O evento de click do botão.
+   */
+    async onDeleteTableClick(event) {
+        event.stopPropagation();
+        const tableNameSelect = this.form.querySelector('#tableName');
+        const selectedOption = tableNameSelect.selectedOptions[0];
+        const tableName = selectedOption.dataset.name;
+        if (tableName) {            
+            await this.db.deleteTable(tableName);
+            const selectedPanel = this.form.querySelector('#databasePanel');
+
+            this.msgBox.showInfo(`Tabela '${tableName}' excluída com sucesso.`);
+            this.configurePanel(selectedPanel);
+        }
+    }
+
+    /**
+   * Configura o event de click para os botões de executar uma query personalizada
+   * @param {Event} event - O evento de click do botão.
+   */
+    async onExecuteQuery(event) {
+        event.stopPropagation();
+        const queryText = this.form.querySelector('#queryText');
+        const query = queryText.value;
+        if (query) {  
+            await this.db.execQuery(query);
+            queryText.value = '';
+            const selectedPanel = this.form.querySelector('#databasePanel');
+
+            this.msgBox.showInfo(`Query executada com sucesso.`);
+            this.configurePanel(selectedPanel);
+        }       
     }
 }

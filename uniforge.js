@@ -2,6 +2,7 @@ import { app, BrowserWindow, Menu, globalShortcut, ipcMain } from 'electron';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
+
 import Database from 'better-sqlite3';
 
 // Para resolver o `__dirname` no modo ESM
@@ -9,6 +10,8 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 let mainWindow;
+
+const db = new Database(path.join(__dirname, './db/database.db')); 
 
 // Remove o menu padrão
 Menu.setApplicationMenu(null);
@@ -30,8 +33,9 @@ app.whenReady().then(() => {
   });
   console.log('UniForge: Registrando Atalhos...OK');
 
-  // Lidar com requisições do renderer process via IPC
-  ipcMain.handle('ask-for-connect', () => { return getConnection(); });
+  ipcMain.handle('db-query', (event, query, params = []) => dbQuery(query, params));
+  ipcMain.handle('db-exec', (event, query, params = []) => dbExec(query, params));
+
   console.log('UniForge: Criando requisição de Renders...OK');
 });
 
@@ -67,24 +71,26 @@ function CreateWindow() {
   mainWindow.on('closed', () => {
     mainWindow = null;
   });
-
-  //sendPackageDataTo(mainWindow);
 }
 
-function getConnection() {
-  const connection = new Database(path.join(__dirname, './db/database.db'));
-  console.log(connection);
-  return connection;
+function dbQuery(query, params = []) {
+  try {
+    const statement = db.prepare(query);
+    const result = statement.all(...params); // Executa a consulta e retorna todos os resultados
+    return result;
+  } catch (err) {
+    console.error('Erro no banco de dados:', err.message);
+    throw err;
+  }
 }
 
-function sendPackageDataTo(window) {
-  // Lendo o arquivo package.json de forma síncrona
-  const packagePath = path.join(__dirname, 'package.json');
-  const packageData = fs.readFileSync(packagePath, 'utf-8');
-  const packageJson = JSON.parse(packageData);
-
-  // Enviar os dados para o renderer
-  window.webContents.once('dom-ready', () => {
-    window.webContents.send('package-info', packageJson);
-  });
+function dbExec(query, params = []){
+  try {
+    const statement = db.prepare(query);
+    const result = statement.run(...params); // Executa um comando (INSERT, UPDATE, DELETE)
+    return result;
+  } catch (err) {
+    console.error('Erro no banco de dados:', err.message);
+    throw err;
+  }
 }

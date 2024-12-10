@@ -17,7 +17,17 @@ export default class Dialog {
     }
 
     // Método para criar o diálogo
-    createDialog(hasOverlay=false) {
+    createDialog() {
+      const overlay = document.createElement("div");
+      overlay.className = "overlay dialog-overlay";
+      document.body.appendChild(overlay);
+
+      // Permitir fechar o diálogo clicando no overlay
+      overlay.addEventListener("click", (event) => {
+        if(!event.target.classList.contains('overlay')) return;  
+        this.closeDialog()
+      });
+
       // Container do diálogo
       this.dialog = document.createElement("div");
       this.dialog.id = 'dialog';
@@ -62,11 +72,11 @@ export default class Dialog {
       this.dialog.appendChild(titleHeader);
       this.dialog.appendChild(dialogBody);
       this.dialog.appendChild(buttons);
+
+      overlay.appendChild(this.dialog);
   
       // Adiciona o diálogo à página
-      document.body.appendChild(this.dialog);
-
-      if(hasOverlay) this.createOverlay();
+      document.body.appendChild(overlay);
 
       this._renderWindow();
     }
@@ -85,16 +95,6 @@ export default class Dialog {
       });
     }
   
-    // Método para criar um overlay
-    createOverlay() {
-      const overlay = document.createElement("div");
-      overlay.className = "dialog-overlay";
-      document.body.appendChild(overlay);
-  
-      // Permitir fechar o diálogo clicando no overlay
-      overlay.addEventListener("click", () => this.closeDialog());
-    }
-  
     // Método para fechar o diálogo
     closeDialog() {
       if (this.dialog) {
@@ -106,7 +106,8 @@ export default class Dialog {
     }
 
     // Iniciar arraste
-    onMouseDown(event) {                
+    onMouseDown(event) {  
+      event.stopPropagation();              
         this.state.isDragging = true;
         this.state.xDiff = event.pageX - this.state.x;
         this.state.yDiff = event.pageY - this.state.y;
@@ -121,6 +122,7 @@ export default class Dialog {
 
     // Manipular arraste
     onMouseMove(event) {
+      event.stopPropagation();
         if (this.state.isDragging) {
 
             this.state.x = this._clampX(event.pageX - this.state.xDiff);

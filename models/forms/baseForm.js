@@ -111,12 +111,12 @@ export default class BaseForm {
   }
 
   /**
-   * Obtém as folders disponíveis para o formulário no banco de dados.
-   * @returns {Object} - Categorias.
+   * Obtém os assuntos disponíveis do banco de dados.
+   * @returns {Object} - Assuntos.
+   * @async
    */
-  getFolders() {
-    const categoriesObj = Object.entries(Database.categories);
-    return Object.fromEntries(categoriesObj.filter(([key, value]) => (value.root == this.root) && !value.deleted));
+  async getSubjects() {
+    return await this.db.getSubjects(this.root);
   }
 
   /**
@@ -133,12 +133,12 @@ export default class BaseForm {
    * Configura o conteúdo do formulário
    * @param {HTMLElement} form - O elemento que representa o formulário.
    */
-  configureContent(form) {
+  async configureContent(form) {
     this.#configureBaseListeners(form);
 
     // Se o formulário possui um sidebar, configure suas entradas.
     if (this.ui.sidebar) {
-      this.data = this.getFolders();
+      this.data = await this.getSubjects();
 
       this.loadSidebarList(form);
       this.configureSidebar(form);
@@ -155,6 +155,21 @@ export default class BaseForm {
       this.loadSidebarList(this.form);
       this.configureSidebar(this.form);
     }
+  }
+
+  /**
+   * Limpa o conteúdo do formulário
+   * @param {HTMLElement} form - O elemento que representa o formulário.
+   */
+  clearContent(form) {
+    const folders = form.querySelectorAll('#folderList .folder');
+
+    folders.forEach(item => {
+      item.classList.remove('selected');
+      const icon = item.querySelector('.fas');
+      icon.classList.remove(...icon.classList);
+      icon.classList.add('fas', 'fa-folder');
+    });
   }
 
   /**
@@ -218,16 +233,10 @@ export default class BaseForm {
    */
   configureSidebar(form) {
     const sidebar = form.querySelector('.entries .sidebar');
-    const folders = form.querySelectorAll('#folderList .folder');
 
     sidebar.addEventListener('click', function (event) {
       if (event.target.classList.contains('entry-item')) return;
-      folders.forEach(item => {
-        item.classList.remove('selected');
-        const icon = item.querySelector('.fas');
-        icon.classList.remove(...icon.classList);
-        icon.classList.add('fas', 'fa-folder');
-      });
+      this.clearContent(form);
     });
   }
   /**
@@ -273,7 +282,8 @@ export default class BaseForm {
 
     const folder = document.createElement('li');
     folder.classList.add('folder', 'created');
-    folder.dataset.id = data.cid ?? data.sid;
+    folder.dataset.cid = data.cid ?? null;
+    folder.dataset.sid = data.sid ?? null;
 
     const folderHeader = document.createElement('div');
     folderHeader.className = 'folder-header flexrow';
@@ -289,14 +299,9 @@ export default class BaseForm {
     const entryList = document.createElement('ul');
     entryList.className = 'entry-list';
 
-    data.entries.forEach(item => {
-      if (!item.deleted) {
-        const entry = this.getEntry(item);
-        if (entry) {
-          const entryItem = this.createEntryItem(entry);
-          entryList.appendChild(entryItem);
-        }
-      }
+    data.entries.forEach(entry => {
+      const entryItem = this.createEntryItem(entry);
+      entryList.appendChild(entryItem);
     });
 
     folderContent.appendChild(entryList);
@@ -315,7 +320,7 @@ export default class BaseForm {
   createEntryItem(data) {
     const entryItem = document.createElement('li');
     entryItem.className = 'entry-item flexrow';
-    entryItem.dataset.id = data.entryId;
+    entryItem.dataset.id = data.cid ?? (data.eid ?? '-1');
 
     const icon = document.createElement('i');
     icon.className = 'fas fa-file';

@@ -357,19 +357,44 @@ input:checked+.slider::before {
     color: var(--grey);
     font-weight: 700;
 }
-
-.entries .footer button {
+.entries .footer:has(.buttons) {
     width: 100%;
+}
+.entries .footer button {
+    color: var(--background-color);
 }
 
 .entries .footer button.new-entry {
-    background-color: var(--green);
-    color: var(--text-color);
+    background-color: var(--green);    
 }
 
 .entries .footer button.new-entry:hover {
     background-color: var(--dark-green);
     color: var(--light-text-color);
+}
+.entries .footer .buttons {
+    flex: 1;
+    gap: 5px;
+}
+.entries .footer .extra.buttons {
+    flex: 0;
+    margin-right: auto;
+    justify-content: flex-start;
+}
+.entries .footer .fixed.buttons {
+    flex: 1;
+    justify-content: flex-end;
+}
+.entries .footer .buttons button {
+    flex: 0 0 130px;
+}
+.entries .footer .buttons button.disabled {
+    background-color: var(--background-color);
+    color: var(--light-text-color);
+    border: 2px solid var(--light-text-color);
+}
+.entries .footer .buttons button.disabled:hover {
+    cursor: default;
 }
 
 /* ------ Scroll ------ */
@@ -866,6 +891,7 @@ input:checked+.slider::before {
     display: flex;
     flex-direction: row;
 }
+
 
 .overlay .form-container .form-content .data-group .data-label {
     flex: 1;
@@ -1437,6 +1463,10 @@ input:checked+.slider::before {
 }
 .settings .settings-container .panel {    
     padding-inline: 5px;
+    height: 100%;
+}
+.settings .settings-container .panel .data-group:first-of-type {
+    margin-top: 5px;
 }
 .settings .settings-container .panel .data-group .data-label {
     flex: 0 0 25%;
@@ -1453,8 +1483,24 @@ input:checked+.slider::before {
 }
 .settings .settings-container .panel .data-complex button {
     margin: 10px 0;
+}
+.settings .settings-container .panel .query-input {
+    flex: 1;
 } 
-
+.settings .settings-container .panel .query-input textarea {
+    width: -webkit-fill-available;
+    resize: none;
+    background-color: var(--blueT50);
+    border-radius: var(--default-border-radius);
+    color: var(--light-text-color);
+    height: 90%;
+}
+.settings .settings-container .panel .query-input .query-button {
+    justify-content: flex-end;
+}
+.settings .settings-container .panel .query-input .query-button button {
+    margin: 10px 0;
+}
 /* ------ Folder List ------ */
 .folder-list {
     list-style: none;

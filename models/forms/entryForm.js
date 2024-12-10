@@ -4,6 +4,8 @@
 import BaseForm from "./baseForm.js";
 import Dialog from "../dialogs/dialog.js";
 import { Database } from "../../scripts/tempDB.js";
+import DBManager from "../../db/dbManager.js";
+import NewEntryDialog from "../dialogs/newEntryDialog.js";
 
 /**
  * Classe EntryForm estende a funcionalidade da classe BaseForm para gerenciar formulários que manipulem Entradas.
@@ -19,11 +21,17 @@ export default class EntryForm extends BaseForm {
     super(overlay);
 
     /**
+     * Gerenciador de conexão de Banco de Dados.
+     * @type {DBManager}
+     */
+    this.db = CONFIG.db;
+
+    /**
      * O ícone Font Awesome para quando uma entrada é selecionada.
      * @type {string}
      */
     this.selectedIcon = 'fas fa-feather';
-
+    
     /**
     * O caminho para o arquivo HTML do dialog de nova entrada
     * @type {string}
@@ -44,8 +52,6 @@ export default class EntryForm extends BaseForm {
     /** @type {Object} - Tooltip de interface do usuário. */
     this.ui.tooltip = CONFIG.tooltip;
   }
-
-
 
   /**
    * Configura o conteúdo do formulário.
@@ -70,31 +76,42 @@ export default class EntryForm extends BaseForm {
   updateContent() {
     super.updateContent();
     this.updateEntryItems();
+  }  
+
+  /**
+   * Obtém as categorias disponíveis do banco de dados.
+   * @returns {Object} - Assuntos.
+   * @async
+   */
+  async getCategory() {
+    return await this.db.getCategory(this.root); 
   }
 
   /**
    * Obtém os assuntos disponíveis do banco de dados.
    * @returns {Object} - Assuntos.
+   * @async
    */
-  getSubjects() {
-    const subjectObj = Object.entries(Database.subjectTypes);
-    return Object.fromEntries(subjectObj.filter(([key, value]) => value.root == this.root && !value.deleted).sort());
+  async getSubjects() {
+    return await this.db.getSubjects(this.root); 
   }
 
   /**
    * Obtém os tipos de entrada disponíveis do banco de dados.
    * @returns {Object} - Tipos de entrada.
+   * @async
    */
-  getEntryTypes() {
-    return Database.entryTypes;
+  async getEntryTypes() {
+    return await this.db.getEntryTypes();
   }  
 
   /**
    * Obtém os calendários disponíveis do banco de dados.
    * @returns {Object} - Calendários.
+   * @async
    */
-  getCalendars() {
-    return Database.calendars;
+  async getCalendars() {
+    return await this.db.getCalendars();
   }
 
   /**
@@ -109,8 +126,8 @@ export default class EntryForm extends BaseForm {
    * Configura o combo de Assuntos.
    * @param {HTMLElement} form - O formulário HTML principal.
    */
-  configureSubjectSelect(form) {
-    this.subjectTypes = this.getSubjects();
+  async configureSubjectSelect(form) {
+    this.subjectTypes = await this.getSubjects();
 
     // Carrega as opções de Tipos de Entradas registrados
     const subjectType = form.querySelector('#subjectType');
@@ -123,13 +140,13 @@ export default class EntryForm extends BaseForm {
    * Configura o combo de Tipos de Entrada.
    * @param {HTMLElement} form - O formulário HTML principal.
    */
-  configureEntryTypeSelect(form) {
-    this.entryTypes = this.getEntryTypes();
+  async configureEntryTypeSelect(form) {
+    this.entryTypes = await this.getEntryTypes();
 
     // Carrega as opções de Tipos de Entradas registrados
     const entryType = form.querySelector('#entryType');
-    for (const id of Object.keys(this.entryTypes)) {
-      entryType.appendChild(this._newEntryTypeOption(id));
+    for (const data of Object.values(this.entryTypes)) {
+      entryType.appendChild(this._newEntryTypeOption(data));
     }
   }
 
@@ -137,8 +154,8 @@ export default class EntryForm extends BaseForm {
    * Configura o combo de Tipos de Entrada.
    * @param {HTMLElement} form - O formulário HTML principal.
    */
-  configureCalendarSelect(form) {
-    this.calendars = this.getCalendars();
+  async configureCalendarSelect(form) {
+    this.calendars = await this.getCalendars();
 
     // Carrega as opções de Calendários registrados
     const calendarType = form.querySelector('#calendarType');
@@ -211,6 +228,7 @@ export default class EntryForm extends BaseForm {
       height: '100%',
       menubar: false,
       resize: false,
+      statusbar: false,
       editable_root: false,
       skin: 'oxide-dark',
       content_css: '/css/styles.css',
@@ -290,74 +308,27 @@ export default class EntryForm extends BaseForm {
 
     const message = `Tem certeza que deseja excluir a entrada ${dataType}?`;
     this._showDialog(message);
-  }
-
-  /**
-   * Gera uma nova entrada e a registra em uma folder (categoria).
-   * @param {Object} data - Conjunto de dados que representam a nova entrada.
-   * @returns {HTMLElement} - O elemento da entrada já devidamente configurada.
-   */
-  createNewEntry(folder) {
-    const entryList = folder.querySelector('.entry-list');
-    const entryTitle = this.dialog.querySelector('#entryTitle');
-
-    const data = Database.newEntry(`${folder.dataset.id}012`, entryTitle.value);
-    (this.root === 'encyclo' ?
-      Database.addEntryToSubject(folder.dataset.id, data) :
-      Database.addEntryToFolder(folder.dataset.id, data)
-    );
-
-    const entryItem = this.createEntryItem(data);
-
-    entryItem.addEventListener('click', (event) => {
-      this.onEntryItemClick(event);
-    });
-    entryItem.addEventListener('dblclick', (event) => {
-      this.onEntryItemDoubleClick(event);
-    });
-
-    entryList.appendChild(entryItem);
-
-    this.dialog.closeDialog();
-    this.updateEntryItems();
-  }
+  }  
 
   /**
   * Trata o evento de criação de uma nova entrada.
   * @param {Event} event - Evento de clique no botão de Nova Entrada.
   */
-  async onNewEntryClick(event) {
+  onNewEntryClick(event) {
     event.stopPropagation();
 
     // Obtém a lista de Categorias
     const selectedFolder = this.form.querySelector('.folder.selected');
     if (!selectedFolder) {
       this.msgBox.showWarning('Nenhuma categoria foi selecionada.');
-      return;
+      return false;
     }
 
-    // HTML do corpo
-    const bodyHTML = await this._loadHTML(this.newEntryDialogPath);
-
-    // Configuração de botões
-    const buttons = [
-      {
-        label: "Cancelar",
-        icon: "fas fa-xmark",
-        onClick: () => {
-          dialog.closeDialog();
-        },
-      },
-      {
-        label: "Confirmar",
-        icon: "fas fa-check",
-        onClick: () => { this.createNewEntry(selectedFolder); },
-      }
-    ];
+    return true;
 
     // Criar o diálogo
-    const dialog = new Dialog("Nova Entrada", bodyHTML, buttons);
-    dialog.createDialog(true);
+    //const dialog = new NewEntryDialog(selectedFolder);
+    //dialog.createDialog(true);
 
     /*
     const listItems = dialog.querySelectorAll('.list-item');
@@ -374,7 +345,7 @@ export default class EntryForm extends BaseForm {
 
     dialog.configureListeners(listerns);
     */
-    this.dialog = dialog;
+    //this.dialog = dialog;
   }
 
   /**
@@ -394,13 +365,13 @@ export default class EntryForm extends BaseForm {
   /**
    * Gera uma nova opção para o ComboBox de Tipos de Entradas.
    * @private
-   * @param {String} type - O identificador do tipo.
+   * @param {Object} data   - Os dados do tipo.
    * @returns {HTMLElement} - Elemento da nova opção.
    */
-  _newEntryTypeOption(type) {
+  _newEntryTypeOption(data) {
     const newOption = document.createElement('option');
-    newOption.value = type;
-    newOption.textContent = this.entryTypes[type].label;
+    newOption.value = data.etid;
+    newOption.textContent = data.label;
 
     return newOption;
   }
