@@ -67,7 +67,7 @@ export class HistoryForm extends EntryForm {
     */
     async configureContent(form) {
         // Chama o método de configuração da classe pai para configurar o formulário base.
-        await super.configureContent(form);
+        await super.configureContent(form);        
 
         // Configura o seletor de importâncias de evento usando o método da classe pai.
         await super.configureImportanceSelect(form);
@@ -78,8 +78,14 @@ export class HistoryForm extends EntryForm {
         // Configura o seletor de calendários usando o método da classe pai.
         await super.configureCalendarSelect(form);
 
-        // Configura o editor TinyMCE associado ao formulário.
+        // Configura o recipiente de imagem usando o método da classe pai.
+        super.configureImageContainer(form);
+
+        // Configura o editor TinyMCE principal associado ao formulário.
         super._configureTinyMCE();
+
+        // Configura o editor TinyMCE de floreio associado ao formulário.
+        this.configureFlavorTinyMCE();
 
         // Carrega os DatePickers associados ao formulário.
         this.loadDatePickers();
@@ -89,12 +95,31 @@ export class HistoryForm extends EntryForm {
 
         // Configura o evento de criação de novas entradas
         const newEntryButton = document.getElementById('newEntryButton');
-        newEntryButton.addEventListener('click', (event) => { this.onNewEntryClick(event); });
+        newEntryButton.addEventListener('click', (event) => { this.onBaseNewClick(event); });
 
         const saveButton = this.form.querySelector('#saveButton');
-        saveButton.addEventListener('click', (event) => { this.onSaveEntryClick(event); });
+        saveButton.addEventListener('click', (event) => { this.onBaseSaveClick(event); });
     }
 
+    /**
+    * Configura o editor TinyMCE para o texto de floreio da Entrada.
+    */
+    configureFlavorTinyMCE() {
+        if (tinymce.get('flavorEditor')) {
+            tinymce.remove('#flavorEditor');
+        }
+
+        const options = CONFIG.utils.mergeObjects(CONFIG.tinymceOptions.simple,{            
+            selector: 'div#flavorEditor',
+            placeholder: "Texto de floreio...",
+            init_instance_callback: (editor) => {
+              editor.setContent(""); // Garante que o editor seja iniciado vazio.
+            },
+            setup: (editor) => { this._setupTinyMCE(editor); }
+          });
+
+        tinymce.init(options);
+    }
 
     /**
     * Carrega os DatePickers associados à instância.
@@ -140,7 +165,8 @@ export class HistoryForm extends EntryForm {
                 end: this.datePickers.end.selectedDate
             },
             img: imgInput.value,
-            htmlString: tinymce.activeEditor?.getContent() ?? '',
+            htmlString: tinymce.get('textEditor').getContent() ?? '',
+            flavor: tinymce.get('flavorEditor').getContent() ?? '',
             isDraft: draftSwitch.checked,
             cid: folder.dataset.cid,
             text: ''
@@ -152,7 +178,8 @@ export class HistoryForm extends EntryForm {
             return;
         }
 
-        await CONFIG.db.addEntry(data);
+        const result = await CONFIG.db.addEntry(data);
+        data.eid = result.lastInsertRowid;
         await CONFIG.db.addEvent(data);
 
         this.msgBox.showInfo('Entrada criada com sucesso.');
@@ -169,9 +196,8 @@ export class HistoryForm extends EntryForm {
     * Trata o evento de registro de uma nova entrada.
     * @param {Event} event - Evento de clique no botão de Salvar.
     */
-    async onSaveEntryClick(event) {
+    async onSaveClick(event) {
         event.stopPropagation();
-        if (!super.onSaveClick(event)) return;
 
         const body = 'Deseja salvar a entrada?';
         // Configuração de botões
@@ -196,10 +222,8 @@ export class HistoryForm extends EntryForm {
     * Trata o evento de criação de uma nova entrada.
     * @param {Event} event - Evento de clique no botão de Nova Entrada.
     */
-    async onNewEntryClick(event) {
-        if (super.onNewClick(event)) {
-            this.clearContent(this.form, false);
-        }
+    async onNewClick(event) {
+        this.clearContent(this.form, false);        
     }
 
     /**

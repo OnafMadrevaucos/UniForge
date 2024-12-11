@@ -102,7 +102,7 @@ export default class DBManager {
         } else {
             query = 'SELECT C.cid, C.sid, C.title, C.img, C.htmlString, C.isDraft FROM category AS C ' +
                     'INNER JOIN subjectType AS S ON S.sid = C.sid ' +
-                    `WHERE S.root = '${root}' `;
+                    `WHERE S.root = '${root}' AND C.isDraft = 0 `;
         }
         query += 'ORDER BY S.title';
         const rows = await CONFIG.sql.query(query);
@@ -138,11 +138,11 @@ export default class DBManager {
 
     async addEntry(data) { 
         let query = `INSERT INTO entry (etid, title, flavor, htmlString, isDraft, cid) VALUES (`; 
-        query += `'${data.etid}',`;
+        query += `${data.etid},`;
         query += `'${data.title}',`;
         query += `'${data.flavor}',`;
         query += `'${data.htmlString}',`;
-        query += `${data.isDraft ? 1 : 0}`;
+        query += `${data.isDraft ? 1 : 0},`;
         query += `${data.cid});`;       
 
         const result = await CONFIG.sql.exec(query);
@@ -166,7 +166,7 @@ export default class DBManager {
     }
 
     async addEvent(data) { 
-        let query = `INSERT INTO event (eid, iid, start_year, start_month, start_day, end_year, end_month, end_day, text) VALUES (`; 
+        let query = `INSERT INTO event (eid, iid, start_year, start_month, start_day, end_year, end_month, end_day, flavor) VALUES (`; 
         query += `${data.eid},`;
         query += `${data.iid},`;
         query += `${data.date.start.year},`;
@@ -175,7 +175,7 @@ export default class DBManager {
         query += `${data.date.end.year},`;
         query += `${data.date.end.month},`;
         query += `${data.date.end.day},`;
-        query += `'${data.text}');`;       
+        query += `'${data.flavor}');`;       
 
         const result = await CONFIG.sql.exec(query);
         

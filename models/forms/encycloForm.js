@@ -53,6 +53,9 @@ export class EncycloForm extends EntryForm {
     async configureContent(form) {
         await super.configureContent(form);
 
+        // Configura o recipiente de imagem usando o método da classe pai.
+        super.configureImageContainer(form);
+
         // Configurações do formulário.
         super._configureTinyMCE();
 

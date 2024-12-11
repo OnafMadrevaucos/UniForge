@@ -14,31 +14,133 @@ import DBManager from "../db/dbManager.js";
 import Utils from "../scripts/utils.js";
 
 // Constante Global
+/**
+ * Objeto global `CONFIG` que armazena configurações e instâncias relacionadas à aplicação,
+ * incluindo configurações do mapa, controles, propriedades de navegação e utilitários.
+ * 
+ * @namespace CONFIG
+ */
 window.CONFIG = {
+    /**
+     * Instância de SQL usada pela aplicação.
+     * @type {Object}
+     */
     sql: window.sql,
+
+    /**
+     * Instância do gerenciador de banco de dados.
+     * @type {DBManager}
+     */
     db: new DBManager(),
+
+    /**
+     * Instância do mapa usando o Leaflet com configurações específicas.
+     * 
+     * @type {L.Map}
+     */
     map: L.map('map', {
         crs: L.CRS.Simple, // Usando o sistema de coordenadas simples do Leaflet para imagens personalizadas
         center: [0.0, 0.0],
         maxZoom: 3,
         minZoom: -2,
-        //zoomLevel: calculateZoomForTileScaleSimple(165),
         zoomSnap: 0.1,
         zoomControl: false, // Desativa o controle de zoom padrão para personalizá-lo
         maxBoundsViscosity: 1.0
     }),
+
+    /**
+     * Opções para editores Tiny MCE. 
+     * Qualquer função customizada ou callbacks deve ser mesclado a essas opções.
+     * 
+     * @type {Object}
+     * @property {Object|null} default  - Opção padrão.
+     * @property {Object|null} simple   - Opção simplificada.
+     */
+    tinymceOptions: {
+        default: {
+            editable_class: 'editable',
+            license_key: 'gpl',
+            plugins: ['anchor', 'autolink', 'codesample', 'link', 'lists', 'searchreplace', 'table', 'visualblocks'],
+            toolbar: 'undo redo | blocks | bold italic backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | entryLink blockquote',
+            toolbar_mode: 'wrap',
+            placeholder: 'Descrição do registro...',
+            block_formats: 'Heading 1=h1; Heading 2=h2; Heading 3=h3; Paragraph=p;',
+            height: '100%',
+            menubar: false,
+            resize: false,
+            statusbar: false,
+            skin: 'oxide-dark',
+            content_css: '/css/styles.css'
+        },
+        simple: {
+            license_key: 'gpl',            
+            plugins: 'quickbars',
+            quickbars_selection_toolbar: 'undo redo | bold italic',
+            quickbars_insert_toolbar: false,            
+            menubar: false,
+            inline: true,
+            skin: 'oxide-dark',
+            content_css: '/css/styles.css'
+        }
+    },
+
+    /**
+     * Grupo de elementos desenhados no mapa.
+     * 
+     * @type {L.FeatureGroup}
+     */
     drawnItems: new L.FeatureGroup(),
+
+    /**
+     * Referência ao corpo do documento HTML.
+     * 
+     * @type {HTMLElement}
+     */
     html: document.body,
+
+    /**
+     * Controles relacionados à interface do usuário.
+     * 
+     * @type {Object}
+     * @property {Object|null} main - Controle principal.
+     * @property {Object|null} draw - Controle de desenho no mapa.
+     * @property {Object|null} grid - Controle de grid.
+     * @property {MsgBoxManager} msgBox - Instância do gerenciador de caixas de mensagem.
+     * @property {LinkTooltip} tooltip - Instância do gerenciador de tooltips.
+     */
     ctrls: {
         main: null,
         draw: null,
         grid: null,
-        tinymce: tinymce,
         msgBox: new MsgBoxManager(6),
         tooltip: new LinkTooltip()
     },
+
+    /**
+     * Referência ao formulário, utilizado em várias partes da aplicação.
+     * 
+     * @type {Object|null}
+     */
     form: null,
+
+    /**
+     * Instância do gerenciador de fila de navegação.
+     * 
+     * @type {NavQueue}
+     */
     navQueue: new NavQueue(), // Fila de controle de navegação
+
+    /**
+     * Constantes configuráveis, como dimensões de imagem e tamanho do tile.
+     * 
+     * @type {Object}
+     * @property {number} MIN_POINTS - Número mínimo de pontos para alguma operação.
+     * @property {number} IMG_WIDTH - Largura da imagem.
+     * @property {number} IMG_HEIGHT - Altura da imagem.
+     * @property {number} VIEW_WIDTH - Largura da área de visualização.
+     * @property {number} VIEW_HEIGHT - Altura da área de visualização.
+     * @property {number} TILE_SIZE - Tamanho de cada tile do mapa.
+     */
     contants: {
         MIN_POINTS: 2000,
         IMG_WIDTH: 5850,
@@ -47,8 +149,28 @@ window.CONFIG = {
         VIEW_HEIGHT: 2160,
         TILE_SIZE: 240
     },
+
+    /**
+     * LatLng onde o último clique no mapa ocorreu.
+     * 
+     * @type {L.LatLng|null}
+     */
     clickLatLang: null,
+
+    /**
+     * Camada de sobreposição do mapa.
+     * 
+     * @type {Object|null}
+     */
     mapOverlay: null,
+
+    /**
+     * Informações relacionadas ao tempo (como o valor do ano e a era).
+     * 
+     * @type {Object}
+     * @property {Object} y - Objeto com valor e label do ano.
+     * @property {string} era - A era representada (por exemplo, 'd.T.').
+     */
     time: {
         y: {
             value: 1,
@@ -56,6 +178,12 @@ window.CONFIG = {
         },
         era: 'd.T.'
     },
+
+    /**
+     * Instância de utilitários gerais.
+     * 
+     * @type {Utils}
+     */
     utils: new Utils()
 }
 
@@ -70,8 +198,7 @@ CONFIG.msgBox = CONFIG.ctrls.msgBox;
 // Atalho para o Controle de Tooltips de Entradas
 CONFIG.tooltip = CONFIG.ctrls.tooltip;
 
-ConfigureElements();
-ConfigureForms();
+
 
 /** 
  * ------------------------------------------------------------------
@@ -553,3 +680,10 @@ function _calculatePrecision(bounds) {
 
     return { latPoints, lngPoints };
 }
+
+document.addEventListener('DOMContentLoaded', () => {
+    CONFIG.html.classList.add('uniforge');
+
+    ConfigureElements();
+    ConfigureForms();
+});

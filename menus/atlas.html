@@ -21,16 +21,24 @@
         <div class="header flexcol">
             <div class="header-info flexcol">
                 <input type="text" class="title" name="title" placeholder="Título da Entrada" />
-            </div>
-            <div id="imageContainer" class="img-container">
-                <img id="displayedImage" class="img-displayed" src="../images/blank-image.svg" alt="Imagem Padrão">
-                <input type="file" class="hidden" id="hiddenFileInput" accept="image/*" />
-            </div>
+            </div>            
+        </div>
+        <div id="imageContainer" class="img-container flexrow">
+            <img id="displayedImage" class="img-displayed" src="../images/blank-image.svg" alt="Imagem Padrão">
+            <input type="file" class="hidden" id="hiddenFileInput" accept="image/*" />
+        </div>
+        <div id="captionEditor" class="simple-tmce">
+            <div class="text-content editable"></div>
         </div>
         <div class="footer flexrow">
-            <button id="newEntryButton" class="new-entry"><i class="fas fa-square-plus"></i> Nova Entrada</button>
-            <button id="load-button"><i class="fa-solid fa-upload"></i> Carregar Mapa</button>
-            <button id="save-button"><i class="fa-regular fa-floppy-disk"></i> Salvar</button>
+            <div class="extra buttons flexrow">
+                <button id="cancelButton" class="cancel-entry hidden"><i class="fas fa-rectangle-xmark"></i> Cancelar</button>
+            </div>
+            <div class="fixed buttons flexrow">
+                <button id="newEntryButton" class="new-entry disabled"><i class="fas fa-square-plus"></i> Nova Entrada</button>
+                <button id="load-button" class="disabled"><i class="fas fa-upload"></i> Carregar Mapa</button>
+                <button id="saveButton" class="disabled"><i class="fa-regular fa-floppy-disk"></i> Salvar</button>
+            </div>
         </div>
     </div>
 </div>

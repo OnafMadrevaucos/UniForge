@@ -238,7 +238,7 @@ export default class BaseForm {
   configureSidebar(form) {
     const sidebar = form.querySelector('.entries .sidebar');
 
-    sidebar.addEventListener('click', function (event) {
+    sidebar.addEventListener('click', (event) => {
       if (event.target.classList.contains('entry-item')) return;
       this.clearContent(form);
     });

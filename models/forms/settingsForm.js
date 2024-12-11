@@ -170,7 +170,7 @@ export class SettingsForm extends BaseForm {
             const result = await this.db.storedProcedures[procedure]();
             const selectedPanel = this.form.querySelector('#databasePanel');
 
-            this.msgBox.showInfo(`Procedure '${procedure}' executada com sucesso.`);
+            this.msgBox.showInfo(`Procedure '${procedure}' executada com sucesso. (${result.changes}) linhas alteradas.`);
             this.configurePanel(selectedPanel);
         }       
     }
@@ -185,7 +185,7 @@ export class SettingsForm extends BaseForm {
         const selectedOption = tableNameSelect.selectedOptions[0];
         const tableName = selectedOption.dataset.name;
         if (tableName) {            
-            await this.db.deleteTable(tableName);
+            const result = await this.db.deleteTable(tableName);
             const selectedPanel = this.form.querySelector('#databasePanel');
 
             this.msgBox.showInfo(`Tabela '${tableName}' excluída com sucesso.`);
@@ -202,11 +202,11 @@ export class SettingsForm extends BaseForm {
         const queryText = this.form.querySelector('#queryText');
         const query = queryText.value;
         if (query) {  
-            await this.db.execQuery(query);
+            const result = await this.db.execQuery(query);
             queryText.value = '';
             const selectedPanel = this.form.querySelector('#databasePanel');
 
-            this.msgBox.showInfo(`Query executada com sucesso.`);
+            this.msgBox.showInfo(`Query executada com sucesso. (${result.changes}) linhas alteradas.`);
             this.configurePanel(selectedPanel);
         }       
     }

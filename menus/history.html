@@ -20,7 +20,7 @@
     <div class="header flexrow">
       <div id="imageContainer" class="img-container">
         <img id="displayedImage" class="img-displayed empty" src="../images/blank-image.svg" alt="Imagem Padrão">
-        <input type="file" class="hidden" id="hiddenFileInput" accept="image/*" />
+        <input id="hiddenFileInput" type="file" class="hidden" accept="image/*"/>
       </div>
       <div class="header-info flexcol">
         <input id="titleInput" type="text" class="title" name="title" placeholder="Título da Entrada" />
@@ -88,9 +88,12 @@
 
     <div class="separator"></div>
 
+    <div id="flavorEditor" class="simple-tmce">
+      <div class="text-content editable"></div>
+    </div>
     <textarea id="textEditor">
         <div class="text-content editable"></div>
-      </textarea>
+    </textarea>
     <div class="footer flexrow">
       <div class="extra buttons flexrow">
         <button id="cancelButton" class="cancel-entry hidden"><i class="fas fa-rectangle-xmark"></i> Cancelar</button>

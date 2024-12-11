@@ -45,8 +45,7 @@ export default class EntryForm extends BaseForm {
     this.isEncyclopedia = false;
 
     /** @type {HTMLElement} - Dialogo de confirmação de nova categoria. */
-    const dialog = this.form.querySelector('#confirmDialog');
-    this.configureCategoryDialog(dialog);
+    const dialog = this.form.querySelector('#confirmDialog');    
     this.ui.dialog = dialog;
 
     /** @type {Object} - Tooltip de interface do usuário. */
@@ -145,7 +144,36 @@ export default class EntryForm extends BaseForm {
    * @param {HTMLElement} form - O formulário HTML principal.
    */
   configureEntrySidebar(form) {
+    this.configureSidebarDialog();
     this.updateEntryItems();
+  }
+
+  /**
+   * Configura recipiente de imagem do formulário.
+   * @param {HTMLElement} form - O formulário HTML principal.
+   */
+  configureImageContainer(form) {
+    const imageContainer = form.querySelector('#imageContainer');
+    const displayedImage = form.querySelector('#displayedImage');
+    const fileInput = form.querySelector('#hiddenFileInput');
+
+    // Adiciona um evento para lidar com a seleção de uma nova imagem.
+    fileInput.addEventListener('change', (event) => {
+      const file = event.target.files[0];
+      if (file && file.type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          displayedImage.src = e.target.result;  // Atualiza a imagem exibida.
+          displayedImage.classList.remove('empty');
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+
+    // Adiciona um evento de clique no contêiner de imagem para abrir o seletor de arquivos.
+    imageContainer.addEventListener('click', () => {
+      fileInput.click();
+    });    
   }
 
   /**
@@ -252,42 +280,15 @@ export default class EntryForm extends BaseForm {
    * @private
    * @param {HTMLElement} dialog - Elemento do diálogo de categorias.
    */
-  configureCategoryDialog(dialog) {
+  configureSidebarDialog() {
+    const dialog = this.ui.dialog;
+
     const yesBtn = dialog.querySelector('#confirm-yes');
     const noBtn = dialog.querySelector('#confirm-no');
 
     yesBtn.addEventListener('click', (event) => { this._doAction(event) });
     noBtn.addEventListener('click', (event) => { this.onCancelNewCategory(event); });
-  }
-
-  /**
-   * Inicializa e configura o editor TinyMCE.
-   * Remove qualquer instância existente antes de reconfigurar.
-   * @private
-   */
-  _configureTinyMCE() {
-    if (tinymce.get('textEditor')) {
-      tinymce.remove('#textEditor');
-    }
-
-    tinymce.init({
-      selector: 'textarea#textEditor',
-      editable_class: 'editable',
-      license_key: 'gpl',
-      plugins: ['anchor', 'autolink', 'codesample', 'link', 'lists', 'searchreplace', 'table', 'visualblocks'],
-      toolbar: 'undo redo | blocks | bold italic backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | entryLink blockquote',
-      forced_root_block: 'p',
-      block_formats: 'Heading 1=h1; Heading 2=h2; Heading 3=h3; Paragraph=p;',
-      height: '100%',
-      menubar: false,
-      resize: false,
-      statusbar: false,
-      editable_root: false,
-      skin: 'oxide-dark',
-      content_css: '/css/styles.css',
-      setup: (editor) => { this._setupTinyMCE(editor); }
-    });
-  }
+  }  
 
   /**
    * Gerencia cliques em pastas.
@@ -385,17 +386,17 @@ export default class EntryForm extends BaseForm {
   * Trata o evento de criação de um novo item qualquer.
   * @param {Event} event - Evento de clique no botão de Nova Entrada.
   */
-  onNewClick(event) {
+  onBaseNewClick(event) {
     event.stopPropagation();
     // Ignora o clique se o botão estiver desativado.
     const button = event.target.closest('#newEntryButton');
-    if (button.classList.contains('disabled')) return false;
+    if (button.classList.contains('disabled')) return;
 
     // Obtém a lista de Categorias
     const selectedFolder = this.form.querySelector('.folder.selected');
     if (!selectedFolder) {
       this.msgBox.showWarning('Nenhuma categoria foi selecionada.');
-      return false;
+      return;
     }
 
     const cancelButton = this.form.querySelector('#cancelButton');
@@ -407,7 +408,12 @@ export default class EntryForm extends BaseForm {
     const titleInput = this.form.querySelector('#titleInput');
     titleInput.focus();
 
-    return true;
+    if(!this.onNewClick) { 
+      const message = 'Método de tratamento do clique de novo item não foi implementado no formulário filho.';      
+      this.msgBox.showWarning(message);      
+    } else {
+      this.onNewClick(event);
+    }
 
     // Criar o diálogo
     //const dialog = new NewEntryDialog(selectedFolder);
@@ -435,14 +441,19 @@ export default class EntryForm extends BaseForm {
     * Trata o evento de registro de uma nova entrada.
     * @param {Event} event - Evento de clique no botão de Salvar.
     */
-  async onSaveClick(event) {
+  async onBaseSaveClick(event) {
     event.stopPropagation();
 
     // Ignora o clique se o botão estiver desativado.
     const button = event.target.closest('#saveButton');
-    if (button.classList.contains('disabled')) return false;
+    if (button.classList.contains('disabled')) return;
 
-    return true;
+    if(!this.onSaveClick) { 
+      const message = 'Método de tratamento do clique de salvamento não foi implementado no formulário filho.';      
+      this.msgBox.showWarning(message);      
+    } else {
+      this.onSaveClick(event);
+    }
   }
 
   /**
@@ -498,6 +509,27 @@ export default class EntryForm extends BaseForm {
     newOption.textContent = calendar.data.label;
 
     return newOption;
+  }
+
+  /**
+   * Inicializa e configura o editor TinyMCE.
+   * Remove qualquer instância existente antes de reconfigurar.
+   * @private
+   */
+  _configureTinyMCE() {
+    if (tinymce.get('textEditor')) {
+      tinymce.remove('#textEditor');
+    }
+
+    const options = CONFIG.utils.mergeObjects(CONFIG.tinymceOptions.default,{
+      selector: 'textarea#textEditor',
+      init_instance_callback: (editor) => {
+        editor.setContent(""); // Garante que o editor seja iniciado vazio.
+      },
+      setup: (editor) => { this._setupTinyMCE(editor); }
+    });
+
+    tinymce.init(options);
   }
 
   /**
@@ -557,7 +589,7 @@ export default class EntryForm extends BaseForm {
       tooltip._hideLinkTooltip();
     });
   }
-
+  
   /**
    * Exibe um diálogo de confirmação com uma mensagem.
    * @private
