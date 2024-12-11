@@ -386,7 +386,8 @@ input:checked+.slider::before {
     justify-content: flex-end;
 }
 .entries .footer .buttons button {
-    flex: 0 0 130px;
+    flex: 0 0 150px;
+    align-self: center;
 }
 .entries .footer .buttons button.disabled {
     background-color: var(--background-color);

@@ -132,6 +132,7 @@ export default class BaseForm {
   /**
    * Configura o conteúdo do formulário
    * @param {HTMLElement} form - O elemento que representa o formulário.
+   * @async
    */
   async configureContent(form) {
     this.#configureBaseListeners(form);
@@ -148,10 +149,13 @@ export default class BaseForm {
   /**
    * Atualiza o conteúdo do formulário
    * @param {HTMLElement} form - O elemento que representa o formulário.
+   * @async
    */
-  updateContent() {
+  async updateContent() {
     // Se o formulário ainda possui um sidebar, reconfigure suas entradas.
     if (this.ui.sidebar) {
+      this.data = await this.getSubjects();
+
       this.loadSidebarList(this.form);
       this.configureSidebar(this.form);
     }
@@ -337,7 +341,6 @@ export default class BaseForm {
   /**
    * Gerencia cliques em pastas.
    * @param {MouseEvent} event - O evento de clique.
-   * @private
    */
   _onFolderClick(event) {
     event.stopPropagation();

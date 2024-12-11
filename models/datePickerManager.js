@@ -162,6 +162,8 @@ export class DatePickerManager
   
   // Seleciona a data
   selectDate(day) {
+    this.currentDay = day;
+
     this.selectedDate = { day: day, month: this.currentMonth, year: this.currentYear };
     this.dateDisplay.textContent = `${this.months[this.currentMonth]} ${day},  ${this.currentYear}`;
     this.dataGroup.dataset.date = `${day}/${this.months[this.currentMonth]}/${this.currentYear}`;

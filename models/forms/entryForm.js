@@ -31,7 +31,7 @@ export default class EntryForm extends BaseForm {
      * @type {string}
      */
     this.selectedIcon = 'fas fa-feather';
-    
+
     /**
     * O caminho para o arquivo HTML do dialog de nova entrada
     * @type {string}
@@ -42,7 +42,7 @@ export default class EntryForm extends BaseForm {
     * O formulário não é o de Enciclopédia
     * @type {boolean}
     */
-    this.isEncyclopedia = false;    
+    this.isEncyclopedia = false;
 
     /** @type {HTMLElement} - Dialogo de confirmação de nova categoria. */
     const dialog = this.form.querySelector('#confirmDialog');
@@ -57,26 +57,43 @@ export default class EntryForm extends BaseForm {
    * Configura o conteúdo do formulário.
    * Sobrescreve a configuração na classe pai.
    * @param {HTMLElement} form - O elemento que representa o formulário.
+   * @async
    */
-  configureContent(form) {
-    super.configureContent(form);
+  async configureContent(form) {
+    await super.configureContent(form);
 
-    if (!this.isEncyclopedia) this.configureSubjectSelect(form);
     this.configureEntrySidebar(form);
-
-    // Configura o evento de criação de novas entradas
-    const newEntryButton = document.getElementById('newEntryButton');
-    newEntryButton.addEventListener('click', (event) => { this.onNewEntryClick(event); });
   }
 
   /**
    * Atualiza o conteúdo do formulário
    * @param {HTMLElement} form - O elemento que representa o formulário.
+   * @async
    */
-  updateContent() {
-    super.updateContent();
+  async updateContent() {
+    await super.updateContent();
     this.updateEntryItems();
-  }  
+  }
+
+  /**
+   * Limpa o conteúdo do formulário
+   * @param {HTMLElement} form - O elemento que representa o formulário.
+   * @param {Boolean} clearSidebar - Flag para habilitar/desabilitar a limpeza da seleção da sidebar.
+   */
+  clearContent(form, clearSidebar = true) {
+    if (clearSidebar) super.clearContent(form);
+    const titleInput = this.form.querySelector('#titleInput');
+    titleInput.value = '';
+
+    const isDraftCheck = this.form.querySelector('#checkbox');
+    isDraftCheck.checked = false;
+
+    if (tinymce.activeEditor) {
+      tinymce.activeEditor.resetContent();
+    } else {
+      this.msgBox.showError('Editor TinyMCE não inicializado.');
+    }
+  }
 
   /**
    * Obtém as categorias disponíveis do banco de dados.
@@ -84,7 +101,7 @@ export default class EntryForm extends BaseForm {
    * @async
    */
   async getCategory() {
-    return await this.db.getCategory(this.root); 
+    return await this.db.getCategory(this.root);
   }
 
   /**
@@ -93,7 +110,16 @@ export default class EntryForm extends BaseForm {
    * @async
    */
   async getSubjects() {
-    return await this.db.getSubjects(this.root); 
+    return await this.db.getSubjects(this.root);
+  }
+
+  /**
+   * Obtém as importâncias de evnetos disponíveis no banco de dados.
+   * @returns {Object}  - Importâncias.
+   * @async
+   */
+  async getImportances() {
+    return await this.db.getImportances();
   }
 
   /**
@@ -103,7 +129,7 @@ export default class EntryForm extends BaseForm {
    */
   async getEntryTypes() {
     return await this.db.getEntryTypes();
-  }  
+  }
 
   /**
    * Obtém os calendários disponíveis do banco de dados.
@@ -125,20 +151,37 @@ export default class EntryForm extends BaseForm {
   /**
    * Configura o combo de Assuntos.
    * @param {HTMLElement} form - O formulário HTML principal.
+   * @async
    */
   async configureSubjectSelect(form) {
     this.subjectTypes = await this.getSubjects();
 
     // Carrega as opções de Tipos de Entradas registrados
     const subjectType = form.querySelector('#subjectType');
-    for (const id of Object.keys(this.subjectTypes)) {
-      subjectType.appendChild(this._newSubjectOption(id));
+    for (const data of Object.values(this.subjectTypes)) {
+      subjectType.appendChild(this._newSubjectOption(data));
+    }
+  }
+
+  /**
+ * Configura o combo de Importância de Evento.
+ * @param {HTMLElement} form - O formulário HTML principal.
+ * @async
+ */
+  async configureImportanceSelect(form) {
+    this.importances = await this.getImportances();
+
+    // Carrega as opções de Importâncias registradas
+    const importance = form.querySelector('#importance');
+    for (const data of Object.values(this.importances)) {
+      importance.appendChild(this._newImportanceOption(data));
     }
   }
 
   /**
    * Configura o combo de Tipos de Entrada.
    * @param {HTMLElement} form - O formulário HTML principal.
+   * @async
    */
   async configureEntryTypeSelect(form) {
     this.entryTypes = await this.getEntryTypes();
@@ -153,6 +196,7 @@ export default class EntryForm extends BaseForm {
   /**
    * Configura o combo de Tipos de Entrada.
    * @param {HTMLElement} form - O formulário HTML principal.
+   * @async
    */
   async configureCalendarSelect(form) {
     this.calendars = await this.getCalendars();
@@ -180,6 +224,15 @@ export default class EntryForm extends BaseForm {
         item.appendChild(deleteIcon);
       }
     });
+  }
+
+  /**
+   * Fecha dialog aberto, se houver um.
+   */
+  closeDialog() {
+    if (this.dialog) {
+      this.dialog.closeDialog();
+    }
   }
 
   /**
@@ -217,7 +270,7 @@ export default class EntryForm extends BaseForm {
       tinymce.remove('#textEditor');
     }
 
-    tinymce.init({      
+    tinymce.init({
       selector: 'textarea#textEditor',
       editable_class: 'editable',
       license_key: 'gpl',
@@ -234,6 +287,18 @@ export default class EntryForm extends BaseForm {
       content_css: '/css/styles.css',
       setup: (editor) => { this._setupTinyMCE(editor); }
     });
+  }
+
+  /**
+   * Gerencia cliques em pastas.
+   * @param {MouseEvent} event - O evento de clique.
+   * @private
+   */
+  _onFolderClick(event) {
+    super._onFolderClick(event);
+
+    const newEntryButton = this.form.querySelector('#newEntryButton');
+    newEntryButton.classList.toggle('disabled');
   }
 
   /**
@@ -271,24 +336,15 @@ export default class EntryForm extends BaseForm {
    * Remove uma entrada de uma categoria da lista.
    * @param {Event} event - Evento de clique no botão para excluir a entrada.
    */
-  onDeleteEntryAction(event) {
+  async onDeleteEntryAction(event) {
     event.stopPropagation();
-    const data = JSON.parse(this.ui.dialog.dataset.data);
-    const dataObj = (this.root === 'encyclo' ? Database.subjectTypes[data.id] : Database.categories[data.id]);
-    let id = null;
+    const id = JSON.parse(this.ui.dialog.dataset.id);
 
-    dataObj.entries.forEach(entry => {
-      if (entry.entryId == data.entryId) id = entry;
-    });
-    const index = dataObj.entries.indexOf(id);
-    if (index < 0) this.msgBox.showError('Item inválido: Item fora da lista');
-    else {
-      dataObj.entries[index].deleted = true;
-      this.updateContent();
-    }
+    if (this.isEncyclopedia) await CONFIG.db.deleteCategory(id);
+    else await CONFIG.db.deleteEntry(id);
 
+    this.updateContent();
     this._hideDialog();
-
   }
 
   /**
@@ -299,23 +355,41 @@ export default class EntryForm extends BaseForm {
   onDeleteEntryClick(event, item) {
     event.stopPropagation();
 
-    const dataType = (this.root === 'encyclo' ? 'do assunto' : 'da categoria');
+    const dataType = (this.isEncyclopedia ? 'do assunto' : 'da categoria');
 
-    const folder = this.form.querySelector('.folder.selected');
-    const data = { id: folder.dataset.id, entryId: item.dataset.id };
-    this.ui.dialog.dataset.data = JSON.stringify(data);
+    this.ui.dialog.dataset.id = item.dataset.id;
     this.ui.dialog.dataset.action = 'del';
 
     const message = `Tem certeza que deseja excluir a entrada ${dataType}?`;
     this._showDialog(message);
-  }  
+  }
 
   /**
-  * Trata o evento de criação de uma nova entrada.
+    * Trata o evento de cancelamento de um novo item.
+    * @param {Event} event - Evento de clique no botão de Cancelar.
+    */
+  async onCancelClick(event) {
+    event.stopPropagation();
+
+    const cancelButton = this.form.querySelector('#cancelButton');
+    cancelButton.classList.add('hidden');
+
+    const newEntryButton = this.form.querySelector('#newEntryButton');
+    newEntryButton.classList.add('disabled');
+
+    const saveButton = this.form.querySelector('#saveButton');
+    saveButton.classList.add('disabled');
+  }
+
+  /**
+  * Trata o evento de criação de um novo item qualquer.
   * @param {Event} event - Evento de clique no botão de Nova Entrada.
   */
-  onNewEntryClick(event) {
+  onNewClick(event) {
     event.stopPropagation();
+    // Ignora o clique se o botão estiver desativado.
+    const button = event.target.closest('#newEntryButton');
+    if (button.classList.contains('disabled')) return false;
 
     // Obtém a lista de Categorias
     const selectedFolder = this.form.querySelector('.folder.selected');
@@ -323,6 +397,15 @@ export default class EntryForm extends BaseForm {
       this.msgBox.showWarning('Nenhuma categoria foi selecionada.');
       return false;
     }
+
+    const cancelButton = this.form.querySelector('#cancelButton');
+    cancelButton.classList.remove('hidden');
+
+    const saveButton = this.form.querySelector('#saveButton');
+    saveButton.classList.remove('disabled');
+
+    const titleInput = this.form.querySelector('#titleInput');
+    titleInput.focus();
 
     return true;
 
@@ -349,15 +432,43 @@ export default class EntryForm extends BaseForm {
   }
 
   /**
+    * Trata o evento de registro de uma nova entrada.
+    * @param {Event} event - Evento de clique no botão de Salvar.
+    */
+  async onSaveClick(event) {
+    event.stopPropagation();
+
+    // Ignora o clique se o botão estiver desativado.
+    const button = event.target.closest('#saveButton');
+    if (button.classList.contains('disabled')) return false;
+
+    return true;
+  }
+
+  /**
    * Gera uma nova opção para o ComboBox de Assuntos.
    * @private
-   * @param {String} type - O identificador do assunto.
+   * @param {Object} data   - Os dados do assunto.
    * @returns {HTMLElement} - Elemento da nova opção.
    */
-  _newSubjectOption(type) {
+  _newSubjectOption(data) {
     const newOption = document.createElement('option');
-    newOption.value = type;
-    newOption.textContent = this.subjectTypes[type].title;
+    newOption.value = data.cid;
+    newOption.textContent = data.title;
+
+    return newOption;
+  }
+
+  /**
+   * Gera uma nova opção para o ComboBox de Importância de Evento.
+   * @private
+   * @param {Object} data   - Os dados do tipo.
+   * @returns {HTMLElement} - Elemento da nova opção.
+   */
+  _newImportanceOption(data) {
+    const newOption = document.createElement('option');
+    newOption.value = data.iid;
+    newOption.textContent = data.label;
 
     return newOption;
   }

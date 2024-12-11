@@ -53,10 +53,18 @@ export default class DBManager {
         }
 
         return result;
-    }
+    }   
 
     async getEntryTypes() {
         let query = 'SELECT * FROM entryTypes';
+        const rows = await CONFIG.sql.query(query);
+
+        return rows;
+    }
+
+    async getImportances(getExternal=false) {
+        let query = 'SELECT * FROM importance ';
+        if(!getExternal) query += 'WHERE isEntry = 1;'
         const rows = await CONFIG.sql.query(query);
 
         return rows;
@@ -79,14 +87,22 @@ export default class DBManager {
         return rows;
     }
 
+    async deleteCategory(cid) {
+        let query = 'DELETE FROM category ' +
+                    `WHERE cid = ${cid}`;
+        const result = await CONFIG.sql.exec(query);
+
+        return result;
+    }
+
     async getSubjects(root='*') {
         let query = '';
         if(root === '*') {
             query = 'SELECT * FROM subjectType AS S ';
         } else {
-            query = 'SELECT * FROM category AS C ' +
+            query = 'SELECT C.cid, C.sid, C.title, C.img, C.htmlString, C.isDraft FROM category AS C ' +
                     'INNER JOIN subjectType AS S ON S.sid = C.sid ' +
-                    `WHERE S.root = ${root} `;
+                    `WHERE S.root = '${root}' `;
         }
         query += 'ORDER BY S.title';
         const rows = await CONFIG.sql.query(query);
@@ -94,7 +110,7 @@ export default class DBManager {
         return rows;
     }
 
-    async getSubjectsEntries(sid) {
+    async getCategoriesFromSubject(sid) {
         let query = `SELECT * FROM category AS C WHERE C.sid = ${sid}`;
 
         const rows = await CONFIG.sql.query(query);
@@ -113,15 +129,32 @@ export default class DBManager {
         return result;
     }
 
+    async getEntriesFromCategory(cid) {
+        let query = `SELECT * FROM entry AS E WHERE E.cid = ${cid}`;
+
+        const rows = await CONFIG.sql.query(query);
+        return rows;
+    }
+
     async addEntry(data) { 
-        let query = `INSERT INTO entry (etid, title, flavor, htmlString, isDraft) VALUES (`; 
-        query.concat(`${data.etid},`,
-                    `'${data.title}',`,
-                    `'${data.flavor}',`,
-                    `'${data.htmlString}',`,
-                    ` ${data.isDraft ? 1 : 0});`);         
+        let query = `INSERT INTO entry (etid, title, flavor, htmlString, isDraft, cid) VALUES (`; 
+        query += `'${data.etid}',`;
+        query += `'${data.title}',`;
+        query += `'${data.flavor}',`;
+        query += `'${data.htmlString}',`;
+        query += `${data.isDraft ? 1 : 0}`;
+        query += `${data.cid});`;       
+
         const result = await CONFIG.sql.exec(query);
         
+        return result;
+    }
+
+    async deleteEntry(eid) {
+        let query = 'DELETE FROM entry ' +
+                    `WHERE eid = ${eid}`;
+        const result = await CONFIG.sql.exec(query);
+
         return result;
     }
 
@@ -130,6 +163,23 @@ export default class DBManager {
         const rows = await CONFIG.sql.query(query);
 
         return rows;
+    }
+
+    async addEvent(data) { 
+        let query = `INSERT INTO event (eid, iid, start_year, start_month, start_day, end_year, end_month, end_day, text) VALUES (`; 
+        query += `${data.eid},`;
+        query += `${data.iid},`;
+        query += `${data.date.start.year},`;
+        query += `${data.date.start.month},`;
+        query += `${data.date.start.day},`;
+        query += `${data.date.end.year},`;
+        query += `${data.date.end.month},`;
+        query += `${data.date.end.day},`;
+        query += `'${data.text}');`;       
+
+        const result = await CONFIG.sql.exec(query);
+        
+        return result;
     }
 
     async deleteTable(tableName) {
@@ -215,9 +265,31 @@ export default class DBManager {
     validateCategory(data) {
 
         if(!data.sid || data.sid < 1)
-            return 'O valor do Assunto da Categoria é inválido.';
+            return 'O identificador de Assunto da Categoria é inválido.';
         if(!data.title || data.title == '')
             return 'É necessário informar um título válido para a Categoria.';
+
+        return '';
+    }
+
+    validateEventEntry(data) {
+
+        if(!data.cid || data.cid < 1)
+            return 'O identificador de Categoria da Entrada é inválido.';
+        if(!data.iid || data.iid < 1)
+            return 'O identificador de Importância da Entrada é inválido.';
+        if(!data.cid || data.cid < 1)
+            return 'O identificador de Categoria da Entrada é inválido.';
+        if(!data.date.start)
+            return 'Um evento histórico deve sempre informar uma data inicial.';
+        if(data.date.start.year == 0)
+            return 'Um evento histórico deve sempre informar uma data inicial. O ano informado é inválido.';
+        if(data.date.start.month < 0)
+            return 'Um evento histórico deve sempre informar uma data inicial. O mês informado é inválido.';
+        if(!data.date.start.day || data.date.start.day < 1)
+            return 'Um evento histórico deve sempre informar uma data inicial. O dia informado é inválido.';
+        if(!data.title || data.title == '')
+            return 'É necessário informar um título válido para a Entrada.';
 
         return '';
     }

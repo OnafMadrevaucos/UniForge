@@ -39,11 +39,10 @@ export class EncycloForm extends EntryForm {
         const data = await this.db.getSubjects();
 
         for (let entry of Object.values(data)) {
-            entry.entries = Object.values(await this.db.getSubjectsEntries(entry.sid));
+            entry.entries = Object.values(await this.db.getCategoriesFromSubject(entry.sid));
         }
         return data;
     }
-
 
     /**
      * Configura o conteúdo do formulário.
@@ -51,8 +50,8 @@ export class EncycloForm extends EntryForm {
      * 
      * @param {HTMLElement} form - Elemento HTML do formulário a ser configurado.
      */
-    configureContent(form) {
-        super.configureContent(form);
+    async configureContent(form) {
+        await super.configureContent(form);
 
         // Configurações do formulário.
         super._configureTinyMCE();
@@ -60,38 +59,13 @@ export class EncycloForm extends EntryForm {
         const cancelButton = this.form.querySelector('#cancelButton');
         cancelButton.addEventListener('click', (event) => { this.onCancelClick(event); });
 
+        // Configura o evento de criação de novas entradas
+        const newEntryButton = document.getElementById('newEntryButton');
+        newEntryButton.addEventListener('click', (event) => { this.onNewClick(event); });
+
         const saveButton = this.form.querySelector('#saveButton');
         saveButton.addEventListener('click', (event) => { this.onSaveCategoryClick(event); });
-    }
-
-    /**
-   * Limpa o conteúdo do formulário
-   * @param {HTMLElement} form - O elemento que representa o formulário.
-   * @param {Boolean} clearSidebar - Flag para habilitar/desabilitar a limpeza da seleção da sidebar.
-   */
-    clearContent(form, clearSidebar = true) {
-        if (clearSidebar) super.clearContent(form);
-        const titleInput = this.form.querySelector('#titleInput');
-        titleInput.value = '';
-
-        const isDraftCheck = this.form.querySelector('#checkbox');
-        isDraftCheck.checked = false;
-
-        if (tinymce.activeEditor) {
-            tinymce.activeEditor.resetContent();
-        } else {
-            this.msgBox.showError('Editor TinyMCE não inicializado.');
-        }
-    }
-
-    /**
-   * Fecha dialog aberto, se houver um.
-   */
-    closeDialog() {
-        if (this.dialog) {
-            this.dialog.closeDialog();
-        }
-    }
+    }       
 
     /**
    * Configura o combo de Tipos de Entrada.
@@ -103,39 +77,6 @@ export class EncycloForm extends EntryForm {
         for (const id of Object.keys(this.data)) {
             subjectType.appendChild(this._newSubjectTypeOption(id));
         }
-    }
-
-    /**
-   * Carrega a lista de entradas da barra lateral.
-   * @param {HTMLElement} form - O formulário principal.
-   */
-    loadSidebarList(form) {
-        const folderList = form.querySelector('#folderList');
-        folderList.innerHTML = '';
-
-        for (const [key, value] of Object.entries(this.data)) {
-            const folder = this.createFolderItem(value);
-            folderList.appendChild(folder);
-        }
-
-        const folders = folderList.querySelectorAll('.folder');
-        const items = form.querySelectorAll('.entry-item');
-
-        folders.forEach(item => {
-            const folderHeader = item.querySelector('.folder-header');
-            folderHeader.addEventListener('click', (event) => {
-                this._onFolderClick(event);
-            });
-        });
-
-        items.forEach(item => {
-            item.addEventListener('click', (event) => {
-                this.onEntryItemClick(event);
-            });
-            item.addEventListener('dblclick', (event) => {
-                this.onEntryItemDoubleClick(event);
-            });
-        });
     }
 
     /**
@@ -170,22 +111,25 @@ export class EncycloForm extends EntryForm {
 
         await CONFIG.db.addCategory(data);
         this.msgBox.showInfo('Categoria criada com sucesso.');
-        this.dialog.closeDialog();
+        this.closeDialog();
         this.clearContent(this.form);
+
+        const cancelButton = this.form.querySelector('#cancelButton');
+        cancelButton.click();
+
+        await this.updateContent();
     }
 
     /**
-    * Trata o evento de registro de uma nova entrada.
+    * Trata o evento de registro de uma nova categoria.
     * @param {Event} event - Evento de clique no botão de Salvar.
     */
     async onSaveCategoryClick(event) {
         event.stopPropagation();
 
-        // Ignora o clique se o botão estiver desativado.
-        const button = event.target.closest('#saveButton');
-        if (button.classList.contains('disabled')) return;
+        if (!super.onSaveClick(event)) return;
 
-        const body = 'Deseja salvar a entrada?';
+        const body = 'Deseja salvar a categoria?';
         // Configuração de botões
         const buttons = [
             {
@@ -206,37 +150,35 @@ export class EncycloForm extends EntryForm {
 
     /**
     * Trata o evento de criação de uma nova entrada.
-    * @param {Event} event - Evento de clique no botão de Nova Entrada.
+    * @param {Event} event - Evento de clique no botão de Nova Categoria.
     */
-    async onNewEntryClick(event) {
-        const isValid = super.onNewEntryClick(event);
-        if (isValid) {
+    async onNewCategoryClick(event) {
+        if (super.onNewClick(event)) {
             this.clearContent(this.form, false);
-
-            const cancelButton = this.form.querySelector('#cancelButton');
-            cancelButton.classList.remove('hidden');
-
-            const saveButton = this.form.querySelector('#saveButton');
-            saveButton.classList.remove('disabled');
-
-            const titleInput = this.form.querySelector('#titleInput');
-            titleInput.focus();
         }
     }
 
     /**
-    * Trata o evento de cancelamento de uma nova entrada.
+   * Remove uma entrada de uma categoria da lista.
+   * @param {Event} event - Evento de clique no botão para excluir a entrada.
+   */
+    async onDeleteEntryAction(event) {
+        super.onDeleteEntryAction(event);
+
+        const cancelButton = this.form.querySelector('#cancelButton');
+        cancelButton.click();
+
+        this.msgBox.showInfo('Categoria removida com sucesso.');
+    }
+
+    /**
+    * Trata o evento de cancelamento de uma nova categoria.
     * @param {Event} event - Evento de clique no botão de Cancelar.
     */
     async onCancelClick(event) {
         event.stopPropagation();
 
-        const cancelButton = this.form.querySelector('#cancelButton');
-        cancelButton.classList.add('hidden');
-
-        const saveButton = this.form.querySelector('#saveButton');
-        saveButton.classList.add('disabled');
-
+        super.onCancelClick(event);
         this.clearContent(this.form);
     }
 
@@ -251,7 +193,7 @@ export class EncycloForm extends EntryForm {
         const itemId = Number(item.dataset.id);
         let category = Object.values(await CONFIG.db.getCategory(itemId));
 
-        if(category.length != 1) {
+        if (category.length != 1) {
             this.msgBox.showError('Categoria está duplicada.');
             return;
         }
@@ -266,7 +208,7 @@ export class EncycloForm extends EntryForm {
         tinymce.activeEditor.setContent(category.htmlString);
         draftSwitch.checked = category.isDraft;
 
-        if(category.img) imgInput.src = category.img;
+        if (category.img) imgInput.src = category.img;
 
         const cancelButton = this.form.querySelector('#cancelButton');
         cancelButton.classList.remove('hidden');
