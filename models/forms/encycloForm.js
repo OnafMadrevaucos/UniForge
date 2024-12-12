@@ -21,7 +21,7 @@ export class EncycloForm extends EntryForm {
         * O formulário é o de Enciclopédia
         * @type {boolean}
         */
-        this.isEncyclopedia = true;
+        this.isEncyclopedia = true;        
 
         /**
          * Configura o conteúdo do formulário.
@@ -36,7 +36,7 @@ export class EncycloForm extends EntryForm {
    * @async
    */
     async getSubjects() {
-        const data = await this.db.getSubjects();
+        const data = await this.db.getAllSubjects();
 
         for (let entry of Object.values(data)) {
             entry.entries = Object.values(await this.db.getCategoriesFromSubject(entry.sid));
@@ -50,24 +50,17 @@ export class EncycloForm extends EntryForm {
      * 
      * @param {HTMLElement} form - Elemento HTML do formulário a ser configurado.
      */
-    async configureContent(form) {
+    async configureContent(form) {        
+        // Obtém objeto com todos os dados unificados necessários para o funcionamento do formulário.         
+        this.data = await this.getData();
+
         await super.configureContent(form);
 
         // Configura o recipiente de imagem usando o método da classe pai.
         super.configureImageContainer(form);
 
         // Configurações do formulário.
-        super._configureTinyMCE();
-
-        const cancelButton = this.form.querySelector('#cancelButton');
-        cancelButton.addEventListener('click', (event) => { this.onCancelClick(event); });
-
-        // Configura o evento de criação de novas entradas
-        const newEntryButton = document.getElementById('newEntryButton');
-        newEntryButton.addEventListener('click', (event) => { this.onNewClick(event); });
-
-        const saveButton = this.form.querySelector('#saveButton');
-        saveButton.addEventListener('click', (event) => { this.onSaveCategoryClick(event); });
+        super._configureTinyMCE();        
     }       
 
     /**
@@ -75,9 +68,10 @@ export class EncycloForm extends EntryForm {
    * @param {HTMLElement} form - O formulário HTML principal.
    */
     configureSubjectTypeSelect(form) {
+        const data = this.data.entryTypes;
         // Carrega as opções de Tipos de Entradas registrados
         const subjectType = form.querySelector('#subjectType');
-        for (const id of Object.keys(this.data)) {
+        for (const id of Object.keys(data)) {
             subjectType.appendChild(this._newSubjectTypeOption(id));
         }
     }
@@ -98,12 +92,23 @@ export class EncycloForm extends EntryForm {
         const titleInput = this.form.querySelector('#titleInput');
         const draftSwitch = this.form.querySelector('#checkbox');
 
+        // Obtém o objeto do arquivo da imagem.
+        const file = imgInput.files[0] ?? null;  
+        // Obtém a extensão do arquivo de imagem.
+        const fileExt = file?.name.split('.').pop().toLowerCase();
+        // Converte o arquivo para um ArrayBuffer (Blob)
+        const arrayBuffer = await file.arrayBuffer();       
+
         const data = {
             sid: folder.dataset.sid,
             title: titleInput.value,
-            img: imgInput.value,
             htmlString: tinymce.activeEditor?.getContent() ?? '',
             isDraft: draftSwitch.checked
+        }
+
+        if(file) { 
+            data.img = new Uint8Array(arrayBuffer);
+            data.ext = fileExt;
         }
 
         const validate = CONFIG.db.validateCategory(data);
@@ -111,14 +116,14 @@ export class EncycloForm extends EntryForm {
             this.msgBox.showWarning(validate);
             return;
         }
-
         await CONFIG.db.addCategory(data);
+
         this.msgBox.showInfo('Categoria criada com sucesso.');
         this.closeDialog();
         this.clearContent(this.form);
 
         const cancelButton = this.form.querySelector('#cancelButton');
-        cancelButton.click();
+        cancelButton.dispatchEvent(new Event('click'));
 
         await this.updateContent();
     }
@@ -127,10 +132,8 @@ export class EncycloForm extends EntryForm {
     * Trata o evento de registro de uma nova categoria.
     * @param {Event} event - Evento de clique no botão de Salvar.
     */
-    async onSaveCategoryClick(event) {
+    async onSaveClick(event) {
         event.stopPropagation();
-
-        if (!super.onSaveClick(event)) return;
 
         const body = 'Deseja salvar a categoria?';
         // Configuração de botões
@@ -155,10 +158,8 @@ export class EncycloForm extends EntryForm {
     * Trata o evento de criação de uma nova entrada.
     * @param {Event} event - Evento de clique no botão de Nova Categoria.
     */
-    async onNewCategoryClick(event) {
-        if (super.onNewClick(event)) {
-            this.clearContent(this.form, false);
-        }
+    async onNewClick(event) {
+        this.clearContent(this.form, false);        
     }
 
     /**
@@ -169,7 +170,7 @@ export class EncycloForm extends EntryForm {
         super.onDeleteEntryAction(event);
 
         const cancelButton = this.form.querySelector('#cancelButton');
-        cancelButton.click();
+        cancelButton.dispatchEvent(new Event('click'));
 
         this.msgBox.showInfo('Categoria removida com sucesso.');
     }
@@ -197,21 +198,26 @@ export class EncycloForm extends EntryForm {
         let category = Object.values(await CONFIG.db.getCategory(itemId));
 
         if (category.length != 1) {
-            this.msgBox.showError('Categoria está duplicada.');
-            return;
+            this.msgBox.showWarning('Categoria está duplicada.');
         }
 
-        category = category[0];
+        category = category[0];        
 
-        const imgInput = this.form.querySelector('#hiddenFileInput');
-        const titleInput = this.form.querySelector('#titleInput');
+        const displayedImage = this.form.querySelector('#displayedImage');
+        const titleInput = this.form.querySelector('#titleInput');        
         const draftSwitch = this.form.querySelector('#checkbox');
 
         titleInput.value = category.title;
         tinymce.activeEditor.setContent(category.htmlString);
-        draftSwitch.checked = category.isDraft;
+        draftSwitch.checked = category.isDraft;       
 
-        if (category.img) imgInput.src = category.img;
+        if (category.img) {
+            const imageType = `image/${category.ext}`;
+            const imageBlob = new Blob([category.img], { type: imageType }); // Ajuste o tipo de imagem conforme necessário
+            const imageURL = URL.createObjectURL(imageBlob);
+            displayedImage.src = imageURL;
+            displayedImage.classList.remove('empty');
+        }
 
         const cancelButton = this.form.querySelector('#cancelButton');
         cancelButton.classList.remove('hidden');

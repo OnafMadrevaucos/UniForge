@@ -21,10 +21,10 @@ export class HistoryForm extends EntryForm {
         super(overlay);
 
         /**
-         * @property {Array} entryTypes - Os tipos de entradas disponíveis para esta instância.
-         * Esta propriedade é inicializada usando o método `getEntryTypes()` da classe pai.
+         * @property {Array} importances - Os tipos de importância de eventos disponíveis para esta instância.
+         * Esta propriedade é inicializada usando o método `getImportances()` da classe pai.
          */
-        this.entryTypes = super.getEntryTypes();
+        this.importances = this.getImportances();
 
         /**
          * @property {Object} datePickers - Um objeto que gerencia os seletores de data para registro de entradas.
@@ -33,7 +33,7 @@ export class HistoryForm extends EntryForm {
         this.datePickers = {
             start: new DatePickerManager('startDate'),
             end: new DatePickerManager('endDate')
-        }
+        }       
 
         /**
          * Configura o conteúdo do formulário associado a esta instância.
@@ -44,16 +44,17 @@ export class HistoryForm extends EntryForm {
     }
 
     /**
-   * Obtém os assuntos de uma dada origem disponíveis no banco de dados.
-   * @returns {Object} - Assuntos e suas categorias.
+   * Obtém os dados unificados necessários para o funcionamento do formulário.
+   * @implements Implemente um método filho para as especificidades de cada formulário.
    * @async
+   * @returns {object}  - Objeto de dados unificado.
    */
-    async getSubjects() {
-        const data = await this.db.getSubjects(this.root);
+    async getData() {
+        const data = await super.getData();
 
-        for (let category of Object.values(data)) {
-            category.entries = Object.values(await this.db.getEntriesFromCategory(category.cid));
-        }
+        data.calendars = await this.getCalendars();
+        data.importances = await this.getImportances();
+
         return data;
     }
 
@@ -66,8 +67,11 @@ export class HistoryForm extends EntryForm {
     * @param {HTMLElement} form - O elemento que representa o formulário a ser configurado.
     */
     async configureContent(form) {
+        // Obtém objeto com todos os dados unificados necessários para o funcionamento do formulário.         
+        this.data = await this.getData();
+
         // Chama o método de configuração da classe pai para configurar o formulário base.
-        await super.configureContent(form);        
+        await super.configureContent(form);
 
         // Configura o seletor de importâncias de evento usando o método da classe pai.
         await super.configureImportanceSelect(form);
@@ -89,16 +93,6 @@ export class HistoryForm extends EntryForm {
 
         // Carrega os DatePickers associados ao formulário.
         this.loadDatePickers();
-
-        const cancelButton = this.form.querySelector('#cancelButton');
-        cancelButton.addEventListener('click', (event) => { this.onCancelClick(event); });
-
-        // Configura o evento de criação de novas entradas
-        const newEntryButton = document.getElementById('newEntryButton');
-        newEntryButton.addEventListener('click', (event) => { this.onBaseNewClick(event); });
-
-        const saveButton = this.form.querySelector('#saveButton');
-        saveButton.addEventListener('click', (event) => { this.onBaseSaveClick(event); });
     }
 
     /**
@@ -109,14 +103,14 @@ export class HistoryForm extends EntryForm {
             tinymce.remove('#flavorEditor');
         }
 
-        const options = CONFIG.utils.mergeObjects(CONFIG.tinymceOptions.simple,{            
+        const options = CONFIG.utils.mergeObjects(CONFIG.tinymceOptions.simple, {
             selector: 'div#flavorEditor',
             placeholder: "Texto de floreio...",
             init_instance_callback: (editor) => {
-              editor.setContent(""); // Garante que o editor seja iniciado vazio.
+                editor.setContent(""); // Garante que o editor seja iniciado vazio.
             },
             setup: (editor) => { this._setupTinyMCE(editor); }
-          });
+        });
 
         tinymce.init(options);
     }
@@ -126,6 +120,7 @@ export class HistoryForm extends EntryForm {
     * Para cada DatePicker, chama o método `_loadDatePicker`, passando o primeiro calendário disponível.
     */
     loadDatePickers() {
+        const calendars = this.data.calendars;
         // Itera sobre todos os valores do objeto `datePickers`.
         Object.values(this.datePickers).forEach(pickers => {
             /**
@@ -133,8 +128,32 @@ export class HistoryForm extends EntryForm {
              * @method _loadDatePicker
              * @param {Object} calendar - O primeiro calendário no objeto `calendars`.
              */
-            pickers._loadDatePicker(Object.values(this.calendars)[0]);
+            pickers._loadDatePicker(Object.values(calendars)[0]);
         });
+    }
+
+    /**
+    * Recarrega os DatePickers associados à instância.
+    * Para cada DatePicker, chama o método `_loadDatePicker`, passando o calendário escolhido.
+    */
+    reloadDatePickers(event) {
+        const calendarType = this.form.querySelector('#calendarType');   
+        calendarType.value = event.clid; 
+        calendarType.dispatchEvent(new Event('change'));     
+
+        this.datePickers.start.selectFullDate(event.start_day, event.start_month, event.start_year);
+        this.datePickers.end.selectFullDate(event.end_day, event.end_month, event.end_year);
+
+        /*
+        // Itera sobre todos os valores do objeto `datePickers`.
+        Object.values(this.datePickers).forEach(pickers => {
+            /**
+             * Carrega o DatePicker com o primeiro calendário disponível.
+             * @method _loadDatePicker
+             * @param {Object} calendar - O primeiro calendário no objeto `calendars`.
+             
+            pickers._reloadDatePicker(calendar, false);
+        });*/        
     }
 
     /**
@@ -154,11 +173,20 @@ export class HistoryForm extends EntryForm {
         const titleInput = this.form.querySelector('#titleInput');
         const entryType = this.form.querySelector('#entryType');
         const importance = this.form.querySelector('#importance');
+        const calendarType = this.form.querySelector('#calendarType');
         const draftSwitch = this.form.querySelector('#checkbox');
 
-        const data = {
+        // Obtém o objeto do arquivo da imagem.
+        const file = imgInput.files[0] ?? null; 
+        // Obtém a extensão do arquivo de imagem.
+        const fileExt = file?.name.split('.').pop().toLowerCase(); 
+        // Converte o arquivo para um ArrayBuffer (Blob)
+        const arrayBuffer = await file.arrayBuffer();
+
+        let data = {
             etid: entryType.value,
             iid: importance.value,
+            clid: calendarType.value,
             title: titleInput.value,
             date: {
                 start: this.datePickers.start.selectedDate,
@@ -172,11 +200,16 @@ export class HistoryForm extends EntryForm {
             text: ''
         }
 
+        if(file) { 
+            data.img = new Uint8Array(arrayBuffer);
+            data.ext = fileExt;
+        }
+
         const validate = CONFIG.db.validateEventEntry(data);
         if (validate !== '') {
             this.msgBox.showWarning(validate);
             return;
-        }
+        } 
 
         const result = await CONFIG.db.addEntry(data);
         data.eid = result.lastInsertRowid;
@@ -187,7 +220,7 @@ export class HistoryForm extends EntryForm {
         this.clearContent(this.form);
 
         const cancelButton = this.form.querySelector('#cancelButton');
-        cancelButton.click();
+        cancelButton.dispatchEvent(new Event('click'));
 
         await this.updateContent();
     }
@@ -223,7 +256,7 @@ export class HistoryForm extends EntryForm {
     * @param {Event} event - Evento de clique no botão de Nova Entrada.
     */
     async onNewClick(event) {
-        this.clearContent(this.form, false);        
+        this.clearContent(this.form, false);
     }
 
     /**
@@ -235,5 +268,64 @@ export class HistoryForm extends EntryForm {
 
         super.onCancelClick(event);
         this.clearContent(this.form);
+    }
+
+    /**
+   * Gerencia cliques duplos em itens de entrada.
+   * @param {MouseEvent} event - O evento de clique duplo.
+   * @private
+   */
+    async onEntryItemDoubleClick(e) {
+        super.onEntryItemDoubleClick(e);
+        const item = e.target.closest('.entry-item');
+        const itemId = Number(item.dataset.id);
+        let entry = Object.values(await CONFIG.db.getEntry(itemId));
+
+        if(entry.length == 0) {
+            this.msgBox.showWarning('A Entrada não foi encontrada.');
+            return;
+        }
+
+        if (entry.length != 1) {
+            this.msgBox.showWarning('A Entrada está duplicada. Utilizando a primeira duplicata.');
+        }
+
+        entry = entry[0];   
+        
+        let event = Object.values(await CONFIG.db.getEventOfEntry(entry.eid));
+
+        if(event.length == 0) {
+            this.msgBox.showWarning('Não há evento para a Entrada Histórica informada.');
+            return;
+        }
+
+        if (event.length != 1) {
+            this.msgBox.showWarning('O Evento está duplicado. Utilizando a primeira duplicata.');
+        }
+
+        event = event[0]; 
+        this.reloadDatePickers(event);                
+
+        const displayedImage = this.form.querySelector('#displayedImage');
+        const titleInput = this.form.querySelector('#titleInput');        
+        const draftSwitch = this.form.querySelector('#checkbox');
+
+        titleInput.value = entry.title;
+        tinymce.get('textEditor').setContent(entry.htmlString);
+        draftSwitch.checked = entry.isDraft;    
+
+        if (entry.img) {
+            const imageType = `image/${entry.ext}`;
+            const imageBlob = new Blob([entry.img], { type: imageType }); // Ajuste o tipo de imagem conforme necessário
+            const imageURL = URL.createObjectURL(imageBlob);
+            displayedImage.src = imageURL;
+            displayedImage.classList.remove('empty');
+        }
+
+        const cancelButton = this.form.querySelector('#cancelButton');
+        cancelButton.classList.remove('hidden');
+
+        const saveButton = this.form.querySelector('#saveButton');
+        saveButton.classList.remove('disabled');
     }
 }

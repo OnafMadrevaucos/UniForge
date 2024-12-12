@@ -1,11 +1,16 @@
 export class DatePickerManager
 {  
-  constructor(pickerId) {
+  constructor(pickerId, date={}) {
     this.pickerId = pickerId;    
 
     this.ready = false;
 
-    this.selectedDate = { day: null, month: 0, year: 2024 };  // Sem uso do Date, valores customizados
+    this.selectedDate = { 
+      day: date?.day ?? null,
+      month: date?.month ?? 0,
+      year: date?.year ?? 1 
+    };  // Sem uso do Date, valores customizados.
+
     this.currentMonth = this.selectedDate.month;
     this.currentYear = this.selectedDate.year;  
 
@@ -99,29 +104,37 @@ export class DatePickerManager
     this.ready = true;
   }
 
-  _loadDatePicker(dateType) {
+  _reloadDatePicker(dateType, clearText=true) {
     // Se o DatePicker ainda não foi inicializado, inicialize-o
     if(!this.ready) this._setupDatePicker();
 
-    this.dateDisplay.textContent = 'Selecione uma data';
+    if(clearText) this.dateDisplay.textContent = 'Selecione uma data';
 
     // Defina meses, dias e anos customizados
     this.months = dateType.months;
     this.days = dateType.days;
     this.daysInMonth = dateType.daysInMonth;
+  }
+
+  _loadDatePicker(dateType, clearText=true) {
+    this._reloadDatePicker(dateType, clearText);
     
     this.updateCalendar(); // Inicializa o calendário
   }
 
   // Função para atualizar o calendário conforme o modo
   updateCalendar() {
+    this.refreshCalendar();
+
+    this.changeView(this.currentView);
+  }
+  // Função para atualizar o calendário conforme o valor da data selecionada.
+  refreshCalendar() {
     this.calendarContent.innerHTML = '';
     this.monthYearDisplay.textContent = `${this.months[this.currentMonth]} ${this.currentYear}`;
 
     this.calendarView.classList.remove(...this.calendarView.classList);
     this.calendarView.classList.add("calendar-view", this.currentView);
-
-    this.changeView(this.currentView);
   }
 
   changeView(newView) {
@@ -167,6 +180,19 @@ export class DatePickerManager
     this.selectedDate = { day: day, month: this.currentMonth, year: this.currentYear };
     this.dateDisplay.textContent = `${this.months[this.currentMonth]} ${day},  ${this.currentYear}`;
     this.dataGroup.dataset.date = `${day}/${this.months[this.currentMonth]}/${this.currentYear}`;
+  }
+
+  // Seleciona a data completa
+  selectFullDate(day, month, year) {
+    this.currentDay = day;
+    this.currentMonth = month;
+    this.currentYear = year;
+
+    this.selectedDate = { day: day, month: this.currentMonth, year: this.currentYear };
+    this.dateDisplay.textContent = `${this.months[this.currentMonth]} ${day},  ${this.currentYear}`;
+    this.dataGroup.dataset.date = `${day}/${this.months[this.currentMonth]}/${this.currentYear}`;
+
+    this.refreshCalendar();
   }
 
   // Exibe os dias do mês

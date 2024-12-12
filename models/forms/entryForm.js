@@ -45,53 +45,11 @@ export default class EntryForm extends BaseForm {
     this.isEncyclopedia = false;
 
     /** @type {HTMLElement} - Dialogo de confirmação de nova categoria. */
-    const dialog = this.form.querySelector('#confirmDialog');    
+    const dialog = this.form.querySelector('#confirmDialog');
     this.ui.dialog = dialog;
 
     /** @type {Object} - Tooltip de interface do usuário. */
     this.ui.tooltip = CONFIG.tooltip;
-  }
-
-  /**
-   * Configura o conteúdo do formulário.
-   * Sobrescreve a configuração na classe pai.
-   * @param {HTMLElement} form - O elemento que representa o formulário.
-   * @async
-   */
-  async configureContent(form) {
-    await super.configureContent(form);
-
-    this.configureEntrySidebar(form);
-  }
-
-  /**
-   * Atualiza o conteúdo do formulário
-   * @param {HTMLElement} form - O elemento que representa o formulário.
-   * @async
-   */
-  async updateContent() {
-    await super.updateContent();
-    this.updateEntryItems();
-  }
-
-  /**
-   * Limpa o conteúdo do formulário
-   * @param {HTMLElement} form - O elemento que representa o formulário.
-   * @param {Boolean} clearSidebar - Flag para habilitar/desabilitar a limpeza da seleção da sidebar.
-   */
-  clearContent(form, clearSidebar = true) {
-    if (clearSidebar) super.clearContent(form);
-    const titleInput = this.form.querySelector('#titleInput');
-    titleInput.value = '';
-
-    const isDraftCheck = this.form.querySelector('#checkbox');
-    isDraftCheck.checked = false;
-
-    if (tinymce.activeEditor) {
-      tinymce.activeEditor.resetContent();
-    } else {
-      this.msgBox.showError('Editor TinyMCE não inicializado.');
-    }
   }
 
   /**
@@ -100,16 +58,7 @@ export default class EntryForm extends BaseForm {
    * @async
    */
   async getCategory() {
-    return await this.db.getCategory(this.root);
-  }
-
-  /**
-   * Obtém os assuntos disponíveis do banco de dados.
-   * @returns {Object} - Assuntos.
-   * @async
-   */
-  async getSubjects() {
-    return await this.db.getSubjects(this.root);
+    return await this.db.getCategoryFromRoot(this.root);
   }
 
   /**
@@ -140,12 +89,89 @@ export default class EntryForm extends BaseForm {
   }
 
   /**
+   * Obtém os dados unificados necessários para o funcionamento do formulário.
+   * @implements Implemente um método filho para as especificidades de cada formulário.
+   * @async
+   * @returns {object}  - Objeto de dados unificado.
+   */
+  async getData() {
+    const data = await super.getData();
+
+    data.entryTypes = await this.getEntryTypes();
+    data.categories = await this.getCategory();
+
+    return data;
+  }
+
+  /**
+   * Configura o conteúdo do formulário.
+   * Sobrescreve a configuração na classe pai.
+   * @param {HTMLElement} form - O elemento que representa o formulário.
+   * @async
+   */
+  async configureContent(form) {
+    await super.configureContent(form);
+
+    this.configureEntrySidebar(form);
+    this.configureButtonsListeners(form);
+  }
+
+  /**
+   * Atualiza o conteúdo do formulário
+   * @param {HTMLElement} form - O elemento que representa o formulário.
+   * @async
+   */
+  async updateContent() {
+    // Atualiza dados antes de atualizar tela.
+    this.data = await this.getData();
+
+    await super.updateContent();
+    this.updateEntryItems();
+  }
+
+  /**
+   * Limpa o conteúdo do formulário
+   * @param {HTMLElement} form - O elemento que representa o formulário.
+   * @param {Boolean} clearSidebar - Flag para habilitar/desabilitar a limpeza da seleção da sidebar.
+   */
+  clearContent(form, clearSidebar = true) {
+    if (clearSidebar) super.clearContent(form);
+    const titleInput = this.form.querySelector('#titleInput');
+    titleInput.value = '';
+
+    const isDraftCheck = this.form.querySelector('#checkbox');
+    isDraftCheck.checked = false;
+
+    if (tinymce.activeEditor) {
+      tinymce.activeEditor.resetContent();
+    } else {
+      this.msgBox.showError('Editor TinyMCE não inicializado.');
+    }
+  }
+
+  /**
    * Configura a barra lateral do formulário.
    * @param {HTMLElement} form - O formulário HTML principal.
    */
   configureEntrySidebar(form) {
     this.configureSidebarDialog();
     this.updateEntryItems();
+  }
+
+  /**
+   * Configura os listeners dos botões do formulário.
+   * @param {HTMLElement} form - O formulário HTML principal.
+   */
+  configureButtonsListeners(form) {
+    const cancelButton = this.form.querySelector('#cancelButton');
+    cancelButton.addEventListener('click', (event) => { this.onCancelClick(event); });
+
+    // Configura o evento de criação de novas entradas
+    const newEntryButton = document.getElementById('newEntryButton');
+    newEntryButton.addEventListener('click', (event) => { this.onBaseNewClick(event); });
+
+    const saveButton = this.form.querySelector('#saveButton');
+    saveButton.addEventListener('click', (event) => { this.onBaseSaveClick(event); });
   }
 
   /**
@@ -160,20 +186,27 @@ export default class EntryForm extends BaseForm {
     // Adiciona um evento para lidar com a seleção de uma nova imagem.
     fileInput.addEventListener('change', (event) => {
       const file = event.target.files[0];
+
+      // Verifica se um arquivo foi selecionado e se é uma imagem.
       if (file && file.type.startsWith('image/')) {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          displayedImage.src = e.target.result;  // Atualiza a imagem exibida.
-          displayedImage.classList.remove('empty');
+        // Cria um URL temporário para o arquivo selecionado.
+        const imageURL = URL.createObjectURL(file);
+
+        // Atualiza a imagem exibida.
+        displayedImage.src = imageURL;
+        displayedImage.classList.remove('empty');
+
+        // Libera o URL temporário quando não for mais necessário.
+        displayedImage.onload = () => {
+          URL.revokeObjectURL(imageURL);
         };
-        reader.readAsDataURL(file);
       }
     });
 
     // Adiciona um evento de clique no contêiner de imagem para abrir o seletor de arquivos.
     imageContainer.addEventListener('click', () => {
       fileInput.click();
-    });    
+    });
   }
 
   /**
@@ -182,8 +215,6 @@ export default class EntryForm extends BaseForm {
    * @async
    */
   async configureSubjectSelect(form) {
-    this.subjectTypes = await this.getSubjects();
-
     // Carrega as opções de Tipos de Entradas registrados
     const subjectType = form.querySelector('#subjectType');
     for (const data of Object.values(this.subjectTypes)) {
@@ -197,11 +228,11 @@ export default class EntryForm extends BaseForm {
  * @async
  */
   async configureImportanceSelect(form) {
-    this.importances = await this.getImportances();
+    const importances = this.data.importances;
 
     // Carrega as opções de Importâncias registradas
     const importance = form.querySelector('#importance');
-    for (const data of Object.values(this.importances)) {
+    for (const data of Object.values(importances)) {
       importance.appendChild(this._newImportanceOption(data));
     }
   }
@@ -209,14 +240,13 @@ export default class EntryForm extends BaseForm {
   /**
    * Configura o combo de Tipos de Entrada.
    * @param {HTMLElement} form - O formulário HTML principal.
-   * @async
    */
-  async configureEntryTypeSelect(form) {
-    this.entryTypes = await this.getEntryTypes();
+  configureEntryTypeSelect(form) {
+    const entryTypes = this.data.entryTypes;
 
     // Carrega as opções de Tipos de Entradas registrados
     const entryType = form.querySelector('#entryType');
-    for (const data of Object.values(this.entryTypes)) {
+    for (const data of Object.values(entryTypes)) {
       entryType.appendChild(this._newEntryTypeOption(data));
     }
   }
@@ -227,12 +257,12 @@ export default class EntryForm extends BaseForm {
    * @async
    */
   async configureCalendarSelect(form) {
-    this.calendars = await this.getCalendars();
+    const calendars = await this.data.calendars;
 
     // Carrega as opções de Calendários registrados
     const calendarType = form.querySelector('#calendarType');
-    for (const [id, data] of Object.entries(this.calendars)) {
-      calendarType.appendChild(this._newCalendarOption({ id: id, data: data }));
+    for (const data of Object.values(calendars)) {
+      calendarType.appendChild(this._newCalendarOption(data));
     }
     calendarType.addEventListener('change', (event) => { this.onDateTypeChange(event); });
   }
@@ -288,7 +318,7 @@ export default class EntryForm extends BaseForm {
 
     yesBtn.addEventListener('click', (event) => { this._doAction(event) });
     noBtn.addEventListener('click', (event) => { this.onCancelNewCategory(event); });
-  }  
+  }
 
   /**
    * Gerencia cliques em pastas.
@@ -297,6 +327,15 @@ export default class EntryForm extends BaseForm {
    */
   _onFolderClick(event) {
     super._onFolderClick(event);
+
+    // Se formulário for o da Enciclopédia, carregue ícone do Assunto.
+    if (this.isEncyclopedia) {
+      const clickedFolder = event.target.closest('.folder');
+      const isSelected = clickedFolder.classList.contains('selected');
+
+      // Carregue ícone apenas se a pasta estiver sendo selecionada.
+      if (isSelected) this._loadRootIcon(clickedFolder);
+    }
 
     const newEntryButton = this.form.querySelector('#newEntryButton');
     newEntryButton.classList.toggle('disabled');
@@ -324,9 +363,9 @@ export default class EntryForm extends BaseForm {
    */
   onDateTypeChange(event) {
     const select = event.target;
-    const option = select.selectedOptions[0];
+    const dateType = select.value;
 
-    const calendar = this.calendars[option.value];
+    const calendar = this.data.calendars[dateType];
 
     Object.values(this.datePickers).forEach(pickers => {
       pickers._loadDatePicker(calendar);
@@ -408,9 +447,9 @@ export default class EntryForm extends BaseForm {
     const titleInput = this.form.querySelector('#titleInput');
     titleInput.focus();
 
-    if(!this.onNewClick) { 
-      const message = 'Método de tratamento do clique de novo item não foi implementado no formulário filho.';      
-      this.msgBox.showWarning(message);      
+    if (!this.onNewClick) {
+      const message = 'Método de tratamento do clique de novo item não foi implementado no formulário filho.';
+      this.msgBox.showWarning(message);
     } else {
       this.onNewClick(event);
     }
@@ -448,9 +487,9 @@ export default class EntryForm extends BaseForm {
     const button = event.target.closest('#saveButton');
     if (button.classList.contains('disabled')) return;
 
-    if(!this.onSaveClick) { 
-      const message = 'Método de tratamento do clique de salvamento não foi implementado no formulário filho.';      
-      this.msgBox.showWarning(message);      
+    if (!this.onSaveClick) {
+      const message = 'Método de tratamento do clique de salvamento não foi implementado no formulário filho.';
+      this.msgBox.showWarning(message);
     } else {
       this.onSaveClick(event);
     }
@@ -503,12 +542,35 @@ export default class EntryForm extends BaseForm {
    * @param {Object} calendar - Objeto com os dados do Calendário.
    * @returns {HTMLElement} - Elemento da nova opção
    */
-  _newCalendarOption(calendar) {
+  _newCalendarOption(data) {
     const newOption = document.createElement('option');
-    newOption.value = calendar.id;
-    newOption.textContent = calendar.data.label;
+    newOption.value = data.clid;
+    newOption.textContent = data.label;
 
     return newOption;
+  }
+  /**
+   * Carrega ícone da raíz do assunto.
+   * @private
+   * @async
+   * @param {HTMLElement} folder - Objeto com os dados da pasta do Assunto.
+   */
+  async _loadRootIcon(folder) {
+    const sid = folder.dataset.sid;
+    let subject = Object.values(await CONFIG.db.getSubjectRoot(sid));
+
+    if (subject.length != 1) {
+      this.msgBox.showWarning('O assunto está duplicado.');
+    }
+
+    subject = subject[0];
+
+    const dataIcon = this.form.querySelector('#dataIcon');
+    const subjectIcon = this.form.querySelector('#subjectIcon');
+
+    dataIcon.dataset.tooltip = CONFIG.utils.capitalizeFirstLetter(subject.root);
+    subjectIcon.classList.remove(...subjectIcon.classList);
+    subjectIcon.className = subject.icon;
   }
 
   /**
@@ -521,7 +583,7 @@ export default class EntryForm extends BaseForm {
       tinymce.remove('#textEditor');
     }
 
-    const options = CONFIG.utils.mergeObjects(CONFIG.tinymceOptions.default,{
+    const options = CONFIG.utils.mergeObjects(CONFIG.tinymceOptions.default, {
       selector: 'textarea#textEditor',
       init_instance_callback: (editor) => {
         editor.setContent(""); // Garante que o editor seja iniciado vazio.
@@ -589,7 +651,7 @@ export default class EntryForm extends BaseForm {
       tooltip._hideLinkTooltip();
     });
   }
-  
+
   /**
    * Exibe um diálogo de confirmação com uma mensagem.
    * @private

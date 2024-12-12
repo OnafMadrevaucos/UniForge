@@ -15,6 +15,11 @@ export default class DBManager {
 
         return rows;
     }  
+
+    async deleteTable(tableName) {
+        const query = `DROP TABLE ${tableName}`;
+        return await CONFIG.sql.exec(query);
+    }
     
     async getCalendars() {
         let query = 'SELECT * FROM calendars';
@@ -49,7 +54,7 @@ export default class DBManager {
                 data.days.push(day.label);
             }  
 
-            result[data.label.toLowerCase()] = data;
+            result[data.clid] = data;
         }
 
         return result;
@@ -81,7 +86,7 @@ export default class DBManager {
     async getCategoryFromRoot(root) {
         let query = 'SELECT C.cid, C.title AS label FROM category AS C ' +
                     'INNER JOIN subjectType AS S ON S.sid = C.sid ' +
-                    `WHERE C.root = ${root}`;
+                    `WHERE S.root = '${root}'`;
         const rows = await CONFIG.sql.query(query);
 
         return rows;
@@ -95,7 +100,23 @@ export default class DBManager {
         return result;
     }
 
-    async getSubjects(root='*') {
+    async getSubject(sid) {
+        let query =  `SELECT * FROM subjectType AS S WHERE S.sid = ${sid}`;
+        const rows = await CONFIG.sql.query(query);
+
+        return rows;
+    }
+
+    async getSubjectRoot(sid) {
+        let query = 'SELECT S.root, R.icon FROM subjectType AS S ';
+        query += 'INNER JOIN roots AS R ON S.root = R.root '
+        query += `WHERE S.sid = ${sid}`;
+        const rows = await CONFIG.sql.query(query);
+
+        return rows;
+    }
+
+    async getAllSubjects(root='*') {
         let query = '';
         if(root === '*') {
             query = 'SELECT * FROM subjectType AS S ';
@@ -118,13 +139,17 @@ export default class DBManager {
     }
 
     async addCategory(data) {   
-        let query = 'INSERT INTO category (sid, title, htmlString, isDraft) VALUES ('; 
-        query += `'${data.sid}',`;
-        query += `'${data.title}',`;
-        query += `'${data.htmlString}',`;
-        query += `${data.isDraft ? 1 : 0});`;                    
+        let query = 'INSERT INTO category (sid, title, img, ext, htmlString, isDraft) VALUES (?,?,?,?,?,?);'; 
+        let params = [];
+
+        params.push(data.sid);
+        params.push(data.title);
+        params.push(data.img ?? null);
+        params.push(data.ext ?? 'jpeg');
+        params.push(data.htmlString);
+        params.push(Number(data.isDraft));                
                     
-        const result = await CONFIG.sql.exec(query);
+        const result = await CONFIG.sql.exec(query, params);
         
         return result;
     }
@@ -137,17 +162,42 @@ export default class DBManager {
     }
 
     async addEntry(data) { 
-        let query = `INSERT INTO entry (etid, title, flavor, htmlString, isDraft, cid) VALUES (`; 
-        query += `${data.etid},`;
-        query += `'${data.title}',`;
-        query += `'${data.flavor}',`;
-        query += `'${data.htmlString}',`;
-        query += `${data.isDraft ? 1 : 0},`;
-        query += `${data.cid});`;       
+        let query = 'INSERT INTO entry (etid, title, flavor, htmlString, isDraft, cid, img, ext) VALUES (?,?,?,?,?,?,?,?);'; 
+        let params = [];
 
-        const result = await CONFIG.sql.exec(query);
+        params.push(data.etid);
+        params.push(data.title);
+        params.push(data.flavor);
+        params.push(data.htmlString);
+        params.push(Number(data.isDraft));
+        params.push(data.cid); 
+        params.push(data.img ?? null);
+        params.push(data.ext ?? 'jpeg');  
+
+        const result = await CONFIG.sql.exec(query, params);
         
         return result;
+    }
+
+    async addEntryImage(data) { 
+        let query = 'INSERT INTO _entryImages (eid, src, ext) VALUES (?,?,?)'; 
+        let params = [];
+
+        params.push(data.eid);
+        params.push(data.src);
+        params.push(data.ext);
+
+        const result = await CONFIG.sql.exec(query, params);
+        
+        return result;
+    }
+
+    async getEntry(eid) {
+        let query = 'SELECT * FROM entry ' +
+                    `WHERE eid = ${eid}`;
+        const rows = await CONFIG.sql.query(query);
+
+        return rows;
     }
 
     async deleteEntry(eid) {
@@ -166,9 +216,10 @@ export default class DBManager {
     }
 
     async addEvent(data) { 
-        let query = `INSERT INTO event (eid, iid, start_year, start_month, start_day, end_year, end_month, end_day, flavor) VALUES (`; 
+        let query = `INSERT INTO event (eid, iid, clid, start_year, start_month, start_day, end_year, end_month, end_day, flavor) VALUES (`; 
         query += `${data.eid},`;
         query += `${data.iid},`;
+        query += `${data.clid},`;
         query += `${data.date.start.year},`;
         query += `${data.date.start.month},`;
         query += `${data.date.start.day},`;
@@ -182,10 +233,13 @@ export default class DBManager {
         return result;
     }
 
-    async deleteTable(tableName) {
-        const query = `DROP TABLE ${tableName}`;
-        return await CONFIG.sql.exec(query);
-    }
+    async getEventOfEntry(eid) {
+        let query = 'SELECT * FROM event ' +
+                    `WHERE eid = ${eid}`;
+        const rows = await CONFIG.sql.query(query);
+
+        return rows;
+    }     
     
     async createEntryTable(){
         const query = 'CREATE TABLE IF NOT EXISTS entry (eid INTEGER PRIMARY KEY,' +
@@ -268,6 +322,20 @@ export default class DBManager {
             return 'O identificador de Assunto da Categoria é inválido.';
         if(!data.title || data.title == '')
             return 'É necessário informar um título válido para a Categoria.';
+
+        return '';
+    }
+
+    validateAtlasEntry(data) {
+
+        if(!data.cid || data.cid < 1)
+            return 'O identificador de Categoria da Entrada é inválido.';        
+        if(!data.cid || data.cid < 1)
+            return 'O identificador de Categoria da Entrada é inválido.';        
+        if(!data.title || data.title == '')
+            return 'É necessário informar um título válido para a Entrada.';
+        if(!data.img || data.img == '')
+            return 'É necessário informar uma imagem válida para a Entrada de Atlas.';
 
         return '';
     }

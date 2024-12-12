@@ -1,4 +1,5 @@
 import EntryForm from "./entryForm.js";
+import Dialog from "../dialogs/dialog.js";
 
 export class AtlasForm extends EntryForm {
     constructor(overlay) {
@@ -15,6 +16,9 @@ export class AtlasForm extends EntryForm {
     * @param {HTMLElement} form - O elemento que representa o formulário a ser configurado.
     */
     async configureContent(form) {
+        // Obtém objeto com todos os dados unificados necessários para o funcionamento do formulário.         
+        this.data = await this.getData();
+        
         // Chama o método de configuração da classe pai para configurar o formulário base.
         await super.configureContent(form);
 
@@ -32,15 +36,165 @@ export class AtlasForm extends EntryForm {
             tinymce.remove('#captionEditor');
         }
 
-        const options = CONFIG.utils.mergeObjects(CONFIG.tinymceOptions.simple,{
+        const options = CONFIG.utils.mergeObjects(CONFIG.tinymceOptions.simple, {
             selector: 'div#captionEditor',
             placeholder: "Descrição da imagem...",
             init_instance_callback: (editor) => {
-              editor.setContent(""); // Garante que o editor seja iniciado vazio.
+                editor.setContent(""); // Garante que o editor seja iniciado vazio.
             },
             setup: (editor) => { this._setupTinyMCE(editor); }
-          });
+        });
 
         tinymce.init(options);
+    }
+
+    /**
+        * Registra uma nova entrada no banco de dados.
+        * @param {Event} event - Evento de clique no botão de Salvar do Dialog.
+        */
+    async onSaveEntry(event) {
+        event.stopPropagation();
+        const folder = this.form.querySelector('.folder.selected');
+        if (!folder) {
+            this.msgBox.showWarning('Nenhuma categoria foi selecionada.');
+            this.closeDialog();
+            return;
+        }
+
+        const imgInput = this.form.querySelector('#hiddenFileInput');
+        const titleInput = this.form.querySelector('#titleInput');
+        const draftSwitch = this.form.querySelector('#checkbox');
+
+        // Obtém o objeto do arquivo da imagem.
+        const file = imgInput.files[0] ?? null; 
+        // Converte o arquivo para um ArrayBuffer (Blob)
+        const arrayBuffer = await file.arrayBuffer();       
+
+        let data = {
+            etid: 0,
+            title: titleInput.value,
+            img: file?.name ?? '',
+            htmlString: '',                        
+            flavor: tinymce.get('captionEditor').getContent() ?? '',
+            isDraft: draftSwitch.checked,
+            cid: folder.dataset.cid
+        }
+
+        const validate = CONFIG.db.validateAtlasEntry(data);
+        if (validate !== '') {
+            this.msgBox.showWarning(validate);
+            return;
+        }
+
+        if(file) {
+            // Obtém a extensão do arquivo de imagem.
+            const fileExt = file.name.split('.').pop().toLowerCase();  
+
+            data.img = new Uint8Array(arrayBuffer);
+            data.ext = fileExt;
+        } else {
+            this.showError('Entrada inválida! O arquivo de imagem da Entrada não pôde ser carregado.');
+            return;
+        }
+
+        await CONFIG.db.addEntry(data);        
+
+        this.msgBox.showInfo('Entrada criada com sucesso.');
+        this.closeDialog();
+        this.clearContent(this.form);
+
+        const cancelButton = this.form.querySelector('#cancelButton');
+        cancelButton.click();
+
+        await this.updateContent();
+    }
+
+    /**
+    * Trata o evento de registro de uma nova entrada.
+    * @param {Event} event - Evento de clique no botão de Salvar.
+    */
+    async onSaveClick(event) {
+        event.stopPropagation();
+
+        const body = 'Deseja salvar o mapa?';
+        // Configuração de botões
+        const buttons = [
+            {
+                label: "Não",
+                icon: "fas fa-xmark",
+                onClick: () => { this.closeDialog(); },
+            },
+            {
+                label: "Sim",
+                icon: "fas fa-check",
+                onClick: (event) => { this.onSaveEntry(event); },
+            }
+        ];
+
+        this.dialog = new Dialog('Salvar', body, buttons);
+        this.dialog.createDialog();
+    }
+
+    /**
+    * Trata o evento de criação de uma nova entrada.
+    * @param {Event} event - Evento de clique no botão de Nova Entrada.
+    */
+    async onNewClick(event) {
+        this.clearContent(this.form, false);
+    }
+
+    /**
+    * Trata o evento de cancelamento de uma nova entrada.
+    * @param {Event} event - Evento de clique no botão de Cancelar.
+    */
+    async onCancelClick(event) {
+        event.stopPropagation();
+
+        super.onCancelClick(event);
+        this.clearContent(this.form);
+    }
+
+    /**
+   * Gerencia cliques duplos em itens de entrada.
+   * @param {MouseEvent} event - O evento de clique duplo.
+   * @private
+   */
+    async onEntryItemDoubleClick(e) {
+        super.onEntryItemDoubleClick(e);
+        const item = e.target.closest('.entry-item');
+        const itemId = Number(item.dataset.id);
+        let entry = Object.values(await CONFIG.db.getEntry(itemId));
+
+        if(entry.length == 0) {
+            this.msgBox.showWarning('A Entrada não foi encontrada.');
+            return;
+        }
+
+        if (entry.length != 1) {
+            this.msgBox.showWarning('A Entrada está duplicada. Utilizando a primeira duplicata.');
+        }
+
+        entry = entry[0]; 
+
+        const displayedImage = this.form.querySelector('#displayedImage');
+        const titleInput = this.form.querySelector('#titleInput');         
+        const draftSwitch = this.form.querySelector('#checkbox');
+
+        titleInput.value = entry.title;
+        tinymce.get('captionEditor').setContent(entry.flavor);
+        draftSwitch.checked = entry.isDraft;    
+
+        if (entry.img) {
+            const imageType = `image/${entry.ext}`;
+            const imageBlob = new Blob([entry.img], { type: imageType }); // Ajuste o tipo de imagem conforme necessário
+            const imageURL = URL.createObjectURL(imageBlob);
+            displayedImage.src = imageURL;
+        }
+
+        const cancelButton = this.form.querySelector('#cancelButton');
+        cancelButton.classList.remove('hidden');
+
+        const saveButton = this.form.querySelector('#saveButton');
+        saveButton.classList.remove('disabled');
     }
 }

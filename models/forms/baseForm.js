@@ -78,6 +78,20 @@ export default class BaseForm {
   }
 
   /**
+   * Obtém os dados unificados necessários para o funcionamento do formulário.
+   * @implements Implemente um método filho para as especificidades de cada formulário.
+   * @async
+   * @returns {object}  - Objeto de dados unificado.
+   */
+  async getData() {
+    const data = {};
+
+    data.subjects = await this.getSubjects();
+
+    return data;
+  }
+
+  /**
    * Exibe o formulário e o overlay associados.
    */
   showForm() {
@@ -111,12 +125,17 @@ export default class BaseForm {
   }
 
   /**
-   * Obtém os assuntos disponíveis do banco de dados.
-   * @returns {Object} - Assuntos.
+   * Obtém os assuntos de uma dada origem disponíveis no banco de dados.
    * @async
+   * @returns {Object} - Assuntos e suas categorias.
    */
   async getSubjects() {
-    return await this.db.getSubjects(this.root);
+    const data = await this.db.getAllSubjects(this.root);
+
+    for (let category of Object.values(data)) {
+      category.entries = Object.values(await this.db.getEntriesFromCategory(category.cid));
+    }
+    return data;
   }
 
   /**
@@ -139,8 +158,6 @@ export default class BaseForm {
 
     // Se o formulário possui um sidebar, configure suas entradas.
     if (this.ui.sidebar) {
-      this.data = await this.getSubjects();
-
       this.loadSidebarList(form);
       this.configureSidebar(form);
     }
@@ -154,7 +171,6 @@ export default class BaseForm {
   async updateContent() {
     // Se o formulário ainda possui um sidebar, reconfigure suas entradas.
     if (this.ui.sidebar) {
-      this.data = await this.getSubjects();
 
       this.loadSidebarList(this.form);
       this.configureSidebar(this.form);
@@ -248,10 +264,11 @@ export default class BaseForm {
    * @param {HTMLElement} form - O formulário principal.
    */
   loadSidebarList(form) {
+    const data = this.data.subjects;
     const folderList = form.querySelector('#folderList');
     folderList.innerHTML = '';
 
-    for (const [key, value] of Object.entries(this.data)) {
+    for (const value of Object.values(data)) {
       const folder = this.createFolderItem(value);
       folderList.appendChild(folder);
     }
@@ -324,7 +341,7 @@ export default class BaseForm {
   createEntryItem(data) {
     const entryItem = document.createElement('li');
     entryItem.className = 'entry-item flexrow';
-    entryItem.dataset.id = data.cid ?? (data.eid ?? '-1');
+    entryItem.dataset.id = data.eid ?? (data.cid ?? '-1');
 
     const icon = document.createElement('i');
     icon.className = 'fas fa-file';

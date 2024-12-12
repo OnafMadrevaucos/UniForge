@@ -369,7 +369,7 @@ input:checked+.slider::before {
     gap: 5px;
 }
 .entries .footer .extra.buttons {
-    flex: 0;
+    flex: 25%;
     margin-right: auto;
     justify-content: flex-start;
 }
@@ -884,13 +884,27 @@ input:checked+.slider::before {
     display: flex;
     flex-direction: row;
 }
-
+.overlay .form-container .form-content .data-group.icon {
+    flex: 1;
+    align-self: flex-end;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background-color: var(--dark-redT87);
+    box-shadow: var(--small-shadow);    
+}
 
 .overlay .form-container .form-content .data-group .data-label {
     flex: 1;
     align-self: center;
     margin-right: 5px;
     font-weight: bold;
+}
+
+.data-group .data-icon {
+    flex: 1;
+    align-content: center;
+    text-align: center;
 }
 
 .data-group .data-label i:hover {
@@ -1818,6 +1832,7 @@ folder-list .folder.created.selected .folder-header .fa-trash {
     height: 75vh;
     max-height: 75vh;
     border-radius: var(--default-border-radius);
+    margin-top: 5px;
 }
 .entries.atlas .content .img-container img {
     flex: 1;

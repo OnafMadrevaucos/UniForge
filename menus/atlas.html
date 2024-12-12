@@ -20,8 +20,17 @@
     <div class="content flexcol">
         <div class="header flexcol">
             <div class="header-info flexcol">
-                <input type="text" class="title" name="title" placeholder="Título da Entrada" />
-            </div>            
+                <input id="titleInput" type="text" class="title" name="title" placeholder="Título da Entrada" />
+                <div class="info-content flexcol">
+                    <div class="data-group check">
+                        <span class="data-label">Rascunho </span>
+                        <label id="isDraftCheck" class="switch">
+                            <input type="checkbox" id="checkbox">
+                            <div class="slider"></div>
+                        </label>
+                    </div>
+                </div>
+            </div>
         </div>
         <div id="imageContainer" class="img-container flexrow">
             <img id="displayedImage" class="img-displayed" src="../images/blank-image.svg" alt="Imagem Padrão">
@@ -32,10 +41,12 @@
         </div>
         <div class="footer flexrow">
             <div class="extra buttons flexrow">
-                <button id="cancelButton" class="cancel-entry hidden"><i class="fas fa-rectangle-xmark"></i> Cancelar</button>
+                <button id="cancelButton" class="cancel-entry hidden"><i class="fa-solid fa-square-xmark"></i>
+                    Cancelar</button>
             </div>
             <div class="fixed buttons flexrow">
-                <button id="newEntryButton" class="new-entry disabled"><i class="fas fa-square-plus"></i> Nova Entrada</button>
+                <button id="newEntryButton" class="new-entry disabled"><i class="fas fa-square-plus"></i> Nova
+                    Entrada</button>
                 <button id="load-button" class="disabled"><i class="fas fa-upload"></i> Carregar Mapa</button>
                 <button id="saveButton" class="disabled"><i class="fa-regular fa-floppy-disk"></i> Salvar</button>
             </div>
