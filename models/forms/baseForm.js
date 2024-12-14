@@ -257,6 +257,8 @@ export default class BaseForm {
     sidebar.addEventListener('click', (event) => {
       if (event.target.classList.contains('entry-item')) return;
       this.clearContent(form);
+
+      if(this._controlFormStates) this._controlFormStates(this.states.default);
     });
   }
   /**

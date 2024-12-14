@@ -20,8 +20,8 @@
     <div class="content flexcol">
         <div class="header flexcol">
             <div class="header-info flexcol">
-                <input id="titleInput" type="text" class="title" name="title" placeholder="Título da Entrada" />
-                <div class="info-content flexcol">
+                <input id="titleInput" type="text" class="title" name="title" placeholder="Título da Entrada" disabled/>
+                <fieldset class="info-content flexcol" disabled>
                     <div class="data-group check">
                         <span class="data-label">Rascunho </span>
                         <label id="isDraftCheck" class="switch">
@@ -29,10 +29,10 @@
                             <div class="slider"></div>
                         </label>
                     </div>
-                </div>
+                </fieldset>
             </div>
         </div>
-        <div id="imageContainer" class="img-container flexrow">
+        <div id="imageContainer" class="img-container flexrow disabled">
             <img id="displayedImage" class="img-displayed" src="../images/blank-image.svg" alt="Imagem Padrão">
             <input type="file" class="hidden" id="hiddenFileInput" accept="image/*" />
         </div>

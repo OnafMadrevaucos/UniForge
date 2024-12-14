@@ -149,6 +149,10 @@ input[type="password"]:focus {
     border: var(--focus-border);
 }
 
+fieldset {
+    border: none;
+}
+
 select {
     padding: 5px;
     background-color: var(--dark-blue);
@@ -211,6 +215,10 @@ blockquote:not(:has(+ blockquote)) {
     margin-bottom: 0.5em;
 }
 
+*:disabled {
+    cursor: not-allowed;
+}
+
 /* ------ Estilo do Switch ------ */
 .switch {
     position: relative;
@@ -218,6 +226,11 @@ blockquote:not(:has(+ blockquote)) {
     width: 32px;
     height: 16px;
     margin: 10px 0;
+}
+
+:disabled .switch {
+    opacity: 0.7;
+    pointer-events: none;
 }
 
 /* Esconde o checkbox padrão */
@@ -254,8 +267,8 @@ blockquote:not(:has(+ blockquote)) {
     content: "";
     height: 14px;
     width: 14px;
-    left: 1.5px;
-    bottom: 0.75px;
+    left: 0.1vw;
+    bottom: 0.1vh;
     background-color: var(--light-grey);
     transition: 0.4s;
     border-radius: 50%;
@@ -382,12 +395,13 @@ input:checked+.slider::before {
     align-self: center;
 }
 .entries .footer .buttons button.disabled {
+    pointer-events: none;
     background-color: var(--background-color);
     color: var(--light-text-color);
     border: var(--filled-border);
 }
-.entries .footer .buttons button.disabled:hover {
-    cursor: default;
+.entries .footer .buttons button.disabled:hover {    
+    cursor: not-allowed;
 }
 
 /* ------ Scroll ------ */
@@ -884,8 +898,8 @@ input:checked+.slider::before {
     display: flex;
     flex-direction: row;
 }
-.overlay .form-container .form-content .data-group.icon {
-    flex: 1;
+.overlay .form-container .form-content .data-group .icon-container {
+    flex: 0;
     align-self: flex-end;
     width: 32px;
     height: 32px;
@@ -900,9 +914,12 @@ input:checked+.slider::before {
     margin-right: 5px;
     font-weight: bold;
 }
+.overlay .form-container .form-content .data-group.icon .data-label {
+    flex: 25%;
+}
 
 .data-group .data-icon {
-    flex: 1;
+    width: 32px;
     align-content: center;
     text-align: center;
 }
@@ -927,6 +944,11 @@ input:checked+.slider::before {
 .overlay .form-container .form-content .data-group select.data,
 .overlay .form-container .form-content .data-group input[type="text"].data {
     flex: 3;
+}
+
+.data-group .type-label {
+    align-content: center;
+    padding-left: 5px;
 }
 
 #entryFormOverlay .form-container .form-content {
@@ -1786,6 +1808,11 @@ folder-list .folder.created.selected .folder-header .fa-trash {
     border-radius: 50%;    
 }
 
+.img-container.disabled {
+    opacity: 0.7;
+    pointer-events: none;    
+}
+
 .entries .content .img-container {    
     padding: 5px;
     display: flex;
@@ -1854,6 +1881,10 @@ folder-list .folder.created.selected .folder-header .fa-trash {
     position: relative;
     cursor: pointer;
     user-select: none;
+}
+:disabled .date-input {
+    opacity: 0.7;
+    pointer-events: none;
 }
 
 .date-display {
@@ -2021,7 +2052,7 @@ folder-list .folder.created.selected .folder-header .fa-trash {
 }
 
 /* ------ TinyMCE Editor ------*/
-#textEditor {
+#mainEditor {
     width: 100%;
     height: 300px;
     border: var(--filled-border);

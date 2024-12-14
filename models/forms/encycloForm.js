@@ -57,10 +57,10 @@ export class EncycloForm extends EntryForm {
         await super.configureContent(form);
 
         // Configura o recipiente de imagem usando o método da classe pai.
-        super.configureImageContainer(form);
+        super.configureImageContainer(form);        
 
-        // Configurações do formulário.
-        super._configureTinyMCE();        
+        // Atribui o estado padrão aos controles do formulário.
+        this._controlFormStates(this.states.default);        
     }       
 
     /**
@@ -78,15 +78,13 @@ export class EncycloForm extends EntryForm {
 
     /**
     * Registra uma nova entrada no banco de dados.
-    * @param {Event} event - Evento de clique no botão de Salvar do Dialog.
+    * @param {Event} event      - Evento de clique no botão de Salvar do Dialog.
+    * @param {Object} options   - Opções de salvamento da categoria.
     */
-    async onSaveCategory(event) {
-        event.stopPropagation();
-        const folder = this.form.querySelector('.folder.selected');
-        if (!folder) {
-            this.msgBox.showWarning('Nenhum assunto foi selecionado.');
-            return;
-        }
+    async onSaveCategory(event, options={}) {
+        event.stopPropagation();        
+        const isEntryUpdate = options.isEntryUpdate ?? false;
+        const headerInfo = this.form.querySelector('.header-info');
 
         const imgInput = this.form.querySelector('#hiddenFileInput');
         const titleInput = this.form.querySelector('#titleInput');
@@ -95,18 +93,19 @@ export class EncycloForm extends EntryForm {
         // Obtém o objeto do arquivo da imagem.
         const file = imgInput.files[0] ?? null;  
         // Obtém a extensão do arquivo de imagem.
-        const fileExt = file?.name.split('.').pop().toLowerCase();
-        // Converte o arquivo para um ArrayBuffer (Blob)
-        const arrayBuffer = await file.arrayBuffer();       
+        const fileExt = file?.name.split('.').pop().toLowerCase();           
 
         const data = {
-            sid: folder.dataset.sid,
+            sid: headerInfo.dataset.sid,
             title: titleInput.value,
             htmlString: tinymce.activeEditor?.getContent() ?? '',
             isDraft: draftSwitch.checked
         }
 
         if(file) { 
+            // Converte o arquivo para um ArrayBuffer (Blob)
+            const arrayBuffer = await file?.arrayBuffer();   
+
             data.img = new Uint8Array(arrayBuffer);
             data.ext = fileExt;
         }
@@ -116,9 +115,17 @@ export class EncycloForm extends EntryForm {
             this.msgBox.showWarning(validate);
             return;
         }
-        await CONFIG.db.addCategory(data);
 
-        this.msgBox.showInfo('Categoria criada com sucesso.');
+        if(isEntryUpdate) { 
+            data.cid = options.id;
+            await CONFIG.db.updateCategory(data);
+            this.msgBox.showInfo('Categoria atualizada com sucesso.');
+        }
+        else { 
+            await CONFIG.db.addCategory(data);
+            this.msgBox.showInfo('Categoria criada com sucesso.');
+        }
+
         this.closeDialog();
         this.clearContent(this.form);
 
@@ -126,16 +133,19 @@ export class EncycloForm extends EntryForm {
         cancelButton.dispatchEvent(new Event('click'));
 
         await this.updateContent();
+        this._controlFormStates(this.states.default);
     }
 
     /**
     * Trata o evento de registro de uma nova categoria.
-    * @param {Event} event - Evento de clique no botão de Salvar.
+    * @param {Event} event      - Evento de clique no botão de Salvar.
+    * @param {Object} options   - Opções de salvamento.
     */
-    async onSaveClick(event) {
+    async onSaveClick(event, options={}) {
         event.stopPropagation();
+        const isEntryUpdate = options.isEntryUpdate ?? false;        
 
-        const body = 'Deseja salvar a categoria?';
+        const body = (isEntryUpdate ? 'Deseja atualizar a categoria?' : 'Deseja salvar a categoria?');
         // Configuração de botões
         const buttons = [
             {
@@ -146,7 +156,7 @@ export class EncycloForm extends EntryForm {
             {
                 label: "Sim",
                 icon: "fas fa-check",
-                onClick: (event) => { this.onSaveCategory(event); },
+                onClick: (event) => { this.onSaveCategory(event, options); },
             }
         ];
 
@@ -159,7 +169,8 @@ export class EncycloForm extends EntryForm {
     * @param {Event} event - Evento de clique no botão de Nova Categoria.
     */
     async onNewClick(event) {
-        this.clearContent(this.form, false);        
+        this.clearContent(this.form, false); 
+        this._controlFormStates(this.states.editEntry);       
     }
 
     /**
@@ -188,8 +199,8 @@ export class EncycloForm extends EntryForm {
 
     /**
    * Gerencia cliques duplos em itens de entrada.
+   * @protected
    * @param {MouseEvent} event - O evento de clique duplo.
-   * @private
    */
     async onEntryItemDoubleClick(event) {
         super.onEntryItemDoubleClick(event);
@@ -201,7 +212,10 @@ export class EncycloForm extends EntryForm {
             this.msgBox.showWarning('Categoria está duplicada.');
         }
 
-        category = category[0];        
+        category = category[0];   
+        
+        const headerInfo = this.form.querySelector('.header-info');
+        headerInfo.dataset.sid = category.sid;
 
         const displayedImage = this.form.querySelector('#displayedImage');
         const titleInput = this.form.querySelector('#titleInput');        

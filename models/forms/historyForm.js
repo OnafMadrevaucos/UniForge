@@ -33,7 +33,7 @@ export class HistoryForm extends EntryForm {
         this.datePickers = {
             start: new DatePickerManager('startDate'),
             end: new DatePickerManager('endDate')
-        }       
+        }
 
         /**
          * Configura o conteúdo do formulário associado a esta instância.
@@ -85,20 +85,34 @@ export class HistoryForm extends EntryForm {
         // Configura o recipiente de imagem usando o método da classe pai.
         super.configureImageContainer(form);
 
-        // Configura o editor TinyMCE principal associado ao formulário.
-        super._configureTinyMCE();
-
         // Configura o editor TinyMCE de floreio associado ao formulário.
-        this.configureFlavorTinyMCE();
+        await this.configureFlavorTinyMCE();
 
         // Carrega os DatePickers associados ao formulário.
         this.loadDatePickers();
+
+        // Atribui o estado padrão aos controles do formulário.
+        this._controlFormStates(this.states.default);
     }
+
+    /**
+   * Limpa o conteúdo do formulário
+   * @param {HTMLElement} form - O elemento que representa o formulário.
+   * @param {Boolean} clearSidebar - Flag para habilitar/desabilitar a limpeza da seleção da sidebar.
+   */
+    clearContent(form, clearSidebar = true) {
+        super.clearContent(form, clearSidebar);
+
+        const flavorEditor = tinymce.get('flavorEditor');
+        flavorEditor.setContent('');
+
+        this.loadDatePickers();
+    }   
 
     /**
     * Configura o editor TinyMCE para o texto de floreio da Entrada.
     */
-    configureFlavorTinyMCE() {
+    async configureFlavorTinyMCE() {
         if (tinymce.get('flavorEditor')) {
             tinymce.remove('#flavorEditor');
         }
@@ -109,10 +123,61 @@ export class HistoryForm extends EntryForm {
             init_instance_callback: (editor) => {
                 editor.setContent(""); // Garante que o editor seja iniciado vazio.
             },
-            setup: (editor) => { this._setupTinyMCE(editor); }
+            setup: (editor) => { this.setupTinyMCE(editor); }
         });
 
-        tinymce.init(options);
+        await tinymce.init(options);
+    }
+
+    /**
+   * Configura o editor TinyMCE com funcionalidades adicionais.
+   * @private
+   * @param {Object} editor - Instância do editor TinyMCE.
+   */
+    setupTinyMCE(editor) {
+        // Número máximo de caractéres do editor Tiny MCE de floreio.
+        const maxCharacters = 255;
+
+        // Sobrescreve o método setContent para limitar o conteúdo
+        const originalSetContent = editor.setContent;
+
+        editor.setContent = function (content, ...args) {
+            // Salva a posição atual do cursor
+            const bookmark = editor.selection.getBookmark(2);
+
+            const plainTextContent = editor.dom.create('div', null, content).innerText; // Remove tags HTML
+            if (plainTextContent.length > maxCharacters) {
+                const truncatedText = plainTextContent.substring(0, maxCharacters);
+                const truncatedHtml = editor.dom.create('div', null, truncatedText).innerHTML;
+                originalSetContent.call(editor, truncatedHtml, ...args);
+            } else {
+                originalSetContent.call(editor, content, ...args);
+            }
+
+            // Restaura o cursor para a posição salva
+            if (bookmark) {
+                editor.selection.moveToBookmark(bookmark);
+            }
+        };
+
+        // Evento para interceptar colagem
+        editor.on('PastePreProcess', (e) => {
+            const plainTextContent = editor.dom.create('div', null, e.content).innerText; // Remove HTML
+            if (plainTextContent.length > maxCharacters) {
+                const truncatedText = plainTextContent.substring(0, maxCharacters);
+                const truncatedHtml = editor.dom.create('div', null, truncatedText).innerHTML;
+                e.content = truncatedHtml; // Atualiza o conteúdo colado
+            }
+        });
+
+        // Evento para evitar exceder o limite durante a digitação
+        editor.on('input', () => {
+            const plainTextContent = editor.getContent({ format: 'text' });
+            if (plainTextContent.length > maxCharacters) {
+                const truncatedText = plainTextContent.substring(0, maxCharacters);
+                editor.setContent(truncatedText); // Trunca o conteúdo
+            }
+        });
     }
 
     /**
@@ -137,9 +202,9 @@ export class HistoryForm extends EntryForm {
     * Para cada DatePicker, chama o método `_loadDatePicker`, passando o calendário escolhido.
     */
     reloadDatePickers(event) {
-        const calendarType = this.form.querySelector('#calendarType');   
-        calendarType.value = event.clid; 
-        calendarType.dispatchEvent(new Event('change'));     
+        const calendarType = this.form.querySelector('#calendarType');
+        calendarType.value = event.clid;
+        calendarType.dispatchEvent(new Event('change'));
 
         this.datePickers.start.selectFullDate(event.start_day, event.start_month, event.start_year);
         this.datePickers.end.selectFullDate(event.end_day, event.end_month, event.end_year);
@@ -153,21 +218,18 @@ export class HistoryForm extends EntryForm {
              * @param {Object} calendar - O primeiro calendário no objeto `calendars`.
              
             pickers._reloadDatePicker(calendar, false);
-        });*/        
+        });*/
     }
 
     /**
     * Registra uma nova entrada no banco de dados.
-    * @param {Event} event - Evento de clique no botão de Salvar do Dialog.
+    * @param {Event} event      - Evento de clique no botão de Salvar do Dialog.
+    * @param {Object} options   - Opções de salvamento da entrada.
     */
-    async onSaveEntry(event) {
+    async onSaveEntry(event, options = {}) {
         event.stopPropagation();
-        const folder = this.form.querySelector('.folder.selected');
-        if (!folder) {
-            this.msgBox.showWarning('Nenhuma categoria foi selecionada.');
-            this.closeDialog();
-            return;
-        }
+        const isEntryUpdate = options.isEntryUpdate ?? false;
+        const headerInfo = this.form.querySelector('.header-info');
 
         const imgInput = this.form.querySelector('#hiddenFileInput');
         const titleInput = this.form.querySelector('#titleInput');
@@ -177,11 +239,9 @@ export class HistoryForm extends EntryForm {
         const draftSwitch = this.form.querySelector('#checkbox');
 
         // Obtém o objeto do arquivo da imagem.
-        const file = imgInput.files[0] ?? null; 
+        const file = imgInput.files[0] ?? null;
         // Obtém a extensão do arquivo de imagem.
-        const fileExt = file?.name.split('.').pop().toLowerCase(); 
-        // Converte o arquivo para um ArrayBuffer (Blob)
-        const arrayBuffer = await file.arrayBuffer();
+        const fileExt = file?.name.split('.').pop().toLowerCase();       
 
         let data = {
             etid: entryType.value,
@@ -193,14 +253,17 @@ export class HistoryForm extends EntryForm {
                 end: this.datePickers.end.selectedDate
             },
             img: imgInput.value,
-            htmlString: tinymce.get('textEditor').getContent() ?? '',
+            htmlString: tinymce.get('mainEditor').getContent() ?? '',
             flavor: tinymce.get('flavorEditor').getContent() ?? '',
             isDraft: draftSwitch.checked,
-            cid: folder.dataset.cid,
+            cid: headerInfo.dataset.cid,
             text: ''
         }
 
-        if(file) { 
+        if (file) {
+            // Converte o arquivo para um ArrayBuffer (Blob)
+            const arrayBuffer = await file?.arrayBuffer();
+
             data.img = new Uint8Array(arrayBuffer);
             data.ext = fileExt;
         }
@@ -209,13 +272,23 @@ export class HistoryForm extends EntryForm {
         if (validate !== '') {
             this.msgBox.showWarning(validate);
             return;
-        } 
+        }
 
-        const result = await CONFIG.db.addEntry(data);
-        data.eid = result.lastInsertRowid;
-        await CONFIG.db.addEvent(data);
+        if (isEntryUpdate) {
+            data.eid = options.id;
+            data.evid = headerInfo.dataset.evid;
 
-        this.msgBox.showInfo('Entrada criada com sucesso.');
+            await CONFIG.db.updateEntry(data);
+            await CONFIG.db.updateEvent(data);
+            this.msgBox.showInfo('Entrada atualizada com sucesso.');
+        }
+        else {
+            const result = await CONFIG.db.addEntry(data);
+            data.eid = result.lastInsertRowid;
+            await CONFIG.db.addEvent(data);
+            this.msgBox.showInfo('Entrada criada com sucesso.');
+        }
+
         this.closeDialog();
         this.clearContent(this.form);
 
@@ -223,16 +296,19 @@ export class HistoryForm extends EntryForm {
         cancelButton.dispatchEvent(new Event('click'));
 
         await this.updateContent();
+        this._controlFormStates(this.states.default);
     }
 
     /**
     * Trata o evento de registro de uma nova entrada.
-    * @param {Event} event - Evento de clique no botão de Salvar.
+    * @param {Event} event      - Evento de clique no botão de Salvar.
+    * @param {Object} options   - Opções de salvamento da entrada.
     */
-    async onSaveClick(event) {
+    async onSaveClick(event, options = {}) {
         event.stopPropagation();
+        const isEntryUpdate = options.isEntryUpdate ?? false;
 
-        const body = 'Deseja salvar a entrada?';
+        const body = (isEntryUpdate ? 'Deseja atualizar a entrada?' : 'Deseja salvar a entrada?');
         // Configuração de botões
         const buttons = [
             {
@@ -243,7 +319,7 @@ export class HistoryForm extends EntryForm {
             {
                 label: "Sim",
                 icon: "fas fa-check",
-                onClick: (event) => { this.onSaveEntry(event); },
+                onClick: (event) => { this.onSaveEntry(event, options); },
             }
         ];
 
@@ -257,6 +333,7 @@ export class HistoryForm extends EntryForm {
     */
     async onNewClick(event) {
         this.clearContent(this.form, false);
+        this._controlFormStates(this.states.editEntry);
     }
 
     /**
@@ -272,7 +349,7 @@ export class HistoryForm extends EntryForm {
 
     /**
    * Gerencia cliques duplos em itens de entrada.
-   * @param {MouseEvent} event - O evento de clique duplo.
+   * @param {MouseEvent} e - O evento de clique duplo.
    * @private
    */
     async onEntryItemDoubleClick(e) {
@@ -281,7 +358,7 @@ export class HistoryForm extends EntryForm {
         const itemId = Number(item.dataset.id);
         let entry = Object.values(await CONFIG.db.getEntry(itemId));
 
-        if(entry.length == 0) {
+        if (entry.length == 0) {
             this.msgBox.showWarning('A Entrada não foi encontrada.');
             return;
         }
@@ -290,11 +367,11 @@ export class HistoryForm extends EntryForm {
             this.msgBox.showWarning('A Entrada está duplicada. Utilizando a primeira duplicata.');
         }
 
-        entry = entry[0];   
-        
+        entry = entry[0];
+
         let event = Object.values(await CONFIG.db.getEventOfEntry(entry.eid));
 
-        if(event.length == 0) {
+        if (event.length == 0) {
             this.msgBox.showWarning('Não há evento para a Entrada Histórica informada.');
             return;
         }
@@ -303,16 +380,25 @@ export class HistoryForm extends EntryForm {
             this.msgBox.showWarning('O Evento está duplicado. Utilizando a primeira duplicata.');
         }
 
-        event = event[0]; 
-        this.reloadDatePickers(event);                
+        event = event[0];
+        this.reloadDatePickers(event);
+
+        const headerInfo = this.form.querySelector('.header-info');
+        headerInfo.dataset.cid = entry.cid;
+        headerInfo.dataset.evid = event.evid;
 
         const displayedImage = this.form.querySelector('#displayedImage');
-        const titleInput = this.form.querySelector('#titleInput');        
+        const titleInput = this.form.querySelector('#titleInput');
+        const entryType = this.form.querySelector('#entryType');
+        const importance = this.form.querySelector('#importance');
         const draftSwitch = this.form.querySelector('#checkbox');
 
         titleInput.value = entry.title;
-        tinymce.get('textEditor').setContent(entry.htmlString);
-        draftSwitch.checked = entry.isDraft;    
+        entryType.value = entry.etid;
+        importance.value = event.iid;
+        tinymce.get('mainEditor').setContent(entry.htmlString);
+        tinymce.get('flavorEditor').setContent(entry.flavor);
+        draftSwitch.checked = entry.isDraft;
 
         if (entry.img) {
             const imageType = `image/${entry.ext}`;

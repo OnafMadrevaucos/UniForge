@@ -22,8 +22,9 @@ export default class DBManager {
     }
     
     async getCalendars() {
-        let query = 'SELECT * FROM calendars';
+        let query = 'SELECT * FROM calendars;';
         const rows = await CONFIG.sql.query(query);
+        let params = [];
 
         const result = {};
 
@@ -36,19 +37,22 @@ export default class DBManager {
                 daysInMonth: [],
             }
 
-            query = `SELECT clmid, label FROM calendarsMonths WHERE clid = ${row.clid}`;
-            const months = await CONFIG.sql.query(query);
+            query = 'SELECT clmid, label FROM calendarsMonths WHERE clid = ?;';
+            params = [row.clid];
+            const months = await CONFIG.sql.query(query, params);
 
             for(let month of months) {
                 data.months.push(month.label);
 
-                query = `SELECT days FROM calendarsDaysInMonths WHERE clmid = ${month.clmid}`;
-                const dayMonths = await CONFIG.sql.query(query);
+                query = 'SELECT days FROM calendarsDaysInMonths WHERE clmid = ?;';
+                params = [month.clmid];
+                const dayMonths = await CONFIG.sql.query(query, params);
                 data.daysInMonth.push(dayMonths[0].days);
             }
 
-            query = `SELECT label FROM calendarsDays WHERE clid = ${row.clid}`;
-            const days = await CONFIG.sql.query(query);
+            query = 'SELECT label FROM calendarsDays WHERE clid = ?;';
+            params = [row.clid];
+            const days = await CONFIG.sql.query(query, params);
 
             for(let day of days) {
                 data.days.push(day.label);
@@ -75,72 +79,9 @@ export default class DBManager {
         return rows;
     }
 
-    async getCategory(cid) {
-        let query = 'SELECT * FROM category ' +
-                    `WHERE cid = ${cid}`;
-        const rows = await CONFIG.sql.query(query);
-
-        return rows;
-    }
-
-    async getCategoryFromRoot(root) {
-        let query = 'SELECT C.cid, C.title AS label FROM category AS C ' +
-                    'INNER JOIN subjectType AS S ON S.sid = C.sid ' +
-                    `WHERE S.root = '${root}'`;
-        const rows = await CONFIG.sql.query(query);
-
-        return rows;
-    }
-
-    async deleteCategory(cid) {
-        let query = 'DELETE FROM category ' +
-                    `WHERE cid = ${cid}`;
-        const result = await CONFIG.sql.exec(query);
-
-        return result;
-    }
-
-    async getSubject(sid) {
-        let query =  `SELECT * FROM subjectType AS S WHERE S.sid = ${sid}`;
-        const rows = await CONFIG.sql.query(query);
-
-        return rows;
-    }
-
-    async getSubjectRoot(sid) {
-        let query = 'SELECT S.root, R.icon FROM subjectType AS S ';
-        query += 'INNER JOIN roots AS R ON S.root = R.root '
-        query += `WHERE S.sid = ${sid}`;
-        const rows = await CONFIG.sql.query(query);
-
-        return rows;
-    }
-
-    async getAllSubjects(root='*') {
-        let query = '';
-        if(root === '*') {
-            query = 'SELECT * FROM subjectType AS S ';
-        } else {
-            query = 'SELECT C.cid, C.sid, C.title, C.img, C.htmlString, C.isDraft FROM category AS C ' +
-                    'INNER JOIN subjectType AS S ON S.sid = C.sid ' +
-                    `WHERE S.root = '${root}' AND C.isDraft = 0 `;
-        }
-        query += 'ORDER BY S.title';
-        const rows = await CONFIG.sql.query(query);
-
-        return rows;
-    }
-
-    async getCategoriesFromSubject(sid) {
-        let query = `SELECT * FROM category AS C WHERE C.sid = ${sid}`;
-
-        const rows = await CONFIG.sql.query(query);
-        return rows;
-    }
-
     async addCategory(data) {   
         let query = 'INSERT INTO category (sid, title, img, ext, htmlString, isDraft) VALUES (?,?,?,?,?,?);'; 
-        let params = [];
+        const params = [];
 
         params.push(data.sid);
         params.push(data.title);
@@ -153,13 +94,91 @@ export default class DBManager {
         
         return result;
     }
+    async updateCategory(data) {  
+        
+        const updateSet = this.buildUpdateSet([
+            ['sid', data.sid],
+            ['title', data.title],
+            ['img', data.img],
+            ['ext', data.ext],
+            ['htmlString', data.htmlString],
+            ['isDraft', Number(data.isDraft)]
+        ]);
 
-    async getEntriesFromCategory(cid) {
-        let query = `SELECT * FROM entry AS E WHERE E.cid = ${cid}`;
+        let query = `UPDATE category SET ${updateSet} WHERE cid = ?`; 
+        let params = [data.cid];
+        const result = await CONFIG.sql.exec(query, params);
+        
+        return result;
+    }
+    async getCategory(cid) {
+        let query = 'SELECT * FROM category WHERE cid = ?';
+        const params = [cid];
+        const rows = await CONFIG.sql.query(query, params);
 
-        const rows = await CONFIG.sql.query(query);
         return rows;
     }
+    async deleteCategory(cid) {
+        let result = {};
+        let query = 'DELETE FROM category WHERE cid = ?;';
+        const params = [cid];
+
+        result.categoryQuery = await CONFIG.sql.exec(query, params);
+
+        query = 'DELETE FROM entry WHERE cid = ?;'
+        result.entryQuery = await CONFIG.sql.exec(query, params);
+
+        return result;
+    }
+    async getCategoryFromRoot(root) {
+        let query = 'SELECT C.cid, C.title AS label FROM category AS C ' +
+                    'INNER JOIN subjectType AS S ON S.sid = C.sid ' +
+                    `WHERE S.root = ?`;
+        const params = [root];
+        const rows = await CONFIG.sql.query(query, params);
+
+        return rows;
+    }
+    async getCategoriesFromSubject(sid) {
+        let query = 'SELECT * FROM category AS C WHERE C.sid = ?;';
+        const params = [sid];
+
+        const rows = await CONFIG.sql.query(query, params);
+        return rows;
+    } 
+    
+
+    async getSubject(sid) {
+        let query =  'SELECT * FROM subjectType AS S WHERE S.sid = ?';
+        const params = [sid];
+
+        const rows = await CONFIG.sql.query(query, params);
+
+        return rows;
+    }
+    async getSubjectRoot(sid) {
+        let query = 'SELECT S.title, S.root, R.icon FROM subjectType AS S ';
+        query += 'INNER JOIN roots AS R ON S.root = R.root ';
+        query += 'WHERE S.sid = ?;';
+        const params = [sid];
+        const rows = await CONFIG.sql.query(query, params);
+
+        return rows;
+    }
+    async getAllSubjects(root='*') {
+        let query = '';        
+        if(root === '*') {
+            query = 'SELECT * FROM subjectType AS S ORDER BY S.title;';
+            return await CONFIG.sql.query(query);
+        } else {
+            const params = [root];
+            query = 'SELECT C.cid, C.sid, C.title, C.img, C.htmlString, C.isDraft FROM category AS C ';
+            query += 'INNER JOIN subjectType AS S ON S.sid = C.sid ';
+            query += 'WHERE S.root = ? AND C.isDraft = 0 ORDER BY S.title;';            
+
+            return await CONFIG.sql.query(query, params);
+        }
+    }       
 
     async addEntry(data) { 
         let query = 'INSERT INTO entry (etid, title, flavor, htmlString, isDraft, cid, img, ext) VALUES (?,?,?,?,?,?,?,?);'; 
@@ -177,66 +196,101 @@ export default class DBManager {
         const result = await CONFIG.sql.exec(query, params);
         
         return result;
+    } 
+    async updateEntry(data) {
+        const updateSet = this.buildUpdateSet([
+            ['etid', data.etid],
+            ['title', data.title],
+            ['flavor', data.flavor],
+            ['htmlString', data.htmlString],
+            ['isDraft', Number(data.isDraft)],
+            ['cid', data.cid],
+            ['img', data.img],
+            ['ext', data.ext]
+        ]);
+
+        let query = `UPDATE entry SET ${updateSet} WHERE eid = ?`; 
+        let params = [data.eid];
+        const result = await CONFIG.sql.exec(query, params);
+        
+        return result;
+    }   
+    async getEntry(eid) {
+        let query = 'SELECT * FROM entry WHERE eid = ?;';
+        const params = [eid];
+
+        const rows = await CONFIG.sql.query(query, params);
+
+        return rows;
+    }
+    async getAllEntries(withDraft=false) {
+        const query = 'SELECT * FROM entry WHERE isDraft = ?;';
+        const params = [Number(withDraft)];
+
+        const rows = await CONFIG.sql.query(query, params);
+
+        return rows;
+    }
+    async deleteEntry(eid) {
+        let query = 'DELETE FROM entry WHERE eid = ?;';
+        const params = [eid];
+        const result = await CONFIG.sql.exec(query, params);
+
+        return result;
+    }    
+    async getEntriesFromCategory(cid) {
+        let query = 'SELECT * FROM entry AS E WHERE E.cid = ?;';
+        const params = [cid];
+
+        const rows = await CONFIG.sql.query(query, params);
+        return rows;
     }
 
-    async addEntryImage(data) { 
-        let query = 'INSERT INTO _entryImages (eid, src, ext) VALUES (?,?,?)'; 
-        let params = [];
+    async addEvent(data) { 
+        let query = 'INSERT INTO event (eid, iid, clid, start_year, start_month, start_day, end_year, end_month, end_day, flavor) ';
+        query += 'VALUES (?,?,?,?,?,?,?,?,?,?);'; 
+        const params = [];
 
         params.push(data.eid);
-        params.push(data.src);
-        params.push(data.ext);
+        params.push(data.iid);
+        params.push(data.clid);
+        params.push(data.date.start.year);
+        params.push(data.date.start.month);
+        params.push(data.date.start.day);
+        params.push(data.date.end.year);
+        params.push(data.date.end.month);
+        params.push(data.date.end.day);
+        params.push(data.flavor);    
 
         const result = await CONFIG.sql.exec(query, params);
         
         return result;
     }
+    async updateEvent(data) {
+        const updateSet = this.buildUpdateSet([
+            ['eid', data.eid],
+            ['iid', data.iid],
+            ['clid', data.clid],
+            ['start_year', data.date.start.year],
+            ['start_month', data.date.start.month],
+            ['start_day', data.date.start.day],
+            ['end_year', data.date.end.year],
+            ['end_month', data.date.end.month],            
+            ['end_day', data.date.end.day],            
+            ['flavor', data.flavor]
+        ]);
 
-    async getEntry(eid) {
-        let query = 'SELECT * FROM entry ' +
-                    `WHERE eid = ${eid}`;
-        const rows = await CONFIG.sql.query(query);
-
-        return rows;
-    }
-
-    async deleteEntry(eid) {
-        let query = 'DELETE FROM entry ' +
-                    `WHERE eid = ${eid}`;
-        const result = await CONFIG.sql.exec(query);
-
-        return result;
-    }
-
-    async getAllEntries(withDraft=false) {
-        const query = 'SELECT * FROM entry' + (withDraft ? ' isDraft = 1' : '');
-        const rows = await CONFIG.sql.query(query);
-
-        return rows;
-    }
-
-    async addEvent(data) { 
-        let query = `INSERT INTO event (eid, iid, clid, start_year, start_month, start_day, end_year, end_month, end_day, flavor) VALUES (`; 
-        query += `${data.eid},`;
-        query += `${data.iid},`;
-        query += `${data.clid},`;
-        query += `${data.date.start.year},`;
-        query += `${data.date.start.month},`;
-        query += `${data.date.start.day},`;
-        query += `${data.date.end.year},`;
-        query += `${data.date.end.month},`;
-        query += `${data.date.end.day},`;
-        query += `'${data.flavor}');`;       
-
-        const result = await CONFIG.sql.exec(query);
+        let query = `UPDATE event SET ${updateSet} WHERE evid = ?`; 
+        let params = [data.evid];
+        const result = await CONFIG.sql.exec(query, params);
         
         return result;
     }
-
     async getEventOfEntry(eid) {
-        let query = 'SELECT * FROM event ' +
-                    `WHERE eid = ${eid}`;
-        const rows = await CONFIG.sql.query(query);
+        let query = 'SELECT * FROM event WHERE eid = ?;';
+        const params = [eid];
+
+        const rows = await CONFIG.sql.query(query, params);
 
         return rows;
     }     
@@ -360,5 +414,19 @@ export default class DBManager {
             return 'É necessário informar um título válido para a Entrada.';
 
         return '';
+    }
+
+    buildUpdateSet(columns) {
+        return columns
+          .filter(([label, value]) => label.trim() && value !== null && value !== undefined && value !== '') // Remove colunas ou valores vazios
+          .map(([label, value]) => `${label} = '${value}'`) // Formata cada dupla
+          .join(' , '); // Junta tudo com ' , '
+    }
+
+    buildWhereClause(conditions) {
+        return conditions
+          .filter(([column, value]) => column.trim() && value !== null && value !== undefined && value !== '') // Remove colunas ou valores vazios
+          .map(([column, value]) => `${column} = '${value}'`) // Formata cada dupla
+          .join(' AND '); // Junta tudo com ' AND '
     }
 }

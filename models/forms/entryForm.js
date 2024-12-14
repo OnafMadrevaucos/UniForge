@@ -2,10 +2,7 @@
  * Importações de módulos necessários.
  */
 import BaseForm from "./baseForm.js";
-import Dialog from "../dialogs/dialog.js";
-import { Database } from "../../scripts/tempDB.js";
 import DBManager from "../../db/dbManager.js";
-import NewEntryDialog from "../dialogs/newEntryDialog.js";
 
 /**
  * Classe EntryForm estende a funcionalidade da classe BaseForm para gerenciar formulários que manipulem Entradas.
@@ -21,6 +18,18 @@ export default class EntryForm extends BaseForm {
     super(overlay);
 
     /**
+     * Estados válidos para os elements do formulário.
+     * @type {Object<number, number>}
+     */
+    this.states = this._states;
+
+    /**
+     * Estado atual dos elements do formulário.
+     * @type {number}
+     */
+    this.currentState = 0;
+
+    /**
      * Gerenciador de conexão de Banco de Dados.
      * @type {DBManager}
      */
@@ -30,13 +39,13 @@ export default class EntryForm extends BaseForm {
      * O ícone Font Awesome para quando uma entrada é selecionada.
      * @type {string}
      */
-    this.selectedIcon = 'fas fa-feather';
-
+    this.selectedIcon = 'fas fa-feather';   
+    
     /**
-    * O caminho para o arquivo HTML do dialog de nova entrada
-    * @type {string}
-    */
-    this.newEntryDialogPath = '../../menus/partials/dialogs/newEntryDialog.html';
+     * A edição atual é uma atualização de uma Entrada?
+     * @type {boolean}
+     */
+    this.isEntryUpdate = false;
 
     /**
     * O formulário não é o de Enciclopédia
@@ -51,6 +60,23 @@ export default class EntryForm extends BaseForm {
     /** @type {Object} - Tooltip de interface do usuário. */
     this.ui.tooltip = CONFIG.tooltip;
   }
+
+
+  /**
+ * Conjunto de filtros de item que representam os estados aplicáveis na classe EntryForm.
+ * Os estados estão mapeados para números inteiros que representam ações específicas.
+ * 
+ * @type {Object<number, number>}
+ * @protected
+ * @property {number} cancelEntry - Representa o estado de cancelamento de uma entrada (valor 0).
+ * @property {number} newEntry - Representa o estado de criação de uma nova entrada (valor 1).
+ * @property {number} saveEntry - Representa o estado de salvamento de uma entrada (valor 2). 
+ */
+  _states = {
+    default: 0,
+    newEntry: 1,
+    editEntry: 2    
+  };
 
   /**
    * Obtém as categorias disponíveis do banco de dados.
@@ -114,6 +140,9 @@ export default class EntryForm extends BaseForm {
 
     this.configureEntrySidebar(form);
     this.configureButtonsListeners(form);
+
+    // Configura o editor Tiny MCE principal .
+    await this._configureTinyMCE();    
   }
 
   /**
@@ -136,17 +165,19 @@ export default class EntryForm extends BaseForm {
    */
   clearContent(form, clearSidebar = true) {
     if (clearSidebar) super.clearContent(form);
+
     const titleInput = this.form.querySelector('#titleInput');
     titleInput.value = '';
 
     const isDraftCheck = this.form.querySelector('#checkbox');
     isDraftCheck.checked = false;
 
-    if (tinymce.activeEditor) {
-      tinymce.activeEditor.resetContent();
-    } else {
-      this.msgBox.showError('Editor TinyMCE não inicializado.');
-    }
+    // Limpa todos os editores Tiny MCE inicializados.
+    tinymce.get().forEach(editor => {
+      editor.setContent('');
+    });
+
+    if(this.isEncyclopedia) this._clearRootIcon();
   }
 
   /**
@@ -308,7 +339,6 @@ export default class EntryForm extends BaseForm {
   /**
    * Configura o diálogo de categorias.
    * @private
-   * @param {HTMLElement} dialog - Elemento do diálogo de categorias.
    */
   configureSidebarDialog() {
     const dialog = this.ui.dialog;
@@ -321,29 +351,132 @@ export default class EntryForm extends BaseForm {
   }
 
   /**
+   * Habilita/desabilita os controles do formulário.
+   * @param {Number} state - O novo estado do formulário.
+   * @protected
+   */
+  _controlFormStates(state) {
+    const titleInput = this.form.querySelector('#titleInput');  
+    const imageContainer = this.form.querySelector('#imageContainer');  
+    const infoContent = this.form.querySelector('.info-content');
+    const mainEditor = tinymce.get('mainEditor');
+    
+    titleInput.disabled = false;
+    infoContent.disabled = false;
+
+    switch (state) {
+      // ESTADO DE HABILITAÇÃO DE NOVA ENTRADA.
+      case this.states.newEntry: {
+        titleInput.disabled = true;
+        infoContent.disabled = true;
+
+        imageContainer.classList.remove('disabled');
+
+        // Limpe qualquer conteúdo, caso uma entrada já estiver sendo manipulada.
+        if (this.currentState > this.states.newEntry) this.clearContent(this.form, false);
+
+        // Configuração dos Estados dos Botões.
+        const saveButton = this.form.querySelector('#saveButton');
+        const newEntryButton = this.form.querySelector('#newEntryButton');
+        const cancelButton = this.form.querySelector('#cancelButton');
+
+        saveButton.innerHTML = '<i class="fa-regular fa-floppy-disk"></i> Salvar';
+        saveButton.classList.add('disabled');
+
+        newEntryButton.classList.remove('disabled');
+
+        cancelButton.classList.add('hidden');
+
+        mainEditor?.mode.set('readonly');
+      } break;
+      // ESTADO DE EDIÇÃO DE ENTRADA.
+      case this.states.editEntry: {
+        imageContainer.classList.remove('disabled');
+
+        // Configuração dos Estados dos Botões.
+        const saveButton = this.form.querySelector('#saveButton');
+        const cancelButton = this.form.querySelector('#cancelButton');
+        saveButton.classList.remove('disabled');
+
+        cancelButton.classList.remove('hidden');
+
+        mainEditor?.mode.set('design');
+      } break;
+      // ESTADO PADRÃO.
+      default: {
+        this.clearContent(this.form);
+
+        // Não há mais atualização de valores.
+        this.isEntryUpdate = false;
+
+        // Limpa todo o dataset do Header Info.
+        const headerInfo = this.form.querySelector('.header-info');
+        Object.keys(headerInfo.dataset).forEach(key => {
+          delete headerInfo.dataset[key];
+        });
+        
+        // Desativa recipiente de imagens.
+        imageContainer.classList.add('disabled');
+
+        // As entradas de dados nesse estado estão desativadas.
+        titleInput.disabled = true;
+        infoContent.disabled = true;
+
+        // -----------------------------------------------------------------------
+        //    Configuração dos Estados dos Botões.
+        // -----------------------------------------------------------------------
+        const saveButton = this.form.querySelector('#saveButton');
+        const newEntryButton = this.form.querySelector('#newEntryButton');
+        const cancelButton = this.form.querySelector('#cancelButton');
+
+        // Configuração do label no botão de Salvar.
+        saveButton.innerHTML = '<i class="fa-regular fa-floppy-disk"></i> Salvar';
+
+        // Nesse estado, todos os botões estão desativados.
+        saveButton.classList.add('disabled');
+        newEntryButton.classList.add('disabled');
+        cancelButton.classList.add('hidden');
+
+        // -----------------------------------------------------------------------
+        //    Configuração dos Estados dos editores Tiny MCE.
+        // -----------------------------------------------------------------------           
+        mainEditor?.mode.set('readonly'); // Desativa o editor.
+      } break;
+    }
+
+    // Atualiza o estado atual do formulário.
+    this.currentState = state;
+  }
+
+  /**
    * Gerencia cliques em pastas.
    * @param {MouseEvent} event - O evento de clique.
-   * @private
+   * @protected
    */
   _onFolderClick(event) {
     super._onFolderClick(event);
 
-    // Se formulário for o da Enciclopédia, carregue ícone do Assunto.
-    if (this.isEncyclopedia) {
-      const clickedFolder = event.target.closest('.folder');
-      const isSelected = clickedFolder.classList.contains('selected');
+    const clickedFolder = event.target.closest('.folder');
+    const isSelected = clickedFolder.classList.contains('selected');
 
+    // Se formulário for o da Enciclopédia, e o estado do formulário seja o 'newEntry' ou 
+    // o 'default', carregue ícone do Assunto.
+    if (this.isEncyclopedia && this.currentState <= this.states.newEntry) {
       // Carregue ícone apenas se a pasta estiver sendo selecionada.
       if (isSelected) this._loadRootIcon(clickedFolder);
     }
 
-    const newEntryButton = this.form.querySelector('#newEntryButton');
-    newEntryButton.classList.toggle('disabled');
+    // A seleção de folders somente afeta o estado do formulário, se ele estiver no 
+    // estado padrão.
+    if (this.currentState == this.states.default) {
+      if (isSelected) this._controlFormStates(this.states.newEntry);
+      else this._controlFormStates(this.states.cancelEntry);
+    }
   }
 
   /**
    * Manipulador de evento para alterar a imagem exibida.
-   * @param {Event} event - Evento disparado pelo input de arquivo.
+   * @param {Event} event                     - Evento disparado pelo input de arquivo.
    * @param {HTMLImageElement} displayedImage - Elemento de imagem a ser atualizado.
    */
   onChangeImage(event, displayedImage) {
@@ -383,6 +516,8 @@ export default class EntryForm extends BaseForm {
     if (this.isEncyclopedia) await CONFIG.db.deleteCategory(id);
     else await CONFIG.db.deleteEntry(id);
 
+    this._controlFormStates(this.states.default);
+
     this.updateContent();
     this._hideDialog();
   }
@@ -411,25 +546,18 @@ export default class EntryForm extends BaseForm {
   async onCancelClick(event) {
     event.stopPropagation();
 
-    const cancelButton = this.form.querySelector('#cancelButton');
-    cancelButton.classList.add('hidden');
-
-    const newEntryButton = this.form.querySelector('#newEntryButton');
-    newEntryButton.classList.add('disabled');
-
-    const saveButton = this.form.querySelector('#saveButton');
-    saveButton.classList.add('disabled');
+    this._controlFormStates(this.states.default);
   }
 
   /**
   * Trata o evento de criação de um novo item qualquer.
   * @param {Event} event - Evento de clique no botão de Nova Entrada.
   */
-  onBaseNewClick(event) {
+  async onBaseNewClick(event) {
     event.stopPropagation();
     // Ignora o clique se o botão estiver desativado.
-    const button = event.target.closest('#newEntryButton');
-    if (button.classList.contains('disabled')) return;
+    //const button = event.target.closest('#newEntryButton');
+    //if (button.classList.contains('disabled')) return;
 
     // Obtém a lista de Categorias
     const selectedFolder = this.form.querySelector('.folder.selected');
@@ -438,11 +566,9 @@ export default class EntryForm extends BaseForm {
       return;
     }
 
-    const cancelButton = this.form.querySelector('#cancelButton');
-    cancelButton.classList.remove('hidden');
-
-    const saveButton = this.form.querySelector('#saveButton');
-    saveButton.classList.remove('disabled');
+    const headerInfo = this.form.querySelector('.header-info');
+    if (this.isEncyclopedia) headerInfo.dataset.sid = selectedFolder.dataset.sid ?? null;
+    else headerInfo.dataset.cid = selectedFolder.dataset.cid ?? null;
 
     const titleInput = this.form.querySelector('#titleInput');
     titleInput.focus();
@@ -451,7 +577,11 @@ export default class EntryForm extends BaseForm {
       const message = 'Método de tratamento do clique de novo item não foi implementado no formulário filho.';
       this.msgBox.showWarning(message);
     } else {
-      this.onNewClick(event);
+      // Configuração do label no botão de Salvar.
+      const saveButton = this.form.querySelector('#saveButton');
+      saveButton.innerHTML = '<i class="fa-regular fa-floppy-disk"></i> Salvar';
+      
+      await this.onNewClick(event);      
     }
 
     // Criar o diálogo
@@ -483,21 +613,42 @@ export default class EntryForm extends BaseForm {
   async onBaseSaveClick(event) {
     event.stopPropagation();
 
-    // Ignora o clique se o botão estiver desativado.
-    const button = event.target.closest('#saveButton');
-    if (button.classList.contains('disabled')) return;
+    const item = this.form.querySelector('.entry-item.selected');
+    const itemId = Number(item.dataset.id);
 
     if (!this.onSaveClick) {
       const message = 'Método de tratamento do clique de salvamento não foi implementado no formulário filho.';
       this.msgBox.showWarning(message);
-    } else {
-      this.onSaveClick(event);
+    } else { 
+      const options = {
+        id: itemId,
+        isEntryUpdate: this.isEntryUpdate    
+      } 
+      await this.onSaveClick(event, options);
     }
   }
 
   /**
+   * Gerencia cliques duplos em itens de entrada.
+   * @protected
+   * @param {MouseEvent} event - O evento de clique duplo.
+   */
+  async onEntryItemDoubleClick(event) {
+    super.onEntryItemDoubleClick(event);
+    // Configuração do label no botão de Salvar.
+    const saveButton = this.form.querySelector('#saveButton');
+    saveButton.innerHTML = '<i class="fa-regular fa-floppy-disk"></i> Atualizar';
+
+    // Está atualizando uma Entrada pré-existente.
+    this.isEntryUpdate = true;
+
+    // Atualiza o estado dos elements do formulário.
+    this._controlFormStates(this.states.editEntry);
+  }
+
+  /**
    * Gera uma nova opção para o ComboBox de Assuntos.
-   * @private
+   * @protected
    * @param {Object} data   - Os dados do assunto.
    * @returns {HTMLElement} - Elemento da nova opção.
    */
@@ -511,7 +662,7 @@ export default class EntryForm extends BaseForm {
 
   /**
    * Gera uma nova opção para o ComboBox de Importância de Evento.
-   * @private
+   * @protected
    * @param {Object} data   - Os dados do tipo.
    * @returns {HTMLElement} - Elemento da nova opção.
    */
@@ -525,7 +676,7 @@ export default class EntryForm extends BaseForm {
 
   /**
    * Gera uma nova opção para o ComboBox de Tipos de Entradas.
-   * @private
+   * @protected
    * @param {Object} data   - Os dados do tipo.
    * @returns {HTMLElement} - Elemento da nova opção.
    */
@@ -538,7 +689,7 @@ export default class EntryForm extends BaseForm {
   }
   /**
    * Gera uma nova opção para o ComboBox de Calendários.
-   * @private
+   * @protected
    * @param {Object} calendar - Objeto com os dados do Calendário.
    * @returns {HTMLElement} - Elemento da nova opção
    */
@@ -551,7 +702,7 @@ export default class EntryForm extends BaseForm {
   }
   /**
    * Carrega ícone da raíz do assunto.
-   * @private
+   * @protected
    * @async
    * @param {HTMLElement} folder - Objeto com os dados da pasta do Assunto.
    */
@@ -565,8 +716,11 @@ export default class EntryForm extends BaseForm {
 
     subject = subject[0];
 
+    const typeLabel = this.form.querySelector('#typeLabel');
     const dataIcon = this.form.querySelector('#dataIcon');
     const subjectIcon = this.form.querySelector('#subjectIcon');
+
+    typeLabel.textContent = subject.title;
 
     dataIcon.dataset.tooltip = CONFIG.utils.capitalizeFirstLetter(subject.root);
     subjectIcon.classList.remove(...subjectIcon.classList);
@@ -574,24 +728,41 @@ export default class EntryForm extends BaseForm {
   }
 
   /**
+   * Carrega ícone da raíz do assunto.
+   * @protected
+   * @async
+   */
+  async _clearRootIcon() {
+    const typeLabel = this.form.querySelector('#typeLabel');
+    const dataIcon = this.form.querySelector('#dataIcon');
+    const subjectIcon = this.form.querySelector('#subjectIcon');
+
+    typeLabel.innerHTML = '&#8212';
+
+    dataIcon.dataset.tooltip = 'Escolha um assunto...';
+    subjectIcon.classList.remove(...subjectIcon.classList);
+    subjectIcon.className = 'fa-regular fa-file';
+  }
+
+  /**
    * Inicializa e configura o editor TinyMCE.
    * Remove qualquer instância existente antes de reconfigurar.
    * @private
    */
-  _configureTinyMCE() {
-    if (tinymce.get('textEditor')) {
-      tinymce.remove('#textEditor');
+  async _configureTinyMCE() {
+    if (tinymce.get('mainEditor')) {
+      tinymce.remove('#mainEditor');
     }
 
     const options = CONFIG.utils.mergeObjects(CONFIG.tinymceOptions.default, {
-      selector: 'textarea#textEditor',
+      selector: 'textarea#mainEditor',
       init_instance_callback: (editor) => {
         editor.setContent(""); // Garante que o editor seja iniciado vazio.
       },
       setup: (editor) => { this._setupTinyMCE(editor); }
     });
 
-    tinymce.init(options);
+    await tinymce.init(options);
   }
 
   /**
