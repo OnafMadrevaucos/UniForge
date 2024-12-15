@@ -1,0 +1,141 @@
+export default class BaseDialog {
+    constructor() {
+        /** 
+         * Estado interno para rastrear a posição e deslocamento do diálogo.
+         * @type {Object}
+         * @property {boolean} isDragging - Indica se o diálogo está sendo arrastado.
+         * @property {number} xDiff - Diferença de posição horizontal do mouse.
+         * @property {number} yDiff - Diferença de posição vertical do mouse.
+         * @property {number} x - Posição horizontal do diálogo.
+         * @property {number} y - Posição vertical do diálogo.
+         */
+        this.state = {
+            isDragging: false,
+            xDiff: 5,
+            yDiff: 5,
+            x: 0,
+            y: 0
+        };
+
+        /** 
+       * Elemento DOM do diálogo.
+       * @type {HTMLElement|null}
+       */
+        this.dialog = null;
+
+        /** 
+         * Estado de arraste do diálogo.
+         * @type {boolean}
+         */
+        this.isDragging = false;
+
+        /**
+         * Elemento pai onde o diálogo será posicionado.
+         * @type {HTMLElement}
+         */
+        this.parentElement = document.querySelector('.entries');
+    }
+    /**
+    * Exibe o diálogo na página.
+    */
+    render() {
+        if (!this.overlay) return;
+
+        document.body.appendChild(this.overlay);
+        this._renderWindow();
+    }
+
+    /**
+    * Fecha o diálogo e remove o overlay da página.
+    */
+    close() {
+        if (this.dialog) {
+            this.dialog.remove();
+            this.dialog = null;
+        }
+
+        const overlay = document.querySelector(".dialog-overlay");
+        if (overlay) overlay.remove();
+    }
+
+    /**
+    * Inicia o processo de arraste do diálogo.
+    * 
+    * @param {MouseEvent} event - O evento de mouse.
+    */
+    onMouseDown(event) {
+        event.stopPropagation();
+        this.state.isDragging = true;
+        this.state.xDiff = event.pageX - this.state.x;
+        this.state.yDiff = event.pageY - this.state.y;
+
+        const header = this.dialog.querySelector('.header');
+        header.style.cursor = "grabbing";
+        document.body.style.userSelect = "none";
+    }
+
+    /**
+     * Manipula o movimento do arraste do diálogo.
+     * 
+     * @param {MouseEvent} event - O evento de movimento do mouse.
+     */
+    onMouseMove(event) {
+        event.stopPropagation();
+        if (this.state.isDragging) {
+            this.state.x = this._clampX(event.pageX - this.state.xDiff);
+            this.state.y = this._clampY(event.pageY - this.state.yDiff);
+        }
+
+        this._renderWindow();
+    }
+
+    /**
+     * Finaliza o arraste do diálogo.
+     */
+    onMouseUp() {
+        if (!this.dialog) return;
+
+        this.state.isDragging = false;
+
+        const header = this.dialog.querySelector('.header');
+        header.style.cursor = "grab";
+        document.body.style.userSelect = "";
+    }
+
+    /**
+     * Atualiza a posição do diálogo na tela com base no estado atual.
+     * @private
+     */
+    _renderWindow() {
+        if (!this.dialog) return;
+        this.dialog.style.transform = 'translate(' + this.state.x + 'px, ' + this.state.y + 'px)';
+    }
+
+    /**
+     * Limita a posição X do diálogo dentro dos limites do contêiner pai.
+     * 
+     * @param {number} n - Valor da posição X.
+     * @returns {number} A posição X limitada.
+     * @private
+     */
+    _clampX(n) {
+        const parentRect = this.parentElement.getBoundingClientRect();
+        const dialogRect = this.dialog.getBoundingClientRect();
+
+        return Math.min(Math.max(n, -parentRect.width / 2), (parentRect.width / 2 - dialogRect.width));
+    }
+
+    /**
+     * Limita a posição Y do diálogo dentro dos limites do contêiner pai.
+     * 
+     * @param {number} n - Valor da posição Y.
+     * @returns {number} A posição Y limitada.
+     * @private
+     */
+    _clampY(n) {
+        const parentRect = this.parentElement.getBoundingClientRect();
+        const dialogRect = this.dialog.getBoundingClientRect();
+
+        return Math.min(Math.max(n, -parentRect.height / 2), (parentRect.height / 2 - dialogRect.height));
+    }
+}

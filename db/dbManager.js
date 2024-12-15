@@ -223,6 +223,15 @@ export default class DBManager {
 
         return rows;
     }
+    async getAllEntriesAndTimelines() {
+        let query = 'SELECT E.eid AS id, E.title, \'entrada\' AS type FROM entry AS E WHERE E.isDraft = 0';
+        query += ' UNION ';
+        query += 'SELECT T.tid AS id, T.title, \'timeline\' AS type FROM timeline AS T WHERE T.isDraft = 0'
+
+        const rows = await CONFIG.sql.query(query);
+
+        return rows;
+    }
     async getAllEntries(withDraft=false) {
         const query = 'SELECT * FROM entry WHERE isDraft = ?;';
         const params = [Number(withDraft)];

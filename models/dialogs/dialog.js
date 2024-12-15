@@ -1,167 +1,194 @@
-export default class Dialog {
-    constructor(title="Dialog", bodyHTML, buttons=[]) {      
-      this.bodyHTML = bodyHTML; // Conteúdo do corpo do diálogo
-      this.title = title;       // Título do diálogo
-      this.buttons = buttons;   // Conjunto de botões
-      this.dialog = null;       // Elemento do diálogo
-      this.isDragging = false;  // Estado para rastrear arraste
-      this.state = {
-            isDragging: false,
-            xDiff: 5,
-            yDiff: 5,
-            x: 0,
-            y: 0 
-      }; // Offset do mouse em relação ao diálogo
+import BaseDialog from "./baseDialog.js";
 
-      this.parentElement = document.querySelector('.entries');
+/**
+ * Classe responsável por criar e manipular um diálogo interativo na página.
+ * O diálogo pode ser configurado com título, botões e conteúdo.
+ * Suporta funcionalidades de arraste e interação com botões de confirmação.
+ * 
+ * @class Dialog
+ */
+export default class Dialog extends BaseDialog{
+  /**
+   * Cria uma instância do diálogo.
+   * 
+   * @constructor
+   * @param {Object} dialogObject - Configurações iniciais do diálogo.
+   * @param {string} dialogObject.title - Título do diálogo (padrão: "Dialog").
+   * @param {Object} dialogObject.buttons - Conjunto de botões a serem exibidos no diálogo.
+   * @param {Function} dialogObject.abort - Função a ser executada se o dialog fechar inesperadamente.
+   * @param {Object} options - Opções adicionais, como o conteúdo do corpo do diálogo.
+   */
+  constructor({ title = "Dialog", buttons = {}, abort = null }, options = {}) {
+    super();
+    /** 
+     * Título do diálogo.
+     * @type {string}
+     */
+    this.title = title;
+
+    /** 
+     * Conjunto de botões do diálogo.
+     * @type {Object<string, {label: string, icon: string, callback: Function}>}
+     */
+    this.buttons = buttons;   
+
+    /**
+     * Corpo do diálogo (HTML ou string).
+     * @type {HTMLElement|string}
+     */
+    this.bodyHTML = '';
+    
+    /** 
+     * Função executada se o dialog fechar inesperadamente.
+     * @type {Function}
+     */
+    this.abort = abort;    
+
+    /**
+     * Opções adicionais fornecidas ao diálogo.
+     * @type {Object}
+     */
+    this.options = options;    
+
+    this._prepareDialog();
+  }
+
+  /**
+   * Cria a estrutura do diálogo, incluindo overlay, cabeçalho, corpo e botões.
+   * @private
+   */
+  async _prepareDialog() {
+    const overlay = document.createElement("div");
+    overlay.className = "overlay dialog-overlay";
+    document.body.appendChild(overlay);
+
+    this.overlay = overlay; // Armazena o overlay para exibição posterior. 
+
+    // Obtem o corpo do dialog.
+    if (this.getBody) {
+      this.bodyHTML = await this.getBody(); // Conteúdo do corpo do diálogo.
+    } else if (options?.prompt) {
+      this.bodyHTML = this.options.prompt; // Conteúdo do corpo do diálogo.
+    } else {
+      console.warn('Corpo HTML do dialog está vazio. Método \'getBody()\' não implementado.');
+      this.bodyHTML = '';
     }
 
-    // Método para criar o diálogo
-    createDialog() {
-      const overlay = document.createElement("div");
-      overlay.className = "overlay dialog-overlay";
-      document.body.appendChild(overlay);
+    // Permite fechar o diálogo clicando no overlay
+    overlay.addEventListener("click", (event) => {
+      if (!event.target.classList.contains('overlay')) return;
+      this.close();
+      this.abort();
+    });
 
-      // Permitir fechar o diálogo clicando no overlay
-      overlay.addEventListener("click", (event) => {
-        if(!event.target.classList.contains('overlay')) return;  
-        this.closeDialog()
-      });
+    // Container do diálogo
+    this.dialog = document.createElement("div");
+    this.dialog.id = 'dialog';
+    this.dialog.className = "dialog";
 
-      // Container do diálogo
-      this.dialog = document.createElement("div");
-      this.dialog.id = 'dialog';
-      this.dialog.className = "dialog";
+    // Cabeçalho
+    const titleHeader = document.createElement('div');
+    titleHeader.className = 'header';
 
-      // Cabeçalho
-      const titleHeader = document.createElement('div');
-      titleHeader.className = 'header';
+    titleHeader.addEventListener('mousedown', (event) => { this.onMouseDown(event); });
+    document.addEventListener('mousemove', (event) => { this.onMouseMove(event); });
+    document.addEventListener('mouseup', () => { this.onMouseUp(); });
 
-      titleHeader.addEventListener('mousedown', (event) => { this.onMouseDown(event); });
-      document.addEventListener('mousemove', (event) => { this.onMouseMove(event); });
-      document.addEventListener('mouseup', () => { this.onMouseUp(); });
-  
-      // Título do diálogo
-      const title = document.createElement("h2");
-      title.textContent = this.title;
+    // Título do diálogo
+    const title = document.createElement("h2");
+    title.textContent = this.title;
 
-      titleHeader.appendChild(title);
-  
-      // Corpo do diálogo
-      const dialogBody = document.createElement("div");
-      dialogBody.className = 'body';
-      dialogBody.innerHTML = this.bodyHTML;
-  
-      // Container dos botões
-      const buttons = document.createElement("div");
-      buttons.className = 'buttons';
-  
-      // Criar os botões
-      this.buttons.forEach((button) => {
-        const newButton = document.createElement("button");
-        newButton.innerHTML = `<i class='${button.icon}'></i> ${button.label}`;
-        newButton.className = button.className || "dialog-button";
+    titleHeader.appendChild(title);
 
-        if (button.onClick) {
-            newButton.addEventListener("click", button.onClick);
-        }
+    // Corpo do diálogo
+    const dialogBody = document.createElement("div");
+    dialogBody.className = 'body';
+    dialogBody.innerHTML = this.bodyHTML.outerHTML ?? this.bodyHTML;
 
-        buttons.appendChild(newButton);
+    // Container dos botões
+    const buttons = document.createElement("div");
+    buttons.className = 'buttons';
+
+    // Criar os botões
+    Object.values(this.buttons).forEach((button) => {
+      const newButton = document.createElement("button");
+      newButton.innerHTML = `<i class='${button.icon}'></i> ${button.label}`;
+      newButton.className = button.className || "dialog-button";
+
+      newButton.addEventListener("click", (event, params={}) => { 
+        this.close();
+        button.callback(event, ...Object.values(params)); 
       });
       
-      this.dialog.appendChild(titleHeader);
-      this.dialog.appendChild(dialogBody);
-      this.dialog.appendChild(buttons);
+      buttons.appendChild(newButton);
+    });
 
-      overlay.appendChild(this.dialog);
-  
-      // Adiciona o diálogo à página
-      document.body.appendChild(overlay);
+    this.dialog.appendChild(titleHeader);
+    this.dialog.appendChild(dialogBody);
+    this.dialog.appendChild(buttons);
 
-      this._renderWindow();
-    }
+    this.overlay.appendChild(this.dialog);
+  }
 
-    querySelector(selector) {
-      return this.dialog.querySelector(selector);
-    }
+  /**
+   * Seleciona o primeiro elemento correspondente ao seletor dentro do diálogo.
+   * 
+   * @param {string} selector - Seletor CSS.
+   * @returns {HTMLElement|null} O primeiro elemento encontrado ou null.
+   */
+  querySelector(selector) {
+    return this.dialog.querySelector(selector);
+  }
 
-    querySelectorAll(selector) {
-      return this.dialog.querySelectorAll(selector);
-    }
+  /**
+   * Seleciona todos os elementos correspondentes ao seletor dentro do diálogo.
+   * 
+   * @param {string} selector - Seletor CSS.
+   * @returns {NodeListOf<HTMLElement>} Lista de elementos encontrados.
+   */
+  querySelectorAll(selector) {
+    return this.dialog.querySelectorAll(selector);
+  }
 
-    configureListeners(listerns=[]) {
-      listerns.forEach(item => {
-        item.element.addEventListener(item.event, item.callback);
-      });
-    }
-  
-    // Método para fechar o diálogo
-    closeDialog() {
-      if (this.dialog) {
-        this.dialog.remove();
-        this.dialog = null;
-      }
-      const overlay = document.querySelector(".dialog-overlay");
-      if (overlay) overlay.remove();
-    }
+  /**
+   * Configura ouvintes de eventos para elementos no diálogo.
+   * 
+   * @param {Array<{element: HTMLElement, event: string, callback: Function}>} listeners - Lista de objetos contendo o elemento, evento e callback.
+   */
+  configureListeners(listeners = []) {
+    listeners.forEach(item => {
+      item.element.addEventListener(item.event, item.callback);
+    });
+  }  
 
-    // Iniciar arraste
-    onMouseDown(event) {  
-      event.stopPropagation();              
-        this.state.isDragging = true;
-        this.state.xDiff = event.pageX - this.state.x;
-        this.state.yDiff = event.pageY - this.state.y;
-
-        const header = this.dialog.querySelector('.header');
-        // Trocar para cursor de "grabbing"
-        header.style.cursor = "grabbing";
-
-        // Restaurar seleção de texto
-        document.body.style.userSelect = "none";
-    }
-
-    // Manipular arraste
-    onMouseMove(event) {
-      event.stopPropagation();
-        if (this.state.isDragging) {
-
-            this.state.x = this._clampX(event.pageX - this.state.xDiff);
-            this.state.y = this._clampY(event.pageY - this.state.yDiff);
-        }
-
-        this._renderWindow();
-    }
-
-    // Finalizar arraste
-    onMouseUp() {
-      if(!this.dialog) return;
-
-      this.state.isDragging = false;
-
-      const header = this.dialog.querySelector('.header');
-      // Trocar para cursor de "grabbing"
-      header.style.cursor = "grab";
-
-      // Restaurar seleção de texto
-      document.body.style.userSelect = "";
-    }
-
-    _renderWindow() { 
-      if(!this.dialog) return;      
-      this.dialog.style.transform = 'translate(' + this.state.x + 'px, ' + this.state.y + 'px)';
-    }
-
-    _clampX(n) {
-        const parentRect = this.parentElement.getBoundingClientRect();
-        const dialogRect = this.dialog.getBoundingClientRect();
-
-        return Math.min(Math.max(n, -parentRect.width/2), (parentRect.width/2 - dialogRect.width));
-    }    
-    _clampY(n) {
-        const parentRect = this.parentElement.getBoundingClientRect();
-        const dialogRect = this.dialog.getBoundingClientRect();
-
-        return Math.min(Math.max(n, -parentRect.height/2), (parentRect.height/2 - dialogRect.height));
-    }
+  /**
+   * Exibe uma caixa de diálogo de confirmação com dois botões (Sim e Não).
+   * 
+   * @static
+   * @param {string} title - Título do diálogo de confirmação.
+   * @param {string} message - Mensagem a ser exibida no corpo do diálogo.
+   * @returns {Promise} Retorna uma promessa que é resolvida se o usuário clicar em "Sim" ou rejeitada se clicar em "Não".
+   */
+  static async confirm(title, message) {
+    return new Promise((resolve, reject) => {
+      const dialogData = {
+        title: title,
+        buttons: {
+          no: {
+            label: "Não",
+            icon: "fas fa-xmark",
+            callback: () => resolve(false)        
+          },
+          yes: {
+            label: "Sim",
+            icon: "fas fa-check",
+            callback: () => resolve(true)
+          }
+        },
+        abort: () => resolve(false)
+      };  
+      const dialog = new this(dialogData, { prompt: message });      
+      dialog.render();
+    });    
+  }
 }
-  

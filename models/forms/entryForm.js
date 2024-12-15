@@ -3,6 +3,7 @@
  */
 import BaseForm from "./baseForm.js";
 import DBManager from "../../db/dbManager.js";
+import { LinkDialog } from "../dialogs/linkDialog.js";
 
 /**
  * Classe EntryForm estende a funcionalidade da classe BaseForm para gerenciar formulários que manipulem Entradas.
@@ -320,7 +321,7 @@ export default class EntryForm extends BaseForm {
    */
   closeDialog() {
     if (this.dialog) {
-      this.dialog.closeDialog();
+      this.dialog.close();
     }
   }
 
@@ -405,9 +406,6 @@ export default class EntryForm extends BaseForm {
       // ESTADO PADRÃO.
       default: {
         this.clearContent(this.form);
-
-        // Não há mais atualização de valores.
-        this.isEntryUpdate = false;
 
         // Limpa todo o dataset do Header Info.
         const headerInfo = this.form.querySelector('.header-info');
@@ -614,7 +612,8 @@ export default class EntryForm extends BaseForm {
     event.stopPropagation();
 
     const item = this.form.querySelector('.entry-item.selected');
-    const itemId = Number(item.dataset.id);
+    this.isEntryUpdate = (item ? true : false);
+    const itemId = Number(item?.dataset.id) ?? -1;
 
     if (!this.onSaveClick) {
       const message = 'Método de tratamento do clique de salvamento não foi implementado no formulário filho.';
@@ -769,9 +768,11 @@ export default class EntryForm extends BaseForm {
     * Ação personalizada no editor TinyMCE para criar ou modificar links.
     * @param {Object} editor - Instância do editor TinyMCE.
     */
-  onTinyMCEAction(editor) {
+  async onEntryLinkCreation(editor) {
     const tooltip = this.ui.tooltip;
     const selectedHtml = editor.selection.getContent();
+
+    await LinkDialog.configDialog(editor);
 
     const spanRegex = /<span[^>]*>(.*?)<\/span>/gi;
     if (spanRegex.test(selectedHtml)) {
@@ -806,7 +807,7 @@ export default class EntryForm extends BaseForm {
     editor.ui.registry.addButton('entryLink', {
       tooltip: 'Criar link',
       icon: 'bookmark',
-      onAction: () => { this.onTinyMCEAction(editor); }
+      onAction: () => { this.onEntryLinkCreation(editor); }
     });
 
     editor.on('mouseover', (event) => {

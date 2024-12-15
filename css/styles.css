@@ -11,7 +11,7 @@
     --dark-blue: #2c2c40;
     --info-blue: #345fba;
 
-    --red: #cc1f1f;
+    --red: #a72626;
     --light-red: #e7b1b1;
     --hover-red: #cd9a9a;
     --border-red: #e39584;
@@ -893,12 +893,12 @@ input:checked+.slider::before {
     flex: 1;
 }
 
-.overlay .form-container .form-content .data-group {
+.data-group {
     width: 100%;
     display: flex;
     flex-direction: row;
 }
-.overlay .form-container .form-content .data-group .icon-container {
+.data-group .icon-container {
     flex: 0;
     align-self: flex-end;
     width: 32px;
@@ -908,13 +908,13 @@ input:checked+.slider::before {
     box-shadow: var(--small-shadow);    
 }
 
-.overlay .form-container .form-content .data-group .data-label {
+.data-group .data-label {
     flex: 1;
     align-self: center;
     margin-right: 5px;
     font-weight: bold;
 }
-.overlay .form-container .form-content .data-group.icon .data-label {
+.data-group.icon .data-label {
     flex: 25%;
 }
 
@@ -935,14 +935,14 @@ input:checked+.slider::before {
     text-shadow: none;
 }
 
-.overlay .form-container .form-content .data-group .data {
+ .data-group .data {
     flex: 1;
     border: var(--data-group-border);
     border-radius: var(--default-border-radius);
 }
 
-.overlay .form-container .form-content .data-group select.data,
-.overlay .form-container .form-content .data-group input[type="text"].data {
+.data-group select.data,
+.data-group input[type="text"].data {
     flex: 3;
 }
 
@@ -2341,6 +2341,48 @@ folder-list .folder.created.selected .folder-header .fa-trash {
     margin-right: 10px;
 }
 
+.dialog .body .link-dialog {
+    gap: 5px;
+    height: 500px;
+    width: 600px;
+}
+.dialog .body .link-dialog .sidebar {
+    padding: 5px;
+}
+.dialog .body .summary {
+    flex: 1;
+}
+.dialog .body .summary .content {
+    padding: 5px;
+    background-color: var(--dark-blue);
+    border-radius: var(--default-border-radius);
+    height: 100%;
+}
+.dialog .body .summary .content * {
+    cursor: default;
+    gap: 5px;
+}
+
+.dialog .body .summary .content .header-info .img-container {
+    border-radius: var(--default-border-radius);
+}
+
+.dialog .body .summary .content .header-info .img-container img.empty{
+    height: 64px;
+    width: 64px;
+}
+.dialog .body .summary .content .header-info input{
+    font-size: 25px;
+}
+.dialog .body .summary .content textarea {
+    margin-top: 5px;
+    height: 100%;
+    resize: none;
+    background-color: var(--background-color);
+    color: var(--light-text-color);
+    border-radius: var(--default-border-radius);
+}
+
 .dialog .buttons {
     display: flex;
     justify-content: flex-end;
@@ -2349,6 +2391,7 @@ folder-list .folder.created.selected .folder-header .fa-trash {
 }
 
 .dialog .buttons button {
+    flex: 1;
     border: none;
     border-radius: var(--default-border-radius);
     cursor: pointer;

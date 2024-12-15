@@ -107,7 +107,7 @@ export class HistoryForm extends EntryForm {
         flavorEditor.setContent('');
 
         this.loadDatePickers();
-    }   
+    }
 
     /**
     * Configura o editor TinyMCE para o texto de floreio da Entrada.
@@ -222,84 +222,6 @@ export class HistoryForm extends EntryForm {
     }
 
     /**
-    * Registra uma nova entrada no banco de dados.
-    * @param {Event} event      - Evento de clique no botão de Salvar do Dialog.
-    * @param {Object} options   - Opções de salvamento da entrada.
-    */
-    async onSaveEntry(event, options = {}) {
-        event.stopPropagation();
-        const isEntryUpdate = options.isEntryUpdate ?? false;
-        const headerInfo = this.form.querySelector('.header-info');
-
-        const imgInput = this.form.querySelector('#hiddenFileInput');
-        const titleInput = this.form.querySelector('#titleInput');
-        const entryType = this.form.querySelector('#entryType');
-        const importance = this.form.querySelector('#importance');
-        const calendarType = this.form.querySelector('#calendarType');
-        const draftSwitch = this.form.querySelector('#checkbox');
-
-        // Obtém o objeto do arquivo da imagem.
-        const file = imgInput.files[0] ?? null;
-        // Obtém a extensão do arquivo de imagem.
-        const fileExt = file?.name.split('.').pop().toLowerCase();       
-
-        let data = {
-            etid: entryType.value,
-            iid: importance.value,
-            clid: calendarType.value,
-            title: titleInput.value,
-            date: {
-                start: this.datePickers.start.selectedDate,
-                end: this.datePickers.end.selectedDate
-            },
-            img: imgInput.value,
-            htmlString: tinymce.get('mainEditor').getContent() ?? '',
-            flavor: tinymce.get('flavorEditor').getContent() ?? '',
-            isDraft: draftSwitch.checked,
-            cid: headerInfo.dataset.cid,
-            text: ''
-        }
-
-        if (file) {
-            // Converte o arquivo para um ArrayBuffer (Blob)
-            const arrayBuffer = await file?.arrayBuffer();
-
-            data.img = new Uint8Array(arrayBuffer);
-            data.ext = fileExt;
-        }
-
-        const validate = CONFIG.db.validateEventEntry(data);
-        if (validate !== '') {
-            this.msgBox.showWarning(validate);
-            return;
-        }
-
-        if (isEntryUpdate) {
-            data.eid = options.id;
-            data.evid = headerInfo.dataset.evid;
-
-            await CONFIG.db.updateEntry(data);
-            await CONFIG.db.updateEvent(data);
-            this.msgBox.showInfo('Entrada atualizada com sucesso.');
-        }
-        else {
-            const result = await CONFIG.db.addEntry(data);
-            data.eid = result.lastInsertRowid;
-            await CONFIG.db.addEvent(data);
-            this.msgBox.showInfo('Entrada criada com sucesso.');
-        }
-
-        this.closeDialog();
-        this.clearContent(this.form);
-
-        const cancelButton = this.form.querySelector('#cancelButton');
-        cancelButton.dispatchEvent(new Event('click'));
-
-        await this.updateContent();
-        this._controlFormStates(this.states.default);
-    }
-
-    /**
     * Trata o evento de registro de uma nova entrada.
     * @param {Event} event      - Evento de clique no botão de Salvar.
     * @param {Object} options   - Opções de salvamento da entrada.
@@ -308,23 +230,77 @@ export class HistoryForm extends EntryForm {
         event.stopPropagation();
         const isEntryUpdate = options.isEntryUpdate ?? false;
 
-        const body = (isEntryUpdate ? 'Deseja atualizar a entrada?' : 'Deseja salvar a entrada?');
-        // Configuração de botões
-        const buttons = [
-            {
-                label: "Não",
-                icon: "fas fa-xmark",
-                onClick: () => { this.closeDialog(); },
-            },
-            {
-                label: "Sim",
-                icon: "fas fa-check",
-                onClick: (event) => { this.onSaveEntry(event, options); },
-            }
-        ];
+        const title = (isEntryUpdate ? 'Atualizar' : 'Registrar');
+        const message = (isEntryUpdate ? 'Deseja atualizar a entrada?' : 'Deseja salvar a entrada?');
 
-        this.dialog = new Dialog('Salvar', body, buttons);
-        this.dialog.createDialog();
+        if (await Dialog.confirm(title, message)) {
+            const headerInfo = this.form.querySelector('.header-info');
+
+            const imgInput = this.form.querySelector('#hiddenFileInput');
+            const titleInput = this.form.querySelector('#titleInput');
+            const entryType = this.form.querySelector('#entryType');
+            const importance = this.form.querySelector('#importance');
+            const calendarType = this.form.querySelector('#calendarType');
+            const draftSwitch = this.form.querySelector('#checkbox');
+
+            // Obtém o objeto do arquivo da imagem.
+            const file = imgInput.files[0] ?? null;
+            let data = {
+                etid: entryType.value,
+                iid: importance.value,
+                clid: calendarType.value,
+                title: titleInput.value,
+                date: {
+                    start: this.datePickers.start.selectedDate,
+                    end: this.datePickers.end.selectedDate
+                },
+                img: imgInput.value,
+                htmlString: tinymce.get('mainEditor').getContent() ?? '',
+                flavor: tinymce.get('flavorEditor').getContent() ?? '',
+                isDraft: draftSwitch.checked,
+                cid: headerInfo.dataset.cid,
+                text: ''
+            }
+
+            // Se uma imagem foi informada, prepare-a para o banco de dados.
+            if (file) {
+                // Obtém a extensão do arquivo de imagem.
+                const fileExt = file?.name.split('.').pop().toLowerCase();
+                // Converte o arquivo para um ArrayBuffer (Blob)
+                const arrayBuffer = await file?.arrayBuffer();
+
+                data.img = new Uint8Array(arrayBuffer);
+                data.ext = fileExt;
+            }
+
+            const validate = CONFIG.db.validateEventEntry(data);
+            if (validate !== '') {
+                this.msgBox.showWarning(validate);
+                return;
+            }
+
+            if (isEntryUpdate) {
+                data.eid = options.id;
+                data.evid = headerInfo.dataset.evid;
+
+                await CONFIG.db.updateEntry(data);
+                await CONFIG.db.updateEvent(data);
+                this.msgBox.showInfo('Entrada atualizada com sucesso.');
+            }
+            else {
+                const result = await CONFIG.db.addEntry(data);
+                data.eid = result.lastInsertRowid;
+                await CONFIG.db.addEvent(data);
+                this.msgBox.showInfo('Entrada criada com sucesso.');
+            }
+        }
+
+        this.clearContent(this.form);
+        const cancelButton = this.form.querySelector('#cancelButton');
+        cancelButton.dispatchEvent(new Event('click'));
+
+        await this.updateContent();
+        this._controlFormStates(this.states.default);
     }
 
     /**
@@ -413,5 +389,30 @@ export class HistoryForm extends EntryForm {
 
         const saveButton = this.form.querySelector('#saveButton');
         saveButton.classList.remove('disabled');
+    }
+
+    /**
+   * Habilita/desabilita os controles do formulário.
+   * @param {Number} state - O novo estado do formulário.
+   * @protected
+   */
+    _controlFormStates(state) {
+        super._controlFormStates(state);
+        const flavorEditor = tinymce.get('flavorEditor');
+
+        switch (state) {
+            // ESTADO DE HABILITAÇÃO DE NOVA ENTRADA.
+            case this.states.newEntry: {
+                flavorEditor.mode.set('readonly');
+            } break;
+            // ESTADO DE EDIÇÃO DE ENTRADA.
+            case this.states.editEntry: {
+                flavorEditor.mode.set('design');
+            } break;
+            // ESTADO PADRÃO.
+            default: {
+                flavorEditor.mode.set('readonly');
+            } break;
+        }
     }
 }

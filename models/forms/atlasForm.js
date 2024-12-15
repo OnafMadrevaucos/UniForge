@@ -18,7 +18,7 @@ export class AtlasForm extends EntryForm {
     async configureContent(form) {
         // Obtém objeto com todos os dados unificados necessários para o funcionamento do formulário.         
         this.data = await this.getData();
-        
+
         // Chama o método de configuração da classe pai para configurar o formulário base.
         await super.configureContent(form);
 
@@ -52,63 +52,68 @@ export class AtlasForm extends EntryForm {
     }
 
     /**
-        * Registra uma nova entrada no banco de dados.
-        * @param {Event} event      - Evento de clique no botão de Salvar do Dialog.
-        * @param {Object} options   - Opções de salvamento da entrada.
-        */
-    async onSaveEntry(event, options={}) {
+    * Trata o evento de registro de uma nova entrada.
+    * @param {Event} event      - Evento de clique no botão de Salvar.
+    * @param {Object} options   - Opções de salvamento da entrada.
+    */
+    async onSaveClick(event, options = {}) {
         event.stopPropagation();
-        const isEntryUpdate = options.isEntryUpdate ?? false;
-        const headerInfo = this.form.querySelector('.header-info');
 
-        const imgInput = this.form.querySelector('#hiddenFileInput');
-        const titleInput = this.form.querySelector('#titleInput');
-        const draftSwitch = this.form.querySelector('#checkbox');
+        const title = (isEntryUpdate ? 'Atualizar' : 'Registrar');
+        const message = (isEntryUpdate ? 'Deseja atualizar a entrada?' : 'Deseja salvar a entrada?');
 
-        // Obtém o objeto do arquivo da imagem.
-        const file = imgInput.files[0] ?? null; 
-        // Converte o arquivo para um ArrayBuffer (Blob)
-        const arrayBuffer = await file.arrayBuffer();       
+        if (await Dialog.confirm(title, message)) {
 
-        let data = {
-            etid: 0,
-            title: titleInput.value,
-            img: file?.name ?? '',
-            htmlString: '',                        
-            flavor: tinymce.get('captionEditor').getContent() ?? '',
-            isDraft: draftSwitch.checked,
-            cid: headerInfo.dataset.cid
+            const isEntryUpdate = options.isEntryUpdate ?? false;
+            const headerInfo = this.form.querySelector('.header-info');
+
+            const imgInput = this.form.querySelector('#hiddenFileInput');
+            const titleInput = this.form.querySelector('#titleInput');
+            const draftSwitch = this.form.querySelector('#checkbox');
+
+            // Obtém o objeto do arquivo da imagem.
+            const file = imgInput.files[0] ?? null;
+
+            let data = {
+                etid: 0,
+                title: titleInput.value,
+                img: file?.name ?? '',
+                htmlString: '',
+                flavor: tinymce.get('captionEditor').getContent() ?? '',
+                isDraft: draftSwitch.checked,
+                cid: headerInfo.dataset.cid
+            }
+
+            const validate = CONFIG.db.validateAtlasEntry(data);
+            if (validate !== '') {
+                this.msgBox.showWarning(validate);
+                return;
+            }
+
+            // Se uma imagem foi informada, prepare-a para o banco de dados.
+            if (file) {
+                // Obtém a extensão do arquivo de imagem.
+                const fileExt = file.name.split('.').pop().toLowerCase();
+                // Converte o arquivo para um ArrayBuffer (Blob)
+                const arrayBuffer = await file.arrayBuffer();
+
+                data.img = new Uint8Array(arrayBuffer);
+                data.ext = fileExt;
+            } else {
+                this.showError('Entrada inválida! O arquivo de imagem da Entrada não pôde ser carregado.');
+                return;
+            }
+
+            if (isEntryUpdate) {
+                data.eid = options.id;
+                await CONFIG.db.updateEntry(data);
+                this.msgBox.showInfo('Entrada atualizada com sucesso.');
+            }
+            else {
+                await CONFIG.db.addEntry(data);
+                this.msgBox.showInfo('Entrada criada com sucesso.');
+            }
         }
-
-        const validate = CONFIG.db.validateAtlasEntry(data);
-        if (validate !== '') {
-            this.msgBox.showWarning(validate);
-            return;
-        }
-
-        if(file) {
-            // Obtém a extensão do arquivo de imagem.
-            const fileExt = file.name.split('.').pop().toLowerCase();  
-
-            data.img = new Uint8Array(arrayBuffer);
-            data.ext = fileExt;
-        } else {
-            this.showError('Entrada inválida! O arquivo de imagem da Entrada não pôde ser carregado.');
-            return;
-        }
-
-        if(isEntryUpdate) { 
-            data.eid = options.id;
-            await CONFIG.db.updateEntry(data);
-            this.msgBox.showInfo('Entrada atualizada com sucesso.');
-        }
-        else {
-            await CONFIG.db.addEntry(data);
-            this.msgBox.showInfo('Entrada criada com sucesso.');
-        }      
-
-        
-        this.closeDialog();
         this.clearContent(this.form);
 
         const cancelButton = this.form.querySelector('#cancelButton');
@@ -119,39 +124,12 @@ export class AtlasForm extends EntryForm {
     }
 
     /**
-    * Trata o evento de registro de uma nova entrada.
-    * @param {Event} event      - Evento de clique no botão de Salvar.
-    * @param {Object} options   - Opções de salvamento da entrada.
-    */
-    async onSaveClick(event, options={}) {
-        event.stopPropagation();
-
-        const body = 'Deseja salvar o mapa?';
-        // Configuração de botões
-        const buttons = [
-            {
-                label: "Não",
-                icon: "fas fa-xmark",
-                onClick: () => { this.closeDialog(); },
-            },
-            {
-                label: "Sim",
-                icon: "fas fa-check",
-                onClick: (event) => { this.onSaveEntry(event, options); },
-            }
-        ];
-
-        this.dialog = new Dialog('Salvar', body, buttons);
-        this.dialog.createDialog();
-    }
-
-    /**
     * Trata o evento de criação de uma nova entrada.
     * @param {Event} event - Evento de clique no botão de Nova Entrada.
     */
     async onNewClick(event) {
         this.clearContent(this.form, false);
-        this._controlFormStates(this.states.editEntry);  
+        this._controlFormStates(this.states.editEntry);
     }
 
     /**
@@ -176,7 +154,7 @@ export class AtlasForm extends EntryForm {
         const itemId = Number(item.dataset.id);
         let entry = Object.values(await CONFIG.db.getEntry(itemId));
 
-        if(entry.length == 0) {
+        if (entry.length == 0) {
             this.msgBox.showWarning('A Entrada não foi encontrada.');
             return;
         }
@@ -185,18 +163,18 @@ export class AtlasForm extends EntryForm {
             this.msgBox.showWarning('A Entrada está duplicada. Utilizando a primeira duplicata.');
         }
 
-        entry = entry[0]; 
+        entry = entry[0];
 
         const headerInfo = this.form.querySelector('.header-info');
         headerInfo.dataset.cid = entry.cid;
 
         const displayedImage = this.form.querySelector('#displayedImage');
-        const titleInput = this.form.querySelector('#titleInput');         
+        const titleInput = this.form.querySelector('#titleInput');
         const draftSwitch = this.form.querySelector('#checkbox');
 
         titleInput.value = entry.title;
         tinymce.get('captionEditor').setContent(entry.flavor);
-        draftSwitch.checked = entry.isDraft;    
+        draftSwitch.checked = entry.isDraft;
 
         if (entry.img) {
             const imageType = `image/${entry.ext}`;
