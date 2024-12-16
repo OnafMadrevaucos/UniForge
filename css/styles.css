@@ -1591,6 +1591,7 @@ folder-list .folder.created.selected .folder-header .fa-trash {
 }
 
 .folder-list .folder.selected .folder-content .entry-list {
+    padding-left: 15px;
     transition: all 0.3s;
 
 }
@@ -2299,8 +2300,15 @@ folder-list .folder.created.selected .folder-header .fa-trash {
     gap: 5px;
 }
 
-.dialog .body .folder-list li {
+.dialog .body .folder-list li:not(.entry-item) {
     margin-top: 3px;
+    flex-direction: column;
+    display: flex;
+    width: -webkit-fill-available;    
+    align-items: flex-start;
+}
+.dialog .body .folder-list li:not(.entry-item) .folder-header{
+    width: -webkit-fill-available;
 }
 
 .dialog .body .folder {
@@ -2339,6 +2347,7 @@ folder-list .folder.created.selected .folder-header .fa-trash {
 
 .dialog .body .folder-list .fas {
     margin-right: 10px;
+    align-self: center;
 }
 
 .dialog .body .link-dialog {
@@ -2347,7 +2356,19 @@ folder-list .folder.created.selected .folder-header .fa-trash {
     width: 600px;
 }
 .dialog .body .link-dialog .sidebar {
+    flex: 0 0 30%;
     padding: 5px;
+}
+.dialog .body .link-dialog .sidebar .folder-list {    
+    justify-items: flex-start;
+}
+.dialog .link-dialog  .folder-list .folder-content .entry-list {
+    padding-left: 5px;
+}
+.link-dialog  .folder-list .folder-content .entry-list .entry-item {
+    font-size: 10px;
+    padding: 5px 2px;
+    margin: 2px 5px;
 }
 .dialog .body .summary {
     flex: 1;
@@ -2367,20 +2388,31 @@ folder-list .folder.created.selected .folder-header .fa-trash {
     border-radius: var(--default-border-radius);
 }
 
+.dialog .body .summary .content .header-info .img-container img {
+    max-height: 64px;
+    max-width: 64px;    
+}
 .dialog .body .summary .content .header-info .img-container img.empty{
     height: 64px;
     width: 64px;
 }
 .dialog .body .summary .content .header-info input{
     font-size: 25px;
+    background-color: var(--dark-redT87);
+    box-shadow: var(--small-shadow);
+    font-weight: bold;
 }
-.dialog .body .summary .content textarea {
-    margin-top: 5px;
+.dialog .body .summary .content div#flavorText {
     height: 100%;
-    resize: none;
-    background-color: var(--background-color);
-    color: var(--light-text-color);
+    margin-top: 5px;
+    background-color: var(--background-color);    
     border-radius: var(--default-border-radius);
+    border: var(--info-content-border);
+    color: var(--light-text-color);
+    padding-inline: 5px;
+}
+.dialog .body .summary .content div#flavorText:focus-visible {
+    outline: none;
 }
 
 .dialog .buttons {

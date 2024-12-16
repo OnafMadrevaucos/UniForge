@@ -22,7 +22,6 @@ export class LibraryForm extends BaseForm {
     }
 
     configureContent(form) {
-        super.configureContent(form);
 
         this.manager.getEntry('PL003').addTo('entryContainer', false);
     }

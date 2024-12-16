@@ -8,6 +8,8 @@ export class AtlasForm extends EntryForm {
         this.configureContent(this.form);
     }
 
+    /* ---------------------------------------------------------------------------------------------------------------- */
+    // CONFIGURAÇÕES
     /**
     * Configura o conteúdo do formulário associado à instância.
     * Este método sobrescreve a implementação da classe pai e adiciona configurações específicas.
@@ -20,15 +22,12 @@ export class AtlasForm extends EntryForm {
         this.data = await this.getData();
 
         // Chama o método de configuração da classe pai para configurar o formulário base.
-        await super.configureContent(form);
-
-        // Configura o recipiente de imagem usando o método da classe pai.
-        super.configureImageContainer(form);
+        await super.configureContent(form);        
 
         this.configureCaptionTinyMCE();
 
         // Atribui o estado padrão aos controles do formulário.
-        this._controlFormStates(this.states.default);
+        this.controlStates(this.states.default);
     }
 
     /**
@@ -45,14 +44,17 @@ export class AtlasForm extends EntryForm {
             init_instance_callback: (editor) => {
                 editor.setContent(""); // Garante que o editor seja iniciado vazio.
             },
-            setup: (editor) => { this._setupTinyMCE(editor); }
+            setup: (editor) => { this._setupInlineTinyMCE(editor); }
         });
 
         tinymce.init(options);
     }
 
+    /* ---------------------------------------------------------------------------------------------------------------- */
+    // LISTENERS
     /**
     * Trata o evento de registro de uma nova entrada.
+    * @interface
     * @param {Event} event      - Evento de clique no botão de Salvar.
     * @param {Object} options   - Opções de salvamento da entrada.
     */
@@ -65,11 +67,11 @@ export class AtlasForm extends EntryForm {
         if (await Dialog.confirm(title, message)) {
 
             const isEntryUpdate = options.isEntryUpdate ?? false;
-            const headerInfo = this.form.querySelector('.header-info');
+            const headerInfo = this.querySelector('.header-info');
 
-            const imgInput = this.form.querySelector('#hiddenFileInput');
-            const titleInput = this.form.querySelector('#titleInput');
-            const draftSwitch = this.form.querySelector('#checkbox');
+            const imgInput = this.querySelector('#hiddenFileInput');
+            const titleInput = this.querySelector('#titleInput');
+            const draftSwitch = this.querySelector('#checkbox');
 
             // Obtém o objeto do arquivo da imagem.
             const file = imgInput.files[0] ?? null;
@@ -116,24 +118,24 @@ export class AtlasForm extends EntryForm {
         }
         this.clearContent(this.form);
 
-        const cancelButton = this.form.querySelector('#cancelButton');
+        const cancelButton = this.querySelector('#cancelButton');
         cancelButton.click();
 
         await this.updateContent();
-        this._controlFormStates(this.states.default);
+        this.controlStates(this.states.default);
     }
-
     /**
     * Trata o evento de criação de uma nova entrada.
+    * @interface
     * @param {Event} event - Evento de clique no botão de Nova Entrada.
     */
     async onNewClick(event) {
         this.clearContent(this.form, false);
-        this._controlFormStates(this.states.editEntry);
+        this.controlStates(this.states.editing);
     }
-
     /**
     * Trata o evento de cancelamento de uma nova entrada.
+    * @interface
     * @param {Event} event - Evento de clique no botão de Cancelar.
     */
     async onCancelClick(event) {
@@ -142,11 +144,10 @@ export class AtlasForm extends EntryForm {
         super.onCancelClick(event);
         this.clearContent(this.form);
     }
-
     /**
    * Gerencia cliques duplos em itens de entrada.
-   * @param {MouseEvent} event  - O evento de clique duplo.
-   * @private
+   * @interface
+   * @param {MouseEvent} event  - O evento de clique duplo. 
    */
     async onEntryItemDoubleClick(event) {
         super.onEntryItemDoubleClick(event);
@@ -165,12 +166,12 @@ export class AtlasForm extends EntryForm {
 
         entry = entry[0];
 
-        const headerInfo = this.form.querySelector('.header-info');
+        const headerInfo = this.querySelector('.header-info');
         headerInfo.dataset.cid = entry.cid;
 
-        const displayedImage = this.form.querySelector('#displayedImage');
-        const titleInput = this.form.querySelector('#titleInput');
-        const draftSwitch = this.form.querySelector('#checkbox');
+        const displayedImage = this.querySelector('#displayedImage');
+        const titleInput = this.querySelector('#titleInput');
+        const draftSwitch = this.querySelector('#checkbox');
 
         titleInput.value = entry.title;
         tinymce.get('captionEditor').setContent(entry.flavor);
@@ -183,10 +184,7 @@ export class AtlasForm extends EntryForm {
             displayedImage.src = imageURL;
         }
 
-        const cancelButton = this.form.querySelector('#cancelButton');
-        cancelButton.classList.remove('hidden');
-
-        const saveButton = this.form.querySelector('#saveButton');
-        saveButton.classList.remove('disabled');
+        // Foca no campo de Título.    
+        titleInput.focus();
     }
 }

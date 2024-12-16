@@ -3,6 +3,10 @@ import Dialog from "./dialog.js";
 export class LinkDialog extends Dialog {
     constructor(dialogData = {}, options = {}) {
         super(dialogData, options);
+
+        this.sourceId = options?.id ?? null;
+
+        this.sourceType = options?.type ?? null;
     }
 
     async getBody() {
@@ -26,19 +30,11 @@ export class LinkDialog extends Dialog {
         folderList.className = "folder-list"; // Define a classe CSS para estilização
         sidebar.appendChild(folderList); // Adiciona a lista de pastas à sidebar        
 
-        const entryFolder = this.createFolderItem('entry', 'Entrada', folderList);
-        const timelineFolder = this.createFolderItem('timeline', 'Linhas do Tempo', folderList);
+        const entryFolder = this.createFolderItem('entry', 'Entrada');
+        const timelineFolder = this.createFolderItem('timeline', 'Linhas do Tempo');
 
-        const items = await CONFIG.db.getAllEntriesAndTimelines();
-        items.forEach(item => {
-            if(item.type == 'entry') {
-                const entryItem = this.createItem(item);
-                entryFolder.appendChild(entryItem);
-            } else if(item.type == 'timeline') {
-                const timelineItem = this.createItem(item);
-                timelineFolder.appendChild(timelineItem);
-            }
-        });
+        folderList.appendChild(entryFolder);
+        folderList.appendChild(timelineFolder);
 
         /**
          * Cria o footer dentro da sidebar.
@@ -152,9 +148,8 @@ export class LinkDialog extends Dialog {
         /**
          * Cria a área de texto para o flavor text.
          */
-        const flavorText = document.createElement("textarea");
-        flavorText.id = "flavorText"; // Define o ID da área de texto
-        flavorText.disabled = true; // Define a área de texto como desabilitada
+        const flavorText = document.createElement("div");
+        flavorText.id = "flavorText"; // Define o ID da área de texto        
 
         /**
          * Monta o container de informações do header.
@@ -178,14 +173,81 @@ export class LinkDialog extends Dialog {
     }
 
     /**
+   * Inicializa e configura o editor TinyMCE.
+   * Remove qualquer instância existente antes de reconfigurar.
+   * @private
+   */
+    async getTinyMCE() {
+        if (tinymce.get('flavorText')) {
+            tinymce.remove('#flavorText');
+        }
+
+        const options = CONFIG.utils.mergeObjects(CONFIG.tinymceOptions.lite, {
+            selector: 'div#flavorText',
+            readonly: true,
+            init_instance_callback: (editor) => {
+                editor.setContent(""); // Garante que o editor seja iniciado vazio.
+            },
+            setup: (editor) => { this._setupInlineTinyMCE(editor); },
+            content_style: "body { text-align: justify; }"
+        });
+
+        await tinymce.init(options);
+    }
+
+    async _prepare() {
+        await super._prepare(); // Gera a estrutura base do diálogo   
+
+        const entryFolder = this.querySelector('#entry');
+        const timelineFolder = this.querySelector('#timeline');
+
+        const entryList = entryFolder.querySelector('.entry-list');
+        const timelineList = timelineFolder.querySelector('.entry-list');
+
+        const items = await CONFIG.db.getAllEntriesAndTimelinesExcept(this.sourceId, this.sourceType);
+        items.forEach(item => {
+            if (item.type == 'entry') {
+                const entryItem = this.createItem(item);
+                entryList.appendChild(entryItem);
+            } else if (item.type == 'timeline') {
+                const timelineItem = this.createItem(item);
+                timelineList.appendChild(timelineItem);
+            }
+        });
+
+        await this.getTinyMCE();
+    }
+
+    /**
+    * Configura ouvintes de eventos básicos para o dialog.
+    * @protected
+    */
+    _activateListeners() {
+        super._activateListeners();
+        const folders = this.querySelectorAll('.folder');
+        const itemsList = this.querySelectorAll('.entry-item');
+
+        folders.forEach(item => {
+            const folderHeader = item.querySelector('.folder-header');
+            folderHeader.addEventListener('click', (event) => {
+                this._onFolderClick(event);
+            });
+        });
+
+        itemsList.forEach(item => {
+            item.addEventListener('dblclick', (event) => { this._onEntryItemDoubleClick(event); });
+        });
+    }
+
+    /**
    * Cria uma nova pasta.
    * @param {Object} data - Dados da pasta a ser criada.
    * @returns {HTMLElement} - Elemento de um folder da lista de pastas.
    */
-    createFolderItem(type, title, folderList) {
+    createFolderItem(type, title) {
         const folder = document.createElement('li');
         folder.id = type;
-        folder.classList.add('folder');
+        folder.className = 'folder flexcol';
         folder.dataset.type = type;
 
         const folderHeader = document.createElement('div');
@@ -195,24 +257,14 @@ export class LinkDialog extends Dialog {
         span.textContent = title;
         folderHeader.innerHTML = `<i class="fas fa-folder"></i> ${span.outerHTML}`;
 
-        //folderHeader.appendChild(this.createDeleteIcon());
-
         const folderContent = document.createElement('div');
         folderContent.className = 'folder-content';
         const entryList = document.createElement('ul');
-        entryList.className = 'entry-list';       
+        entryList.className = 'entry-list';
 
         folderContent.appendChild(entryList);
         folder.appendChild(folderHeader);
         folder.appendChild(folderContent);
-        folderList.appendChild(folder);
-
-        folderList.forEach(item => {
-            const folderHeader = item.querySelector('.folder-header');
-            folderHeader.addEventListener('click', (event) => {
-              this._onFolderClick(event);
-            });
-        });
 
         return folder;
     }
@@ -226,9 +278,10 @@ export class LinkDialog extends Dialog {
         const entryItem = document.createElement('li');
         entryItem.className = 'entry-item flexrow';
         entryItem.dataset.id = data.id;
+        entryItem.dataset.type = data.type;
 
         const icon = document.createElement('i');
-        icon.className = 'fas fa-file';
+        icon.className = data.icon;
 
         const span = document.createElement('span');
         span.textContent = data.title;
@@ -239,30 +292,12 @@ export class LinkDialog extends Dialog {
         return entryItem;
     }
 
-    static async configDialog(editor) {
-        function createNewLink(event, editor) {
-            const selectedHtml = editor.selection.getContent();
-            const spanRegex = /<span[^>]*>(.*?)<\/span>/gi;
-
-            if (spanRegex.test(selectedHtml)) {
-                const unwrappedText = selectedHtml.replace(spanRegex, '$1').trim();
-                editor.selection.setContent(unwrappedText);
-            } else {
-                const selectedText = editor.selection.getContent({ format: 'text' });
-                if (selectedText) {
-                    const leadingSpaces = selectedText.match(/^\s+/);
-                    const trailingSpaces = selectedText.match(/\s+$/);
-
-                    const trimmedText = selectedText.trim();
-                    const wrappedContent = `${leadingSpaces ? leadingSpaces[0] : ''}${tooltip.forgeLink('FN002', trimmedText, () => { console.log("*CLICK*"); })}${trailingSpaces ? trailingSpaces[0] : ''}`;
-                    editor.selection.setContent(wrappedContent);
-                } else {
-                    editor.notificationManager.open({
-                        text: 'Favor selecionar um texto antes de criar um link.',
-                        type: 'warning'
-                    });
-                }
-            }
+    static async configDialog(source) {        
+        function getLinkData(event) {
+            const button = event.target.closest('.dialog-button');
+            const item = JSON.parse(button.dataset.item); 
+            
+            return item;            
         }
 
         return new Promise((resolve, reject) => {
@@ -277,14 +312,58 @@ export class LinkDialog extends Dialog {
                     link: {
                         label: "Vincular",
                         icon: "fas fa-link",
-                        callback: (event) => { resolve(createNewLink(event, editor)); }
+                        callback: (event) => { resolve(getLinkData(event)); }
                     }
                 },
                 abort: () => resolve(null)
             };
 
-            const dialog = new this(dialogData);
+            const dialog = new this(dialogData, source);
             dialog.render();
+        });
+    }
+
+    /**
+   * Gerencia cliques em pastas.
+   * @param {MouseEvent} event - O evento de clique.
+   */
+    _onFolderClick(event) {
+        event.stopPropagation();
+        const clickedFolder = event.target.closest('.folder');
+        const isSelected = clickedFolder.classList.contains('selected');
+
+        this._clearFolderList();
+
+        if (!isSelected) {
+            clickedFolder.classList.add('selected');
+            const folderIcon = clickedFolder.querySelector('.fas');
+            folderIcon.classList.remove(...folderIcon.classList);
+            folderIcon.classList.add('fas', 'fa-folder-open');
+        }
+    }
+    /**
+     * Remove a seleção de todas as pastas.
+     * @private
+     */
+    _clearFolderList() {
+        const folders = this.querySelectorAll('.folder');
+        folders.forEach(item => {
+            item.classList.remove('selected');
+            const folderIcon = item.querySelector('.fas');
+            folderIcon.classList.remove(...folderIcon.classList);
+            folderIcon.classList.add('fas', 'fa-folder');
+        });
+        this._clearEntryList();
+    }
+
+    /**
+     * Remove a seleção de todas as entradas.
+     * @private
+     */
+    _clearEntryList() {
+        const itemsList = this.querySelectorAll('.entry-item');
+        itemsList.forEach(item => {
+            item.classList.remove('selected');
         });
     }
 
@@ -309,5 +388,87 @@ export class LinkDialog extends Dialog {
         const folderIcon = item.querySelector('.fas');
         folderIcon.classList.remove(...folderIcon.classList);
         folderIcon.classList.add('fas', 'fa-folder-open');
+    }
+
+    /**
+    * Gerencia cliques duplos em itens de entrada.
+    * @inheritdoc
+    * @param {MouseEvent} event - O evento de clique duplo.
+    */
+    async _onEntryItemDoubleClick(event) {
+        const item = event.target.closest('.entry-item');
+        const type = item.dataset.type;
+        const itemId = Number(item.dataset.id);
+
+        let data = null;
+        if (type == 'entry')
+            data = Object.values(await CONFIG.db.getEntry(itemId));
+        else
+            data = Object.values(await CONFIG.db.getTimeline(itemId));
+
+        if (data.length == 0) {
+            this.msgBox.showWarning('O Item não foi encontrado.');
+            return;
+        }
+
+        if (data.length != 1) {
+            this.msgBox.showWarning('O Item está duplicado. Utilizando a primeira duplicata.');
+        }
+
+        data = data[0];
+
+        data.type = type;
+
+        const displayedImage = this.querySelector('#displayedImage');
+        const titleInput = this.querySelector('#titleInput');
+
+        titleInput.value = data.title;
+        tinymce.get('flavorText').setContent(data.flavor);
+
+        if (data.img) {
+            const imageType = `image/${data.ext}`;
+            const imageBlob = new Blob([data.img], { type: imageType }); // Ajuste o tipo de imagem conforme necessário
+            const imageURL = URL.createObjectURL(imageBlob);
+            displayedImage.src = imageURL;
+            displayedImage.classList.remove('empty');
+        }
+
+        // Foca no campo de Título.    
+        titleInput.focus();
+
+        const linkButton = this.querySelector('#link');
+        linkButton.dataset.item = JSON.stringify({id: itemId, type: type});
+    }
+
+    /**
+   * Configura o editor TinyMCE com funcionalidades inline.
+   * @protected
+   * @param {Object} editor - Instância do editor TinyMCE.
+   */
+    _setupInlineTinyMCE(editor) {
+        // Número máximo de caractéres do editor Tiny MCE de floreio.
+        const maxCharacters = 255;
+
+        // Sobrescreve o método setContent para limitar o conteúdo
+        const originalSetContent = editor.setContent;
+
+        editor.setContent = function (content, ...args) {
+            // Salva a posição atual do cursor
+            const bookmark = editor.selection.getBookmark(2);
+
+            const plainTextContent = editor.dom.create('div', null, content).innerText; // Remove tags HTML
+            if (plainTextContent.length > maxCharacters) {
+                const truncatedText = plainTextContent.substring(0, maxCharacters);
+                const truncatedHtml = editor.dom.create('div', null, truncatedText).innerHTML;
+                originalSetContent.call(editor, truncatedHtml, ...args);
+            } else {
+                originalSetContent.call(editor, content, ...args);
+            }
+
+            // Restaura o cursor para a posição salva
+            if (bookmark) {
+                editor.selection.moveToBookmark(bookmark);
+            }
+        };        
     }
 }

@@ -42,17 +42,17 @@ export class SettingsForm extends BaseForm {
 
         this.configureOptions(form);
 
-        const executeProcButton = this.form.querySelector('#procedureButton');
+        const executeProcButton = this.querySelector('#procedureButton');
         executeProcButton.addEventListener('click', (event) => { this.onExecuteProcClick(event); });
 
-        const deleteTableButton = this.form.querySelector('#deleteTableButton');
+        const deleteTableButton = this.querySelector('#deleteTableButton');
         deleteTableButton.addEventListener('click', (event) => { this.onDeleteTableClick(event); });
 
-        const queryButton = this.form.querySelector('#queryButton');
+        const queryButton = this.querySelector('#queryButton');
         queryButton.addEventListener('click', (event) => { this.onExecuteQuery(event); });
 
         // O panel padrão é sempre o panel de Banco de Dados
-        const panel = this.form.querySelector(`#databasePanel`);
+        const panel = this.querySelector(`#databasePanel`);
         this.configureDatabasePanel(panel);
     }
 
@@ -61,7 +61,7 @@ export class SettingsForm extends BaseForm {
    * @param {HTMLElement} form - O elemento que representa o formulário.
    */
     configureOptions(form) {
-        const options = form.querySelector('.settings-options');
+        const options = this.querySelector('.settings-options');
         const buttons = options.querySelectorAll('button');
 
         buttons.forEach(button => {
@@ -142,10 +142,10 @@ export class SettingsForm extends BaseForm {
    */
     onOptionButtonClick(event) {
         event.stopPropagation();
-        const options = this.form.querySelector('.settings-options');
+        const options = this.querySelector('.settings-options');
         const buttons = options.querySelectorAll('button');
         buttons.forEach(button => {
-            let panel = this.form.querySelector(`#${button.dataset.panel}`);
+            let panel = this.querySelector(`#${button.dataset.panel}`);
             button.classList.remove('selected');
             panel.classList.add('hidden');
         });
@@ -153,7 +153,7 @@ export class SettingsForm extends BaseForm {
         const selectedButton = event.target.closest('button');
         selectedButton.classList.add('selected');
 
-        const selectedPanel = this.form.querySelector(`#${selectedButton.dataset.panel}`);
+        const selectedPanel = this.querySelector(`#${selectedButton.dataset.panel}`);
         this.configurePanel(selectedPanel);
     }
 
@@ -163,12 +163,12 @@ export class SettingsForm extends BaseForm {
    */
     async onExecuteProcClick(event) {
         event.stopPropagation();
-        const procedureNameSelect = this.form.querySelector('#procedureName');
+        const procedureNameSelect = this.querySelector('#procedureName');
         const selectedOption = procedureNameSelect.selectedOptions[0];
         const procedure = selectedOption.dataset.name;
         if (procedure) {  
             const result = await this.db.storedProcedures[procedure]();
-            const selectedPanel = this.form.querySelector('#databasePanel');
+            const selectedPanel = this.querySelector('#databasePanel');
 
             this.msgBox.showInfo(`Procedure '${procedure}' executada com sucesso. (${result.changes}) linhas alteradas.`);
             this.configurePanel(selectedPanel);
@@ -181,12 +181,12 @@ export class SettingsForm extends BaseForm {
    */
     async onDeleteTableClick(event) {
         event.stopPropagation();
-        const tableNameSelect = this.form.querySelector('#tableName');
+        const tableNameSelect = this.querySelector('#tableName');
         const selectedOption = tableNameSelect.selectedOptions[0];
         const tableName = selectedOption.dataset.name;
         if (tableName) {            
             const result = await this.db.deleteTable(tableName);
-            const selectedPanel = this.form.querySelector('#databasePanel');
+            const selectedPanel = this.querySelector('#databasePanel');
 
             this.msgBox.showInfo(`Tabela '${tableName}' excluída com sucesso.`);
             this.configurePanel(selectedPanel);
@@ -199,12 +199,12 @@ export class SettingsForm extends BaseForm {
    */
     async onExecuteQuery(event) {
         event.stopPropagation();
-        const queryText = this.form.querySelector('#queryText');
+        const queryText = this.querySelector('#queryText');
         const query = queryText.value;
         if (query) {  
             const result = await this.db.execQuery(query);
             queryText.value = '';
-            const selectedPanel = this.form.querySelector('#databasePanel');
+            const selectedPanel = this.querySelector('#databasePanel');
 
             this.msgBox.showInfo(`Query executada com sucesso. (${result.changes}) linhas alteradas.`);
             this.configurePanel(selectedPanel);

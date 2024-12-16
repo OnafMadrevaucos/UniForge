@@ -53,7 +53,7 @@ export default class BaseForm {
      * O identificador da raíz desse formulário.
      * @type {string}
      */
-    this.root = this.form.querySelector('.entries')?.id ?? 'article';
+    this.root = this.querySelector('.entries')?.id ?? 'article';
 
     /**
      * Objeto de controle global para mensagens ao usuário.
@@ -75,55 +75,13 @@ export default class BaseForm {
       folder: null,
       entry: null,
     };
+
+    // Configura os conteúdos básicos do formulário.
+    this.configureBaseContent(this.form);
   }
 
-  /**
-   * Obtém os dados unificados necessários para o funcionamento do formulário.
-   * @implements Implemente um método filho para as especificidades de cada formulário.
-   * @async
-   * @returns {object}  - Objeto de dados unificado.
-   */
-  async getData() {
-    const data = {};
-
-    data.subjects = await this.getSubjects();
-
-    return data;
-  }
-
-  /**
-   * Exibe o formulário e o overlay associados.
-   */
-  showForm() {
-    this.ui.overlay.classList.remove('hidden');
-    this.ui.form.classList.remove('hidden');
-  }
-
-  /**
-   * Oculta o formulário e o overlay, limpando seu conteúdo.
-   */
-  hideForm() {
-    this.clear();
-    this.ui.form.classList.add('hidden');
-    this.ui.overlay.classList.add('hidden');
-  }
-
-  /**
-   * Remove todos os elementos filhos de um elemento especificado ou do formulário principal.
-   * @param {HTMLElement} [element={}] - O elemento cujos filhos devem ser removidos. Por padrão, é o formulário principal.
-   */
-  clear(element = {}) {
-    if (!element) {
-      while (this.form.firstChild) {
-        this.form.removeChild(this.form.firstChild);
-      }
-    } else {
-      while (element.firstChild) {
-        element.removeChild(element.firstChild);
-      }
-    }
-  }
-
+  /* ---------------------------------------------------------------------------------------------------------------- */
+  // GETTERS E SETTERS
   /**
    * Obtém os assuntos de uma dada origem disponíveis no banco de dados.
    * @async
@@ -149,31 +107,94 @@ export default class BaseForm {
   }
 
   /**
+   * Obtém os dados unificados necessários para o funcionamento do formulário.
+   * @implements Implemente um método filho para as especificidades de cada formulário.
+   * @async
+   * @returns {object}  - Objeto de dados unificado.
+   */
+  async getData() {
+    const data = {};
+
+    data.subjects = await this.getSubjects();
+
+    return data;
+  }
+
+  /* ---------------------------------------------------------------------------------------------------------------- */
+  // INTERFACE DE USUÁRIO
+  /**
+   * Exibe o formulário e o overlay associados.
+   */
+  showForm() {
+    // Constrói formulário antes de exibi-lo.
+    this._configure();
+
+    this.ui.overlay.classList.remove('hidden');
+    this.ui.form.classList.remove('hidden');
+  }
+
+  /**
+   * Oculta o formulário e o overlay, limpando seu conteúdo.
+   */
+  hideForm() {
+    this.clear();
+    this.ui.form.classList.add('hidden');
+    this.ui.overlay.classList.add('hidden');
+  }
+
+  /**
+   * Inicia a construção do formulário.
+   */
+  _configure() {
+    if (this.configureContent) this.configureContent(this.form);
+    else throw new Error('Não é possível iniciar a construção do formulário. Método \'configureContent\' não foi implementado.');
+  }
+
+  /**
+   * Remove todos os elementos filhos de um elemento especificado ou do formulário principal.
+   * @param {HTMLElement} [element={}] - O elemento cujos filhos devem ser removidos. Por padrão, é o formulário principal.
+   */
+  clear(element = {}) {
+    if (!element) {
+      while (this.form.firstChild) {
+        this.form.removeChild(this.form.firstChild);
+      }
+    } else {
+      while (element.firstChild) {
+        element.removeChild(element.firstChild);
+      }
+    }
+  }
+
+  /* ---------------------------------------------------------------------------------------------------------------- */
+  // CONFIGURAÇÃO
+  /**
    * Configura o conteúdo do formulário
    * @param {HTMLElement} form - O elemento que representa o formulário.
    * @async
    */
-  async configureContent(form) {
-    this.#configureBaseListeners(form);
+  async configureBaseContent(form) {
+    // Ativa os ouvintes de eventos básicos.
+    this.activateBaseListeners(form);
+  }
 
+  /**
+   * Carrega todo conteúdo que seja dependente de dados.
+   * @param {HTMLElement} form - O formulário HTML principal.
+  */
+  async configureDataContent(form) {
     // Se o formulário possui um sidebar, configure suas entradas.
-    if (this.ui.sidebar) {
-      this.loadSidebarList(form);
-      this.configureSidebar(form);
-    }
+    if (this.ui.sidebar) this.loadSidebarData(form);
   }
 
   /**
    * Atualiza o conteúdo do formulário
-   * @param {HTMLElement} form - O elemento que representa o formulário.
    * @async
    */
   async updateContent() {
     // Se o formulário ainda possui um sidebar, reconfigure suas entradas.
     if (this.ui.sidebar) {
-
-      this.loadSidebarList(this.form);
-      this.configureSidebar(this.form);
+      this.loadSidebarData(this.form);
     }
   }
 
@@ -193,106 +214,18 @@ export default class BaseForm {
   }
 
   /**
-   * Consulta um seletor CSS dentro do overlay principal.
-   * @param {string} selector - O seletor CSS a ser buscado.
-   * @returns {HTMLElement} O primeiro elemento correspondente.
-   */
-  querySelector(selector) {
-    return this.ui.overlay.querySelector(selector);
-  }
-
-  /**
-   * Consulta todos os elementos correspondentes a um seletor CSS dentro do overlay principal.
-   * @param {string} selector - O seletor CSS a ser buscado.
-   * @returns {NodeList} Uma NodeList com os elementos correspondentes.
-   */
-  querySelectorAll(selector) {
-    return this.ui.overlay.querySelectorAll(selector);
-  }
-
-  /**
-   * Carrega um arquivo HTML usando fetch.
-   * @param {string} filePath - O caminho do arquivo HTML.
-   * @returns {Promise<string>|null} Uma Promise que resolve para o conteúdo HTML carregado como string.
-   */
-  async _loadHTML(filePath) {
-    try {
-      let response = await fetch(filePath);
-      let htmlString = await response.text();
-      return htmlString;
-    } catch (err) {
-      this.msgBox.showError(err);
-      return null;
-    }
-  }
-
-  /**
-   * Configura ouvintes de eventos básicos para o formulário.
-   * @param {HTMLElement} form - O formulário principal.
-   * @private
-   */
-  #configureBaseListeners(form) {
-    this.ui.overlay.addEventListener('click', (event) => {
-      event.stopPropagation();
-      if (!event.target.closest('.form-container') && !event.target.closest('.content')) {
-        this.#handleNavQueueOnClose(event);
-        this.hideForm();
-      }
-    }, { once: true });
-
-    this.ui.close_btn.addEventListener('click', (event) => {
-      event.stopPropagation();
-      this.#handleNavQueueOnClose(event);
-      this.hideForm();
-    }, { once: true });
-  }
-
-  /**
-   * Configura a lista de entradas e seus ouvintes na barra lateral.
-   * @param {HTMLElement} form - O formulário principal.
-   */
-  configureSidebar(form) {
-    const sidebar = form.querySelector('.entries .sidebar');
-
-    sidebar.addEventListener('click', (event) => {
-      if (event.target.classList.contains('entry-item')) return;
-      this.clearContent(form);
-
-      if(this._controlFormStates) this._controlFormStates(this.states.default);
-    });
-  }
-  /**
    * Carrega a lista de entradas da barra lateral.
    * @param {HTMLElement} form - O formulário principal.
    */
-  loadSidebarList(form) {
+  loadSidebarData(form) {
     const data = this.data.subjects;
-    const folderList = form.querySelector('#folderList');
+    const folderList = this.querySelector('#folderList');
     folderList.innerHTML = '';
 
     for (const value of Object.values(data)) {
       const folder = this.createFolderItem(value);
       folderList.appendChild(folder);
     }
-
-    const folders = folderList.querySelectorAll('.folder');
-    const items = form.querySelectorAll('.entry-item');
-
-    folders.forEach(item => {
-      const folderHeader = item.querySelector('.folder-header');
-      folderHeader.addEventListener('click', (event) => {
-        this._onFolderClick(event);
-      });
-    });
-
-    items.forEach(item => {
-      item.addEventListener('click', (event) => {
-        this.onEntryItemClick(event);
-      });
-      item.addEventListener('dblclick', (event) => {
-        this.onEntryItemDoubleClick(event);
-      });
-    });
   }
 
   /**
@@ -301,7 +234,7 @@ export default class BaseForm {
    * @returns {HTMLElement} - Elemento de um folder da lista de pastas.
    */
   createFolderItem(data) {
-    const folderList = this.form.querySelector('#folderList');
+    const folderList = this.querySelector('#folderList');
 
     const folder = document.createElement('li');
     folder.classList.add('folder', 'created');
@@ -357,11 +290,97 @@ export default class BaseForm {
     return entryItem;
   }
 
+  /* ---------------------------------------------------------------------------------------------------------------- */
+  // LISTENERS
+  /**
+   * Configura ouvintes de eventos básicos para o formulário.
+   * @param {HTMLElement} form - O formulário principal.
+   * @private
+   */
+  activateBaseListeners(form) {
+    this.ui.overlay.addEventListener('click', (event) => {
+      event.stopPropagation();
+      if (!event.target.closest('.form-container') && !event.target.closest('.content')) {
+        this.#handleNavQueueOnClose(event);
+        this.hideForm();
+      }
+    }, { once: true });
+
+    this.ui.close_btn.addEventListener('click', (event) => {
+      event.stopPropagation();
+      this.#handleNavQueueOnClose(event);
+      this.hideForm();
+    }, { once: true });
+  }
+  /**
+   * Configura ouvintes de eventos para o formulário.
+   * @param {HTMLElement} form - O formulário principal.
+   * @private
+   */
+  activateListeners(form) {
+    const sidebar = this.ui.sidebar;
+    if (sidebar) {
+      sidebar.addEventListener('click', (event) => {
+        if (event.target.classList.contains('entry-item')) return;
+        this.clearContent(form);
+
+        if (this.controlStates) this.controlStates(this.states.default);
+      });
+
+      const folders = this.querySelectorAll('.folder');
+      const items = this.querySelectorAll('.entry-item');
+
+      folders.forEach(item => {
+        const folderHeader = item.querySelector('.folder-header');
+        folderHeader.addEventListener('click', (event) => {
+          this.onFolderClick(event);
+        });
+      });
+
+      items.forEach(item => {
+        item.addEventListener('click', (event) => {
+          this.onEntryItemClick(event);
+        });
+        item.addEventListener('dblclick', (event) => {
+          this.onEntryItemDoubleClick(event);
+        });
+      });
+    }
+  }
+  /**
+   * Reconfigura ouvintes de eventos para o formulário.
+   * @param {HTMLElement} form - O formulário principal.
+   * @private
+   */
+  reactivateListeners(form) {
+    const sidebar = this.ui.sidebar;
+    if (sidebar) {
+      const folders = this.querySelectorAll('.folder');
+      const items = this.querySelectorAll('.entry-item');
+
+      folders.forEach(item => {
+        const folderHeader = item.querySelector('.folder-header');
+        folderHeader.addEventListener('click', (event) => {
+          this.onFolderClick(event);
+        });
+      });
+
+      items.forEach(item => {
+        item.addEventListener('click', (event) => {
+          this.onEntryItemClick(event);
+        });
+        item.addEventListener('dblclick', (event) => {
+          this.onEntryItemDoubleClick(event);
+        });
+      });
+    }
+  }
+
   /**
    * Gerencia cliques em pastas.
    * @param {MouseEvent} event - O evento de clique.
    */
-  _onFolderClick(event) {
+  onFolderClick(event) {
     event.stopPropagation();
     const clickedFolder = event.target.closest('.folder');
     const isSelected = clickedFolder.classList.contains('selected');
@@ -408,6 +427,42 @@ export default class BaseForm {
     itemIcon.className = this.selectedIcon;
 
     this.selection.entry = clickedItem;
+  }
+
+  /* ---------------------------------------------------------------------------------------------------------------- */
+  // UTILITÁRIOS
+  /**
+   * Consulta um seletor CSS dentro do overlay principal.
+   * @param {string} selector - O seletor CSS a ser buscado.
+   * @returns {HTMLElement} O primeiro elemento correspondente.
+   */
+  querySelector(selector) {
+    return this.ui.overlay.querySelector(selector);
+  }
+
+  /**
+   * Consulta todos os elementos correspondentes a um seletor CSS dentro do overlay principal.
+   * @param {string} selector - O seletor CSS a ser buscado.
+   * @returns {NodeList} Uma NodeList com os elementos correspondentes.
+   */
+  querySelectorAll(selector) {
+    return this.ui.overlay.querySelectorAll(selector);
+  }
+
+  /**
+   * Carrega um arquivo HTML usando fetch.
+   * @param {string} filePath - O caminho do arquivo HTML.
+   * @returns {Promise<string>|null} Uma Promise que resolve para o conteúdo HTML carregado como string.
+   */
+  async _loadHTML(filePath) {
+    try {
+      let response = await fetch(filePath);
+      let htmlString = await response.text();
+      return htmlString;
+    } catch (err) {
+      this.msgBox.showError(err);
+      return null;
+    }
   }
 
   /**

@@ -22,7 +22,7 @@ export default class EntryForm extends BaseForm {
      * Estados válidos para os elements do formulário.
      * @type {Object<number, number>}
      */
-    this.states = this._states;
+    this.states = EntryForm._states;
 
     /**
      * Estado atual dos elements do formulário.
@@ -40,8 +40,8 @@ export default class EntryForm extends BaseForm {
      * O ícone Font Awesome para quando uma entrada é selecionada.
      * @type {string}
      */
-    this.selectedIcon = 'fas fa-feather';   
-    
+    this.selectedIcon = 'fas fa-feather';
+
     /**
      * A edição atual é uma atualização de uma Entrada?
      * @type {boolean}
@@ -55,28 +55,31 @@ export default class EntryForm extends BaseForm {
     this.isEncyclopedia = false;
 
     /** @type {HTMLElement} - Dialogo de confirmação de nova categoria. */
-    const dialog = this.form.querySelector('#confirmDialog');
+    const dialog = this.querySelector('#confirmDialog');
     this.ui.dialog = dialog;
 
     /** @type {Object} - Tooltip de interface do usuário. */
     this.ui.tooltip = CONFIG.tooltip;
   }
 
-
+  /* ---------------------------------------------------------------------------------------------------------------- */
+  // GETTERS E SETTERS
   /**
- * Conjunto de filtros de item que representam os estados aplicáveis na classe EntryForm.
- * Os estados estão mapeados para números inteiros que representam ações específicas.
- * 
- * @type {Object<number, number>}
- * @protected
- * @property {number} cancelEntry - Representa o estado de cancelamento de uma entrada (valor 0).
- * @property {number} newEntry - Representa o estado de criação de uma nova entrada (valor 1).
- * @property {number} saveEntry - Representa o estado de salvamento de uma entrada (valor 2). 
- */
-  _states = {
-    default: 0,
-    newEntry: 1,
-    editEntry: 2    
+  * Conjunto de filtros de item que representam os estados aplicáveis na classe EntryForm.
+  * Os estados estão mapeados para números inteiros que representam ações específicas.
+  * 
+  * @type {Object<number, number>}
+  * @protected
+  * @property {number} cancelEntry - Representa o estado de cancelamento de uma entrada (valor 0).
+  * @property {number} newEntry - Representa o estado de criação de uma nova entrada (valor 1).
+  * @property {number} saveEntry - Representa o estado de salvamento de uma entrada (valor 2). 
+  */
+  static get _states() {
+    return {
+      default: 0,
+      newEntry: 1,
+      editing: 2
+    }
   };
 
   /**
@@ -129,239 +132,19 @@ export default class EntryForm extends BaseForm {
 
     return data;
   }
-
-  /**
-   * Configura o conteúdo do formulário.
-   * Sobrescreve a configuração na classe pai.
-   * @param {HTMLElement} form - O elemento que representa o formulário.
-   * @async
-   */
-  async configureContent(form) {
-    await super.configureContent(form);
-
-    this.configureEntrySidebar(form);
-    this.configureButtonsListeners(form);
-
-    // Configura o editor Tiny MCE principal .
-    await this._configureTinyMCE();    
-  }
-
-  /**
-   * Atualiza o conteúdo do formulário
-   * @param {HTMLElement} form - O elemento que representa o formulário.
-   * @async
-   */
-  async updateContent() {
-    // Atualiza dados antes de atualizar tela.
-    this.data = await this.getData();
-
-    await super.updateContent();
-    this.updateEntryItems();
-  }
-
-  /**
-   * Limpa o conteúdo do formulário
-   * @param {HTMLElement} form - O elemento que representa o formulário.
-   * @param {Boolean} clearSidebar - Flag para habilitar/desabilitar a limpeza da seleção da sidebar.
-   */
-  clearContent(form, clearSidebar = true) {
-    if (clearSidebar) super.clearContent(form);
-
-    const titleInput = this.form.querySelector('#titleInput');
-    titleInput.value = '';
-
-    const isDraftCheck = this.form.querySelector('#checkbox');
-    isDraftCheck.checked = false;
-
-    // Limpa todos os editores Tiny MCE inicializados.
-    tinymce.get().forEach(editor => {
-      editor.setContent('');
-    });
-
-    if(this.isEncyclopedia) this._clearRootIcon();
-  }
-
-  /**
-   * Configura a barra lateral do formulário.
-   * @param {HTMLElement} form - O formulário HTML principal.
-   */
-  configureEntrySidebar(form) {
-    this.configureSidebarDialog();
-    this.updateEntryItems();
-  }
-
-  /**
-   * Configura os listeners dos botões do formulário.
-   * @param {HTMLElement} form - O formulário HTML principal.
-   */
-  configureButtonsListeners(form) {
-    const cancelButton = this.form.querySelector('#cancelButton');
-    cancelButton.addEventListener('click', (event) => { this.onCancelClick(event); });
-
-    // Configura o evento de criação de novas entradas
-    const newEntryButton = document.getElementById('newEntryButton');
-    newEntryButton.addEventListener('click', (event) => { this.onBaseNewClick(event); });
-
-    const saveButton = this.form.querySelector('#saveButton');
-    saveButton.addEventListener('click', (event) => { this.onBaseSaveClick(event); });
-  }
-
-  /**
-   * Configura recipiente de imagem do formulário.
-   * @param {HTMLElement} form - O formulário HTML principal.
-   */
-  configureImageContainer(form) {
-    const imageContainer = form.querySelector('#imageContainer');
-    const displayedImage = form.querySelector('#displayedImage');
-    const fileInput = form.querySelector('#hiddenFileInput');
-
-    // Adiciona um evento para lidar com a seleção de uma nova imagem.
-    fileInput.addEventListener('change', (event) => {
-      const file = event.target.files[0];
-
-      // Verifica se um arquivo foi selecionado e se é uma imagem.
-      if (file && file.type.startsWith('image/')) {
-        // Cria um URL temporário para o arquivo selecionado.
-        const imageURL = URL.createObjectURL(file);
-
-        // Atualiza a imagem exibida.
-        displayedImage.src = imageURL;
-        displayedImage.classList.remove('empty');
-
-        // Libera o URL temporário quando não for mais necessário.
-        displayedImage.onload = () => {
-          URL.revokeObjectURL(imageURL);
-        };
-      }
-    });
-
-    // Adiciona um evento de clique no contêiner de imagem para abrir o seletor de arquivos.
-    imageContainer.addEventListener('click', () => {
-      fileInput.click();
-    });
-  }
-
-  /**
-   * Configura o combo de Assuntos.
-   * @param {HTMLElement} form - O formulário HTML principal.
-   * @async
-   */
-  async configureSubjectSelect(form) {
-    // Carrega as opções de Tipos de Entradas registrados
-    const subjectType = form.querySelector('#subjectType');
-    for (const data of Object.values(this.subjectTypes)) {
-      subjectType.appendChild(this._newSubjectOption(data));
-    }
-  }
-
-  /**
- * Configura o combo de Importância de Evento.
- * @param {HTMLElement} form - O formulário HTML principal.
- * @async
- */
-  async configureImportanceSelect(form) {
-    const importances = this.data.importances;
-
-    // Carrega as opções de Importâncias registradas
-    const importance = form.querySelector('#importance');
-    for (const data of Object.values(importances)) {
-      importance.appendChild(this._newImportanceOption(data));
-    }
-  }
-
-  /**
-   * Configura o combo de Tipos de Entrada.
-   * @param {HTMLElement} form - O formulário HTML principal.
-   */
-  configureEntryTypeSelect(form) {
-    const entryTypes = this.data.entryTypes;
-
-    // Carrega as opções de Tipos de Entradas registrados
-    const entryType = form.querySelector('#entryType');
-    for (const data of Object.values(entryTypes)) {
-      entryType.appendChild(this._newEntryTypeOption(data));
-    }
-  }
-
-  /**
-   * Configura o combo de Tipos de Entrada.
-   * @param {HTMLElement} form - O formulário HTML principal.
-   * @async
-   */
-  async configureCalendarSelect(form) {
-    const calendars = await this.data.calendars;
-
-    // Carrega as opções de Calendários registrados
-    const calendarType = form.querySelector('#calendarType');
-    for (const data of Object.values(calendars)) {
-      calendarType.appendChild(this._newCalendarOption(data));
-    }
-    calendarType.addEventListener('change', (event) => { this.onDateTypeChange(event); });
-  }
-
-  /**
-   * Habilita todas as entradas de uma pasta (categoria) para poderem ser atualizadas.
-   */
-  updateEntryItems() {
-    const entriesList = this.form.querySelectorAll('.entry-item');
-
-    entriesList.forEach(item => {
-      const removeButton = item.querySelector('.remove-button');
-      // Se o item não possui botão de remoção, adicione-o.
-      if (!removeButton) {
-        const deleteIcon = this.createDeleteIcon();
-        deleteIcon.addEventListener('click', (event) => { this.onDeleteEntryClick(event, item); });
-        item.appendChild(deleteIcon);
-      }
-    });
-  }
-
-  /**
-   * Fecha dialog aberto, se houver um.
-   */
-  closeDialog() {
-    if (this.dialog) {
-      this.dialog.close();
-    }
-  }
-
-  /**
-   * Cria um botão para remoção de itens de listas.
-   * @returns {HTMLElement} - Elemento do botão de remoção de folder.
-   */
-  createDeleteIcon() {
-    const a = document.createElement('a');
-    a.className = 'remove-button';
-    a.innerHTML = '<i class="fas fa-trash"></i>';
-
-    return a;
-  }
-
-  /**
-   * Configura o diálogo de categorias.
-   * @private
-   */
-  configureSidebarDialog() {
-    const dialog = this.ui.dialog;
-
-    const yesBtn = dialog.querySelector('#confirm-yes');
-    const noBtn = dialog.querySelector('#confirm-no');
-
-    yesBtn.addEventListener('click', (event) => { this._doAction(event) });
-    noBtn.addEventListener('click', (event) => { this.onCancelNewCategory(event); });
-  }
-
+  /* ---------------------------------------------------------------------------------------------------------------- */
+  // INTERFACE DE USUÁRIO
   /**
    * Habilita/desabilita os controles do formulário.
    * @param {Number} state - O novo estado do formulário.
    * @protected
    */
-  _controlFormStates(state) {
-    const titleInput = this.form.querySelector('#titleInput');  
-    const imageContainer = this.form.querySelector('#imageContainer');  
-    const infoContent = this.form.querySelector('.info-content');
+  controlStates(state) {
+    const titleInput = this.querySelector('#titleInput');
+    const imageContainer = this.querySelector('#imageContainer');
+    const infoContent = this.querySelector('.info-content');
     const mainEditor = tinymce.get('mainEditor');
-    
+
     titleInput.disabled = false;
     infoContent.disabled = false;
 
@@ -377,9 +160,9 @@ export default class EntryForm extends BaseForm {
         if (this.currentState > this.states.newEntry) this.clearContent(this.form, false);
 
         // Configuração dos Estados dos Botões.
-        const saveButton = this.form.querySelector('#saveButton');
-        const newEntryButton = this.form.querySelector('#newEntryButton');
-        const cancelButton = this.form.querySelector('#cancelButton');
+        const saveButton = this.querySelector('#saveButton');
+        const newEntryButton = this.querySelector('#newEntryButton');
+        const cancelButton = this.querySelector('#cancelButton');
 
         saveButton.innerHTML = '<i class="fa-regular fa-floppy-disk"></i> Salvar';
         saveButton.classList.add('disabled');
@@ -391,12 +174,12 @@ export default class EntryForm extends BaseForm {
         mainEditor?.mode.set('readonly');
       } break;
       // ESTADO DE EDIÇÃO DE ENTRADA.
-      case this.states.editEntry: {
+      case this.states.editing: {
         imageContainer.classList.remove('disabled');
 
         // Configuração dos Estados dos Botões.
-        const saveButton = this.form.querySelector('#saveButton');
-        const cancelButton = this.form.querySelector('#cancelButton');
+        const saveButton = this.querySelector('#saveButton');
+        const cancelButton = this.querySelector('#cancelButton');
         saveButton.classList.remove('disabled');
 
         cancelButton.classList.remove('hidden');
@@ -408,11 +191,11 @@ export default class EntryForm extends BaseForm {
         this.clearContent(this.form);
 
         // Limpa todo o dataset do Header Info.
-        const headerInfo = this.form.querySelector('.header-info');
+        const headerInfo = this.querySelector('.header-info');
         Object.keys(headerInfo.dataset).forEach(key => {
           delete headerInfo.dataset[key];
         });
-        
+
         // Desativa recipiente de imagens.
         imageContainer.classList.add('disabled');
 
@@ -423,9 +206,9 @@ export default class EntryForm extends BaseForm {
         // -----------------------------------------------------------------------
         //    Configuração dos Estados dos Botões.
         // -----------------------------------------------------------------------
-        const saveButton = this.form.querySelector('#saveButton');
-        const newEntryButton = this.form.querySelector('#newEntryButton');
-        const cancelButton = this.form.querySelector('#cancelButton');
+        const saveButton = this.querySelector('#saveButton');
+        const newEntryButton = this.querySelector('#newEntryButton');
+        const cancelButton = this.querySelector('#cancelButton');
 
         // Configuração do label no botão de Salvar.
         saveButton.innerHTML = '<i class="fa-regular fa-floppy-disk"></i> Salvar';
@@ -447,12 +230,237 @@ export default class EntryForm extends BaseForm {
   }
 
   /**
+  * Fecha dialog aberto, se houver um.
+  */
+  closeDialog() {
+    if (this.dialog) {
+      this.dialog.close();
+    }
+  }
+
+  /* ---------------------------------------------------------------------------------------------------------------- */
+  // CONFIGURAÇÃO
+  /**
+   * Configura o conteúdo do formulário.
+   * Sobrescreve a configuração na classe pai.
+   * @param {HTMLElement} form - O elemento que representa o formulário.
+   * @async
+   */
+  async configureContent(form) {
+    // Configura o editor Tiny MCE principal .
+    await this.configureTinyMCE();
+
+    await this.configureDataContent(form);
+
+    this.activateListeners(form);
+  }
+
+  /**
+  * Carrega todo conteúdo que seja dependente de dados.
+  * @param {HTMLElement} form - O elemento que representa o formulário.
+  */
+  async configureDataContent(form) {
+    await super.configureDataContent(form);
+
+    this.configureEntrySidebar();
+  }
+
+  /**
+   * Atualiza o conteúdo do formulário
+   * @param {HTMLElement} form - O elemento que representa o formulário.
+   * @async
+   */
+  async updateContent() {
+    // Atualiza dados antes de atualizar tela.
+    this.data = await this.getData();
+    await super.updateContent();
+
+    this.addDeleteIconToEntryItems();
+    this.reactivateListeners(this.form);
+  }
+
+  /**
+   * Limpa o conteúdo do formulário
+   * @param {HTMLElement} form - O elemento que representa o formulário.
+   * @param {Boolean} clearSidebar - Flag para habilitar/desabilitar a limpeza da seleção da sidebar.
+   */
+  clearContent(form, clearSidebar = true) {
+    if (clearSidebar) super.clearContent(form);
+
+    const titleInput = this.querySelector('#titleInput');
+    titleInput.value = '';
+
+    const isDraftCheck = this.querySelector('#checkbox');
+    isDraftCheck.checked = false;
+
+    // Limpa todos os editores Tiny MCE inicializados.
+    tinymce.get().forEach(editor => {
+      editor.setContent('');
+    });
+
+    this.closeDialog();
+
+    if (this.isEncyclopedia) this._clearRootIcon();
+  }
+
+  /**
+   * Configura a barra lateral do formulário.
+   */
+  configureEntrySidebar() {
+    this.configureSidebarDialog();
+    this.addDeleteIconToEntryItems();
+  }
+
+  /**
+   * Configura o combo de Assuntos.
+   * @param {HTMLElement} form - O formulário HTML principal.
+   * @async
+   */
+  async configureSubjectSelect(form) {
+    // Carrega as opções de Tipos de Entradas registrados
+    const subjectType = this.querySelector('#subjectType');
+    for (const data of Object.values(this.subjectTypes)) {
+      subjectType.appendChild(this._newSubjectOption(data));
+    }
+  }
+
+  /**
+ * Configura o combo de Importância de Evento.
+ * @param {HTMLElement} form - O formulário HTML principal.
+ * @async
+ */
+  async configureImportanceSelect(form) {
+    const importances = this.data.importances;
+
+    // Carrega as opções de Importâncias registradas
+    const importance = this.querySelector('#importance');
+    for (const data of Object.values(importances)) {
+      importance.appendChild(this._newImportanceOption(data));
+    }
+  }
+
+  /**
+   * Configura o combo de Tipos de Entrada.
+   * @param {HTMLElement} form - O formulário HTML principal.
+   */
+  configureEntryTypeSelect(form) {
+    const entryTypes = this.data.entryTypes;
+
+    // Carrega as opções de Tipos de Entradas registrados
+    const entryType = this.querySelector('#entryType');
+    for (const data of Object.values(entryTypes)) {
+      entryType.appendChild(this._newEntryTypeOption(data));
+    }
+  }
+
+  /**
+   * Configura o combo de Tipos de Entrada.
+   * @param {HTMLElement} form - O formulário HTML principal.
+   * @async
+   */
+  async configureCalendarSelect(form) {
+    const calendars = await this.data.calendars;
+
+    // Carrega as opções de Calendários registrados
+    const calendarType = this.querySelector('#calendarType');
+    for (const data of Object.values(calendars)) {
+      calendarType.appendChild(this._newCalendarOption(data));
+    }
+    //calendarType.addEventListener('change', (event) => { this.onDateTypeChange(event); });
+  }
+
+  /**
+   * Configura o diálogo de categorias.
+   * @private
+   */
+  configureSidebarDialog() {
+    const dialog = this.ui.dialog;
+
+    const yesBtn = dialog.querySelector('#confirm-yes');
+    const noBtn = dialog.querySelector('#confirm-no');
+
+    yesBtn.addEventListener('click', (event) => { this._doAction(event); });
+    noBtn.addEventListener('click', (event) => { this.onCancelSidebarDialogClick(event); });
+  }
+
+  /**
+   * Inicializa e configura o editor TinyMCE.
+   * Remove qualquer instância existente antes de reconfigurar.
+   * @private
+   */
+  async configureTinyMCE() {
+    if (tinymce.get('mainEditor')) {
+      tinymce.remove('#mainEditor');
+    }
+
+    const options = CONFIG.utils.mergeObjects(CONFIG.tinymceOptions.default, {
+      selector: 'textarea#mainEditor',
+      init_instance_callback: (editor) => {
+        editor.setContent(""); // Garante que o editor seja iniciado vazio.
+      },
+      setup: (editor) => { this._setupTinyMCE(editor); }
+    });
+
+    await tinymce.init(options);
+  }
+
+  /* ---------------------------------------------------------------------------------------------------------------- */
+  // LISTENERS
+  /**
+   * Configura ouvintes de eventos básicos para o formulário.
+   * @param {HTMLElement} form - O formulário principal.
+   * @private
+   */
+  activateListeners(form) {
+    super.activateListeners(form)
+    const imageContainer = this.querySelector('#imageContainer');
+    const displayedImage = this.querySelector('#displayedImage');
+    const fileInput = this.querySelector('#hiddenFileInput');
+
+    const cancelButton = this.querySelector('#cancelButton');
+    const newEntryButton = this.querySelector('#newEntryButton');
+    const saveButton = this.querySelector('#saveButton');
+
+    const entriesList = this.querySelectorAll('.entry-item');
+
+    // Adiciona um evento para lidar com a seleção de uma nova imagem.
+    fileInput.addEventListener('change', (event) => { this.onChangeImage(event, displayedImage); });
+
+    // Adiciona um evento de clique no contêiner de imagem para abrir o seletor de arquivos.
+    imageContainer.addEventListener('click', () => { fileInput.click(); });
+
+    cancelButton.addEventListener('click', (event) => { this.onCancelClick(event); });
+    newEntryButton.addEventListener('click', (event) => { this.onBaseNewClick(event); });
+    saveButton.addEventListener('click', (event) => { this.onBaseSaveClick(event); });
+
+    entriesList.forEach(item => {
+      const deleteIcon = item.querySelector('.remove-button');
+      deleteIcon.addEventListener('click', (event) => { this.onDeleteEntryClick(event, item); });
+    });
+  }
+
+  /**
+   * Reconfigura alguns ouvintes de eventos para o formulário.
+   * @param {HTMLElement} form - O formulário principal.
+   * @private
+   */
+  reactivateListeners(form) {
+    super.reactivateListeners(form);
+    const entriesList = this.querySelectorAll('.entry-item');
+
+    entriesList.forEach(item => {
+      const deleteIcon = item.querySelector('.remove-button');
+      deleteIcon.addEventListener('click', (event) => { this.onDeleteEntryClick(event, item); });
+    });
+  }
+
+  /**
    * Gerencia cliques em pastas.
    * @param {MouseEvent} event - O evento de clique.
    * @protected
    */
-  _onFolderClick(event) {
-    super._onFolderClick(event);
+  onFolderClick(event) {
+    super.onFolderClick(event);
 
     const clickedFolder = event.target.closest('.folder');
     const isSelected = clickedFolder.classList.contains('selected');
@@ -467,8 +475,8 @@ export default class EntryForm extends BaseForm {
     // A seleção de folders somente afeta o estado do formulário, se ele estiver no 
     // estado padrão.
     if (this.currentState == this.states.default) {
-      if (isSelected) this._controlFormStates(this.states.newEntry);
-      else this._controlFormStates(this.states.cancelEntry);
+      if (isSelected) this.controlStates(this.states.newEntry);
+      else this.controlStates(this.states.cancelEntry);
     }
   }
 
@@ -479,12 +487,20 @@ export default class EntryForm extends BaseForm {
    */
   onChangeImage(event, displayedImage) {
     const file = event.target.files[0];
+
+    // Verifica se um arquivo foi selecionado e se é uma imagem.
     if (file && file.type.startsWith('image/')) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        displayedImage.src = e.target.result;
+      // Cria um URL temporário para o arquivo selecionado.
+      const imageURL = URL.createObjectURL(file);
+
+      // Atualiza a imagem exibida.
+      displayedImage.src = imageURL;
+      displayedImage.classList.remove('empty');
+
+      // Libera o URL temporário quando não for mais necessário.
+      displayedImage.onload = () => {
+        URL.revokeObjectURL(imageURL);
       };
-      reader.readAsDataURL(file);
     }
   }
 
@@ -504,6 +520,87 @@ export default class EntryForm extends BaseForm {
   }
 
   /**
+  * Trata o evento de criação de um novo item qualquer.
+  * @param {Event} event - Evento de clique no botão de Nova Entrada.
+  */
+  async onBaseNewClick(event) {
+    event.stopPropagation();
+    // Ignora o clique se o botão estiver desativado.
+    //const button = event.target.closest('#newEntryButton');
+    //if (button.classList.contains('disabled')) return;
+
+    // Obtém a lista de Categorias
+    const selectedFolder = this.selection.folder;
+    if (!selectedFolder) {
+      this.msgBox.showWarning('Nenhuma categoria foi selecionada.');
+      return;
+    }
+
+    const headerInfo = this.querySelector('.header-info');
+    if (this.isEncyclopedia) headerInfo.dataset.sid = selectedFolder.dataset.sid ?? null;
+    else headerInfo.dataset.cid = selectedFolder.dataset.cid ?? null;
+
+    const titleInput = this.querySelector('#titleInput');
+    titleInput.focus();
+
+    if (!this.onNewClick) {
+      const message = 'Método de tratamento do clique de novo item não foi implementado no formulário filho.';
+      this.msgBox.showWarning(message);
+    } else {
+      // Configuração do label no botão de Salvar.
+      const saveButton = this.querySelector('#saveButton');
+      saveButton.innerHTML = '<i class="fa-regular fa-floppy-disk"></i> Salvar';
+
+      await this.onNewClick(event);
+    }
+  }
+
+  /**
+    * Trata o evento de registro de uma nova entrada.
+    * @param {Event} event - Evento de clique no botão de Salvar.
+    */
+  async onBaseSaveClick(event) {
+    event.stopPropagation();
+
+    const item = this.selection.entry;
+    this.isEntryUpdate = (item ? true : false);
+    const itemId = Number(item?.dataset.id) ?? -1;
+
+    if (!this.onSaveClick) {
+      const message = 'Método de tratamento do clique de salvamento não foi implementado no formulário filho.';
+      this.msgBox.showWarning(message);
+    } else {
+      const options = {
+        id: itemId,
+        isEntryUpdate: this.isEntryUpdate
+      }
+      await this.onSaveClick(event, options);
+    }
+  }
+
+  /**
+   * Gerencia cliques duplos em itens de entrada.
+   * @protected
+   * @param {MouseEvent} event - O evento de clique duplo.
+   */
+  async onEntryItemDoubleClick(event) {
+    super.onEntryItemDoubleClick(event);
+    // Configuração do label no botão de Salvar.
+    const saveButton = this.querySelector('#saveButton');
+    saveButton.innerHTML = '<i class="fa-regular fa-floppy-disk"></i> Atualizar';
+
+    // Está atualizando uma Entrada pré-existente.
+    this.isEntryUpdate = true;
+
+    // Foca no campo de Título.
+    const titleInput = this.querySelector('#titleInput');
+    titleInput.focus();
+
+    // Atualiza o estado dos elements do formulário.
+    this.controlStates(this.states.editing);
+  }
+
+  /**
    * Remove uma entrada de uma categoria da lista.
    * @param {Event} event - Evento de clique no botão para excluir a entrada.
    */
@@ -514,7 +611,7 @@ export default class EntryForm extends BaseForm {
     if (this.isEncyclopedia) await CONFIG.db.deleteCategory(id);
     else await CONFIG.db.deleteEntry(id);
 
-    this._controlFormStates(this.states.default);
+    this.controlStates(this.states.default);
 
     this.updateContent();
     this._hideDialog();
@@ -536,6 +633,16 @@ export default class EntryForm extends BaseForm {
     const message = `Tem certeza que deseja excluir a entrada ${dataType}?`;
     this._showDialog(message);
   }
+  /**
+   * Rotina para tratamento do tooltip de confirmação de remoção.
+   * @param {Event} event - Evento de clique no ícone de exclusão.
+   */
+  onCancelSidebarDialogClick(event) {
+    event.stopPropagation();
+
+    this._hideDialog();
+    this.controlStates(this.states.default);
+  }
 
   /**
     * Trata o evento de cancelamento de um novo item.
@@ -544,107 +651,60 @@ export default class EntryForm extends BaseForm {
   async onCancelClick(event) {
     event.stopPropagation();
 
-    this._controlFormStates(this.states.default);
+    this.controlStates(this.states.default);
   }
-
   /**
-  * Trata o evento de criação de um novo item qualquer.
-  * @param {Event} event - Evento de clique no botão de Nova Entrada.
-  */
-  async onBaseNewClick(event) {
-    event.stopPropagation();
-    // Ignora o clique se o botão estiver desativado.
-    //const button = event.target.closest('#newEntryButton');
-    //if (button.classList.contains('disabled')) return;
-
-    // Obtém a lista de Categorias
-    const selectedFolder = this.form.querySelector('.folder.selected');
-    if (!selectedFolder) {
-      this.msgBox.showWarning('Nenhuma categoria foi selecionada.');
-      return;
-    }
-
-    const headerInfo = this.form.querySelector('.header-info');
-    if (this.isEncyclopedia) headerInfo.dataset.sid = selectedFolder.dataset.sid ?? null;
-    else headerInfo.dataset.cid = selectedFolder.dataset.cid ?? null;
-
-    const titleInput = this.form.querySelector('#titleInput');
-    titleInput.focus();
-
-    if (!this.onNewClick) {
-      const message = 'Método de tratamento do clique de novo item não foi implementado no formulário filho.';
-      this.msgBox.showWarning(message);
-    } else {
-      // Configuração do label no botão de Salvar.
-      const saveButton = this.form.querySelector('#saveButton');
-      saveButton.innerHTML = '<i class="fa-regular fa-floppy-disk"></i> Salvar';
-      
-      await this.onNewClick(event);      
-    }
-
-    // Criar o diálogo
-    //const dialog = new NewEntryDialog(selectedFolder);
-    //dialog.createDialog(true);
-
-    /*
-    const listItems = dialog.querySelectorAll('.list-item');
-    let listerns = [];
-    listItems.forEach(item => {
-        listerns.push(
-            {
-                element: item,
-                event: 'click',
-                callback: (event) => { dialog.onEntryItemClick(event); }
-            }
-        );
-    });
-
-    dialog.configureListeners(listerns);
+    * Ação personalizada no editor TinyMCE para criar ou modificar links.
+    * @param {Object} editor - Instância do editor TinyMCE.
     */
-    //this.dialog = dialog;
-  }
+  async onEntryLinkCreation(editor) {
+    const tooltip = this.ui.tooltip;
+    const selectedHtml = editor.selection.getContent();
 
-  /**
-    * Trata o evento de registro de uma nova entrada.
-    * @param {Event} event - Evento de clique no botão de Salvar.
-    */
-  async onBaseSaveClick(event) {
-    event.stopPropagation();
+    const id = this.selection.entry.dataset.id;
+    const type = ((this.querySelector('.entries')).classList.contains('timeline') ? 'timeline' : 'entry');
+    const link = await LinkDialog.configDialog({ id, type });
 
-    const item = this.form.querySelector('.entry-item.selected');
-    this.isEntryUpdate = (item ? true : false);
-    const itemId = Number(item?.dataset.id) ?? -1;
+    if (link) {
+      const spanRegex = /<span[^>]*>(.*?)<\/span>/gi;
+      if (spanRegex.test(selectedHtml)) {
+        const unwrappedText = selectedHtml.replace(spanRegex, '$1').trim();
+        editor.selection.setContent(unwrappedText);
+      } else {
+        const selectedText = editor.selection.getContent({ format: 'text' });
+        if (selectedText) {
+          const leadingSpaces = selectedText.match(/^\s+/);
+          const trailingSpaces = selectedText.match(/\s+$/);
 
-    if (!this.onSaveClick) {
-      const message = 'Método de tratamento do clique de salvamento não foi implementado no formulário filho.';
-      this.msgBox.showWarning(message);
-    } else { 
-      const options = {
-        id: itemId,
-        isEntryUpdate: this.isEntryUpdate    
-      } 
-      await this.onSaveClick(event, options);
+          const trimmedText = selectedText.trim();
+          const wrappedContent = `${leadingSpaces ? leadingSpaces[0] : ''}${tooltip.forgeLink(link, trimmedText, null)}${trailingSpaces ? trailingSpaces[0] : ''}`;
+          editor.selection.setContent(wrappedContent);
+        } else {
+          editor.notificationManager.open({
+            text: 'Favor selecionar um texto antes de criar um link.',
+            type: 'warning'
+          });
+        }
+      }
     }
   }
 
   /**
-   * Gerencia cliques duplos em itens de entrada.
-   * @protected
-   * @param {MouseEvent} event - O evento de clique duplo.
+   * Realiza uma ação com base no tipo configurado no diálogo.
+   * @private
+   * @param {Event} event - Evento disparado no botão de confirmação.
    */
-  async onEntryItemDoubleClick(event) {
-    super.onEntryItemDoubleClick(event);
-    // Configuração do label no botão de Salvar.
-    const saveButton = this.form.querySelector('#saveButton');
-    saveButton.innerHTML = '<i class="fa-regular fa-floppy-disk"></i> Atualizar';
-
-    // Está atualizando uma Entrada pré-existente.
-    this.isEntryUpdate = true;
-
-    // Atualiza o estado dos elements do formulário.
-    this._controlFormStates(this.states.editEntry);
+  _doAction(event) {
+    switch (this.ui.dialog.dataset.action) {
+      case 'del': {
+        this.onDeleteEntryAction(event);
+      } break;
+      default:
+        this.msgBox.showError("Ação inválida. Não foi possível realizar a ação enviada.");
+    }
   }
-
+  /* ---------------------------------------------------------------------------------------------------------------- */
+  // UTILITÁRIOS
   /**
    * Gera uma nova opção para o ComboBox de Assuntos.
    * @protected
@@ -672,7 +732,6 @@ export default class EntryForm extends BaseForm {
 
     return newOption;
   }
-
   /**
    * Gera uma nova opção para o ComboBox de Tipos de Entradas.
    * @protected
@@ -715,9 +774,9 @@ export default class EntryForm extends BaseForm {
 
     subject = subject[0];
 
-    const typeLabel = this.form.querySelector('#typeLabel');
-    const dataIcon = this.form.querySelector('#dataIcon');
-    const subjectIcon = this.form.querySelector('#subjectIcon');
+    const typeLabel = this.querySelector('#typeLabel');
+    const dataIcon = this.querySelector('#dataIcon');
+    const subjectIcon = this.querySelector('#subjectIcon');
 
     typeLabel.textContent = subject.title;
 
@@ -725,16 +784,15 @@ export default class EntryForm extends BaseForm {
     subjectIcon.classList.remove(...subjectIcon.classList);
     subjectIcon.className = subject.icon;
   }
-
   /**
    * Carrega ícone da raíz do assunto.
    * @protected
    * @async
    */
   async _clearRootIcon() {
-    const typeLabel = this.form.querySelector('#typeLabel');
-    const dataIcon = this.form.querySelector('#dataIcon');
-    const subjectIcon = this.form.querySelector('#subjectIcon');
+    const typeLabel = this.querySelector('#typeLabel');
+    const dataIcon = this.querySelector('#dataIcon');
+    const subjectIcon = this.querySelector('#subjectIcon');
 
     typeLabel.innerHTML = '&#8212';
 
@@ -742,62 +800,37 @@ export default class EntryForm extends BaseForm {
     subjectIcon.classList.remove(...subjectIcon.classList);
     subjectIcon.className = 'fa-regular fa-file';
   }
-
   /**
-   * Inicializa e configura o editor TinyMCE.
-   * Remove qualquer instância existente antes de reconfigurar.
-   * @private
+   * Habilita todas as entradas de uma pasta (categoria) para poderem ser atualizadas.
    */
-  async _configureTinyMCE() {
-    if (tinymce.get('mainEditor')) {
-      tinymce.remove('#mainEditor');
-    }
+  addDeleteIconToEntryItems() {
+    const entriesList = this.querySelectorAll('.entry-item');
 
-    const options = CONFIG.utils.mergeObjects(CONFIG.tinymceOptions.default, {
-      selector: 'textarea#mainEditor',
-      init_instance_callback: (editor) => {
-        editor.setContent(""); // Garante que o editor seja iniciado vazio.
-      },
-      setup: (editor) => { this._setupTinyMCE(editor); }
-    });
-
-    await tinymce.init(options);
-  }
-
-  /**
-    * Ação personalizada no editor TinyMCE para criar ou modificar links.
-    * @param {Object} editor - Instância do editor TinyMCE.
-    */
-  async onEntryLinkCreation(editor) {
-    const tooltip = this.ui.tooltip;
-    const selectedHtml = editor.selection.getContent();
-
-    await LinkDialog.configDialog(editor);
-
-    const spanRegex = /<span[^>]*>(.*?)<\/span>/gi;
-    if (spanRegex.test(selectedHtml)) {
-      const unwrappedText = selectedHtml.replace(spanRegex, '$1').trim();
-      editor.selection.setContent(unwrappedText);
-    } else {
-      const selectedText = editor.selection.getContent({ format: 'text' });
-      if (selectedText) {
-        const leadingSpaces = selectedText.match(/^\s+/);
-        const trailingSpaces = selectedText.match(/\s+$/);
-
-        const trimmedText = selectedText.trim();
-        const wrappedContent = `${leadingSpaces ? leadingSpaces[0] : ''}${tooltip.forgeLink('FN002', trimmedText, () => { console.log("*CLICK*"); })}${trailingSpaces ? trailingSpaces[0] : ''}`;
-        editor.selection.setContent(wrappedContent);
-      } else {
-        editor.notificationManager.open({
-          text: 'Favor selecionar um texto antes de criar um link.',
-          type: 'warning'
-        });
+    entriesList.forEach(item => {
+      const removeButton = item.querySelector('.remove-button');
+      // Se o item não possui botão de remoção, adicione-o.
+      if (!removeButton) {
+        const deleteIcon = this.createDeleteIcon();
+        //deleteIcon.addEventListener('click', (event) => { this.onDeleteEntryClick(event, item); });
+        item.appendChild(deleteIcon);
       }
-    }
+    });
   }
 
   /**
-   * Configura o editor TinyMCE com funcionalidades adicionais.
+   * Cria um botão para remoção de itens de listas.
+   * @returns {HTMLElement} - Elemento do botão de remoção de folder.
+   */
+  createDeleteIcon() {
+    const a = document.createElement('a');
+    a.className = 'remove-button';
+    a.innerHTML = '<i class="fas fa-trash"></i>';
+
+    return a;
+  }
+
+  /**
+   * Configura o editor TinyMCE com funcionalidades padrões.
    * @private
    * @param {Object} editor - Instância do editor TinyMCE.
    */
@@ -811,9 +844,9 @@ export default class EntryForm extends BaseForm {
     });
 
     editor.on('mouseover', (event) => {
-      const span = event.target.closest('span.linked-text');
+      const span = event.target.closest('span.linked-text');   
       if (span) {
-        tooltip._showLinkTooltip(span, 'FN002');
+        tooltip._showLinkTooltip(span);
       } else {
         tooltip._hideLinkTooltip();
       }
@@ -821,6 +854,56 @@ export default class EntryForm extends BaseForm {
 
     editor.on('mouseout', () => {
       tooltip._hideLinkTooltip();
+    });
+  }
+  /**
+   * Configura o editor TinyMCE com funcionalidades inline.
+   * @protected
+   * @param {Object} editor - Instância do editor TinyMCE.
+   */
+  _setupInlineTinyMCE(editor) {
+    // Número máximo de caractéres do editor Tiny MCE de floreio.
+    const maxCharacters = 255;
+
+    // Sobrescreve o método setContent para limitar o conteúdo
+    const originalSetContent = editor.setContent;
+
+    editor.setContent = function (content, ...args) {
+      // Salva a posição atual do cursor
+      const bookmark = editor.selection.getBookmark(2);
+
+      const plainTextContent = editor.dom.create('div', null, content).innerText; // Remove tags HTML
+      if (plainTextContent.length > maxCharacters) {
+        const truncatedText = plainTextContent.substring(0, maxCharacters);
+        const truncatedHtml = editor.dom.create('div', null, truncatedText).innerHTML;
+        originalSetContent.call(editor, truncatedHtml, ...args);
+      } else {
+        originalSetContent.call(editor, content, ...args);
+      }
+
+      // Restaura o cursor para a posição salva
+      if (bookmark) {
+        editor.selection.moveToBookmark(bookmark);
+      }
+    };
+
+    // Evento para interceptar colagem
+    editor.on('PastePreProcess', (e) => {
+      const plainTextContent = editor.dom.create('div', null, e.content).innerText; // Remove HTML
+      if (plainTextContent.length > maxCharacters) {
+        const truncatedText = plainTextContent.substring(0, maxCharacters);
+        const truncatedHtml = editor.dom.create('div', null, truncatedText).innerHTML;
+        e.content = truncatedHtml; // Atualiza o conteúdo colado
+      }
+    });
+
+    // Evento para evitar exceder o limite durante a digitação
+    editor.on('input', () => {
+      const plainTextContent = editor.getContent({ format: 'text' });
+      if (plainTextContent.length > maxCharacters) {
+        const truncatedText = plainTextContent.substring(0, maxCharacters);
+        editor.setContent(truncatedText); // Trunca o conteúdo
+      }
     });
   }
 
@@ -841,20 +924,5 @@ export default class EntryForm extends BaseForm {
    */
   _hideDialog() {
     this.ui.dialog.classList.add('hidden');
-  }
-
-  /**
-   * Realiza uma ação com base no tipo configurado no diálogo.
-   * @private
-   * @param {Event} event - Evento disparado no botão de confirmação.
-   */
-  _doAction(event) {
-    switch (this.ui.dialog.dataset.action) {
-      case 'del': {
-        this.onDeleteEntryAction(event);
-      } break;
-      default:
-        this.msgBox.showError("Ação inválida. Não foi possível realizar a ação enviada.");
-    }
   }
 }

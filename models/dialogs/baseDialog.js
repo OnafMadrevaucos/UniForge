@@ -39,8 +39,6 @@ export default class BaseDialog {
     * Exibe o diálogo na página.
     */
     render() {
-        if (!this.overlay) return;
-
         document.body.appendChild(this.overlay);
         this._renderWindow();
     }
@@ -59,6 +57,18 @@ export default class BaseDialog {
     }
 
     /**
+    * Configura ouvintes de eventos básicos para o dialog.
+    * @protected
+    */
+    _activateListeners() {
+        const titleHeader = this.querySelector('.header');
+        titleHeader.addEventListener('mousedown', (event) => { this.onMouseDown(event); });
+        
+        document.addEventListener('mousemove', (event) => { this.onMouseMove(event); });
+        document.addEventListener('mouseup', () => { this.onMouseUp(); });
+    }
+
+    /**
     * Inicia o processo de arraste do diálogo.
     * 
     * @param {MouseEvent} event - O evento de mouse.
@@ -66,8 +76,13 @@ export default class BaseDialog {
     onMouseDown(event) {
         event.stopPropagation();
         this.state.isDragging = true;
-        this.state.xDiff = event.pageX - this.state.x;
-        this.state.yDiff = event.pageY - this.state.y;
+
+        // Obtém as coordenadas reais do diálogo
+        const dialogRect = this.dialog.getBoundingClientRect();
+
+        // Calcula as diferenças entre o clique e a posição atual
+        this.state.xDiff = event.pageX - dialogRect.left;
+        this.state.yDiff = event.pageY - dialogRect.top;
 
         const header = this.dialog.querySelector('.header');
         header.style.cursor = "grabbing";
@@ -82,11 +97,20 @@ export default class BaseDialog {
     onMouseMove(event) {
         event.stopPropagation();
         if (this.state.isDragging) {
-            this.state.x = this._clampX(event.pageX - this.state.xDiff);
-            this.state.y = this._clampY(event.pageY - this.state.yDiff);
-        }
+            const parentRect = this.parentElement.getBoundingClientRect();
+            const dialogRect = this.dialog.getBoundingClientRect();
 
-        this._renderWindow();
+            // Calcula as novas posições, respeitando os limites do parentElement
+            const newX = event.pageX - this.state.xDiff;
+            const newY = event.pageY - this.state.yDiff;
+
+            this.state.x = Math.max(parentRect.left, Math.min(newX, parentRect.right - dialogRect.width));
+            this.state.y = Math.max(parentRect.top, Math.min(newY, parentRect.bottom - dialogRect.height));
+
+            // Aplica as novas posições
+            this.dialog.style.left = `${this.state.x}px`;
+            this.dialog.style.top = `${this.state.y}px`;
+        }
     }
 
     /**

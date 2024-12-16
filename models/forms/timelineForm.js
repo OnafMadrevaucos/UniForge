@@ -16,7 +16,6 @@ export class TimelineForm extends BaseForm {
     }
 
     configureContent(form) {
-        super.configureContent(form);
         this.configureSidebar(form);
 
         this.manager.getTimeline('TL02').addTo('timelineContainer');

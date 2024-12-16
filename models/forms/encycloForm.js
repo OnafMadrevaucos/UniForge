@@ -54,27 +54,11 @@ export class EncycloForm extends EntryForm {
         // Obtém objeto com todos os dados unificados necessários para o funcionamento do formulário.         
         this.data = await this.getData();
 
-        await super.configureContent(form);
-
-        // Configura o recipiente de imagem usando o método da classe pai.
-        super.configureImageContainer(form);
+        await super.configureContent(form);        
 
         // Atribui o estado padrão aos controles do formulário.
-        this._controlFormStates(this.states.default);
-    }
-
-    /**
-   * Configura o combo de Tipos de Entrada.
-   * @param {HTMLElement} form - O formulário HTML principal.
-   */
-    configureSubjectTypeSelect(form) {
-        const data = this.data.entryTypes;
-        // Carrega as opções de Tipos de Entradas registrados
-        const subjectType = form.querySelector('#subjectType');
-        for (const id of Object.keys(data)) {
-            subjectType.appendChild(this._newSubjectTypeOption(id));
-        }
-    }
+        this.controlStates(this.states.default);
+    }    
 
     /**
     * Trata o evento de registro de uma nova categoria.
@@ -90,11 +74,11 @@ export class EncycloForm extends EntryForm {
 
         if (await Dialog.confirm(title, message)) {
 
-            const headerInfo = this.form.querySelector('.header-info');
+            const headerInfo = this.querySelector('.header-info');
 
-            const imgInput = this.form.querySelector('#hiddenFileInput');
-            const titleInput = this.form.querySelector('#titleInput');
-            const draftSwitch = this.form.querySelector('#checkbox');
+            const imgInput = this.querySelector('#hiddenFileInput');
+            const titleInput = this.querySelector('#titleInput');
+            const draftSwitch = this.querySelector('#checkbox');
 
             // Obtém o objeto do arquivo da imagem.
             const file = imgInput.files[0] ?? null;
@@ -135,11 +119,11 @@ export class EncycloForm extends EntryForm {
         }
         this.clearContent(this.form);
 
-        const cancelButton = this.form.querySelector('#cancelButton');
+        const cancelButton = this.querySelector('#cancelButton');
         cancelButton.dispatchEvent(new Event('click'));
 
         await this.updateContent();
-        this._controlFormStates(this.states.default);
+        this.controlStates(this.states.default);
     }
 
     /**
@@ -148,7 +132,7 @@ export class EncycloForm extends EntryForm {
     */
     async onNewClick(event) {
         this.clearContent(this.form, false);
-        this._controlFormStates(this.states.editEntry);
+        this.controlStates(this.states.editing);
     }
 
     /**
@@ -158,7 +142,7 @@ export class EncycloForm extends EntryForm {
     async onDeleteEntryAction(event) {
         super.onDeleteEntryAction(event);
 
-        const cancelButton = this.form.querySelector('#cancelButton');
+        const cancelButton = this.querySelector('#cancelButton');
         cancelButton.dispatchEvent(new Event('click'));
 
         this.msgBox.showInfo('Categoria removida com sucesso.');
@@ -192,12 +176,12 @@ export class EncycloForm extends EntryForm {
 
         category = category[0];
 
-        const headerInfo = this.form.querySelector('.header-info');
+        const headerInfo = this.querySelector('.header-info');
         headerInfo.dataset.sid = category.sid;
 
-        const displayedImage = this.form.querySelector('#displayedImage');
-        const titleInput = this.form.querySelector('#titleInput');
-        const draftSwitch = this.form.querySelector('#checkbox');
+        const displayedImage = this.querySelector('#displayedImage');
+        const titleInput = this.querySelector('#titleInput');
+        const draftSwitch = this.querySelector('#checkbox');
 
         titleInput.value = category.title;
         tinymce.activeEditor.setContent(category.htmlString);
@@ -211,10 +195,7 @@ export class EncycloForm extends EntryForm {
             displayedImage.classList.remove('empty');
         }
 
-        const cancelButton = this.form.querySelector('#cancelButton');
-        cancelButton.classList.remove('hidden');
-
-        const saveButton = this.form.querySelector('#saveButton');
-        saveButton.classList.remove('disabled');
+        // Foca no campo de Título.    
+        titleInput.focus();
     }
 }

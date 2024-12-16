@@ -81,6 +81,13 @@ window.CONFIG = {
             inline: true,
             skin: 'oxide-dark',
             content_css: '/css/styles.css'
+        },
+        lite: {
+            license_key: 'gpl',
+            menubar: false,
+            inline: true,
+            skin: 'oxide-dark',
+            content_css: '/css/styles.css'
         }
     },
 

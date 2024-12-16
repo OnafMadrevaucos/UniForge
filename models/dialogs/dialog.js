@@ -7,7 +7,7 @@ import BaseDialog from "./baseDialog.js";
  * 
  * @class Dialog
  */
-export default class Dialog extends BaseDialog{
+export default class Dialog extends BaseDialog {
   /**
    * Cria uma instância do diálogo.
    * 
@@ -30,34 +30,33 @@ export default class Dialog extends BaseDialog{
      * Conjunto de botões do diálogo.
      * @type {Object<string, {label: string, icon: string, callback: Function}>}
      */
-    this.buttons = buttons;   
+    this.buttons = buttons;
 
     /**
      * Corpo do diálogo (HTML ou string).
      * @type {HTMLElement|string}
      */
     this.bodyHTML = '';
-    
+
     /** 
      * Função executada se o dialog fechar inesperadamente.
      * @type {Function}
      */
-    this.abort = abort;    
+    this.abort = abort;
 
     /**
      * Opções adicionais fornecidas ao diálogo.
      * @type {Object}
      */
-    this.options = options;    
-
-    this._prepareDialog();
+    this.options = options;       
   }
 
   /**
    * Cria a estrutura do diálogo, incluindo overlay, cabeçalho, corpo e botões.
    * @private
    */
-  async _prepareDialog() {
+  async _prepare() {
+    const options = this.options ?? {};
     const overlay = document.createElement("div");
     overlay.className = "overlay dialog-overlay";
     document.body.appendChild(overlay);
@@ -72,14 +71,7 @@ export default class Dialog extends BaseDialog{
     } else {
       console.warn('Corpo HTML do dialog está vazio. Método \'getBody()\' não implementado.');
       this.bodyHTML = '';
-    }
-
-    // Permite fechar o diálogo clicando no overlay
-    overlay.addEventListener("click", (event) => {
-      if (!event.target.classList.contains('overlay')) return;
-      this.close();
-      this.abort();
-    });
+    }    
 
     // Container do diálogo
     this.dialog = document.createElement("div");
@@ -89,10 +81,6 @@ export default class Dialog extends BaseDialog{
     // Cabeçalho
     const titleHeader = document.createElement('div');
     titleHeader.className = 'header';
-
-    titleHeader.addEventListener('mousedown', (event) => { this.onMouseDown(event); });
-    document.addEventListener('mousemove', (event) => { this.onMouseMove(event); });
-    document.addEventListener('mouseup', () => { this.onMouseUp(); });
 
     // Título do diálogo
     const title = document.createElement("h2");
@@ -104,22 +92,28 @@ export default class Dialog extends BaseDialog{
     const dialogBody = document.createElement("div");
     dialogBody.className = 'body';
     dialogBody.innerHTML = this.bodyHTML.outerHTML ?? this.bodyHTML;
+    
+    /*
+    const folders = dialogBody.querySelectorAll('.folder');
+    folders.forEach(item => {
+      const folderHeader = item.querySelector('.folder-header');
+      folderHeader.addEventListener('click', (event) => {
+        this._onFolderClick(event);
+      });
+    });
+    */   
 
     // Container dos botões
     const buttons = document.createElement("div");
     buttons.className = 'buttons';
 
     // Criar os botões
-    Object.values(this.buttons).forEach((button) => {
+    Object.entries(this.buttons).forEach(([id, button]) => {
       const newButton = document.createElement("button");
+      newButton.id = id;
       newButton.innerHTML = `<i class='${button.icon}'></i> ${button.label}`;
-      newButton.className = button.className || "dialog-button";
+      newButton.className = button.className || "dialog-button";     
 
-      newButton.addEventListener("click", (event, params={}) => { 
-        this.close();
-        button.callback(event, ...Object.values(params)); 
-      });
-      
       buttons.appendChild(newButton);
     });
 
@@ -128,6 +122,33 @@ export default class Dialog extends BaseDialog{
     this.dialog.appendChild(buttons);
 
     this.overlay.appendChild(this.dialog);
+
+    // Centralizar o diálogo no parentElement
+    if (this.parentElement && this.dialog) {
+      const parentRect = this.parentElement.getBoundingClientRect();
+      const dialogRect = this.dialog.getBoundingClientRect();
+
+      // Calcula as coordenadas para centralizar o diálogo
+      const centerX = parentRect.left + (parentRect.width - dialogRect.width) / 2;
+      const centerY = parentRect.top + (parentRect.height - dialogRect.height) / 2;
+
+      // Define a posição do diálogo
+      this.dialog.style.position = "absolute";
+      this.dialog.style.left = `${centerX}px`;
+      this.dialog.style.top = `${centerY}px`;
+    }
+  }
+
+  /**
+    * Exibe o diálogo na página.
+    */
+  render() { 
+    // Prepara o dialog para em seguida renderizá-lo.
+    this._prepare().then(result =>{
+      super.render();
+
+      this._activateListeners();
+    }); 
   }
 
   /**
@@ -151,6 +172,28 @@ export default class Dialog extends BaseDialog{
   }
 
   /**
+    * Configura ouvintes de eventos básicos para o dialog.
+    * @protected
+    */
+  _activateListeners(){
+    super._activateListeners();
+    // Permite fechar o diálogo clicando no overlay
+    this.overlay.addEventListener("click", (event) => {
+      if (!event.target.classList.contains('overlay')) return;
+      this.close();
+      this.abort();
+    });
+    const buttons = this.querySelectorAll('.dialog-button');
+    Object.values(buttons).forEach(button => {
+      button.addEventListener("click", (event, params = {}) => {
+        this.close();
+        this.buttons[button.id].callback(event, ...Object.values(params));
+      });
+    });
+    
+  }
+
+  /**
    * Configura ouvintes de eventos para elementos no diálogo.
    * 
    * @param {Array<{element: HTMLElement, event: string, callback: Function}>} listeners - Lista de objetos contendo o elemento, evento e callback.
@@ -159,7 +202,7 @@ export default class Dialog extends BaseDialog{
     listeners.forEach(item => {
       item.element.addEventListener(item.event, item.callback);
     });
-  }  
+  }
 
   /**
    * Exibe uma caixa de diálogo de confirmação com dois botões (Sim e Não).
@@ -177,7 +220,7 @@ export default class Dialog extends BaseDialog{
           no: {
             label: "Não",
             icon: "fas fa-xmark",
-            callback: () => resolve(false)        
+            callback: () => resolve(false)
           },
           yes: {
             label: "Sim",
@@ -186,9 +229,9 @@ export default class Dialog extends BaseDialog{
           }
         },
         abort: () => resolve(false)
-      };  
-      const dialog = new this(dialogData, { prompt: message });      
+      };
+      const dialog = new this(dialogData, { prompt: message });
       dialog.render();
-    });    
+    });
   }
 }
