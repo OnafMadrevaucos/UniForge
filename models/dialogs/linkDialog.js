@@ -1,6 +1,6 @@
 import Dialog from "./dialog.js";
 
-export class LinkDialog extends Dialog {
+export default class LinkDialog extends Dialog {
     constructor(dialogData = {}, options = {}) {
         super(dialogData, options);
 

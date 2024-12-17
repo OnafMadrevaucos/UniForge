@@ -3,7 +3,8 @@
  */
 import BaseForm from "./baseForm.js";
 import DBManager from "../../db/dbManager.js";
-import { LinkDialog } from "../dialogs/linkDialog.js";
+import LinkDialog from "../dialogs/linkDialog.js";
+import ImagePickerDialog from "../dialogs/imagePickerDialog.js";
 
 /**
  * Classe EntryForm estende a funcionalidade da classe BaseForm para gerenciar formulários que manipulem Entradas.
@@ -690,6 +691,45 @@ export default class EntryForm extends BaseForm {
   }
 
   /**
+   * Cria um ImagePicker e trata a ação do usuário de envio de uma imagem para o texto.
+   * @private
+   */
+  async onUploadImage() {
+    const result = await ImagePickerDialog.configDialog();
+    const i = 0;
+
+    /*
+    const input = document.createElement('input');
+    input.setAttribute('type', 'file');
+    input.setAttribute('accept', 'image/*');
+
+    input.addEventListener('change', (event) => {
+      const file = event.target.files[0];
+
+      const reader = new FileReader();
+      reader.addEventListener('load', () => {
+        
+          Note: Now we need to register the blob in TinyMCEs image blob
+          registry. In the next release this part hopefully won't be
+          necessary, as we are looking to handle it internally.
+        
+        const id = 'blobid' + (new Date()).getTime();
+        const blobCache =  tinymce.activeEditor.editorUpload.blobCache;
+        const base64 = reader.result.split(',')[1];
+        const blobInfo = blobCache.create(id, file, base64);
+        blobCache.add(blobInfo);
+
+        /* call the callback and populate the Title field with the file name 
+        callback(blobInfo.blobUri(), { title: file.name });
+      });
+      reader.readAsDataURL(file);
+    });
+
+    input.click();
+    */
+  }
+
+  /**
    * Realiza uma ação com base no tipo configurado no diálogo.
    * @private
    * @param {Event} event - Evento disparado no botão de confirmação.
@@ -843,8 +883,15 @@ export default class EntryForm extends BaseForm {
       onAction: () => { this.onEntryLinkCreation(editor); }
     });
 
+    // Adiciona um botão de imagem customizado na toolbar
+    editor.ui.registry.addButton('sendImage', {
+      icon: 'image',
+      tooltip: 'Enviar Imagem',
+      onAction: () => { this.onUploadImage(); }
+    });
+
     editor.on('mouseover', (event) => {
-      const span = event.target.closest('span.linked-text');   
+      const span = event.target.closest('span.linked-text');
       if (span) {
         tooltip._showLinkTooltip(span);
       } else {

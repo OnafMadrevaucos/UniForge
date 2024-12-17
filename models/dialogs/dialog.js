@@ -80,13 +80,18 @@ export default class Dialog extends BaseDialog {
 
     // Cabeçalho
     const titleHeader = document.createElement('div');
-    titleHeader.className = 'header';
+    titleHeader.className = 'header flexrow';
 
     // Título do diálogo
     const title = document.createElement("h2");
     title.textContent = this.title;
 
+    const closeButton = document.createElement("a");
+    closeButton.className = 'close-button';
+    closeButton.innerHTML = '<i class="fas fa-xmark"></i>';
+
     titleHeader.appendChild(title);
+    titleHeader.appendChild(closeButton);
 
     // Corpo do diálogo
     const dialogBody = document.createElement("div");
@@ -152,6 +157,14 @@ export default class Dialog extends BaseDialog {
   }
 
   /**
+    * Fecha o diálogo e remove o overlay da página.
+  */
+  close(){
+    if(this.abort) this.abort();    
+    super.close();
+  }
+
+  /**
    * Seleciona o primeiro elemento correspondente ao seletor dentro do diálogo.
    * 
    * @param {string} selector - Seletor CSS.
@@ -189,6 +202,12 @@ export default class Dialog extends BaseDialog {
         this.close();
         this.buttons[button.id].callback(event, ...Object.values(params));
       });
+    });
+    
+    const closeButton = this.querySelector('.close-button');
+    closeButton.addEventListener('click', (event) => {
+      event.stopPropagation();
+      this.close();
     });
     
   }

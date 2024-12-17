@@ -873,6 +873,7 @@ input:checked+.slider::before {
     border: none;
     cursor: pointer;
     z-index: 10000;
+    border-radius: 5px 15px;
 }
 
 .overlay .form-container.article .close-button,
@@ -887,6 +888,7 @@ input:checked+.slider::before {
 .overlay .form-container .close-button:hover {
     color: var(--light-text-color);
     box-shadow: var(--small-shadow);
+    border-radius: 5px 15px;
 }
 
 .overlay .form-container .form-content {
@@ -2232,10 +2234,10 @@ folder-list .folder.created.selected .folder-header .fa-trash {
 }
 
 /* ------ Dialog ------ */
-.dialog {
+.dialog { 
     position: fixed;
     top: 50%;
-    left: 50%;
+    left: 50%;     
     background: var(--background-color);
     font-size: var(--default-size);
     padding-block: 10px;
@@ -2244,16 +2246,16 @@ folder-list .folder.created.selected .folder-header .fa-trash {
     z-index: 9999;
     width: fit-content;
 }
-
 .dialog:hover {
     cursor: default;
 }
 
 .dialog .header {
     background: var(--dark-red);
-    border-radius: var(--title-header-radius);
-    margin-right: 5px;
+    border-radius: var(--title-header-radius);    
     box-shadow: var(--small-shadow);
+    margin-right: 5px; 
+    margin-bottom: 10px;   
 }
 
 .dialog .header:hover {
@@ -2261,13 +2263,25 @@ folder-list .folder.created.selected .folder-header .fa-trash {
 }
 
 .dialog .header h2 {
+    flex: 1;
     color: var(--light-text-color);
     margin: 0;
-    margin-bottom: 15px;
     padding-left: 20px;
     font-size: 18px;
     font-weight: bold;
     text-shadow: none;
+}
+.dialog .header a {
+    flex: 0;
+    color: var(--light-text-color);    
+    align-self: center;
+    text-align: end;
+    margin-right: 5px;
+    padding-right: 5px;
+}
+.dialog .header a i:hover {
+    cursor: pointer;
+    text-shadow: var(--text-shadow);
 }
 
 .dialog .body {
@@ -2415,13 +2429,18 @@ folder-list .folder.created.selected .folder-header .fa-trash {
     outline: none;
 }
 
+.tox .tox-dialog .tox-dialog__footer {
+    background-color: transparent;
+}
+
+.tox .tox-dialog .tox-dialog__footer,
 .dialog .buttons {
     display: flex;
     justify-content: flex-end;
     margin-inline: 5px;
     gap: 5px;
 }
-
+.tox .tox-dialog .tox-dialog__footer .tox-button,
 .dialog .buttons button {
     flex: 1;
     border: none;
@@ -2432,6 +2451,7 @@ folder-list .folder.created.selected .folder-header .fa-trash {
     color: var(--background-color);
 }
 
+.tox .tox-dialog .tox-dialog__footer .tox-button:hover,
 .dialog .buttons button:hover {
     background: var(--dark-red);
     color: var(--light-text-color);
