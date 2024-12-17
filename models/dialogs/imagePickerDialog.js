@@ -2,63 +2,117 @@ import Dialog from "./dialog.js";
 
 export default class FilePickerDialog extends Dialog {
     constructor(dialogData = {}, options = {}) {
-        super(dialogData, options);
+        super(dialogData, CONFIG.utils.mergeObjects(options, {
+            height: '150px', 
+            width: '475px'
+        }));
     }
 
     async getBody() {
         // Cria o body
         const body = document.createElement('div');
-        body.className = 'flexcol';
+        body.className = 'image-dialog flexcol';
 
-        const fileLabel = document.createElement('label');
-        fileLabel.setAttribute('for', 'fileInput');
-        fileLabel.textContent = 'Escolha uma imagem:';
+        const fileGroup = document.createElement('div');
+        fileGroup.className = 'data-group text file';
 
-        const fileInput = document.createElement('input');
-        fileInput.setAttribute('type', 'file');
-        fileInput.setAttribute('id', 'fileInput');
-        fileInput.setAttribute('accept', 'image/*');
+        const fileLabel = document.createElement('span');
+        fileLabel.className = 'data-label';
+        fileLabel.textContent = 'Escolha uma imagem: ';
 
-        const captionLabel = document.createElement('label');
-        captionLabel.setAttribute('for', 'captionInput');
-        captionLabel.textContent = 'Legenda:';
+        const fileContainer = document.createElement('div');
+        fileContainer.id = 'fileContainer';
+        fileContainer.className = 'file-container flexrow';
+
+        const chosenFilePath = document.createElement('input');
+        chosenFilePath.type = 'text';
+        chosenFilePath.id = 'chosenFilePath';
+        chosenFilePath.className = 'file-path';
+        chosenFilePath.disabled = true;
+
+        const chooseFileButton = document.createElement('a');
+        chooseFileButton.id = 'chooseFileButton';
+        chooseFileButton.innerHTML = '<i class="fas fa-upload"></i>';
+
+        const hiddenfileInput = document.createElement('input');
+        hiddenfileInput.type = 'file';
+        hiddenfileInput.id = 'hiddenfileInput';
+        hiddenfileInput.className = 'hidden';
+        hiddenfileInput.accept = 'image/*';   
+        
+        fileContainer.appendChild(fileLabel);
+        fileContainer.appendChild(chosenFilePath);
+        fileContainer.appendChild(chooseFileButton);
+        fileContainer.appendChild(hiddenfileInput);
+
+        fileGroup.appendChild(fileContainer);
+
+        const captionGroup = document.createElement('div');
+        captionGroup.className = 'data-group text';
+
+        const captionLabel = document.createElement('span');
+        captionLabel.className = 'data-label';
+        captionLabel.textContent = 'Legenda: ';
 
         const captionInput = document.createElement('input');
-        captionInput.setAttribute('type', 'text');
-        captionInput.setAttribute('id', 'captionInput');
-        captionInput.setAttribute('placeholder', 'Digite a legenda...');
+        captionInput.id = 'captionInput';
+        captionInput.type = 'text';
+        captionInput.placeholder = 'Digite a legenda...';
 
-        body.appendChild(fileLabel);
-        body.appendChild(fileInput);
-        body.appendChild(captionLabel);
-        body.appendChild(captionInput);
+        captionGroup.appendChild(captionLabel);
+        captionGroup.appendChild(captionInput);
+
+        body.appendChild(fileGroup);
+        body.appendChild(captionGroup);
 
         return body;
-    }   
+    }  
+    
+    /**
+    * Configura ouvintes de eventos básicos para o dialog.
+    * @protected
+    */
+    _activateListeners() {
+        super._activateListeners();
 
-    static async configDialog(fileInput, callback) {
-        function getImage(fileInput, callback) {
-            const file = fileInput.files[0];
-            const caption = captionInput.value;
+        const hiddenfileInput = this.querySelector('#hiddenfileInput');
+        const chooseFileButton = this.querySelector('#chooseFileButton');
+        const chosenFilePath = this.querySelector('#chosenFilePath');
 
-            if (file) {
-                const reader = new FileReader();
+        hiddenfileInput.addEventListener('change', (event) => { this._onChangeFile(event, chosenFilePath); })
+        chooseFileButton.addEventListener('click', () => { hiddenfileInput.click(); });
+    }
 
-                reader.onload = function (event) {
-                    // Converte a imagem em Blob
-                    const blob = new Blob([event.target.result], { type: file.type });
-                    const url = URL.createObjectURL(blob);
+    /**
+    * Trata evento de seleção de arquivo.
+    * @param {MouseEvent} event             - O evento de clique.
+    * @param {HTMLElement} chosenFilePath   - O recipiente para o caminho do arquivo selecionado.
+    */
+    _onChangeFile(event, chosenFilePath) {
+        const file = event.target.files[0];
 
-                    // Chama o callback com o URL da imagem
-                    callback(url, { title: caption });
+        // Verifica se um arquivo foi selecionado e se é uma imagem.
+        if (file && file.type.startsWith('image/')) {
+          // Cria um URL temporário para o arquivo selecionado.
+          const imageURL = URL.createObjectURL(file);
+    
+          // Atualiza a imagem exibida.
+          chosenFilePath.value = imageURL;
+    
+          /*
+          // Libera o URL temporário quando não for mais necessário.
+          displayedImage.onload = () => {
+            URL.revokeObjectURL(imageURL);
+          };
+          */
+        }
+    }
 
-                    closeDialog();
-                };
+    static async configDialog() {
+        function getImage(event) {  
+            event.stopPropagation();
 
-                reader.readAsArrayBuffer(file);
-            } else {
-                alert('Por favor, selecione um arquivo de imagem.');
-            }
+            
         }
 
         return new Promise((resolve, reject) => {
@@ -73,7 +127,7 @@ export default class FilePickerDialog extends Dialog {
                     link: {
                         label: "Enviar",
                         icon: "fas fa-link",
-                        callback: (fileInput, callback) => { resolve(getImage(fileInput, callback)); }
+                        callback: (event) => { resolve(getImage(event)); }
                     }
                 },
                 abort: () => resolve(null)

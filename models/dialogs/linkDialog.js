@@ -2,7 +2,10 @@ import Dialog from "./dialog.js";
 
 export default class LinkDialog extends Dialog {
     constructor(dialogData = {}, options = {}) {
-        super(dialogData, options);
+        super(dialogData, CONFIG.utils.mergeObjects(options, {
+            height: '500px', 
+            width: '600px'
+        }));
 
         this.sourceId = options?.id ?? null;
 

@@ -911,7 +911,7 @@ input:checked+.slider::before {
 }
 
 .data-group .data-label {
-    flex: 1;
+    flex: none;
     align-self: center;
     margin-right: 5px;
     font-weight: bold;
@@ -951,6 +951,26 @@ input:checked+.slider::before {
 .data-group .type-label {
     align-content: center;
     padding-left: 5px;
+}
+
+.data-group .file-container {
+    flex: 1;
+    gap: 5px;
+    margin-bottom: 5px;
+}
+.data-group .file-container .file-path {
+    flex: 1;
+    border: none;
+    cursor: default;
+}
+.data-group .file-container a {
+    flex: 0;
+    align-self: center;    
+}
+.data-group .file-container a:hover {
+    cursor: pointer;
+    color: var(--focus-red); 
+    text-shadow: 0 0 2px var(--dark-redT87);
 }
 
 #entryFormOverlay .form-container .form-content {
@@ -2251,6 +2271,7 @@ folder-list .folder.created.selected .folder-header .fa-trash {
 }
 
 .dialog .header {
+    gap: 5px;
     background: var(--dark-red);
     border-radius: var(--title-header-radius);    
     box-shadow: var(--small-shadow);
@@ -2273,22 +2294,30 @@ folder-list .folder.created.selected .folder-header .fa-trash {
 }
 .dialog .header a {
     flex: 0;
-    color: var(--light-text-color);    
+    color: var(--light-text-color);
     align-self: center;
     text-align: end;
     margin-right: 5px;
-    padding-right: 5px;
+    padding-inline: 2.65px 2.5px;
+    border-radius: 50%;
 }
-.dialog .header a i:hover {
+
+.dialog .header a:hover {
     cursor: pointer;
-    text-shadow: var(--text-shadow);
+    color: var(--dark-red);
+    background-color: var(--light-text-color);
 }
 
 .dialog .body {
+    height: -webkit-fill-available;
     margin-bottom: 10px;
     padding-inline: 10px;
     font-size: var(--default-size);
     color: var(--light-text-color);
+}
+
+.dialog .body .link-dialog {
+    gap: 5px;
 }
 
 .dialog .body input,
@@ -2364,11 +2393,6 @@ folder-list .folder.created.selected .folder-header .fa-trash {
     align-self: center;
 }
 
-.dialog .body .link-dialog {
-    gap: 5px;
-    height: 500px;
-    width: 600px;
-}
 .dialog .body .link-dialog .sidebar {
     flex: 0 0 30%;
     padding: 5px;
@@ -2429,32 +2453,26 @@ folder-list .folder.created.selected .folder-header .fa-trash {
     outline: none;
 }
 
-.tox .tox-dialog .tox-dialog__footer {
-    background-color: transparent;
-}
-
-.tox .tox-dialog .tox-dialog__footer,
 .dialog .buttons {
+    flex: 1;
     display: flex;
     justify-content: flex-end;
     margin-inline: 5px;
     gap: 5px;
 }
-.tox .tox-dialog .tox-dialog__footer .tox-button,
 .dialog .buttons button {
     flex: 1;
+    align-self: flex-end;
     border: none;
     border-radius: var(--default-border-radius);
     cursor: pointer;
-    background: var(--red);
-    box-shadow: var(--small-shadow);
-    color: var(--background-color);
-}
-
-.tox .tox-dialog .tox-dialog__footer .tox-button:hover,
-.dialog .buttons button:hover {
     background: var(--dark-red);
+    box-shadow: var(--small-shadow);
     color: var(--light-text-color);
+}
+.dialog .buttons button:hover {
+    background: var(--focus-red);
+    color: var(--background-color);
 }
 
 .dialog .dialog-overlay {

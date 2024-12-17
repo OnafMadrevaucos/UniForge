@@ -59,7 +59,7 @@ export default class Dialog extends BaseDialog {
     const options = this.options ?? {};
     const overlay = document.createElement("div");
     overlay.className = "overlay dialog-overlay";
-    document.body.appendChild(overlay);
+    document.body.appendChild(overlay);    
 
     this.overlay = overlay; // Armazena o overlay para exibição posterior. 
 
@@ -76,7 +76,9 @@ export default class Dialog extends BaseDialog {
     // Container do diálogo
     this.dialog = document.createElement("div");
     this.dialog.id = 'dialog';
-    this.dialog.className = "dialog";
+    this.dialog.className = 'dialog flexcol';
+
+    this.dialog.style = `height: ${this.options.height ?? 'auto'}; width: ${this.options.width ?? 'auto'}`;
 
     // Cabeçalho
     const titleHeader = document.createElement('div');
@@ -95,7 +97,7 @@ export default class Dialog extends BaseDialog {
 
     // Corpo do diálogo
     const dialogBody = document.createElement("div");
-    dialogBody.className = 'body';
+    dialogBody.className = 'body flexcol';
     dialogBody.innerHTML = this.bodyHTML.outerHTML ?? this.bodyHTML;
     
     /*
