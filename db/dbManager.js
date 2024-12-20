@@ -1,13 +1,27 @@
 export default class DBManager {
-    storedProcedures = {
-        createEntryTable: this.createEntryTable,
-        createEntryTypesTable: this.createEntryTypesTable,
-        createSubjectTypeTable: this.createSubjectTypeTable,
-        createCalendarTable: this.createCalendarTable,
-        createMonthsTable: this.createMonthsTable,
-        createDaysTable: this.createDaysTable,
-        createDaysInMonthsTable: this.createDaysInMonthsTable
-    };
+    constructor() {
+
+        this.crypto = window.crypto;
+
+        this.storedProcedures = {
+            createCalendarTable: this.createCalendarTable,
+            createMonthsTable: this.createMonthsTable,
+            createDaysTable: this.createDaysTable,
+            createDaysInMonthsTable: this.createDaysInMonthsTable,
+            createEntryTypesTable: this.createEntryTypesTable,
+            createImportanceTable: this.createImportanceTable,
+            createSubjectTypeTable: this.createSubjectTypeTable,
+            createCategoryTable: this.createCategoryTable,
+            createEntryTable: this.createEntryTable,
+            createEventTable: this.createEventTable,
+            createTimelineTable: this.createTimelineTable,
+            createTimelineEventTable: this.createTimelineEventTable,
+            createTextImagesTable: this.createTextImagesTable,
+            createSettingsTable: this.createSettingsTable
+        };
+    }
+
+
 
     async getAllTables() {
         const query = 'SELECT name FROM sqlite_master WHERE type=\'table\' ORDER BY name';
@@ -19,6 +33,58 @@ export default class DBManager {
     async deleteTable(tableName) {
         const query = `DROP TABLE ${tableName}`;
         return await CONFIG.sql.exec(query);
+    }
+
+    async resetDatabase() {
+        const queires = [
+            'DROP TABLE _textImages',
+            'DROP TABLE _timelineEvent',
+            'DROP TABLE category',
+            'DROP TABLE entry',
+            'DROP TABLE entryTypes',
+            'DROP TABLE event',
+            'DROP TABLE importance',
+            'DROP TABLE settings',
+            'DROP TABLE subjectType',
+            'DROP TABLE timeline'
+        ];
+
+        const totalQueries = queires.length;
+
+        try {
+            // Inicia a transação
+            await CONFIG.sql.exec('BEGIN TRANSACTION');
+
+            let count = 0;
+
+            for (let query of queires) {
+                await CONFIG.sql.exec(query);
+                count++;
+
+                console.log(`Tabela ${count} de ${totalQueries} deletada.`);
+            }
+
+            this.createEntryTypesTable();            
+            this.createImportanceTable();            
+            this.createTextImagesTable();
+            this.createTimelineEventTable();
+            this.createSubjectTypeTable();
+            this.createCategoryTable();
+            this.createEntryTable(); 
+            this.createEventTable();
+            this.createTimelineTable();
+            this.createSettingsTable(); 
+
+            // Comita a transação
+            await CONFIG.sql.exec('COMMIT');
+            return true;
+            
+        } catch (error) {
+            // Faz rollback em caso de erro
+            await CONFIG.sql.exec('ROLLBACK');
+            console.error('Erro ao resetar o banco de dados, operação abortada.', error);            
+            return false;
+        }
     }
 
     async getCalendars() {
@@ -74,15 +140,17 @@ export default class DBManager {
     async getImportances(getExternal = false) {
         let query = 'SELECT * FROM importance ';
         if (!getExternal) query += 'WHERE isEntry = 1;'
+
         const rows = await CONFIG.sql.query(query);
 
         return rows;
     }
 
     async addCategory(data) {
-        let query = 'INSERT INTO category (sid, title, img, ext, htmlString, isDraft) VALUES (?,?,?,?,?,?);';
+        let query = 'INSERT INTO category (cid, sid, title, img, ext, htmlString, isDraft) VALUES (?,?,?,?,?,?,?);';
         const params = [];
 
+        params.push(this.generateUUID());
         params.push(data.sid);
         params.push(data.title);
         params.push(data.img ?? null);
@@ -115,6 +183,15 @@ export default class DBManager {
         let query = 'SELECT * FROM category WHERE cid = ?';
         const params = [cid];
         const rows = await CONFIG.sql.query(query, params);
+
+        if (rows.length >= 1) return rows[0];
+        else return null;
+    }
+    async getAllCategory() {
+        let query = 'SELECT C.*, S.icon FROM category AS C ';
+        query += 'INNER JOIN subjectType AS S ON S.sid = C.sid ';
+        query += 'WHERE C.isDraft = 0 ORDER BY C.title;';
+        const rows = await CONFIG.sql.query(query);
 
         return rows;
     }
@@ -152,9 +229,8 @@ export default class DBManager {
         let query = 'SELECT * FROM subjectType AS S WHERE S.sid = ?';
         const params = [sid];
 
-        const rows = await CONFIG.sql.query(query, params);
-
-        return rows;
+        if (rows.length >= 1) return rows[0];
+        else return null;
     }
     async getSubjectRoot(sid) {
         let query = 'SELECT S.title, S.root, R.icon FROM subjectType AS S ';
@@ -163,7 +239,8 @@ export default class DBManager {
         const params = [sid];
         const rows = await CONFIG.sql.query(query, params);
 
-        return rows;
+        if (rows.length >= 1) return rows[0];
+        else return null;
     }
     async getAllSubjects(root = '*') {
         let query = '';
@@ -181,17 +258,18 @@ export default class DBManager {
     }
 
     async addEntry(data) {
-        let query = 'INSERT INTO entry (etid, title, flavor, htmlString, isDraft, cid, img, ext) VALUES (?,?,?,?,?,?,?,?);';
+        let query = 'INSERT INTO entry (eid, etid, cid, title, flavor, htmlString, img, ext isDraft) VALUES (?,?,?,?,?,?,?,?,?);';
         let params = [];
 
+        params.push(this.generateUUID());
         params.push(data.etid);
+        params.push(data.cid);
         params.push(data.title);
         params.push(data.flavor);
         params.push(data.htmlString);
-        params.push(Number(data.isDraft));
-        params.push(data.cid);
         params.push(data.img ?? null);
         params.push(data.ext ?? 'jpeg');
+        params.push(Number(data.isDraft));
 
         const result = await CONFIG.sql.exec(query, params);
 
@@ -203,10 +281,10 @@ export default class DBManager {
             ['title', data.title],
             ['flavor', data.flavor],
             ['htmlString', data.htmlString],
-            ['isDraft', Number(data.isDraft)],
+            ['isDraft', data.isDraft],
             ['cid', data.cid],
-            ['img', data.img],
-            ['ext', data.ext]
+            ['ext', data.ext],
+            ['img', data.img]
         ]);
 
         let query = `UPDATE entry SET ${updateSet} WHERE eid = ?`;
@@ -221,16 +299,27 @@ export default class DBManager {
 
         const rows = await CONFIG.sql.query(query, params);
 
-        return rows;
+        if (rows.length >= 1) return rows[0];
+        else return null;
     }
     async getEntryWithIcon(eid) {
-        let query = 'SELECT E.*, S.icon FROM entry AS E ';
+        let query = 'SELECT E.*, C.title AS category, S.icon FROM entry AS E ';
         query += 'INNER JOIN category AS C ON C.cid = E.cid ';
         query += 'INNER JOIN subjectType AS S ON S.sid = C.sid ';
         query += 'WHERE eid = ?'
         const params = [eid];
 
         const rows = await CONFIG.sql.query(query, params);
+
+        if (rows.length >= 1) return rows[0];
+        else return null;
+    }
+    async getAllEntriesWithIcon() {
+        let query = 'SELECT E.*, C.title AS category, S.icon FROM entry AS E ';
+        query += 'INNER JOIN category AS C ON C.cid = E.cid ';
+        query += 'INNER JOIN subjectType AS S ON S.sid = C.sid ';
+
+        const rows = await CONFIG.sql.query(query);
 
         return rows;
     }
@@ -240,7 +329,7 @@ export default class DBManager {
         query += 'INNER JOIN subjectType AS S ON S.sid = C.sid ';
         query += 'WHERE A.isDraft = 0';
 
-        if(type == 'entry') query += ` AND A.eid <> ${id}`;
+        if (type == 'entry') query += ` AND A.eid <> ${id}`;
 
         query += ' UNION ';
         query += 'SELECT A.tid AS id, A.title, \'timeline\' AS type, S.icon FROM timeline AS A ';
@@ -251,7 +340,7 @@ export default class DBManager {
         query += 'INNER JOIN subjectType AS S ON S.sid = C.sid ';
         query += 'WHERE A.isDraft = 0 ';
 
-        if(type == 'timeline') query += ` AND A.tid <> ${id}`;
+        if (type == 'timeline') query += ` AND A.tid <> ${id}`;
 
         query += 'ORDER BY S.icon, A.title '
 
@@ -281,12 +370,33 @@ export default class DBManager {
         const rows = await CONFIG.sql.query(query, params);
         return rows;
     }
+    async addEntriesTextImages(data) {
+        let query = 'INSERT INTO _textImages (uuid, img, ext) VALUES (?,?,?);';
+        const params = [];
+        const blob = data.data;
+
+        params.push(data.uuid);
+        params.push(blob.img);
+        params.push(blob.ext);
+
+        const result = await CONFIG.sql.exec(query, params);
+
+        return result;
+    }
+    async getEntriesTextImage(uuid) {
+        let query = 'SELECT * FROM _textImages AS TI WHERE TI.uuid = ?;';
+        const params = [uuid];
+
+        const rows = await CONFIG.sql.query(query, params);
+        return rows;
+    }
 
     async addEvent(data) {
-        let query = 'INSERT INTO event (eid, iid, clid, start_year, start_month, start_day, end_year, end_month, end_day, flavor) ';
-        query += 'VALUES (?,?,?,?,?,?,?,?,?,?);';
+        let query = 'INSERT INTO event (evid, eid, iid, clid, start_year, start_month, start_day, end_year, end_month, end_day, flavor) ';
+        query += 'VALUES (?,?,?,?,?,?,?,?,?,?,?);';
         const params = [];
 
+        params.push(this.generateUUID());
         params.push(data.eid);
         params.push(data.iid);
         params.push(data.clid);
@@ -328,7 +438,8 @@ export default class DBManager {
 
         const rows = await CONFIG.sql.query(query, params);
 
-        return rows;
+        if (rows.length >= 1) return rows[0];
+        else return null;
     }
 
     async getTimeline(tid) {
@@ -337,7 +448,8 @@ export default class DBManager {
 
         const rows = await CONFIG.sql.query(query, params);
 
-        return rows;
+        if (rows.length >= 1) return rows[0];
+        else return null;
     }
     async getTimelineWithIcon(tid) {
         let query = 'SELECT * FROM timeline WHERE tid = ?;';
@@ -345,42 +457,115 @@ export default class DBManager {
 
         const rows = await CONFIG.sql.query(query, params);
 
-        return rows;
+        if (rows.length >= 1) return rows[0];
+        else return null;
     }
 
     async createEntryTable() {
-        const query = 'CREATE TABLE IF NOT EXISTS entry (eid INTEGER PRIMARY KEY,' +
-            'importance TEXT,' +                 // Texto para representar a importância
-            'date_y INTEGER,' +                  // Ano (como número inteiro)
-            'date_m INTEGER,' +                  // Mês (como número inteiro)
-            'date_d INTEGER,' +                  // Dia (como número inteiro)
-            'title TEXT,' +                      // Título da entrada
-            'type TEXT,' +                       // Tipo da entrada
-            'flavor TEXT,' +                     // Sabor ou descrição adicional
-            'icon TEXT,' +                       // Ícone associado (caminho ou identificador)
-            'text TEXT,' +                       // Texto da entrada
-            'htmlString TEXT,' +                 // HTML associado à entrada
-            'isDraft BOOLEAN DEFAULT 0)';        // Indica se é um rascunho (falso por padrão)
+        const query = 'CREATE TABLE IF NOT EXISTS entry (eid TEXT PRIMARY KEY NOT NULL,' +
+            'cid TEXT NOT NULL,' +                        // Identificador da Categoria
+            'etid TEXT NOT NULL,' +                       // Texto para representar a importância
+            'title TEXT NOT NULL,' +                      // Título da entrada
+            'flavor TEXT,' +                              // Descrição adicional
+            'htmlString TEXT,' +                          // HTML associado à entrada
+            'img BLOB,' +                                 // BLOB associado à imagem da entrada
+            'ext VARCHAR(50),' +                          // Extensão do arquivo de imagem
+            'isDraft BOOLEAN NOT NULL DEFAULT 0 )';       // Indica se é um rascunho (falso por padrão)
 
+        console.log('Tabela \'entry\' criada....OK.');
+        return await CONFIG.sql.exec(query);
+    }
+
+    async createEventTable() {
+        const query = 'CREATE TABLE IF NOT EXISTS event (evid TEXT PRIMARY KEY NOT NULL,' +
+            'eid TEXT NOT NULL,' +                        // Identificador da Entrada
+            'iid TEXT NOT NULL,' +                        // Identificador da importância
+            'clid TEXT NOT NULL,' +                       // Identificador do calendário
+            'flavor TEXT,' +                              // Descrição adicional
+            'start_day INTEGER,' +                        // Dia da data inicial
+            'start_month INTEGER,' +                      // Mês da data inicial
+            'start_year INTEGER,' +                       // Ano da data inicial
+            'end_day INTEGER,' +                          // Dia da data final
+            'end_month INTEGER,' +                        // Mês da data final
+            'end_year INTEGER)';                          // Ano da data final
+
+        console.log('Tabela \'event\' criada....OK.');
+        return await CONFIG.sql.exec(query);
+    }
+
+    async createTextImagesTable() {
+        const query = 'CREATE TABLE IF NOT EXISTS _textImages (uuid TEXT PRIMARY KEY NOT NULL,' +
+            'img BLOB NOT NULL,' +                 // Texto para representar a importância
+            'ext VARCHAR(50) NOT NULL)';            // Ano (como número inteiro)'; 
+
+        console.log('Tabela \'_textImages\' criada....OK.');
         return await CONFIG.sql.exec(query);
     }
 
     async createSubjectTypeTable() {
-        const query = 'CREATE TABLE IF NOT EXISTS subjectType (sid INTEGER PRIMARY KEY,' +
-            'root TEXT,' +                 // Origem do tipo
-            'title TEXT,' +                // Título do tipo
-            'icon TEXT)';                  // Classe do ícone do FontAwesome
+        const query = 'CREATE TABLE IF NOT EXISTS subjectType (sid TEXT PRIMARY KEY NOT NULL,' +
+            'root TEXT NOT NULL,' +                 // Origem do tipo
+            'title TEXT NOT NULL,' +                // Título do tipo
+            'icon TEXT NOT NULL)';                  // Classe do ícone do FontAwesome
 
         console.log('Tabela \'subjectType\' criada....OK.');
         return await CONFIG.sql.exec(query);
     }
 
+    async createCategoryTable() {
+        const query = 'CREATE TABLE IF NOT EXISTS category (cid TEXT PRIMARY KEY NOT NULL,' +
+            'sid TEXT NOT NULL,' +                          // Identificador do tipo de assunto            
+            'title TEXT NOT NULL,' +                        // Título do tipo
+            'htmlString TEXT NOT NULL,' +                   // HTML associado à entrada
+            'img BLOB,' +                                   // BLOB associado à imagem da entrada
+            'ext NVARCHAR(50),' +                           // Extensão do arquivo de imagem
+            'isDraft BOOLEAN NOT NULL DEFAULT 0 )';         // Indica se é um rascunho (falso por padrão)
+
+        console.log('Tabela \'category\' criada....OK.');
+        return await CONFIG.sql.exec(query);
+    }
+
+    async createTimelineTable() {
+        const query = 'CREATE TABLE IF NOT EXISTS timeline (tid TEXT PRIMARY KEY NOT NULL,' +
+            'title TEXT NOT NULL,' +                        // Título da linha do tempo
+            'flavor TEXT NOT NULL,' +                       // Descrição adicional                          // Extensão do arquivo de imagem
+            'isDraft BOOLEAN NOT NULL DEFAULT 0 )';         // Indica se é um rascunho (falso por padrão)
+
+        console.log('Tabela \'timeline\' criada....OK.');
+        return await CONFIG.sql.exec(query);
+    }
+
+    async createTimelineEventTable() {
+        const query = 'CREATE TABLE IF NOT EXISTS _timelineEvent (tid TEXT PRIMARY KEY NOT NULL,' + // Identificador da linha do tempo
+            'evid TEXT NOT NULL)';                        // Identificador do evento           
+
+        console.log('Tabela \'_timelineEvent\' criada....OK.');
+        return await CONFIG.sql.exec(query);
+    }
+
     async createEntryTypesTable() {
-        let query = 'CREATE TABLE IF NOT EXISTS entryTypes (etid INTEGER PRIMARY KEY,' +
-            'label TEXT,' +
-            'icon TEXT)';                // Número de DIAS por MÊS do calendário
+        let query = 'CREATE TABLE IF NOT EXISTS entryTypes (etid TEXT PRIMARY KEY NOT NULL,' +
+            'label TEXT NOT NULL,' +
+            'icon TEXT NOT NULL)';                // Número de DIAS por MÊS do calendário
 
         console.log('Tabela \'entryTypes\' criada....OK.');
+        return await CONFIG.sql.exec(query);
+    }
+    async createImportanceTable() {
+        let query = 'CREATE TABLE IF NOT EXISTS importance (iid TEXT PRIMARY KEY NOT NULL,' +
+            'label TEXT NOT NULL,' +                        // Título da importância
+            'isEntry BOOLEAN NOT NULL DEFAULT 1)';          // Se é uma importância de entrada
+
+        console.log('Tabela \'entryTypes\' criada....OK.');
+        return await CONFIG.sql.exec(query);
+    }
+
+    async createSettingsTable() {
+        let query = 'CREATE TABLE IF NOT EXISTS settings (tag VARCHAR(50) PRIMARY KEY NOT NULL,' +
+            '\"group\" VARCHAR(50) NOT NULL,' +     // Grupo de configuração
+            'value TEXT NOT NULL)';             // Valor da configuração
+
+        console.log('Tabela \'settings\' criada....OK.');
         return await CONFIG.sql.exec(query);
     }
 
@@ -469,17 +654,31 @@ export default class DBManager {
         return '';
     }
 
+    generateUUID() {
+        return this.crypto.randomUUID();
+    }
+
     buildUpdateSet(columns) {
-        return columns
+        const updateSet = columns
             .filter(([label, value]) => label.trim() && value !== null && value !== undefined && value !== '') // Remove colunas ou valores vazios
-            .map(([label, value]) => `${label} = '${value}'`) // Formata cada dupla
+            .map(([label, value]) => {
+                if (typeof value === 'string') {
+                    // Strings cercadas por aspas simples
+                    return `${label} = '${value}'`;
+                } else {
+                    // Outros tipos (número, booleano, etc.) salvos diretamente
+                    return `${label} = ${value}`;
+                }
+            })
             .join(' , '); // Junta tudo com ' , '
+        return updateSet;
     }
 
     buildWhereClause(conditions) {
-        return conditions
+        const whereClause = conditions
             .filter(([column, value]) => column.trim() && value !== null && value !== undefined && value !== '') // Remove colunas ou valores vazios
-            .map(([column, value]) => `${column} = '${value}'`) // Formata cada dupla
+            .map(([column, value]) => `${column} = ${typeof value === 'string' ? `'${value}'` : value}`) // Formata cada dupla
             .join(' AND '); // Junta tudo com ' AND '
+        return whereClause;
     }
 }

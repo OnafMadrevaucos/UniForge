@@ -16,7 +16,7 @@ export class LinkTooltip {
 
   async _showLinkTooltip(event) {
     const span = event.target.closest('.linked-text');
-    
+
     const link = {
       id: span.dataset.id ?? null,
       type: span.dataset.type ?? null
@@ -27,16 +27,8 @@ export class LinkTooltip {
     if (link.type == 'entry') data = await CONFIG.db.getEntryWithIcon(link.id);
     else data = await CONFIG.db.getTimelineWithIcon(link.id);
 
-    if (data.length == 0) {
-      console.warn('O Link não foi encontrado.');
-      return;
-    }
-
-    if (data.length != 1) {
-      console.warn('O Link está duplicado. Utilizando a primeira duplicata.');
-    }
-
-    data = data[0];
+    // Verifica se a entrada foi encontrada. Se não, não exibe o tooltip.
+    if (!data) return;
 
     let tooltip = document.querySelector('.link-tooltip');
     let entryTitle = null; // Elemento do Título da Entrada
@@ -87,18 +79,20 @@ export class LinkTooltip {
     entryIdParagraph.textContent = `${link.id}`;
     entryDescription.innerHTML = data.flavor;
 
-    const iframe = document.querySelector('#textEditor_ifr'); // Substitua por um seletor que identifica o iframe do TinyMCE
+    // Verifica se o tooltip ultrapassa os limites da tela e ajusta a posição
+    const tooltipRect = tooltip.getBoundingClientRect();
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
 
     let coord = { X: 0, Y: 0 };
+    coord.X = event.pageX - 20;
+    coord.Y = event.pageY + 25;
 
-    if (iframe) {
-      const rect = iframe.getBoundingClientRect();
-
-      coord.X = span.offsetLeft + rect.left - 20;
-      coord.Y = span.offsetTop + rect.top + 35;
-    } else {
-      coord.X = span.clientX - 20;
-      coord.Y = span.clientY + 30;
+    if (coord.X + tooltipRect.width > viewportWidth) {
+      coord.X = viewportWidth - (tooltipRect.width + tooltipRect.width/2); // Ajusta para manter o tooltip visível
+    }
+    if (coord.Y + tooltipRect.height > viewportHeight) {
+      coord.Y = viewportHeight - (tooltipRect.height + tooltipRect.height/2); // Ajusta para manter o tooltip visível
     }
 
     tooltip.style.left = `${coord.X}px`;

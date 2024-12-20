@@ -404,21 +404,10 @@ export default class LinkDialog extends Dialog {
         const itemId = Number(item.dataset.id);
 
         let data = null;
-        if (type == 'entry')
-            data = Object.values(await CONFIG.db.getEntry(itemId));
+        if (type == 'e')
+            data = await CONFIG.db.getEntry(itemId);
         else
-            data = Object.values(await CONFIG.db.getTimeline(itemId));
-
-        if (data.length == 0) {
-            this.msgBox.showWarning('O Item não foi encontrado.');
-            return;
-        }
-
-        if (data.length != 1) {
-            this.msgBox.showWarning('O Item está duplicado. Utilizando a primeira duplicata.');
-        }
-
-        data = data[0];
+            data = await CONFIG.db.getTimeline(itemId);        
 
         data.type = type;
 
@@ -429,11 +418,13 @@ export default class LinkDialog extends Dialog {
         tinymce.get('flavorText').setContent(data.flavor);
 
         if (data.img) {
-            const imageType = `image/${data.ext}`;
-            const imageBlob = new Blob([data.img], { type: imageType }); // Ajuste o tipo de imagem conforme necessário
-            const imageURL = URL.createObjectURL(imageBlob);
-            displayedImage.src = imageURL;
+            const imageUrl = await CONFIG.utils.blobToImage(data.img, data.ext);
+
+            displayedImage.src = imageUrl
             displayedImage.classList.remove('empty');
+        } else {
+            displayedImage.src = "../images/blank-image.svg";
+            displayedImage.classList.add('empty');
         }
 
         // Foca no campo de Título.    

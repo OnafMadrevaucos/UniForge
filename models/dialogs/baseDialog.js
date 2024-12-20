@@ -23,6 +23,12 @@ export default class BaseDialog {
        */
         this.dialog = null;
 
+        /**
+        * Objeto de controle global para mensagens ao usuário.
+        * @type {object}
+        */
+        this.msgBox = CONFIG.msgBox;
+
         /** 
          * Estado de arraste do diálogo.
          * @type {boolean}

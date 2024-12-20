@@ -54,11 +54,11 @@ export class EncycloForm extends EntryForm {
         // Obtém objeto com todos os dados unificados necessários para o funcionamento do formulário.         
         this.data = await this.getData();
 
-        await super.configureContent(form);        
+        await super.configureContent(form);
 
         // Atribui o estado padrão aos controles do formulário.
         this.controlStates(this.states.default);
-    }    
+    }
 
     /**
     * Trata o evento de registro de uma nova categoria.
@@ -91,15 +91,7 @@ export class EncycloForm extends EntryForm {
             }
 
             // Se uma imagem foi informada, prepare-a para o banco de dados.
-            if (file) {
-                // Obtém a extensão do arquivo de imagem.
-                const fileExt = file?.name.split('.').pop().toLowerCase();
-                // Converte o arquivo para um ArrayBuffer (Blob)
-                const arrayBuffer = await file?.arrayBuffer();
-
-                data.img = new Uint8Array(arrayBuffer);
-                data.ext = fileExt;
-            }
+            CONFIG.utils.mergeObjects(data, await CONFIG.utils.imageToBlob(file));
 
             const validate = CONFIG.db.validateCategory(data);
             if (validate !== '') {
@@ -168,34 +160,30 @@ export class EncycloForm extends EntryForm {
         super.onEntryItemDoubleClick(event);
         const item = event.target.closest('.entry-item');
         const itemId = Number(item.dataset.id);
-        let category = Object.values(await CONFIG.db.getCategory(itemId));
+        let category = await CONFIG.db.getCategory(itemId);
 
-        if (category.length != 1) {
-            this.msgBox.showWarning('Categoria está duplicada.');
+        if (category) {
+            const headerInfo = this.querySelector('.header-info');
+            headerInfo.dataset.sid = category.sid;
+
+            const displayedImage = this.querySelector('#displayedImage');
+            const titleInput = this.querySelector('#titleInput');
+            const draftSwitch = this.querySelector('#checkbox');
+
+            titleInput.value = category.title;
+            tinymce.activeEditor.setContent(category.htmlString);
+            draftSwitch.checked = category.isDraft;
+
+            if (category.img) {
+                const imageType = `image/${category.ext}`;
+                const imageBlob = new Blob([category.img], { type: imageType }); // Ajuste o tipo de imagem conforme necessário
+                const imageURL = URL.createObjectURL(imageBlob);
+                displayedImage.src = imageURL;
+                displayedImage.classList.remove('empty');
+            }
+
+            // Foca no campo de Título.    
+            titleInput.focus();
         }
-
-        category = category[0];
-
-        const headerInfo = this.querySelector('.header-info');
-        headerInfo.dataset.sid = category.sid;
-
-        const displayedImage = this.querySelector('#displayedImage');
-        const titleInput = this.querySelector('#titleInput');
-        const draftSwitch = this.querySelector('#checkbox');
-
-        titleInput.value = category.title;
-        tinymce.activeEditor.setContent(category.htmlString);
-        draftSwitch.checked = category.isDraft;
-
-        if (category.img) {
-            const imageType = `image/${category.ext}`;
-            const imageBlob = new Blob([category.img], { type: imageType }); // Ajuste o tipo de imagem conforme necessário
-            const imageURL = URL.createObjectURL(imageBlob);
-            displayedImage.src = imageURL;
-            displayedImage.classList.remove('empty');
-        }
-
-        // Foca no campo de Título.    
-        titleInput.focus();
     }
 }

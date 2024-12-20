@@ -242,12 +242,10 @@ export class HistoryForm extends EntryForm {
             const calendarType = this.querySelector('#calendarType');
             const draftSwitch = this.querySelector('#checkbox');
 
-            // Obtém o objeto do arquivo da imagem.
-            const file = imgInput.files[0] ?? null;
             let data = {
-                etid: entryType.value,
-                iid: importance.value,
-                clid: calendarType.value,
+                etid: Number(entryType.value),
+                iid: Number(importance.value),
+                clid: Number(calendarType.value),
                 title: titleInput.value,
                 date: {
                     start: this.datePickers.start.selectedDate,
@@ -256,21 +254,21 @@ export class HistoryForm extends EntryForm {
                 img: imgInput.value,
                 htmlString: tinymce.get('mainEditor').getContent() ?? '',
                 flavor: tinymce.get('flavorEditor').getContent() ?? '',
-                isDraft: draftSwitch.checked,
-                cid: headerInfo.dataset.cid,
+                isDraft: Number(draftSwitch.checked),
+                cid: Number(headerInfo.dataset.cid),
                 text: ''
             }
 
-            // Se uma imagem foi informada, prepare-a para o banco de dados.
+            // Obtém o objeto do arquivo da imagem.
+            const file = imgInput.files[0] ?? null;
+            let rawImage = null;
             if (file) {
-                // Obtém a extensão do arquivo de imagem.
-                const fileExt = file?.name.split('.').pop().toLowerCase();
-                // Converte o arquivo para um ArrayBuffer (Blob)
-                const arrayBuffer = await file?.arrayBuffer();
-
-                data.img = new Uint8Array(arrayBuffer);
-                data.ext = fileExt;
+                // Se uma imagem foi informada, prepare-a para o banco de dados.
+                rawImage = await CONFIG.utils.imageToBlob(file);
             }
+
+            data.img = rawImage?.img ?? null;
+            data.ext = rawImage?.ext ?? 'jpeg';
 
             const validate = CONFIG.db.validateEventEntry(data);
             if (validate !== '') {
@@ -319,59 +317,48 @@ export class HistoryForm extends EntryForm {
         super.onEntryItemDoubleClick(event);
         const item = event.target.closest('.entry-item');
         const itemId = Number(item.dataset.id);
-        let entry = Object.values(await CONFIG.db.getEntry(itemId));
+        let entry = await CONFIG.db.getEntry(itemId);
 
-        if (entry.length == 0) {
-            this.msgBox.showWarning('A Entrada não foi encontrada.');
-            return;
+        if (entry) {
+            const entryEvent = await CONFIG.db.getEventOfEntry(entry.eid);
+            
+            if (entryEvent) {                
+                this.reconfigureDatePickers(entryEvent);
+
+                const headerInfo = this.querySelector('.header-info');
+                headerInfo.dataset.cid = entry.cid;
+                headerInfo.dataset.evid = entryEvent.evid;
+
+                const displayedImage = this.querySelector('#displayedImage');
+                const imgInput = this.querySelector('#hiddenFileInput');
+                const titleInput = this.querySelector('#titleInput');
+                const entryType = this.querySelector('#entryType');
+                const importance = this.querySelector('#importance');
+                const draftSwitch = this.querySelector('#checkbox');
+
+                titleInput.value = entry.title;
+                entryType.value = entry.etid;
+                importance.value = entryEvent.iid;
+                tinymce.get('mainEditor').setContent(entry.htmlString);
+                tinymce.get('flavorEditor').setContent(entry.flavor);
+                draftSwitch.checked = entry.isDraft;
+
+                if (entry.img) {
+                    const imageUrl = await CONFIG.utils.blobToImage(entry.img, entry.ext);
+
+                    displayedImage.src = imageUrl
+                    displayedImage.classList.remove('empty');
+                } else { // A imagem é vazia.
+                    this.clearImage();
+                }
+
+                // Foca no campo de Título.    
+                titleInput.focus();
+            } else {
+                this.msgBox.showWarning('Erro ao carregar eventos da entrada.');
+            }
+        } else {
+            this.msgBox.showWarning('Erro ao carregar a entrada.');
         }
-
-        if (entry.length != 1) {
-            this.msgBox.showWarning('A Entrada está duplicada. Utilizando a primeira duplicata.');
-        }
-
-        entry = entry[0];
-
-        let entryEvent = Object.values(await CONFIG.db.getEventOfEntry(entry.eid));
-
-        if (entryEvent.length == 0) {
-            this.msgBox.showWarning('Não há evento para a Entrada Histórica informada.');
-            return;
-        }
-
-        if (entryEvent.length != 1) {
-            this.msgBox.showWarning('O Evento está duplicado. Utilizando a primeira duplicata.');
-        }
-
-        entryEvent = entryEvent[0];
-        this.reconfigureDatePickers(entryEvent);
-
-        const headerInfo = this.querySelector('.header-info');
-        headerInfo.dataset.cid = entry.cid;
-        headerInfo.dataset.evid = entryEvent.evid;
-
-        const displayedImage = this.querySelector('#displayedImage');
-        const titleInput = this.querySelector('#titleInput');
-        const entryType = this.querySelector('#entryType');
-        const importance = this.querySelector('#importance');
-        const draftSwitch = this.querySelector('#checkbox');
-
-        titleInput.value = entry.title;
-        entryType.value = entry.etid;
-        importance.value = entryEvent.iid;
-        tinymce.get('mainEditor').setContent(entry.htmlString);
-        tinymce.get('flavorEditor').setContent(entry.flavor);
-        draftSwitch.checked = entry.isDraft;
-
-        if (entry.img) {
-            const imageType = `image/${entry.ext}`;
-            const imageBlob = new Blob([entry.img], { type: imageType }); // Ajuste o tipo de imagem conforme necessário
-            const imageURL = URL.createObjectURL(imageBlob);
-            displayedImage.src = imageURL;
-            displayedImage.classList.remove('empty');
-        }
-
-        // Foca no campo de Título.    
-        titleInput.focus();
     }
 }

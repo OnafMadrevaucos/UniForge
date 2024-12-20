@@ -34,16 +34,16 @@ export default class FilePickerDialog extends Dialog {
         chooseFileButton.id = 'chooseFileButton';
         chooseFileButton.innerHTML = '<i class="fas fa-upload"></i>';
 
-        const hiddenfileInput = document.createElement('input');
-        hiddenfileInput.type = 'file';
-        hiddenfileInput.id = 'hiddenfileInput';
-        hiddenfileInput.className = 'hidden';
-        hiddenfileInput.accept = 'image/*';   
+        const hiddenImageInput = document.createElement('input');
+        hiddenImageInput.type = 'file';
+        hiddenImageInput.id = 'hiddenImageInput';
+        hiddenImageInput.className = 'hidden';
+        hiddenImageInput.accept = 'image/*';   
         
         fileContainer.appendChild(fileLabel);
         fileContainer.appendChild(chosenFilePath);
         fileContainer.appendChild(chooseFileButton);
-        fileContainer.appendChild(hiddenfileInput);
+        fileContainer.appendChild(hiddenImageInput);
 
         fileGroup.appendChild(fileContainer);
 
@@ -75,12 +75,12 @@ export default class FilePickerDialog extends Dialog {
     _activateListeners() {
         super._activateListeners();
 
-        const hiddenfileInput = this.querySelector('#hiddenfileInput');
+        const hiddenImageInput = this.querySelector('#hiddenImageInput');
         const chooseFileButton = this.querySelector('#chooseFileButton');
         const chosenFilePath = this.querySelector('#chosenFilePath');
 
-        hiddenfileInput.addEventListener('change', (event) => { this._onChangeFile(event, chosenFilePath); })
-        chooseFileButton.addEventListener('click', () => { hiddenfileInput.click(); });
+        hiddenImageInput.addEventListener('change', (event) => { this._onChangeFile(event, chosenFilePath); })
+        chooseFileButton.addEventListener('click', () => { hiddenImageInput.click(); });
     }
 
     /**
@@ -88,7 +88,7 @@ export default class FilePickerDialog extends Dialog {
     * @param {MouseEvent} event             - O evento de clique.
     * @param {HTMLElement} chosenFilePath   - O recipiente para o caminho do arquivo selecionado.
     */
-    _onChangeFile(event, chosenFilePath) {
+    async _onChangeFile(event, chosenFilePath) {
         const file = event.target.files[0];
 
         // Verifica se um arquivo foi selecionado e se é uma imagem.
@@ -98,21 +98,22 @@ export default class FilePickerDialog extends Dialog {
     
           // Atualiza a imagem exibida.
           chosenFilePath.value = imageURL;
-    
-          /*
-          // Libera o URL temporário quando não for mais necessário.
-          displayedImage.onload = () => {
-            URL.revokeObjectURL(imageURL);
-          };
-          */
+
+          const data = await CONFIG.utils.imageToBlob(file);
+          CONFIG.utils.associateDataWithElement(chosenFilePath, data);
         }
     }
 
     static async configDialog() {
         function getImage(event) {  
             event.stopPropagation();
+            const chosenFilePath = document.querySelector('#chosenFilePath');
+            const captionInput = document.querySelector('#captionInput');
 
-            
+            const data = CONFIG.utils.getAsociatedData(chosenFilePath);
+            data.caption = captionInput.value;
+                        
+            return data;
         }
 
         return new Promise((resolve, reject) => {

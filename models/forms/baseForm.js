@@ -11,10 +11,22 @@ export default class BaseForm {
    */
   constructor(overlay) {
     /**
+     * Gerenciador de conexão de Banco de Dados.
+     * @type {DBManager}
+     */
+    this.db = CONFIG.db;
+
+    /**
      * URL da imagem de fundo para o overlay.
      * @type {string}
      */
     this.imageUrl = '../images/lib-background.png';
+
+    /**
+     * O caminho para quando a entrada não possui imagem.
+     * @type {string}
+     */
+    this.blankImgUrl = '../images/blank-image.svg';
 
     /**
         * O ícone Font Awesome para quando uma entrada é selecionada.
@@ -211,6 +223,20 @@ export default class BaseForm {
       icon.classList.remove(...icon.classList);
       icon.classList.add('fas', 'fa-folder');
     });
+
+    this.clearImage();
+  }
+
+  /**
+  * Limpa a imagem exibida definindo sua fonte para uma URL de imagem em branco.
+  * Se a imagem ainda não tiver a classe 'empty', ela adiciona a classe 'empty'.
+  */
+  clearImage() {
+    const displayedImage = this.querySelector('#displayedImage');    
+    if(!displayedImage.classList.contains('empty'))
+      displayedImage.classList.add('empty');
+
+    displayedImage.src = this.blankImgUrl;
   }
 
   /**
@@ -219,6 +245,10 @@ export default class BaseForm {
    */
   loadSidebarData(form) {
     const data = this.data.subjects;
+    this.createFolderList(data);
+  }
+
+  createFolderList(data) {
     const folderList = this.querySelector('#folderList');
     folderList.innerHTML = '';
 

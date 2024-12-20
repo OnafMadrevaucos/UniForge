@@ -1,4 +1,5 @@
 import BaseForm from "./baseForm.js";
+import Dialog from '../dialogs/dialog.js';
 import DBManager from "../../db/dbManager.js";
 
 /**
@@ -24,22 +25,13 @@ export class SettingsForm extends BaseForm {
         * @type {DBManager}
         */
         this.db = CONFIG.db;
-
-        /**
-         * Configura o conteúdo do formulário associado a esta instância.
-         * @method configureContent
-         * @param {HTMLElement} this.form - O elemento de formulário a ser configurado.
-         */
-        this.configureContent(this.form);
     }
 
     /**
    * Configura o conteúdo do formulário.
    * @param {HTMLElement} form - O elemento que representa o formulário.
    */
-    configureContent(form) {
-        super.configureContent(form);
-
+    configureContent(form) {  
         this.configureOptions(form);
 
         const executeProcButton = this.querySelector('#procedureButton');
@@ -50,6 +42,9 @@ export class SettingsForm extends BaseForm {
 
         const queryButton = this.querySelector('#queryButton');
         queryButton.addEventListener('click', (event) => { this.onExecuteQuery(event); });
+
+        const resetDatabaseButton = this.querySelector('#resetDatabaseButton');
+        resetDatabaseButton.addEventListener('click', (event) => { this.onResetDatabaseClick(event); });
 
         // O panel padrão é sempre o panel de Banco de Dados
         const panel = this.querySelector(`#databasePanel`);
@@ -208,6 +203,20 @@ export class SettingsForm extends BaseForm {
 
             this.msgBox.showInfo(`Query executada com sucesso. (${result.changes}) linhas alteradas.`);
             this.configurePanel(selectedPanel);
+        }       
+    }
+
+    /**
+   * Configura o event de click para os botões de resetar o Banco de Dados.
+   * @param {Event} event - O evento de click do botão.
+   */
+    async onResetDatabaseClick(event) {
+        event.stopPropagation();
+        const confirmed = await Dialog.secureConfirm('Recriar Banco de Dados');
+        if (confirmed) {  
+            const commited = await this.db.resetDatabase();
+            if(commited)
+                this.msgBox.showInfo(`Toda estrutura do banco de dados foi recriada com sucesso.`);
         }       
     }
 }

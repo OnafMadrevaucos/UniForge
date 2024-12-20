@@ -29,13 +29,7 @@ export default class EntryForm extends BaseForm {
      * Estado atual dos elements do formulário.
      * @type {number}
      */
-    this.currentState = 0;
-
-    /**
-     * Gerenciador de conexão de Banco de Dados.
-     * @type {DBManager}
-     */
-    this.db = CONFIG.db;
+    this.currentState = 0;    
 
     /**
      * O ícone Font Awesome para quando uma entrada é selecionada.
@@ -399,6 +393,11 @@ export default class EntryForm extends BaseForm {
       init_instance_callback: (editor) => {
         editor.setContent(""); // Garante que o editor seja iniciado vazio.
       },
+      text_patterns: [
+        { start: '@[', end: ']', format: 'bold' },
+        { start: '{', end: '}', format: 'italic' }
+        //{ start: '##', format: 'blockquote', trigger: 'space' }
+      ],
       setup: (editor) => { this._setupTinyMCE(editor); }
     });
 
@@ -678,7 +677,7 @@ export default class EntryForm extends BaseForm {
           const trailingSpaces = selectedText.match(/\s+$/);
 
           const trimmedText = selectedText.trim();
-          const wrappedContent = `${leadingSpaces ? leadingSpaces[0] : ''}${tooltip.forgeLink(link, trimmedText, null)}${trailingSpaces ? trailingSpaces[0] : ''}`;
+          const wrappedContent = `${leadingSpaces ? leadingSpaces[0] : ''}@[${link.id}, ${link.type[0]}]{${trimmedText}}${trailingSpaces ? trailingSpaces[0] : ''}`;
           editor.selection.setContent(wrappedContent);
         } else {
           editor.notificationManager.open({
@@ -693,40 +692,46 @@ export default class EntryForm extends BaseForm {
   /**
    * Cria um ImagePicker e trata a ação do usuário de envio de uma imagem para o texto.
    * @private
+   * @param {Object} editor - Instância do editor TinyMCE.
    */
-  async onUploadImage() {
-    const result = await ImagePickerDialog.configDialog();
-    const i = 0;
+  async onUploadImage(editor) {
+    // Abre o diálogo de seleção de imagem.
+    const image = await ImagePickerDialog.configDialog();
 
-    /*
-    const input = document.createElement('input');
-    input.setAttribute('type', 'file');
-    input.setAttribute('accept', 'image/*');
+    // Se uma imagem foi selecionada, insira-a no editor.
+    if (image) {
+      const rawData = image.data;
 
-    input.addEventListener('change', (event) => {
-      const file = event.target.files[0];
+      // Recupera o elemento do editor TinyMCE.
+      const editorTexarea = editor.targetElm;
+      // Recupera a contagem de imagens no editor.
+      const imgCount = Number(editorTexarea.dataset.imgCounter);
 
-      const reader = new FileReader();
-      reader.addEventListener('load', () => {
-        
-          Note: Now we need to register the blob in TinyMCEs image blob
-          registry. In the next release this part hopefully won't be
-          necessary, as we are looking to handle it internally.
-        
-        const id = 'blobid' + (new Date()).getTime();
-        const blobCache =  tinymce.activeEditor.editorUpload.blobCache;
-        const base64 = reader.result.split(',')[1];
-        const blobInfo = blobCache.create(id, file, base64);
-        blobCache.add(blobInfo);
+      // Cria o elemento <div> que envolverá a imagem e sua legenda.
+      const imgWrapper = document.createElement('figure');
+      imgWrapper.dataset.uuid = image.uuid;
+      imgWrapper.className = 'img-wrapper image';
+      imgWrapper.contenteditable = 'false';
 
-        /* call the callback and populate the Title field with the file name 
-        callback(blobInfo.blobUri(), { title: file.name });
-      });
-      reader.readAsDataURL(file);
-    });
+      const newImage = document.createElement('img');
+      const imageURL = await CONFIG.utils.blobToImage(rawData.img, rawData.ext);
+      newImage.src = imageURL;
 
-    input.click();
-    */
+      const newCaption = document.createElement('figcaption');
+      newCaption.className = 'img-caption';
+      newCaption.textContent = `Imagem ${imgCount + 1} - ${image.caption}`;
+      newCaption.contenteditable = 'true';
+
+      imgWrapper.appendChild(newImage);
+      imgWrapper.appendChild(newCaption);
+
+      // Insira o HTML na posição atual do cursor.
+      editor.execCommand('mceInsertContent', false, imgWrapper.outerHTML);
+      // Registra o Blob da imagem no banco de dados.
+      await CONFIG.db.addEntriesTextImages(image);
+      // Atualiza a contagem de imagens no editor.
+      this._updateImageCount(editor);
+    }
   }
 
   /**
@@ -798,6 +803,35 @@ export default class EntryForm extends BaseForm {
 
     return newOption;
   }
+
+  /**
+  * Atualiza a contagem de imagens no editor.
+  * Obtém o conteúdo atual do editor e conta as tags <img>.
+  * Define o atributo data-img-counter do textarea do editor com a contagem de imagens.
+  *
+  * @param {Object} editor - O editor cujo conteúdo será analisado.
+  */
+  _updateImageCount(editor) {
+    const content = editor.getContent(); // Obtém o conteúdo atual do editor
+    const imageCount = (content.match(/<img\b[^>]*>/gi) || []).length; // Conta as tags <img>
+
+    const editorTextarea = editor.targetElm;
+    editorTextarea.dataset.imgCounter = imageCount;
+  }
+
+  async _initializeImagesInText(editor) {
+    const content = editor.getContent(); // Obtém o conteúdo atual do editor
+    const searchDiv = document.createElement('div'); // Cria um elemento temporário
+    searchDiv.innerHTML = content; // Define o conteúdo do elemento temporário
+
+    const imgArray = searchDiv.querySelectorAll('.img-wrapper'); // Seleciona todos os <div> com a classe 'img-wrapper'
+    imgArray.forEach(async (img) => {
+      const uuid = img.dataset.uuid; // Obtém o uuid armazenado no <div>
+      const data = await CONFIG.db.getEntriesTextImage(uuid); // Obtém a imagem do banco de dados
+      const imageURL = CONFIG.utils.blobToImage(data.img, data.ext); // Converte o blob da imagem para URL
+    });
+  }
+
   /**
    * Carrega ícone da raíz do assunto.
    * @protected
@@ -877,6 +911,16 @@ export default class EntryForm extends BaseForm {
   _setupTinyMCE(editor) {
     const tooltip = this.ui.tooltip;
 
+    // Update the image count on editor initialization
+    editor.on('init', () => {
+      this._updateImageCount(editor)
+    });
+
+    // Update the image count whenever the content changes
+    editor.on('input', () => this._updateImageCount(editor));
+    editor.on('change', () => this._updateImageCount(editor));
+    editor.on('NodeChange', () => this._updateImageCount(editor));
+
     editor.ui.registry.addButton('entryLink', {
       tooltip: 'Criar link',
       icon: 'bookmark',
@@ -887,7 +931,7 @@ export default class EntryForm extends BaseForm {
     editor.ui.registry.addButton('sendImage', {
       icon: 'image',
       tooltip: 'Enviar Imagem',
-      onAction: () => { this.onUploadImage(); }
+      onAction: () => { this.onUploadImage(editor); }
     });
 
     editor.on('mouseover', (event) => {

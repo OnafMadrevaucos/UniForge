@@ -3,6 +3,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
 
+import crypto, { randomBytes, randomUUID } from 'crypto';
 import Database from 'better-sqlite3';
 
 // Para resolver o `__dirname` no modo ESM
@@ -35,6 +36,9 @@ app.whenReady().then(() => {
 
   ipcMain.handle('db-query', (event, query, params = []) => dbQuery(query, params));
   ipcMain.handle('db-exec', (event, query, params = []) => dbExec(query, params));
+
+  //ipcMain.handle('random-bytes', (length) => randomBytes(length));
+  //ipcMain.handle('random-uuid', () => randomUUID());
 
   console.log('UniForge: Criando requisição de Renders...OK');
 });

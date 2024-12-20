@@ -28,6 +28,12 @@ window.CONFIG = {
     sql: window.sql,
 
     /**
+     * Instância de Crypto usada pela aplicação.
+     * @type {Object}
+     */
+    crypto: window.crypto,
+
+    /**
      * Instância do gerenciador de banco de dados.
      * @type {DBManager}
      */

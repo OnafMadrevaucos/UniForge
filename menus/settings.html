@@ -18,12 +18,19 @@
                     <select id="tableName" class="data" name="tableName"></select>
                     <button id="deleteTableButton"><i class="fa-solid fa-cloud-arrow-up"></i> Executar</button>
                 </div>                
-            </div>
-            <div class="query-input">
+            </div>            
+            <div class="data-group query-input">
+                <span class="data-label">Executar Comando </span>
                 <textarea id="queryText"></textarea>
                 <div class="query-button flexrow">
                     <button id="queryButton"><i class="fa-solid fa-cloud-arrow-up"></i> Executar</button>
                 </div>
+            </div>
+            <div class="data-group combo">
+                <span class="data-label">Recriar Banco de Dados </span>
+                <div class="data-complex flexcol">
+                    <button id="resetDatabaseButton"><i class="fa-solid fa-arrows-rotate"></i> Recriar </button>
+                </div>                
             </div>
         </div>  
         <div id="leafletPanel" class="panel hidden">

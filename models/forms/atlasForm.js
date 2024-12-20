@@ -4,8 +4,6 @@ import Dialog from "../dialogs/dialog.js";
 export class AtlasForm extends EntryForm {
     constructor(overlay) {
         super(overlay);
-
-        this.configureContent(this.form);
     }
 
     /* ---------------------------------------------------------------------------------------------------------------- */
@@ -22,7 +20,7 @@ export class AtlasForm extends EntryForm {
         this.data = await this.getData();
 
         // Chama o método de configuração da classe pai para configurar o formulário base.
-        await super.configureContent(form);        
+        await super.configureContent(form);
 
         this.configureCaptionTinyMCE();
 
@@ -60,13 +58,12 @@ export class AtlasForm extends EntryForm {
     */
     async onSaveClick(event, options = {}) {
         event.stopPropagation();
+        const isEntryUpdate = options.isEntryUpdate ?? false;
 
         const title = (isEntryUpdate ? 'Atualizar' : 'Registrar');
         const message = (isEntryUpdate ? 'Deseja atualizar a entrada?' : 'Deseja salvar a entrada?');
 
         if (await Dialog.confirm(title, message)) {
-
-            const isEntryUpdate = options.isEntryUpdate ?? false;
             const headerInfo = this.querySelector('.header-info');
 
             const imgInput = this.querySelector('#hiddenFileInput');
@@ -86,6 +83,7 @@ export class AtlasForm extends EntryForm {
                 cid: headerInfo.dataset.cid
             }
 
+            // Validar os dados de entrada de Atlas.
             const validate = CONFIG.db.validateAtlasEntry(data);
             if (validate !== '') {
                 this.msgBox.showWarning(validate);
@@ -93,15 +91,10 @@ export class AtlasForm extends EntryForm {
             }
 
             // Se uma imagem foi informada, prepare-a para o banco de dados.
-            if (file) {
-                // Obtém a extensão do arquivo de imagem.
-                const fileExt = file.name.split('.').pop().toLowerCase();
-                // Converte o arquivo para um ArrayBuffer (Blob)
-                const arrayBuffer = await file.arrayBuffer();
+            CONFIG.utils.mergeObjects(data, await CONFIG.utils.imageToBlob(file));
 
-                data.img = new Uint8Array(arrayBuffer);
-                data.ext = fileExt;
-            } else {
+            // Atlas deve sempre possuir uma imagem.
+            if (!data.img) {
                 this.showError('Entrada inválida! O arquivo de imagem da Entrada não pôde ser carregado.');
                 return;
             }
@@ -153,38 +146,29 @@ export class AtlasForm extends EntryForm {
         super.onEntryItemDoubleClick(event);
         const item = event.target.closest('.entry-item');
         const itemId = Number(item.dataset.id);
-        let entry = Object.values(await CONFIG.db.getEntry(itemId));
+        let entry = await CONFIG.db.getEntry(itemId);
 
-        if (entry.length == 0) {
-            this.msgBox.showWarning('A Entrada não foi encontrada.');
-            return;
+        if (entry) {
+            const headerInfo = this.querySelector('.header-info');
+            headerInfo.dataset.cid = entry.cid;
+
+            const displayedImage = this.querySelector('#displayedImage');
+            const titleInput = this.querySelector('#titleInput');
+            const draftSwitch = this.querySelector('#checkbox');
+
+            titleInput.value = entry.title;
+            tinymce.get('captionEditor').setContent(entry.flavor);
+            draftSwitch.checked = entry.isDraft;
+
+            if (entry.img) {
+                const imageType = `image/${entry.ext}`;
+                const imageBlob = new Blob([entry.img], { type: imageType }); // Ajuste o tipo de imagem conforme necessário
+                const imageURL = URL.createObjectURL(imageBlob);
+                displayedImage.src = imageURL;
+            }
+
+            // Foca no campo de Título.    
+            titleInput.focus();
         }
-
-        if (entry.length != 1) {
-            this.msgBox.showWarning('A Entrada está duplicada. Utilizando a primeira duplicata.');
-        }
-
-        entry = entry[0];
-
-        const headerInfo = this.querySelector('.header-info');
-        headerInfo.dataset.cid = entry.cid;
-
-        const displayedImage = this.querySelector('#displayedImage');
-        const titleInput = this.querySelector('#titleInput');
-        const draftSwitch = this.querySelector('#checkbox');
-
-        titleInput.value = entry.title;
-        tinymce.get('captionEditor').setContent(entry.flavor);
-        draftSwitch.checked = entry.isDraft;
-
-        if (entry.img) {
-            const imageType = `image/${entry.ext}`;
-            const imageBlob = new Blob([entry.img], { type: imageType }); // Ajuste o tipo de imagem conforme necessário
-            const imageURL = URL.createObjectURL(imageBlob);
-            displayedImage.src = imageURL;
-        }
-
-        // Foca no campo de Título.    
-        titleInput.focus();
     }
 }
