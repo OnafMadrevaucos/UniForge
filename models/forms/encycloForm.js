@@ -1,6 +1,7 @@
 import EntryForm from "./entryForm.js";
 import { Database } from "../../scripts/tempDB.js";
 import Dialog from "../dialogs/dialog.js";
+import SubjectDialog from "../dialogs/subjectDialog.js";
 
 /**
  * Classe EncycloForm que estende a classe EntryForm.
@@ -45,6 +46,28 @@ export class EncycloForm extends EntryForm {
     }
 
     /**
+   * Habilita/desabilita os controles do formulário.
+   * @param {Number} state - O novo estado do formulário.
+   * @protected
+   */
+    controlStates(state) {
+        super.controlStates(state);
+
+        switch (state) {
+            // ESTADO DE HABILITAÇÃO DE NOVA ENTRADA.
+            case this.states.newEntry: {                
+            } break;
+            // ESTADO DE EDIÇÃO DE ENTRADA.
+            case this.states.editing: {               
+            } break;
+            // ESTADO PADRÃO.
+            default: {
+                this._clearRootIcon();
+            } break;
+        }
+    }
+
+    /**
      * Configura o conteúdo do formulário.
      * Inclui configurações específicas, como a seleção do tipo de entrada e o editor TinyMCE.
      * 
@@ -58,6 +81,18 @@ export class EncycloForm extends EntryForm {
 
         // Atribui o estado padrão aos controles do formulário.
         this.controlStates(this.states.default);
+    }
+
+    /**
+   * Configura ouvintes de eventos básicos para o formulário.
+   * @param {HTMLElement} form - O formulário principal.
+   * @protected
+   */
+    activateListeners(form) {
+        super.activateListeners(form);
+
+        const newSubjectButton = this.querySelector('#newSubjectButton');
+        newSubjectButton.addEventListener('click', (event) => { this.onNewSubjectClick(event) });
     }
 
     /**
@@ -159,7 +194,7 @@ export class EncycloForm extends EntryForm {
     async onEntryItemDoubleClick(event) {
         super.onEntryItemDoubleClick(event);
         const item = event.target.closest('.entry-item');
-        const itemId = Number(item.dataset.id);
+        const itemId = item.dataset.id;
         let category = await CONFIG.db.getCategory(itemId);
 
         if (category) {
@@ -175,15 +210,28 @@ export class EncycloForm extends EntryForm {
             draftSwitch.checked = category.isDraft;
 
             if (category.img) {
-                const imageType = `image/${category.ext}`;
-                const imageBlob = new Blob([category.img], { type: imageType }); // Ajuste o tipo de imagem conforme necessário
-                const imageURL = URL.createObjectURL(imageBlob);
-                displayedImage.src = imageURL;
+                const imageUrl = await CONFIG.utils.blobToImage(category.img, category.ext);
+                
+                displayedImage.src = imageUrl;
                 displayedImage.classList.remove('empty');
             }
 
             // Foca no campo de Título.    
             titleInput.focus();
+        }
+    }
+
+    /**
+    * Gera um novo assunto.
+    * @param {Event} event - Evento de clique no botão.
+    */
+    async onNewSubjectClick(event) {
+        event.stopPropagation();
+
+        const subject = await SubjectDialog.configDialog();
+        if (subject) {
+            await CONFIG.db.addSubject(subject);
+            this.updateContent();
         }
     }
 }

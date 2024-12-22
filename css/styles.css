@@ -49,6 +49,7 @@
     --heading-3-size: 14px;
     --default-size: 12px;
     --small-size: 11px;
+    --smaller-size: 10.5px;
 
     /* Borders */
     --filled-border: 1px solid var(--border-yellow);
@@ -901,6 +902,10 @@ input:checked+.slider::before {
     display: flex;
     flex-direction: row;
 }
+.data-group.list {
+    flex-direction: column; 
+    overflow: hidden;  
+}
 .data-group .icon-container {
     flex: 0;
     align-self: flex-end;
@@ -909,6 +914,38 @@ input:checked+.slider::before {
     border-radius: 50%;
     background-color: var(--dark-redT87);
     box-shadow: var(--small-shadow);    
+}
+
+.data-group .search-box input[type="text"] {
+    width: -webkit-fill-available;
+    padding: 5px;    
+    border-radius: 5px;
+    background: var(--dark-blue);
+    color: var(--light-text-color);
+    font-size: var(--small-size);
+}
+
+.data-group.list ul {
+    height: 100%;
+    overflow-y: scroll;
+    list-style: none;
+    padding-left: 5px;
+    margin-bottom: 0;
+}
+.data-group.list ul li {
+    margin-block: 5px;
+    font-size: 32px;
+    border-radius: var(--default-border-radius);
+    background-color: var(--light-background-color);
+    padding: 5px; 
+    transition: all 0.3s ease;   
+}
+.data-group.list ul li.selected,
+.data-group.list ul li:hover {
+    background-color: var(--dark-redT87);
+}
+.data-group.list ul li:hover {
+    cursor: pointer;
 }
 
 .data-group .data-label {
@@ -1737,6 +1774,24 @@ folder-list .folder.created.selected .folder-header .fa-trash {
     /* Alinhamento à esquerda */
 }
 
+.entries .sidebar .flyer-button {
+    width: 200px; 
+    margin-bottom: 5px;
+    align-self: center;
+    text-align: center;
+    padding-block: 1px;
+    font-size: var(--small-size);
+    color: var(--dark-red);
+    border-radius: var(--default-border-radius);
+    transition: all 0.5s ease;
+}
+.entries .sidebar .flyer-button:hover {
+    cursor: pointer;
+    border-radius: 15px;
+    background-color: var(--dark-redT87);
+    color: var(--light-text-color);
+}
+
 .entries .sidebar .footer {
     margin-top: auto;
     /* Move o botão para a parte inferior */
@@ -1814,6 +1869,9 @@ folder-list .folder.created.selected .folder-header .fa-trash {
     padding-bottom: 5px;
     margin-bottom: 15px;
     color: var(--red);
+}
+#encyclo.entries .sidebar h3 {
+    margin-bottom: 10px;
 }
 
 .entries .content {
@@ -2357,10 +2415,15 @@ folder-list .folder.created.selected .folder-header .fa-trash {
     padding-inline: 10px;
     font-size: var(--default-size);
     color: var(--light-text-color);
+    overflow-y: auto;
 }
 
 .dialog .body .link-dialog {
     gap: 5px;
+}
+
+.dialog .body .subject-dialog {
+    overflow: hidden;
 }
 
 .dialog .body input,

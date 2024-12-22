@@ -217,8 +217,6 @@ CONFIG.msgBox = CONFIG.ctrls.msgBox;
 // Atalho para o Controle de Tooltips de Entradas
 CONFIG.tooltip = CONFIG.ctrls.tooltip;
 
-
-
 /** 
  * ------------------------------------------------------------------
  * FUNÇÕES DE CONFIGURAÇÕES 

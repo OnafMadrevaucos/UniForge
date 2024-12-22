@@ -16,6 +16,65 @@ export default class Utils {
         * @type {Object}
         */
         this._crypto = window.crypto;
+
+        /**
+        * Instância do conversor de CSS usada pela aplicação.
+        * @type {Object}
+        */
+        this._cssConverter = window.cssConverter;
+    }
+
+    parseCssToJson(cssText) {
+        // Dividir o texto do CSS em blocos com base em '{' e '}'
+        const json = [];
+
+        // Remover comentários (/* ... */)
+        const cleanedCssText = cssText.replace(/\/\*[\s\S]*?\*\//g, '');
+
+        const blocks = cleanedCssText.match(/([^{}]+)\{([^{}]*)\}/g);
+
+        if (!blocks) return json; // Retorna vazio se não houver regras
+
+        blocks.forEach(block => {
+            const [selectors, styles] = block.split('{').map(s => s.trim());
+
+            // Ignorar blocos com seletores que começam com '@'
+            if (selectors.startsWith('@')) return;
+
+            const stylesArray = styles.split(';').map(s => s.trim()).filter(Boolean);
+            const filteredStyles = stylesArray.filter(s => !s.includes('}'));
+
+            const stylesObject = Object.fromEntries(
+                filteredStyles.map(style => {
+                    const [property, value] = style.split(':').map(s => s.trim());
+                    return [property, value];
+                })
+            );
+
+            if (stylesObject['--fa']) {
+                json.push({
+                    selector: selectors.trim().slice(1),
+                    unicode: stylesObject
+                });
+            }
+        });
+
+        return json;
+    }
+
+    async extractFontAwesomeIcons() {
+        const cssFilePath = '../node_modules/@fortawesome/fontawesome-free/css/all.css';
+        const response = await fetch(cssFilePath);
+        const cssContent = await response.text();
+
+        try {
+            // Parsear as regras CSS para JSON
+            const json = this.parseCssToJson(cssContent);
+            return json;
+        } catch (error) {
+            console.error('Erro ao converter CSS para JSON:', error);
+            return null;
+        }
     }
 
     /**
@@ -73,8 +132,8 @@ export default class Utils {
         const data = {};
 
         // Se uma imagem foi informada, prepare-a para o banco de dados.
-        if (file || !file.type.startsWith('image/')) {
-            var buffer = await this._readArrayBuffer(file);
+        if (file && file.type.startsWith('image/')) {
+            var buffer = await file.arrayBuffer();
             //const blob = new Blob([buffer], { type: file.type });
 
             //const uint8Array = new Uint8Array(await blob.img.arrayBuffer());

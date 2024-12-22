@@ -130,6 +130,13 @@ export default class DBManager {
         return result;
     }
 
+    async getAllRoots() {
+        let query = 'SELECT * FROM roots';
+        const rows = await CONFIG.sql.query(query);
+
+        return rows;
+    }
+
     async getEntryTypes() {
         let query = 'SELECT * FROM entryTypes';
         const rows = await CONFIG.sql.query(query);
@@ -224,7 +231,19 @@ export default class DBManager {
         return rows;
     }
 
+    async addSubject(data) {
+        let query = 'INSERT INTO subjectType (sid, root, title, icon) VALUES (?,?,?,?);';
+        let params = [];
 
+        params.push(this.generateUUID());
+        params.push(data.root);
+        params.push(data.title);
+        params.push(data.icon);
+
+        const result = await CONFIG.sql.exec(query, params);
+
+        return result;
+    }
     async getSubject(sid) {
         let query = 'SELECT * FROM subjectType AS S WHERE S.sid = ?';
         const params = [sid];
@@ -329,7 +348,7 @@ export default class DBManager {
         query += 'INNER JOIN subjectType AS S ON S.sid = C.sid ';
         query += 'WHERE A.isDraft = 0';
 
-        if (type == 'entry') query += ` AND A.eid <> ${id}`;
+        if (type == 'entry') query += ` AND A.eid <> '${id}'`;
 
         query += ' UNION ';
         query += 'SELECT A.tid AS id, A.title, \'timeline\' AS type, S.icon FROM timeline AS A ';
@@ -340,7 +359,7 @@ export default class DBManager {
         query += 'INNER JOIN subjectType AS S ON S.sid = C.sid ';
         query += 'WHERE A.isDraft = 0 ';
 
-        if (type == 'timeline') query += ` AND A.tid <> ${id}`;
+        if (type == 'timeline') query += ` AND A.tid <> '${id}'`;
 
         query += 'ORDER BY S.icon, A.title '
 

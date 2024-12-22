@@ -207,7 +207,7 @@ export default class LinkDialog extends Dialog {
         const entryList = entryFolder.querySelector('.entry-list');
         const timelineList = timelineFolder.querySelector('.entry-list');
 
-        const items = await CONFIG.db.getAllEntriesAndTimelinesExcept(this.sourceId, this.sourceType);
+        const items = await this.db.getAllEntriesAndTimelinesExcept(this.sourceId, this.sourceType);
         items.forEach(item => {
             if (item.type == 'entry') {
                 const entryItem = this.createItem(item);
@@ -405,9 +405,9 @@ export default class LinkDialog extends Dialog {
 
         let data = null;
         if (type == 'e')
-            data = await CONFIG.db.getEntry(itemId);
+            data = await this.db.getEntry(itemId);
         else
-            data = await CONFIG.db.getTimeline(itemId);        
+            data = await this.db.getTimeline(itemId);        
 
         data.type = type;
 

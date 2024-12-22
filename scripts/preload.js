@@ -13,11 +13,3 @@ contextBridge.exposeInMainWorld('sql', {
   exec: async (sql, params = []) => ipcRenderer.invoke('db-exec', sql, params)
 });
 console.log('UniForge: Realizando pré-carregamentos de SQL...OK');
-
-/*
-contextBridge.exposeInMainWorld('crypto', {
-  randomBytes: (length) => ipcRenderer.invoke('random-bytes', length),
-  randomUUID: () => ipcRenderer.invoke('random-uuid'),
-});
-console.log('UniForge: Realizando pré-carregamentos de Criptografia...OK');
-*/

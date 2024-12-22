@@ -38,6 +38,12 @@ export default class Dialog extends BaseDialog {
      */
     this.bodyHTML = '';
 
+    /**
+     * Gerenciador de conexão de Banco de Dados.
+     * @type {DBManager}
+     */
+    this.db = CONFIG.db;
+
     /** 
      * Função executada se o dialog fechar inesperadamente.
      * @type {Function}

@@ -29,7 +29,7 @@ export default class EntryForm extends BaseForm {
      * Estado atual dos elements do formulário.
      * @type {number}
      */
-    this.currentState = 0;    
+    this.currentState = 0;
 
     /**
      * O ícone Font Awesome para quando uma entrada é selecionada.
@@ -295,7 +295,7 @@ export default class EntryForm extends BaseForm {
 
     this.closeDialog();
 
-    if (this.isEncyclopedia) this._clearRootIcon();
+    //if (this.isEncyclopedia) this._clearRootIcon();
   }
 
   /**
@@ -564,7 +564,7 @@ export default class EntryForm extends BaseForm {
 
     const item = this.selection.entry;
     this.isEntryUpdate = (item ? true : false);
-    const itemId = Number(item?.dataset.id) ?? -1;
+    const itemId = item?.dataset.id ?? -1;
 
     if (!this.onSaveClick) {
       const message = 'Método de tratamento do clique de salvamento não foi implementado no formulário filho.';
@@ -840,23 +840,19 @@ export default class EntryForm extends BaseForm {
    */
   async _loadRootIcon(folder) {
     const sid = folder.dataset.sid;
-    let subject = Object.values(await CONFIG.db.getSubjectRoot(sid));
+    let subject = await CONFIG.db.getSubjectRoot(sid);
 
-    if (subject.length != 1) {
-      this.msgBox.showWarning('O assunto está duplicado.');
+    if (subject) {
+      const typeLabel = this.querySelector('#typeLabel');
+      const dataIcon = this.querySelector('#dataIcon');
+      const subjectIcon = this.querySelector('#subjectIcon');
+
+      typeLabel.textContent = subject.title;
+
+      dataIcon.dataset.tooltip = CONFIG.utils.capitalizeFirstLetter(subject.root);
+      subjectIcon.classList.remove(...subjectIcon.classList);
+      subjectIcon.className = subject.icon;
     }
-
-    subject = subject[0];
-
-    const typeLabel = this.querySelector('#typeLabel');
-    const dataIcon = this.querySelector('#dataIcon');
-    const subjectIcon = this.querySelector('#subjectIcon');
-
-    typeLabel.textContent = subject.title;
-
-    dataIcon.dataset.tooltip = CONFIG.utils.capitalizeFirstLetter(subject.root);
-    subjectIcon.classList.remove(...subjectIcon.classList);
-    subjectIcon.className = subject.icon;
   }
   /**
    * Carrega ícone da raíz do assunto.

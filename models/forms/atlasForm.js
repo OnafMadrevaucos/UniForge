@@ -145,7 +145,7 @@ export class AtlasForm extends EntryForm {
     async onEntryItemDoubleClick(event) {
         super.onEntryItemDoubleClick(event);
         const item = event.target.closest('.entry-item');
-        const itemId = Number(item.dataset.id);
+        const itemId = item.dataset.id;
         let entry = await CONFIG.db.getEntry(itemId);
 
         if (entry) {
