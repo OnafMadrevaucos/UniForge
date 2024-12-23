@@ -4,20 +4,20 @@ export default class DBManager {
         this.crypto = window.crypto;
 
         this.storedProcedures = {
-            createCalendarTable: this.createCalendarTable,
-            createMonthsTable: this.createMonthsTable,
-            createDaysTable: this.createDaysTable,
-            createDaysInMonthsTable: this.createDaysInMonthsTable,
-            createEntryTypesTable: this.createEntryTypesTable,
-            createImportanceTable: this.createImportanceTable,
-            createSubjectTypeTable: this.createSubjectTypeTable,
-            createCategoryTable: this.createCategoryTable,
-            createEntryTable: this.createEntryTable,
-            createEventTable: this.createEventTable,
-            createTimelineTable: this.createTimelineTable,
-            createTimelineEventTable: this.createTimelineEventTable,
-            createTextImagesTable: this.createTextImagesTable,
-            createSettingsTable: this.createSettingsTable
+            createCalendarTable: () => this.createCalendarTable(),
+            createMonthsTable: () => this.createMonthsTable(),
+            createDaysTable: () => this.createDaysTable(),
+            createDaysInMonthsTable: () => this.createDaysInMonthsTable(),
+            createEntryTypesTable: () => this.createEntryTypesTable(),
+            createImportanceTable: () => this.createImportanceTable(),
+            createSubjectTypeTable: () => this.createSubjectTypeTable(),
+            createCategoryTable: () => this.createCategoryTable(),
+            createEntryTable: () => this.createEntryTable(),
+            createEventTable: () => this.createEventTable(),
+            createTimelineTable: () => this.createTimelineTable(),
+            createTimelineEventTable: () => this.createTimelineEventTable(),
+            createTextImagesTable: () => this.createTextImagesTable(),
+            createSettingsTable: () => this.createSettingsTable()
         };
     }
 
@@ -277,10 +277,12 @@ export default class DBManager {
     }
 
     async addEntry(data) {
-        let query = 'INSERT INTO entry (eid, etid, cid, title, flavor, htmlString, img, ext isDraft) VALUES (?,?,?,?,?,?,?,?,?);';
+        let query = 'INSERT INTO entry (eid, etid, cid, title, flavor, htmlString, img, ext, isDraft) VALUES (?,?,?,?,?,?,?,?,?);';
         let params = [];
 
-        params.push(this.generateUUID());
+        const eid = this.generateUUID();
+
+        params.push(eid);
         params.push(data.etid);
         params.push(data.cid);
         params.push(data.title);
@@ -291,6 +293,7 @@ export default class DBManager {
         params.push(Number(data.isDraft));
 
         const result = await CONFIG.sql.exec(query, params);
+        result.addedId = eid;
 
         return result;
     }
@@ -563,20 +566,112 @@ export default class DBManager {
     }
 
     async createEntryTypesTable() {
-        let query = 'CREATE TABLE IF NOT EXISTS entryTypes (etid TEXT PRIMARY KEY NOT NULL,' +
+        let query = 'DROP TABLE entryTypes';
+        let changes = 0;
+        let result = await CONFIG.sql.exec(query);
+        changes += result.changes;
+
+        query = 'CREATE TABLE IF NOT EXISTS entryTypes (etid TEXT PRIMARY KEY NOT NULL,' +
             'label TEXT NOT NULL,' +
             'icon TEXT NOT NULL)';                // Número de DIAS por MÊS do calendário
 
         console.log('Tabela \'entryTypes\' criada....OK.');
-        return await CONFIG.sql.exec(query);
+        result = await CONFIG.sql.exec(query);
+        changes += result.changes;
+
+        console.log('Populando tabela \'entryTypes\'....');
+
+        const entryTypes = [
+            {
+                label: 'Artigo Genérico',
+                icon: 'fas fa-newspaper'
+            },
+            {
+                label: 'Boato',
+                icon: 'fas fa-comments'
+            },
+            {
+                label: 'Descoberta',
+                icon: 'fas fa-book-open-reader'
+            },
+            {
+                label: 'Documento',
+                icon: 'fas fa-file'
+            },
+            {
+                label: 'Pessoa',
+                icon: 'fas fa-user-large'
+            },
+            {
+                label: 'Relato',
+                icon: 'fas fa-message'
+            }
+        ];
+
+        query = 'INSERT INTO entryTypes (etid, label, icon) ';
+        query += 'VALUES (?,?,?);';        
+
+        entryTypes.forEach(async entryType => {
+            let params = [];
+
+            params.push(this.generateUUID());
+            params.push(entryType.label);
+            params.push(entryType.icon);
+
+            result = await CONFIG.sql.exec(query, params);
+            changes += result.changes;
+        });
+        console.log('Tabela \'entryTypes\' populada....OK.');
+
+        result.changes = changes;
+        return result;
     }
     async createImportanceTable() {
-        let query = 'CREATE TABLE IF NOT EXISTS importance (iid TEXT PRIMARY KEY NOT NULL,' +
-            'label TEXT NOT NULL,' +                        // Título da importância
-            'isEntry BOOLEAN NOT NULL DEFAULT 1)';          // Se é uma importância de entrada
+        let query = 'DROP TABLE importance';
+        let changes = 0;
+        let result = await CONFIG.sql.exec(query);
 
-        console.log('Tabela \'entryTypes\' criada....OK.');
-        return await CONFIG.sql.exec(query);
+        changes += result.changes;
+
+        query = 'CREATE TABLE IF NOT EXISTS importance (iid TEXT PRIMARY KEY NOT NULL,' +
+        'label TEXT NOT NULL,' +                        // Título da importância
+        'isEntry BOOLEAN NOT NULL DEFAULT 1)';          // Se é uma importância de entrada
+
+        result = await CONFIG.sql.exec(query);
+        changes += result.changes;
+        console.log('Tabela \'importance\' criada....OK.');
+
+        console.log('Populando tabela \'importance\'....');
+
+        query = 'INSERT INTO importance (iid, label) ';
+        query += 'VALUES (?,?);';
+        let params = [];
+
+        params.push(this.generateUUID());
+        params.push('Major');
+        result = await CONFIG.sql.exec(query, params);
+        changes += result.changes;
+
+        params = [];
+        params.push(this.generateUUID());
+        params.push('Minor');
+        result = await CONFIG.sql.exec(query, params);
+        changes += result.changes;
+
+        query = 'INSERT INTO importance (iid, label, isEntry) ';
+        query += 'VALUES (?,?,?);';
+        
+        params = [];
+        params.push(this.generateUUID());
+        params.push('Timeline');
+        params.push(Number(false));
+        result = await CONFIG.sql.exec(query, params);
+        changes += result.changes;
+
+        result.changes = changes;
+
+        console.log('Tabela \'importance\' populada....OK.');
+        return result;
     }
 
     async createSettingsTable() {

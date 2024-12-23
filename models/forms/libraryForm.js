@@ -3,8 +3,8 @@ import BaseForm from "./baseForm.js";
 import { LibraryManager } from "../../scripts/managers/libraryManager.js";
 
 export class LibraryForm extends BaseForm {
-    constructor(overlay) {
-        const form = super(overlay);
+    constructor(overlay, title) {
+        const form = super(overlay, title);
         this.form = form;
 
         this.manager = new LibraryManager(form);

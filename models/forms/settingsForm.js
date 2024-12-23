@@ -15,10 +15,11 @@ export class SettingsForm extends BaseForm {
       * @extends BaseForm
       * 
       * @param {Object} overlay - O objeto overlay passado para a classe pai e utilizado para configurar esta instância.
+      * @param {HTMLElement} title   - O título do formulário.
       */
-    constructor(overlay) {
+    constructor(overlay, title) {
         // Chama o construtor da classe pai com o parâmetro overlay.
-        super(overlay);
+        super(overlay, title);
 
         /**
         * O objeto de manipulação do Banco de Dados.

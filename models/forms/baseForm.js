@@ -8,13 +8,23 @@ export default class BaseForm {
   /**
    * Construtor da classe BaseForm.
    * @param {HTMLElement} overlay - O elemento de overlay que contém o formulário.
+   * @param {HTMLElement} title   - O título do formulário.
    */
-  constructor(overlay) {
+  constructor(overlay, title) {
+    /**
+    * O título do formulário.
+    * @type {string}
+    * 
+    */
+    this.title = title;
+
     /**
      * Gerenciador de conexão de Banco de Dados.
      * @type {DBManager}
      */
     this.db = CONFIG.db;
+
+   
 
     /**
      * URL da imagem de fundo para o overlay.
@@ -37,11 +47,12 @@ export default class BaseForm {
 
     /**
      * Elementos da interface do usuário (UI) associados ao formulário.
-     * @type {{ overlay: HTMLElement, form: HTMLElement, close_btn: HTMLElement, content: HTMLElement, sidebar: HTMLElement }}
+     * @type {{ overlay: HTMLElement, form: HTMLElement, header: HTMLElement, close_btn: HTMLElement, content: HTMLElement, sidebar: HTMLElement }}
      */
     this.ui = {
       overlay: overlay,
       form: overlay.querySelector('.form-container'),
+      header: overlay.querySelector('.form-header'),
       close_btn: overlay.querySelector('.close-button'),
       content: overlay.querySelector('.form-content'),
       sidebar: overlay.querySelector('.sidebar'),
@@ -54,6 +65,12 @@ export default class BaseForm {
     this.isHidden = this.ui.form.classList.contains('hidden');
 
     if (!this.isHidden) this.ui.form.classList.add('hidden');
+
+    /**
+     * Indica se o formulário está oculto inicialmente.
+     * @type {boolean}
+     */
+    this.canDelete = false;
 
     /**
      * Referência ao container do formulário.
@@ -93,7 +110,7 @@ export default class BaseForm {
   }
 
   /* ---------------------------------------------------------------------------------------------------------------- */
-  // GETTERS E SETTERS
+  // GETTERS E SETTERS  
   /**
    * Obtém os assuntos de uma dada origem disponíveis no banco de dados.
    * @async
@@ -176,8 +193,7 @@ export default class BaseForm {
         element.removeChild(element.firstChild);
       }
     }
-  }
-
+  } 
   /* ---------------------------------------------------------------------------------------------------------------- */
   // CONFIGURAÇÃO
   /**
@@ -186,6 +202,10 @@ export default class BaseForm {
    * @async
    */
   async configureBaseContent(form) {
+    // Configura o título do formulário.
+    const formTitle = this.querySelector('.form-title');
+    formTitle.textContent = this.title;
+
     // Ativa os ouvintes de eventos básicos.
     this.activateBaseListeners(form);
   }
@@ -232,8 +252,8 @@ export default class BaseForm {
   * Se a imagem ainda não tiver a classe 'empty', ela adiciona a classe 'empty'.
   */
   clearImage() {
-    const displayedImage = this.querySelector('#displayedImage');    
-    if(!displayedImage.classList.contains('empty'))
+    const displayedImage = this.querySelector('#displayedImage');
+    if (!displayedImage.classList.contains('empty'))
       displayedImage.classList.add('empty');
 
     displayedImage.src = this.blankImgUrl;

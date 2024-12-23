@@ -3,8 +3,8 @@ import { Database } from "../../scripts/tempDB.js";
 import { TimelineManager } from "../../scripts/managers/timelineManager.js";
 
 export class TimelineForm extends BaseForm {
-    constructor(overlay) {
-        const form = super(overlay);
+    constructor(overlay, title) {
+        const form = super(overlay, title);
         this.form = form;
 
         this.manager = new TimelineManager(form);                

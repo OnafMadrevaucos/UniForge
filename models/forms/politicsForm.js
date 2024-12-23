@@ -14,10 +14,11 @@ export class PoliticsForm extends EntryForm {
       * @extends EntryForm
       * 
       * @param {Object} overlay - O objeto overlay passado para a classe pai e utilizado para configurar esta instância.
+      * @param {HTMLElement} title   - O título do formulário.
       */
-    constructor(overlay) {
+    constructor(overlay, title) {
         // Chama o construtor da classe pai com o parâmetro overlay.
-        super(overlay);
+        super(overlay, title);
 
         /**
          * @property {Array} entryTypes - Os tipos de entradas disponíveis para esta instância.

@@ -5,6 +5,7 @@ import BaseForm from "./baseForm.js";
 import DBManager from "../../db/dbManager.js";
 import LinkDialog from "../dialogs/linkDialog.js";
 import ImagePickerDialog from "../dialogs/imagePickerDialog.js";
+import Dialog from "../dialogs/dialog.js";
 
 /**
  * Classe EntryForm estende a funcionalidade da classe BaseForm para gerenciar formulários que manipulem Entradas.
@@ -15,15 +16,16 @@ export default class EntryForm extends BaseForm {
   /**
    * Construtor da classe EntryForm.
    * @param {HTMLElement} overlay - O elemento de sobreposição para o formulário.
+   * @param {HTMLElement} title   - O título do formulário.
    */
-  constructor(overlay) {
-    super(overlay);
+  constructor(overlay, title) {
+    super(overlay, title);
 
     /**
-     * Estados válidos para os elements do formulário.
-     * @type {Object<number, number>}
-     */
-    this.states = EntryForm._states;
+    * Estados válidos para os elements do formulário.
+    * @type {Object<number, number>}
+    */
+    this.states = this._states;
 
     /**
      * Estado atual dos elements do formulário.
@@ -65,18 +67,17 @@ export default class EntryForm extends BaseForm {
   * 
   * @type {Object<number, number>}
   * @protected
-  * @property {number} cancelEntry - Representa o estado de cancelamento de uma entrada (valor 0).
+  * @property {number} default - Representa o estado de cancelamento de uma entrada (valor 0).
   * @property {number} newEntry - Representa o estado de criação de uma nova entrada (valor 1).
-  * @property {number} saveEntry - Representa o estado de salvamento de uma entrada (valor 2). 
+  * @property {number} editing - Representa o estado de salvamento de uma entrada (valor 2). 
   */
-  static get _states() {
+  get _states() {
     return {
       default: 0,
       newEntry: 1,
       editing: 2
     }
   };
-
   /**
    * Obtém as categorias disponíveis do banco de dados.
    * @returns {Object} - Assuntos.
@@ -139,6 +140,11 @@ export default class EntryForm extends BaseForm {
     const imageContainer = this.querySelector('#imageContainer');
     const infoContent = this.querySelector('.info-content');
     const mainEditor = tinymce.get('mainEditor');
+    const deleteSwitch = this.ui.header.querySelector('.switch');
+    const deleteCheckbox = this.ui.header.querySelector('#checkbox');
+
+    deleteCheckbox.checked = false;
+    deleteSwitch.classList.add('hidden');
 
     titleInput.disabled = false;
     infoContent.disabled = false;
@@ -171,6 +177,8 @@ export default class EntryForm extends BaseForm {
       // ESTADO DE EDIÇÃO DE ENTRADA.
       case this.states.editing: {
         imageContainer.classList.remove('disabled');
+
+        deleteSwitch.classList.remove('hidden');
 
         // Configuração dos Estados dos Botões.
         const saveButton = this.querySelector('#saveButton');
@@ -222,6 +230,14 @@ export default class EntryForm extends BaseForm {
 
     // Atualiza o estado atual do formulário.
     this.currentState = state;
+  }
+  /**
+   * Recarrega os controles do formulário.
+   * @protected
+   */
+  refreshStates() {
+    const state = this.currentState;
+    this.controlStates(state);
   }
 
   /**
@@ -416,6 +432,7 @@ export default class EntryForm extends BaseForm {
     const imageContainer = this.querySelector('#imageContainer');
     const displayedImage = this.querySelector('#displayedImage');
     const fileInput = this.querySelector('#hiddenFileInput');
+    const deleteCheckbox = this.ui.header.querySelector('#checkbox');
 
     const cancelButton = this.querySelector('#cancelButton');
     const newEntryButton = this.querySelector('#newEntryButton');
@@ -423,11 +440,13 @@ export default class EntryForm extends BaseForm {
 
     const entriesList = this.querySelectorAll('.entry-item');
 
+    deleteCheckbox.addEventListener('change', (event) => { this.onDeleteSwitchChange(event); });
+
     // Adiciona um evento para lidar com a seleção de uma nova imagem.
     fileInput.addEventListener('change', (event) => { this.onChangeImage(event, displayedImage); });
 
     // Adiciona um evento de clique no contêiner de imagem para abrir o seletor de arquivos.
-    imageContainer.addEventListener('click', () => { fileInput.click(); });
+    imageContainer.addEventListener('click', (event) => { this.onImageClick(event, fileInput, displayedImage); });
 
     cancelButton.addEventListener('click', (event) => { this.onCancelClick(event); });
     newEntryButton.addEventListener('click', (event) => { this.onBaseNewClick(event); });
@@ -440,7 +459,7 @@ export default class EntryForm extends BaseForm {
   }
 
   /**
-   * Reconfigura alguns ouvintes de eventos para o formulário.
+   * Reconfigura alguns ouvintes de eventos para o formulário após alguma alteração nos dados.
    * @param {HTMLElement} form - O formulário principal.
    * @private
    */
@@ -452,6 +471,22 @@ export default class EntryForm extends BaseForm {
       const deleteIcon = item.querySelector('.remove-button');
       deleteIcon.addEventListener('click', (event) => { this.onDeleteEntryClick(event, item); });
     });
+  }
+
+  /**
+   * Gerencia cliques no switch de Deleção de Dados.
+   * @param {MouseEvent} event - O evento de clique.
+   * @protected
+   */
+  onDeleteSwitchChange(event) {
+    this.canDelete = event.target.checked;
+    const imageContainer = this.querySelector('#imageContainer');
+
+    if (this.canDelete) {
+      imageContainer.classList.add('delete');
+    } else {
+      imageContainer.classList.remove('delete');
+    }
   }
 
   /**
@@ -480,6 +515,23 @@ export default class EntryForm extends BaseForm {
     }
   }
 
+  /**
+   * Manipulador de evento para alterar a imagem exibida.
+   * @param {Event} event                     - Evento disparado pelo input de arquivo.
+   * @param {HTMLImageElement} fileInput      - Elemento de carga de arquivo de imagem.
+   * @param {HTMLImageElement} displayedImage - Elemento de imagem a ser atualizado.
+   */
+  async onImageClick(event, fileInput, displayedImage) {
+    if (this.canDelete) {
+      const confirm = await Dialog.confirm('Apagar Imagem', 'Deseja remover a imagem?')
+      if (confirm) {
+        displayedImage.src = this.blankImgUrl;
+        displayedImage.classList.add('empty');
+      }
+    } else {
+      fileInput.click();
+    }
+  }
   /**
    * Manipulador de evento para alterar a imagem exibida.
    * @param {Event} event                     - Evento disparado pelo input de arquivo.
@@ -606,7 +658,7 @@ export default class EntryForm extends BaseForm {
    */
   async onDeleteEntryAction(event) {
     event.stopPropagation();
-    const id = JSON.parse(this.ui.dialog.dataset.id);
+    const id = this.ui.dialog.dataset.id;
 
     if (this.isEncyclopedia) await CONFIG.db.deleteCategory(id);
     else await CONFIG.db.deleteEntry(id);

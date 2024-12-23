@@ -15,10 +15,11 @@ export class HistoryForm extends EntryForm {
       * @extends EntryForm
       * 
       * @param {Object} overlay - O objeto overlay passado para a classe pai e utilizado para configurar esta instância.
+      * @param {HTMLElement} title   - O título do formulário.
       */
-    constructor(overlay) {
+    constructor(overlay, title) {
         // Chama o construtor da classe pai com o parâmetro overlay.
-        super(overlay);
+        super(overlay, title);
 
         /**
          * @property {Array} importances - Os tipos de importância de eventos disponíveis para esta instância.
@@ -73,6 +74,8 @@ export class HistoryForm extends EntryForm {
             case this.states.editing: {
                 flavorEditor.mode.set('design');
             } break;
+            // ESTADO DE DELEÇÃO DE DADOS.
+            case this.states.delete: break;
             // ESTADO PADRÃO.
             default: {
                 flavorEditor.mode.set('readonly');
@@ -243,19 +246,19 @@ export class HistoryForm extends EntryForm {
             const draftSwitch = this.querySelector('#checkbox');
 
             let data = {
-                etid: Number(entryType.value),
-                iid: Number(importance.value),
-                clid: Number(calendarType.value),
+                etid: entryType.value,
+                cid: headerInfo.dataset.cid,
+                iid: importance.value,
+                clid:calendarType.value,
                 title: titleInput.value,
+                flavor: tinymce.get('flavorEditor').getContent() ?? '',
+                htmlString: tinymce.get('mainEditor').getContent() ?? '',
                 date: {
                     start: this.datePickers.start.selectedDate,
                     end: this.datePickers.end.selectedDate
                 },
                 img: imgInput.value,
-                htmlString: tinymce.get('mainEditor').getContent() ?? '',
-                flavor: tinymce.get('flavorEditor').getContent() ?? '',
-                isDraft: Number(draftSwitch.checked),
-                cid: Number(headerInfo.dataset.cid),
+                isDraft: Number(draftSwitch.checked),                
                 text: ''
             }
 
@@ -286,7 +289,7 @@ export class HistoryForm extends EntryForm {
             }
             else {
                 const result = await CONFIG.db.addEntry(data);
-                data.eid = result.lastInsertRowid;
+                data.eid = result.addedId;
                 await CONFIG.db.addEvent(data);
                 this.msgBox.showInfo('Entrada criada com sucesso.');
             }

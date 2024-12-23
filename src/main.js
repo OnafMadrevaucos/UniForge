@@ -563,25 +563,25 @@ function _loadPartial(id) {
 
             switch (id) {
                 case 'atlas': {
-                    CONFIG.form = new AtlasForm(overlay);
+                    CONFIG.form = new AtlasForm(overlay, 'Atlas');
                 } break;
                 case 'encyclo': {
-                    CONFIG.form = new EncycloForm(overlay);
+                    CONFIG.form = new EncycloForm(overlay, 'Enciclopédia');
                 } break;
                 case 'history': {
-                    CONFIG.form = new HistoryForm(overlay);
+                    CONFIG.form = new HistoryForm(overlay, 'História');
                 } break;
                 case 'politics': {
-                    CONFIG.form = new PoliticsForm(overlay);
+                    CONFIG.form = new PoliticsForm(overlay, 'Política');
                 } break;
                 case 'library': {
-                    CONFIG.form = new LibraryForm(overlay);
+                    CONFIG.form = new LibraryForm(overlay, 'Biblioteca');
                 } break;
                 case 'timeline': {
-                    CONFIG.form = new TimelineForm(overlay);
+                    CONFIG.form = new TimelineForm(overlay, 'Linha do Tempo');
                 } break;
                 case 'settings': {
-                    CONFIG.form = new SettingsForm(overlay);
+                    CONFIG.form = new SettingsForm(overlay, 'Configurações');
                 } break;
                 default: break;
             }

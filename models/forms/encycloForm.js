@@ -14,9 +14,10 @@ export class EncycloForm extends EntryForm {
      * Construtor da classe EncycloForm.
      * 
      * @param {Object} overlay - Objeto de sobreposição usado para interagir com o formulário.
+     * @param {HTMLElement} title   - O título do formulário.
      */
-    constructor(overlay) {
-        super(overlay);
+    constructor(overlay, title) {
+        super(overlay, title);
 
         /**
         * O formulário é o de Enciclopédia
@@ -55,11 +56,11 @@ export class EncycloForm extends EntryForm {
 
         switch (state) {
             // ESTADO DE HABILITAÇÃO DE NOVA ENTRADA.
-            case this.states.newEntry: {                
-            } break;
+            case this.states.newEntry: break;
             // ESTADO DE EDIÇÃO DE ENTRADA.
-            case this.states.editing: {               
-            } break;
+            case this.states.editing: break;
+            // ESTADO DE DELEÇÃO DE DADOS.
+            case this.states.delete: break;
             // ESTADO PADRÃO.
             default: {
                 this._clearRootIcon();
