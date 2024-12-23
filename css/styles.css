@@ -859,38 +859,41 @@ input:checked+.slider::before {
 }
 
 .overlay .form-container.fullscreen {
-    height: 97%;
+    height: 90%;
     width: 97%;
 }
 
-.overlay .form-container .close-button {
-    width: auto;
+.overlay .form-container .form-header {
+    border-top-left-radius: var(--default-border-radius);
+    border-top-right-radius: var(--default-border-radius);
+    background-color: var(--dark-red);
+    width: 100%;
+    height: 25px;
     position: absolute;
-    top: -30px;
-    right: -20px;
-    padding: 5px;
-    font-size: var(--heading-2-size);
-    color: var(--red);
-    background: none;
+    top: -25px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+.overlay .form-container .form-header .close-button {
+    width: 18px;
+    height: 18px;
+    font-size: 18px;
+    text-align: center;
+    align-self: center;
+    padding: 0.5px;
+    color: var(--light-text-color);
     border: none;
     cursor: pointer;
     z-index: 10000;
-    border-radius: 5px 15px;
-}
-
-.overlay .form-container.article .close-button,
-.overlay .form-container.fullscreen .close-button {
-    font-size: 16px;
-    top: -25px;
-    right: -15px;
-    box-shadow: none;
+    border-radius: 50% 50%;
+    margin: 1px;
+    margin-right: 5px;
 }
 
 .overlay .form-container.article .close-button:hover,
 .overlay .form-container .close-button:hover {
-    color: var(--light-text-color);
-    box-shadow: var(--small-shadow);
-    border-radius: 5px 15px;
+    color: var(--dark-red);
+    background-color: var(--light-text-color);
 }
 
 .overlay .form-container .form-content {
@@ -1746,8 +1749,9 @@ folder-list .folder.created.selected .folder-header .fa-trash {
     background-size: cover;
     background-repeat: no-repeat;
     background-position: center;
-    border-radius: var(--default-border-radius);
-    user-select: none;
+    border-bottom-left-radius: var(--default-border-radius);
+    border-bottom-right-radius: var(--default-border-radius);
+    user-select: none;    
 }
 
 .entries input[type="text"] {
@@ -1763,7 +1767,8 @@ folder-list .folder.created.selected .folder-header .fa-trash {
     overflow-y: auto;
     border-right: var(--sidebar-border);
     box-sizing: border-box;
-    border-radius: var(--default-border-radius);
+    border-bottom-left-radius: var(--default-border-radius);
+    border-bottom-right-radius: var(--default-border-radius);
 
     display: flex;
     flex-direction: column;
