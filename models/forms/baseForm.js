@@ -24,8 +24,6 @@ export default class BaseForm {
      */
     this.db = CONFIG.db;
 
-   
-
     /**
      * URL da imagem de fundo para o overlay.
      * @type {string}
@@ -193,7 +191,7 @@ export default class BaseForm {
         element.removeChild(element.firstChild);
       }
     }
-  } 
+  }
   /* ---------------------------------------------------------------------------------------------------------------- */
   // CONFIGURAÇÃO
   /**
@@ -265,7 +263,7 @@ export default class BaseForm {
    */
   loadSidebarData(form) {
     const data = this.data.subjects;
-    this.createFolderList(data);
+    if(data) this.createFolderList(data);
   }
 
   createFolderList(data) {
@@ -290,6 +288,7 @@ export default class BaseForm {
     folder.classList.add('folder', 'created');
     folder.dataset.cid = data.cid ?? null;
     folder.dataset.sid = data.sid ?? null;
+    folder.dataset.tid = data.tid ?? null;
 
     const folderHeader = document.createElement('div');
     folderHeader.className = 'folder-header flexrow';
@@ -513,7 +512,7 @@ export default class BaseForm {
       this.msgBox.showError(err);
       return null;
     }
-  }
+  }  
 
   /**
    * Lida com a fila de navegação ao fechar o formulário.

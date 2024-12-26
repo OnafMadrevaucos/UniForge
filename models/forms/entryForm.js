@@ -40,6 +40,15 @@ export default class EntryForm extends BaseForm {
     this.selectedIcon = 'fas fa-feather';
 
     /**
+     * Objeto com os dados da imagem da entrada.
+     * @type {Object}
+     */
+    this.selectedImg = {
+      rawData: null,
+      ext: ''
+    };
+
+    /**
      * A edição atual é uma atualização de uma Entrada?
      * @type {boolean}
      */
@@ -176,6 +185,12 @@ export default class EntryForm extends BaseForm {
       } break;
       // ESTADO DE EDIÇÃO DE ENTRADA.
       case this.states.editing: {
+        // Está atualizando uma Entrada pré-existente.
+        this.isEntryUpdate = true;
+
+        // Foca no campo de Título.
+        const titleInput = this.querySelector('#titleInput');
+        titleInput.focus();
         imageContainer.classList.remove('disabled');
 
         deleteSwitch.classList.remove('hidden');
@@ -183,6 +198,9 @@ export default class EntryForm extends BaseForm {
         // Configuração dos Estados dos Botões.
         const saveButton = this.querySelector('#saveButton');
         const cancelButton = this.querySelector('#cancelButton');
+
+        // Configuração do label no botão de Salvar.
+        saveButton.innerHTML = '<i class="fa-regular fa-floppy-disk"></i> Atualizar';
         saveButton.classList.remove('disabled');
 
         cancelButton.classList.remove('hidden');
@@ -447,6 +465,7 @@ export default class EntryForm extends BaseForm {
 
     // Adiciona um evento de clique no contêiner de imagem para abrir o seletor de arquivos.
     imageContainer.addEventListener('click', (event) => { this.onImageClick(event, fileInput, displayedImage); });
+    imageContainer.addEventListener('contextmenu', (event) => { this.onImageRightClick(event, displayedImage); });
 
     cancelButton.addEventListener('click', (event) => { this.onCancelClick(event); });
     newEntryButton.addEventListener('click', (event) => { this.onBaseNewClick(event); });
@@ -525,6 +544,9 @@ export default class EntryForm extends BaseForm {
     if (this.canDelete) {
       const confirm = await Dialog.confirm('Apagar Imagem', 'Deseja remover a imagem?')
       if (confirm) {
+
+        this.selectedImg.rawData = null;
+
         displayedImage.src = this.blankImgUrl;
         displayedImage.classList.add('empty');
       }
@@ -537,7 +559,20 @@ export default class EntryForm extends BaseForm {
    * @param {Event} event                     - Evento disparado pelo input de arquivo.
    * @param {HTMLImageElement} displayedImage - Elemento de imagem a ser atualizado.
    */
-  onChangeImage(event, displayedImage) {
+  async onImageRightClick(event, displayedImage) {
+    event.preventDefault();
+
+    if (this.selectedImg.rawData && !displayedImage.classList.contains('empty')) {
+      const imageUrl = await CONFIG.utils.blobToImage(this.selectedImg.rawData, this.selectedImg.ext);
+      await Dialog.showImagem('Exibir Imagem', imageUrl);
+    }
+  }
+  /**
+   * Manipulador de evento para alterar a imagem exibida.
+   * @param {Event} event                     - Evento disparado pelo input de arquivo.
+   * @param {HTMLImageElement} displayedImage - Elemento de imagem a ser atualizado.
+   */
+  async onChangeImage(event, displayedImage) {
     const file = event.target.files[0];
 
     // Verifica se um arquivo foi selecionado e se é uma imagem.
@@ -547,7 +582,10 @@ export default class EntryForm extends BaseForm {
 
       // Atualiza a imagem exibida.
       displayedImage.src = imageURL;
+      displayedImage.dataset.ext = file.type.split('/')[1];
       displayedImage.classList.remove('empty');
+
+      this.selectedImg = await CONFIG.utils.imageToBlob(file);
 
       // Libera o URL temporário quando não for mais necessário.
       displayedImage.onload = () => {
@@ -636,20 +674,48 @@ export default class EntryForm extends BaseForm {
    * @param {MouseEvent} event - O evento de clique duplo.
    */
   async onEntryItemDoubleClick(event) {
-    super.onEntryItemDoubleClick(event);
-    // Configuração do label no botão de Salvar.
-    const saveButton = this.querySelector('#saveButton');
-    saveButton.innerHTML = '<i class="fa-regular fa-floppy-disk"></i> Atualizar';
+    await super.onEntryItemDoubleClick(event);
 
-    // Está atualizando uma Entrada pré-existente.
-    this.isEntryUpdate = true;
+    const item = event.target.closest('.entry-item');
+    const itemId = item.dataset.id;
+    let entry = null;
+    if(this.isEncyclopedia) entry = await CONFIG.db.getCategory(itemId);
+    else entry = await CONFIG.db.getEntry(itemId);
 
-    // Foca no campo de Título.
-    const titleInput = this.querySelector('#titleInput');
-    titleInput.focus();
+    if (entry) {
+      const headerInfo = this.querySelector('.header-info');
+      headerInfo.dataset.cid = entry.cid ?? null;
+      headerInfo.dataset.sid = entry.sid ?? null;
 
-    // Atualiza o estado dos elements do formulário.
-    this.controlStates(this.states.editing);
+      const displayedImage = this.querySelector('#displayedImage');
+      const titleInput = this.querySelector('#titleInput');
+      const draftSwitch = this.querySelector('#checkbox');
+
+      titleInput.value = entry.title;
+      draftSwitch.checked = entry.isDraft;
+
+      if (entry.img) {
+        const imageUrl = await CONFIG.utils.blobToImage(entry.img, entry.ext);
+
+        displayedImage.dataset.ext = entry.ext;
+        displayedImage.src = imageUrl
+        displayedImage.classList.remove('empty');
+      } else { // A imagem é vazia.
+        this.clearImage();
+      }
+
+      this.selectedImg = {
+        rawData: entry.img,
+        ext: entry.ext
+      };
+
+      this.data.entry = entry;
+
+      // Atualiza o estado dos elements do formulário.
+      this.controlStates(this.states.editing);
+    } else {
+      this.msgBox.showWarning('Erro ao carregar a entrada.');
+    }
   }
 
   /**

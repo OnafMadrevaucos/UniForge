@@ -149,7 +149,7 @@ export default class Utils {
             // Obtém a extensão do arquivo de imagem.
             const fileExt = file?.name.split('.').pop().toLowerCase();
 
-            data.img = base64;
+            data.rawData = base64;
             data.ext = fileExt;
         }
 

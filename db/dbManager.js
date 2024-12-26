@@ -473,6 +473,24 @@ export default class DBManager {
         if (rows.length >= 1) return rows[0];
         else return null;
     }
+    async getAllTimelines() {
+        let query = 'SELECT * FROM timeline';
+
+        const rows = await CONFIG.sql.query(query);
+
+        if (rows.length >= 1) return rows[0];
+        else return null;
+    }
+    async getEventsFromTimeline(tid) {
+        let query = 'SELECT TE.tid, E.title, EV.* FROM _timelineEvent AS TE ';
+        query += 'INNER JOIN event AS EV ON TE.evid = EV.evid ';
+        query += 'INNER JOIN entry AS E ON EV.eid = E.eid ';
+        query += 'WHERE TE.tid = ?;';
+        const params = [tid];
+
+        const rows = await CONFIG.sql.query(query, params);
+        return rows;
+    }
     async getTimelineWithIcon(tid) {
         let query = 'SELECT * FROM timeline WHERE tid = ?;';
         const params = [tid];

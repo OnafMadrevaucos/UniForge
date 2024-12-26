@@ -65,11 +65,25 @@ export default class Dialog extends BaseDialog {
 
   async getBody() {
     if(this.secure) return this.getSecureConfirmBody();
+    else if (this.options.imageUrl) return this.getImageBody();
     else return this.getConfirmBody();
   }
 
   getConfirmBody() {
     return this.options?.prompt ?? '';
+  }
+
+  getImageBody() {
+    // Cria o body
+    const body = document.createElement('div');
+    body.className = 'image-dialog flexcol';
+
+    const img = document.createElement('img');
+    img.src = this.options.imageUrl;
+
+    body.appendChild(img);
+
+    return body;
   }
 
   getSecureConfirmBody() {
@@ -354,6 +368,25 @@ export default class Dialog extends BaseDialog {
         abort: () => resolve(false)
       };
       const dialog = new this(dialogData, { secure: true });
+      dialog.render();
+    });
+  }
+
+  /**
+   * Exibe uma caixa de diálogo de confirmação com dois botões (Sim e Não).
+   * 
+   * @static
+   * @param {string} title - Título do arquivo de imagem exibido.
+   * @param {URL} imageUrl - Url do arquivo de imagem a ser exibido.
+   * @returns {Promise}    - Retorna uma promessa que é resolvida se o usuário clicar em "Fechar".
+   */
+  static async showImagem(title, imageUrl) {
+      return new Promise((resolve, reject) => {
+      const dialogData = {
+        title: title,
+        abort: () => resolve()
+      };
+      const dialog = new this(dialogData, {imageUrl, width: '75%'});
       dialog.render();
     });
   }

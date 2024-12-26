@@ -83,11 +83,11 @@ window.CONFIG = {
             content_css: '/css/styles.css'
         },
         simple: {
-            license_key: 'gpl',            
+            license_key: 'gpl',
             plugins: 'quickbars',
             quickbars_selection_toolbar: 'undo redo | bold italic',
             quickbars_insert_toolbar: false,
-            browser_spellcheck: true,            
+            browser_spellcheck: true,
             menubar: false,
             inline: true,
             skin: 'oxide-dark',

@@ -195,18 +195,8 @@ export class HistoryForm extends EntryForm {
         calendarType.dispatchEvent(new Event('change'));
 
         this.datePickers.start.selectFullDate(event.start_day, event.start_month, event.start_year);
-        this.datePickers.end.selectFullDate(event.end_day, event.end_month, event.end_year);
-
-        /*
-        // Itera sobre todos os valores do objeto `datePickers`.
-        Object.values(this.datePickers).forEach(pickers => {
-            /**
-             * Carrega o DatePicker com o primeiro calendário disponível.
-             * @method _loadDatePicker
-             * @param {Object} calendar - O primeiro calendário no objeto `calendars`.
-             
-            pickers._reloadDatePicker(calendar, false);
-        });*/
+        if(event.end_day)
+            this.datePickers.end.selectFullDate(event.end_day, event.end_month, event.end_year);
     }
 
     /* ---------------------------------------------------------------------------------------------------------------- */
@@ -262,16 +252,8 @@ export class HistoryForm extends EntryForm {
                 text: ''
             }
 
-            // Obtém o objeto do arquivo da imagem.
-            const file = imgInput.files[0] ?? null;
-            let rawImage = null;
-            if (file) {
-                // Se uma imagem foi informada, prepare-a para o banco de dados.
-                rawImage = await CONFIG.utils.imageToBlob(file);
-            }
-
-            data.img = rawImage?.img ?? null;
-            data.ext = rawImage?.ext ?? 'jpeg';
+            data.img = this.selectedImg?.data ?? null;
+            data.ext = this.selectedImg?.ext ?? 'jpeg';
 
             const validate = CONFIG.db.validateEventEntry(data);
             if (validate !== '') {
@@ -317,10 +299,8 @@ export class HistoryForm extends EntryForm {
     * @param {MouseEvent} event - O evento de clique duplo.
     */
     async onEntryItemDoubleClick(event) {
-        super.onEntryItemDoubleClick(event);
-        const item = event.target.closest('.entry-item');
-        const itemId = item.dataset.id;
-        let entry = await CONFIG.db.getEntry(itemId);
+        await super.onEntryItemDoubleClick(event);
+        const entry = this.data.entry;        
 
         if (entry) {
             const entryEvent = await CONFIG.db.getEventOfEntry(entry.eid);
@@ -328,35 +308,18 @@ export class HistoryForm extends EntryForm {
             if (entryEvent) {                
                 this.reconfigureDatePickers(entryEvent);
 
-                const headerInfo = this.querySelector('.header-info');
-                headerInfo.dataset.cid = entry.cid;
+                const headerInfo = this.querySelector('.header-info');                
                 headerInfo.dataset.evid = entryEvent.evid;
 
-                const displayedImage = this.querySelector('#displayedImage');
-                const imgInput = this.querySelector('#hiddenFileInput');
-                const titleInput = this.querySelector('#titleInput');
                 const entryType = this.querySelector('#entryType');
-                const importance = this.querySelector('#importance');
-                const draftSwitch = this.querySelector('#checkbox');
+                const importance = this.querySelector('#importance');               
 
-                titleInput.value = entry.title;
                 entryType.value = entry.etid;
                 importance.value = entryEvent.iid;
                 tinymce.get('mainEditor').setContent(entry.htmlString);
                 tinymce.get('flavorEditor').setContent(entry.flavor);
-                draftSwitch.checked = entry.isDraft;
-
-                if (entry.img) {
-                    const imageUrl = await CONFIG.utils.blobToImage(entry.img, entry.ext);
-
-                    displayedImage.src = imageUrl
-                    displayedImage.classList.remove('empty');
-                } else { // A imagem é vazia.
-                    this.clearImage();
-                }
-
-                // Foca no campo de Título.    
-                titleInput.focus();
+                
+                entry.event = entryEvent;                
             } else {
                 this.msgBox.showWarning('Erro ao carregar eventos da entrada.');
             }

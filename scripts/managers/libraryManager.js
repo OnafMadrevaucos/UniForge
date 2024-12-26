@@ -60,7 +60,7 @@ export class Entry {
         this.form.clear(container);
 
         // Adiciona a nova Entrada ao container
-        container.appendChild(content);
+        container.appendChild(content); 
 
         // Configura o tooltip dos links da Entrada
         this._configureTooltip(this.form.ui.form);
@@ -224,11 +224,50 @@ export class Entry {
         // Substitui os trechos encontrados pelo <span> correspondente
         const newHtmlString = htmlString.replace(regex, (match, id, type, text) => {
             let fullType = 'entry';
-            if(type !== 'e') fullType = 'timeline';
+            if (type !== 'e') fullType = 'timeline';
 
             return `<span class="linked-text" data-id='${id}' data-type='${fullType}'>${text}</span>`;
         });
 
         return newHtmlString;
+    }
+
+    /**
+   * Ajusta o tamanho da fonte de acordo com o tamanho do formulário.
+   */
+    _adjustFontSize(event) {
+        const container = event.target;
+        if (container) {
+            const text = container.querySelector('.title');
+
+            let fontSize = 100; // Tamanho inicial da fonte em porcentagem
+            text.style.fontSize = fontSize + "%";
+
+            // Reduz o tamanho da fonte se o texto ultrapassar os limites do contêiner
+            while (
+                (text.offsetWidth > container.offsetWidth || text.offsetHeight > container.offsetHeight) &&
+                fontSize > 1
+            ) {
+                fontSize -= 1;
+                text.style.fontSize = fontSize + "%";
+            }
+
+            // Aumenta o tamanho da fonte se houver espaço disponível no contêiner
+            while (
+                text.offsetWidth <= container.offsetWidth &&
+                text.offsetHeight <= container.offsetHeight &&
+                fontSize < 100
+            ) {
+                fontSize += 1;
+                text.style.fontSize = fontSize + "%";
+
+                // Garante que o texto não ultrapasse os limites ao aumentar o tamanho
+                if (text.offsetWidth > container.offsetWidth || text.offsetHeight > container.offsetHeight) {
+                    fontSize -= 1;
+                    text.style.fontSize = fontSize + "%";
+                    break;
+                }
+            }
+        }
     }
 }

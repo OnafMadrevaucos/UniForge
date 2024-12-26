@@ -194,31 +194,10 @@ export class EncycloForm extends EntryForm {
    */
     async onEntryItemDoubleClick(event) {
         super.onEntryItemDoubleClick(event);
-        const item = event.target.closest('.entry-item');
-        const itemId = item.dataset.id;
-        let category = await CONFIG.db.getCategory(itemId);
+        const category = this.data.entry;
 
-        if (category) {
-            const headerInfo = this.querySelector('.header-info');
-            headerInfo.dataset.sid = category.sid;
-
-            const displayedImage = this.querySelector('#displayedImage');
-            const titleInput = this.querySelector('#titleInput');
-            const draftSwitch = this.querySelector('#checkbox');
-
-            titleInput.value = category.title;
-            tinymce.activeEditor.setContent(category.htmlString);
-            draftSwitch.checked = category.isDraft;
-
-            if (category.img) {
-                const imageUrl = await CONFIG.utils.blobToImage(category.img, category.ext);
-                
-                displayedImage.src = imageUrl;
-                displayedImage.classList.remove('empty');
-            }
-
-            // Foca no campo de Título.    
-            titleInput.focus();
+        if (category) {            
+            tinymce.get('mainEditor').setContent(category.htmlString);            
         }
     }
 

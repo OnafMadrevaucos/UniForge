@@ -7,29 +7,86 @@ export class TimelineForm extends BaseForm {
         const form = super(overlay, title);
         this.form = form;
 
-        this.manager = new TimelineManager(form);                
-        this.configureContent(form);
+        this.manager = new TimelineManager(form);
     }
 
-    getData(id){
-        return Database.timelines[id];        
+    /**
+    * Obtém as linhas do tempo de uma dada origem disponíveis no banco de dados.
+    * @async
+    * @returns {Object} - Assuntos e suas categorias.
+    */
+    async getTimelines() {
+        const data = await this.db.getAllTimelines();
+
+        if (data) {
+            for (let timeline of Object.values(data)) {
+                timeline.entries = Object.values(await this.db.getEventsFromTimeline(timeline.tid));
+            }
+        }
+        return data;
     }
 
-    configureContent(form) {
-        this.configureSidebar(form);
+    /**
+    * Obtém as categorias disponíveis para o formulário no banco de dados.
+    * @returns {Object} - Categorias.
+    */
+    async getData() {
+        const data = {};
 
-        this.manager.getTimeline('TL02').addTo('timelineContainer');
-        //this._configureTimeline(form, this.data);        
+        data.timelines = await this.getTimelines();
+
+        return data;
     }
-    configureSidebar(form) {
-        // Botão de adicionar uma nova categoria à Enciclopédia
-        const searchButton = form.querySelector('#searchButton');    
-        // Ao clicar no botão, inicie a transformação
-        searchButton.addEventListener('click', (event) => { this.onSearchButtonClick(event); });
-        
-    }    
-    
 
+    async configureContent(form) {
+        this.data = await this.getData();
+
+        this.loadSidebarData(form);
+
+        this.activateListeners(form);
+    }
+
+    /**
+    * Carrega a lista de entradas da barra lateral.
+    * @param {HTMLElement} form - O formulário principal.
+    */
+    loadSidebarData(form) {
+        const data = this.data.timelines;
+        if(data) this.createFolderList(data);
+    }
+    /* ---------------------------------------------------------------------------------------------------------------- */
+    // LISTENERS
+    /**
+     * Configura ouvintes de eventos básicos para o formulário.
+     * @param {HTMLElement} form - O formulário principal.
+     * @private
+     */
+    activateListeners(form) {
+        super.activateListeners(form);
+    }
+    /**
+   * Gerencia cliques duplos em itens de entrada.
+   * @param {MouseEvent} event - O evento de clique duplo.
+   * @private
+   */
+    async onEntryItemDoubleClick(event) {
+        super.onEntryItemDoubleClick(event);
+        // Obter a entrada clicada.
+        const entry = event.target.closest('.entry-item');
+        const entryId = entry.dataset.id;
+        const data = await CONFIG.db.getEntryWithIcon(entryId);
+
+        this.manager.getEntry(data).addTo('entryContainer', false);
+    }
+
+    onSearchButtonClick(event) {
+        // Impedir que o clique no item desencadeie o clique fora do sidebar
+        event.stopPropagation();
+
+        console.log('*CLICK*')
+    }
+
+    /*
     onEntryItemClick(event){
         // Impedir que o clique no item desencadeie o clique fora do sidebar
         event.stopPropagation();
@@ -56,5 +113,5 @@ export class TimelineForm extends BaseForm {
         event.stopPropagation();
         
         console.log('*CLICK*')
-    }    
+    }*/
 }

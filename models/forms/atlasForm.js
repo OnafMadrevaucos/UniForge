@@ -144,31 +144,10 @@ export class AtlasForm extends EntryForm {
    */
     async onEntryItemDoubleClick(event) {
         super.onEntryItemDoubleClick(event);
-        const item = event.target.closest('.entry-item');
-        const itemId = item.dataset.id;
-        let entry = await CONFIG.db.getEntry(itemId);
+        const entry = this.data.entry;
 
-        if (entry) {
-            const headerInfo = this.querySelector('.header-info');
-            headerInfo.dataset.cid = entry.cid;
-
-            const displayedImage = this.querySelector('#displayedImage');
-            const titleInput = this.querySelector('#titleInput');
-            const draftSwitch = this.querySelector('#checkbox');
-
-            titleInput.value = entry.title;
-            tinymce.get('captionEditor').setContent(entry.flavor);
-            draftSwitch.checked = entry.isDraft;
-
-            if (entry.img) {
-                const imageType = `image/${entry.ext}`;
-                const imageBlob = new Blob([entry.img], { type: imageType }); // Ajuste o tipo de imagem conforme necessário
-                const imageURL = URL.createObjectURL(imageBlob);
-                displayedImage.src = imageURL;
-            }
-
-            // Foca no campo de Título.    
-            titleInput.focus();
+        if (entry) {              
+            tinymce.get('captionEditor').setContent(entry.flavor);            
         }
     }
 }

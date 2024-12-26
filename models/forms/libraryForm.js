@@ -18,8 +18,10 @@ export class LibraryForm extends BaseForm {
     async getCategories() {
         const data = await this.db.getAllCategory();
 
-        for (let category of Object.values(data)) {
-            category.entries = Object.values(await this.db.getEntriesFromCategory(category.cid));
+        if (data) {
+            for (let category of Object.values(data)) {
+                category.entries = Object.values(await this.db.getEntriesFromCategory(category.cid));
+            }
         }
         return data;
     }
@@ -50,7 +52,7 @@ export class LibraryForm extends BaseForm {
     */
     loadSidebarData(form) {
         const data = this.data.categories;
-        this.createFolderList(data);
+        if(data) this.createFolderList(data);
     }
 
     /* ---------------------------------------------------------------------------------------------------------------- */
@@ -74,7 +76,7 @@ export class LibraryForm extends BaseForm {
         const entry = event.target.closest('.entry-item');
         const entryId = entry.dataset.id;
         const data = await CONFIG.db.getEntryWithIcon(entryId);
-        
+
         this.manager.getEntry(data).addTo('entryContainer', false);
     }
 

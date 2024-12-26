@@ -894,7 +894,8 @@ input:checked+.slider::before {
     height: 92%;
     width: 90%;
     margin: 1em;
-    border-radius: var(--default-border-radius);
+    border-bottom-right-radius: var(--default-border-radius);
+    border-bottom-left-radius: var(--default-border-radius);
     box-shadow: var(--default-shadow);
 }
 
@@ -1168,7 +1169,20 @@ input:checked+.slider::before {
         url('../images/politics.jpeg');
 }
 
+#library {
+    background-image:
+        linear-gradient(180deg, rgba(255, 255, 255, 0) 35%, rgba(30, 30, 47, 1) 70%),
+        url('../images/grand-library.jpg');
+}
+
+#timeline {
+    background-image:
+        linear-gradient(180deg, rgba(255, 255, 255, 0) 35%, rgba(30, 30, 47, 1) 70%),
+        url('../images/timeline.jpg');
+}
+
 /* ------ Library Form ------ */
+#timeline .sidebar,
 #library .sidebar {
     flex: 0 0 auto;
     white-space: nowrap;
@@ -2018,15 +2032,21 @@ folder-list .folder.created.selected .folder-header .fa-trash {
     visibility: visible;
 }
 
-.entries.timeline .content,
 .entries.article .content {
     overflow-y: scroll;
+}
+.entries.timeline .content,
+.entries.article .content {    
     height: fit-content;
     background-size: cover;
     background-repeat: no-repeat;
     background-color: #ffc56e83;
     background-blend-mode: multiply;
     transition: visibility 0.5s ease-in-out, background-image 0.5s ease-in-out;
+}
+
+.entries.timeline .time-container {
+    overflow-y: scroll;
 }
 
 .entries .content .header {
@@ -2585,6 +2605,7 @@ folder-list .folder.created.selected .folder-header .fa-trash {
     gap: 5px;
 }
 
+.dialog .body .image-dialog,
 .dialog .body .subject-dialog {
     overflow: hidden;
 }
@@ -2661,6 +2682,12 @@ folder-list .folder.created.selected .folder-header .fa-trash {
 .dialog .body .folder-list .fas {
     margin-right: 10px;
     align-self: center;
+}
+
+.dialog .body .image-dialog img {
+    align-self: center;
+    max-width: 650px;
+    max-height: 600px;
 }
 
 .dialog .body .link-dialog .sidebar {
