@@ -115,22 +115,26 @@ export class Entry {
 
     async _onLinkClick(event) {
         const span = event.target;
-        const entryId = span.dataset.entryId;
+        const entryId = span.dataset.id;
         const data = await CONFIG.db.getEntryWithIcon(entryId);
 
-        document.body.style.cursor = 'wait';
-        const overlay = document.getElementById('entryFormOverlay');
-        const form = new BaseForm(overlay);
-
-        this.entry = new Entry(data, new LibraryManager(form));
-        CONFIG.navQueue.push(this.entry);
-
-        const newForm = this.entry.addTo('entryFormContent', true);
-        newForm.ui.prev_btn.setAttribute('data-tooltip', this._getQueueText());
-        newForm.ui.prev_btn.classList.remove('invisible');
-
-        newForm.showForm();
-        document.body.style.cursor = 'default';
+        if (data) {
+            document.body.style.cursor = 'wait';
+            const overlay = document.getElementById('entryFormOverlay');
+            const form = new BaseForm(overlay, '');
+    
+            this.entry = new Entry(data, new LibraryManager(form));
+            CONFIG.navQueue.push(this.entry);
+    
+            const newForm = this.entry.addTo('entryFormContent', true);
+            newForm.ui.prev_btn.setAttribute('data-tooltip', this._getQueueText());
+            newForm.ui.prev_btn.classList.remove('invisible');
+    
+            newForm.showForm(true);
+            document.body.style.cursor = 'default';
+        } else {
+            this.msgBox.showWarning('Entrada vinculada ao link não foi encontrada.');
+        }
     }
 
     _onPreviousClick() {
@@ -219,12 +223,12 @@ export class Entry {
     */
     _replaceLinkWithSpan(htmlString) {
         // Expressão regular para encontrar o padrão '@[id, type]{texto}'
-        const regex = /@\[(\w+),\s*(\w+)\]\{([^}]+)\}/g;
+        const regex = /@\[([a-zA-Z0-9\-]+),\s*([^\]]+)]\{([^}]+)\}/g;
 
         // Substitui os trechos encontrados pelo <span> correspondente
         const newHtmlString = htmlString.replace(regex, (match, id, type, text) => {
             let fullType = 'entry';
-            if (type !== 'e') fullType = 'timeline';
+            if (type !== 'entry') fullType = 'timeline';
 
             return `<span class="linked-text" data-id='${id}' data-type='${fullType}'>${text}</span>`;
         });

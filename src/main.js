@@ -203,7 +203,14 @@ window.CONFIG = {
      * 
      * @type {Utils}
      */
-    utils: new Utils()
+    utils: new Utils(),
+
+    /**
+     * Função de criação de HTMLElement.1
+     * 
+     * @type {Function}
+     */
+    createElement: createElement
 }
 
 // Inicializa o Mapa, ajustando a visualização com base nas coordenadas de imagem
@@ -704,3 +711,28 @@ document.addEventListener('DOMContentLoaded', () => {
     ConfigureElements();
     ConfigureForms();
 });
+
+// Função para criar um elemento com classes e atributos
+function createElement(tag, attributes = {}, children = []) {
+    const element = document.createElement(tag);
+
+    // Adiciona os atributos ao elemento
+    for (const [key, value] of Object.entries(attributes)) {
+        if (key === 'class') {
+            element.className = value;
+        } else {
+            element.setAttribute(key, value);
+        }
+    }
+
+    // Adiciona os filhos ao elemento
+    children.forEach(child => {
+        if (typeof child === 'string') {
+            element.appendChild(document.createTextNode(child));
+        } else {
+            element.appendChild(child);
+        }
+    });
+
+    return element;
+}

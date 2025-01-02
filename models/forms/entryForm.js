@@ -795,7 +795,7 @@ export default class EntryForm extends BaseForm {
           const trailingSpaces = selectedText.match(/\s+$/);
 
           const trimmedText = selectedText.trim();
-          const wrappedContent = `${leadingSpaces ? leadingSpaces[0] : ''}@[${link.id}, ${link.type[0]}]{${trimmedText}}${trailingSpaces ? trailingSpaces[0] : ''}`;
+          const wrappedContent = `${leadingSpaces ? leadingSpaces[0] : ''}@[${link.id}, ${link.type}]{${trimmedText}}${trailingSpaces ? trailingSpaces[0] : ''}`;
           editor.selection.setContent(wrappedContent);
         } else {
           editor.notificationManager.open({

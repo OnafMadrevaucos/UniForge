@@ -152,9 +152,9 @@ export default class BaseForm {
   /**
    * Exibe o formulário e o overlay associados.
    */
-  showForm() {
+  showForm(forceLoad=false) {
     // Constrói formulário antes de exibi-lo.
-    this._configure();
+    this._configure(forceLoad);
 
     this.ui.overlay.classList.remove('hidden');
     this.ui.form.classList.remove('hidden');
@@ -172,9 +172,11 @@ export default class BaseForm {
   /**
    * Inicia a construção do formulário.
    */
-  _configure() {
-    if (this.configureContent) this.configureContent(this.form);
-    else throw new Error('Não é possível iniciar a construção do formulário. Método \'configureContent\' não foi implementado.');
+  _configure(forceLoad=false) {
+    if (!forceLoad) {
+      if (this.configureContent) this.configureContent(this.form);
+      else throw new Error('Não é possível iniciar a construção do formulário. Método \'configureContent\' não foi implementado.');
+    }
   }
 
   /**
@@ -251,10 +253,12 @@ export default class BaseForm {
   */
   clearImage() {
     const displayedImage = this.querySelector('#displayedImage');
-    if (!displayedImage.classList.contains('empty'))
-      displayedImage.classList.add('empty');
-
-    displayedImage.src = this.blankImgUrl;
+    if (displayedImage) {
+      if (!displayedImage.classList.contains('empty'))
+        displayedImage.classList.add('empty');
+  
+      displayedImage.src = this.blankImgUrl;
+    }
   }
 
   /**

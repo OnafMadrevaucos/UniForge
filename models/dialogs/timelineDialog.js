@@ -1,10 +1,10 @@
 import Dialog from "./dialog.js";
 
-export default class LinkDialog extends Dialog {
+export default class TimelineDialog extends Dialog {
     constructor(dialogData = {}, options = {}) {
         super(dialogData, CONFIG.utils.mergeObjects(options, {
-            height: '500px', 
-            width: '600px'
+            height: '500px',
+            width: '900px'
         }));
 
         this.sourceId = options?.id ?? null;
@@ -17,7 +17,7 @@ export default class LinkDialog extends Dialog {
          * Cria o elemento raiz div principal que conterá toda a estrutura.
          */
         const body = document.createElement("div");
-        body.className = "link-dialog entries flexrow"; // Define as classes CSS para o elemento raiz
+        body.className = "timeline-dialog entries flexrow"; // Define as classes CSS para o elemento raiz
 
         /**
          * Criação da sidebar (barra lateral esquerda).
@@ -95,13 +95,19 @@ export default class LinkDialog extends Dialog {
         contentSummary.className = "summary"; // Define as classes CSS
 
         /**
-         * Cria o header dentro do content-summary.
+         * Cria o content dentro do content-summary.
          */
-        const header = document.createElement("div");
-        header.className = "content flexcol"; // Define as classes CSS para o layout
+        const content = document.createElement("div");
+        content.className = "content flexcol"; // Define as classes CSS para o layout
 
         /**
-         * Cria o container de imagem dentro do header.
+         * Cria o container de informações do content.
+         */
+        const headerInfo = document.createElement("div");
+        headerInfo.className = "header-info flexrow"; // Define as classes CSS
+
+        /**
+         * Cria o container de imagem dentro do content.
          */
         const imageContainer = document.createElement("div");
         imageContainer.id = "imageContainer"; // Define o ID para referência futura
@@ -132,12 +138,6 @@ export default class LinkDialog extends Dialog {
         imageContainer.appendChild(hiddenFileInput);
 
         /**
-         * Cria o container de informações do header.
-         */
-        const headerInfo = document.createElement("div");
-        headerInfo.className = "header-info flexrow"; // Define as classes CSS
-
-        /**
          * Cria o campo de entrada para o título.
          */
         const titleInput = document.createElement("input");
@@ -145,32 +145,94 @@ export default class LinkDialog extends Dialog {
         titleInput.type = "text"; // Define o tipo de entrada
         titleInput.className = "title"; // Define a classe CSS
         titleInput.name = "title"; // Define o nome do campo
-        titleInput.setAttribute('value', 'Título da Entrada'); // Define o texto do placeholder
-        titleInput.disabled = true; // Define o campo como desabilitado
+        titleInput.setAttribute('value', 'Título da Linha do Tempo'); // Define o texto do placeholder
+        titleInput.disabled = true;
 
         /**
-         * Cria a área de texto para o flavor text.
-         */
-        const flavorText = document.createElement("div");
-        flavorText.id = "flavorText"; // Define o ID da área de texto        
-
-        /**
-         * Monta o container de informações do header.
+         * Monta o container de informações do content.
          */
         headerInfo.appendChild(imageContainer);
         headerInfo.appendChild(titleInput);
 
         /**
-         * Monta o header com o container de imagem e as informações.
+         * Criação do conteúdo do HTML principal
          */
-        header.appendChild(headerInfo);
-        header.appendChild(flavorText);
+        const dateInfo = document.createElement('div');
+        dateInfo.className = 'date-info flexrow';
+
+        const startDate = document.createElement('div');
+        startDate.id = 'startDate';
+        startDate.className = 'date start';
+        startDate.setAttribute('data-date', '');
+
+        const startDisplay = document.createElement('div');
+        startDisplay.className = 'date-display';
+        startDisplay.id = 'dateDisplay';
+        startDisplay.textContent = 'Data Inicial';
+
+        startDate.appendChild(startDisplay);
+        dateInfo.appendChild(startDate);
+
+        const endDate = document.createElement('div');
+        endDate.id = 'endDate';
+        endDate.className = 'date end';
+        endDate.setAttribute('data-date', '');
+        
+        const endDisplay = document.createElement('div');
+        endDisplay.className = 'date-display';
+        endDisplay.id = 'dateDisplay';
+        endDisplay.textContent = 'Data Final';
+
+        endDate.appendChild(endDisplay);
+        dateInfo.appendChild(endDate);        
 
         /**
-         * Adiciona o header ao content-summary e o content-summary ao elemento raiz.
+         * Cria a área de texto para o flavor text.
          */
-        contentSummary.appendChild(header);
+        const flavorText = document.createElement("div");
+        flavorText.id = "flavorText"; // Define o ID da área de texto  
+        flavorText.disabled = true;
+
+        /**
+         * Cria a área de texto para o flavor text.
+        */
+        const addButton = document.createElement('button');
+        addButton.className = 'add-button';
+        addButton.innerHTML = '<i class="fa-solid fa-plus"></i> Adicionar'; 
+
+        /**
+         * Monta o content com o container de imagem e as informações.
+         */
+        content.appendChild(headerInfo);
+        content.appendChild(dateInfo);
+        content.appendChild(flavorText);
+        content.appendChild(addButton);
+
+        /**
+         * Adiciona o content ao content-summary e o content-summary ao elemento raiz.
+         */
+        contentSummary.appendChild(content);
         body.appendChild(contentSummary);
+
+        /**
+         * Cria uma barra lateral para o conteúdo da linha do tempo.
+         */
+        const eventSidebar = document.createElement('div');
+        eventSidebar.id = 'eventSidebar';
+        eventSidebar.className = 'sidebar inverted';
+
+        /**
+         * Cria a lista para os eventos da linha do tempo.
+         */
+        const eventsList = document.createElement('ul');
+        eventsList.id = 'eventList';
+        eventsList.className = 'event-list';
+
+        /**
+         * Adiciona a lista à barra lateral e barra lateral ao elemento raiz.
+         */
+        eventSidebar.appendChild(eventsList);
+        body.appendChild(eventSidebar);
 
         return body;
     }
@@ -295,27 +357,27 @@ export default class LinkDialog extends Dialog {
         return entryItem;
     }
 
-    static async configDialog(source) {        
-        function getLinkData(event) {
+    static async configDialog(source) {
+        function getTimelineData(event) {
             const button = event.target.closest('.dialog-button');
-            const item = JSON.parse(button.dataset.item); 
-            
-            return item;            
+            const item = JSON.parse(button.dataset.item);
+
+            return item;
         }
 
         return new Promise((resolve, reject) => {
             const dialogData = {
-                title: 'Novo Vínculo',
+                title: 'Criar Linha do Tempo',
                 buttons: {
                     cancel: {
                         label: "Cancelar",
                         icon: "fas fa-xmark",
                         callback: () => resolve(null)
                     },
-                    link: {
-                        label: "Vincular",
-                        icon: "fas fa-link",
-                        callback: (event) => { resolve(getLinkData(event)); }
+                    create: {
+                        label: "Criar",
+                        icon: "fas fa-pencil",
+                        callback: (event) => { resolve(getTimelineData(event)); }
                     }
                 },
                 abort: () => resolve(null)
@@ -407,7 +469,7 @@ export default class LinkDialog extends Dialog {
         if (type == 'entry')
             data = await this.db.getEntry(itemId);
         else
-            data = await this.db.getTimeline(itemId);        
+            data = await this.db.getTimeline(itemId);
 
         data.type = type;
 
@@ -427,11 +489,11 @@ export default class LinkDialog extends Dialog {
             displayedImage.classList.add('empty');
         }
 
-        // Foca no campo de Título.    
+        // Foca no campo de Título.
         titleInput.focus();
 
-        const linkButton = this.querySelector('#link');
-        linkButton.dataset.item = JSON.stringify({id: itemId, type: type});
+        const createButton = this.querySelector('#create');
+        createButton.dataset.item = JSON.stringify({ id: itemId, type: type });
     }
 
     /**
@@ -463,6 +525,6 @@ export default class LinkDialog extends Dialog {
             if (bookmark) {
                 editor.selection.moveToBookmark(bookmark);
             }
-        };        
+        };
     }
 }

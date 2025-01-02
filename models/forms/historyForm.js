@@ -1,6 +1,7 @@
 import { DatePickerManager } from "../datePickerManager.js";
 import EntryForm from "./entryForm.js";
 import Dialog from "../dialogs/dialog.js";
+import TimelineDialog from "../dialogs/timelineDialog.js";
 
 /**
   * Formulário para lidar com entradas do tipo histórico.
@@ -211,6 +212,9 @@ export class HistoryForm extends EntryForm {
 
         const calendarType = this.querySelector('#calendarType');
         calendarType.addEventListener('change', (event) => { this.onDateTypeChange(event); });
+
+        const timelineButton = this.querySelector('.add-timeline');
+        timelineButton.addEventListener('click', (event) => { this.onTimelineClick(event); });
     }
     /**
     * Trata o evento de registro de uma nova entrada.
@@ -326,5 +330,15 @@ export class HistoryForm extends EntryForm {
         } else {
             this.msgBox.showWarning('Erro ao carregar a entrada.');
         }
+    }
+
+    /**
+    * Gerencia cliques do botão de criar linha de tempo.
+    * @inheritdoc
+    * @param {MouseEvent} event - O evento de clique.
+    */
+    async onTimelineClick(event) {
+        event.stopPropagation();
+        await TimelineDialog.configDialog();
     }
 }

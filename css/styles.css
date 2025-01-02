@@ -103,7 +103,7 @@
     --text-shadow: 2px 2px 5px var(--shadow-color);
     --text-highlight: 2px 2px 2px var(--light-text-color);
     --dark-text-highlight: 2px 2px 2px var(--highlight-red);
-    --sidebar-shadow: 4px 0 8px rgba(0, 0, 0, 0.2);
+    --sidebar-shadow: 4px 0 8px rgba(0, 0, 0, 0.2);    
     --dialog-shadow: 5px 0 10px var(--shadow-color);
 }
 
@@ -132,6 +132,9 @@ body.uniforge {
     background-size: cover;
     background-image: url('../images/background.jpeg');
     overflow: hidden;
+}
+*:disabled {
+    cursor: default;
 }
 
 h1 {
@@ -240,10 +243,6 @@ blockquote+blockquote {
 blockquote:not(:has(+ blockquote)) {
     box-shadow: var(--light-shadow);
     margin-bottom: 0.5em;
-}
-
-*:disabled {
-    cursor: not-allowed;
 }
 
 /* ------ Estilo do Switch ------ */
@@ -1065,7 +1064,7 @@ input:checked+.slider::before {
     text-shadow: var(--text-shadow);
 }
 
-.data-group .data-label i::after {
+::after {
     font-family: var(--default-font);
     font-style: normal;
     text-shadow: none;
@@ -1175,7 +1174,7 @@ input:checked+.slider::before {
         url('../images/grand-library.jpg');
 }
 
-#timeline {
+#timeline:not(.folder) {
     background-image:
         linear-gradient(180deg, rgba(255, 255, 255, 0) 35%, rgba(30, 30, 47, 1) 70%),
         url('../images/timeline.jpg');
@@ -1192,8 +1191,7 @@ input:checked+.slider::before {
 /* ------ Article Type Form ------ */
 .article {
     width: 100%;
-    height: 100%;
-    overflow: hidden;
+    height: 100%;    
 }
 
 .article .article-container {
@@ -1917,6 +1915,45 @@ folder-list .folder.created.selected .folder-header .fa-trash {
     align-items: flex-start;
     /* Alinhamento à esquerda */
 }
+.entries .sidebar.inverted {
+    border-right: none;
+    border-left: var(--sidebar-border);
+}
+.timeline-dialog.entries .sidebar {
+    flex: 0 0 30%;
+    padding: 10px;
+    margin-right: 5px;
+    border-radius: var(--default-border-radius);
+}
+
+.timeline-dialog.entries .sidebar.inverted {
+    margin-left: 5px;
+}
+.dialog .timeline-dialog.entries .summary .content .header-info input {
+    font-size: var(--heading-3-size);
+}
+.timeline-dialog.entries .content .date-info {
+    border: var(--data-group-border);
+    border-radius: var(--default-border-radius);
+    margin-top: 5px;
+}
+.timeline-dialog.entries .content .date-info .date {
+    flex: 1;
+    align-content: center;
+}
+.timeline-dialog.entries .content .date-info .date:first-of-type {
+    border-right: var(--data-group-border);
+}
+.timeline-dialog.entries .content .date-info .date:last-of-type {
+    border-left: var(--data-group-border);
+}
+.timeline-dialog.entries .content .add-button {
+    padding: 3px;
+    width: 100%;
+}
+.timeline-dialog.entries .content .add-button:hover {
+    cursor: pointer;
+}
 
 .entries .sidebar .flyer-button {
     width: 200px;
@@ -2075,6 +2112,15 @@ folder-list .folder.created.selected .folder-header .fa-trash {
 
 .entries .content .header .header-info .info-content .date-info {
     gap: 5px;
+}
+.entries .content .header .header-info .info-content .add-timeline {
+    align-self: center;
+    margin-right: 5px;
+}
+.entries .content .header .header-info .info-content:not(:disabled) .add-timeline:hover {
+    cursor: pointer;
+    color: var(--focus-red);
+    text-shadow: var(--text-shadow);
 }
 
 .entries .content .header .img-container {
@@ -2539,7 +2585,6 @@ folder-list .folder.created.selected .folder-header .fa-trash {
 .dialog {
     position: fixed;
     top: 50%;
-    left: 50%;
     background: var(--background-color);
     font-size: var(--default-size);
     padding-block: 10px;
@@ -2727,6 +2772,8 @@ folder-list .folder.created.selected .folder-header .fa-trash {
 
 .dialog .body .summary .content .header-info .img-container {
     border-radius: var(--default-border-radius);
+    min-height: 64px;
+    min-width: 64px;
 }
 
 .dialog .body .summary .content .header-info .img-container img {
@@ -2849,7 +2896,7 @@ folder-list .folder.created.selected .folder-header .fa-trash {
 #tinymce span.linked-text,
 .text-content span.linked-text {
     border-bottom: 1px dashed var(--red);
-    cursor: help;
+    cursor: alias;
 }
 
 .text-content span.linked-text::after {

@@ -7,7 +7,7 @@
     <meta http-equiv="Content-Security-Policy" 
         content="default-src 'none'; script-src 'self'; connect-src 'self' blob:; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; style-src-elem 'self' 'unsafe-inline'; font-src 'self';">    
 
-    <title>UniForge - Home</title>
+    <title>UniForge</title>
     <link rel="icon" type="image/svg" sizes="16x16" href="../images/icons/icone.svg">
 
     <link rel="stylesheet" href="../node_modules/leaflet/dist/leaflet.css" />
@@ -114,7 +114,10 @@
     <!-- Formulário de Vizualização de Entradas -->
     <div id="entryFormOverlay" class="overlay flexrow hidden">
         <div id="entryFormContainer" class="form-container entries article flexrow">
-            <button id="closeEntryButton" class="close-button"><i class="fas fa-xmark"></i></button>
+            <div class="form-header flexrow">
+                <span class="form-title">Título</span>                
+                <a id="closeEntryButton" class="close-button flexcol"><i class="fas fa-xmark"></i></a>
+            </div>
             <div id="entryFormContent" class="form-content article-container flexcol"></div>
         </div>
     </div>    

@@ -60,12 +60,12 @@ export default class Dialog extends BaseDialog {
      * Opções adicionais fornecidas ao diálogo.
      * @type {Object}
      */
-    this.options = options;       
+    this.options = options;
   }
 
   async getBody() {
-    if(this.secure) return this.getSecureConfirmBody();
-    else if (this.options.imageUrl) return this.getImageBody();
+    if (this.secure) return this.getSecureConfirmBody();
+    else if (this.options.imageUrl) return await this.getImageBody();
     else return this.getConfirmBody();
   }
 
@@ -76,10 +76,14 @@ export default class Dialog extends BaseDialog {
   getImageBody() {
     // Cria o body
     const body = document.createElement('div');
-    body.className = 'image-dialog flexcol';
+    body.className = 'image-dialog flexcol';    
 
     const img = document.createElement('img');
     img.src = this.options.imageUrl;
+
+    img.addEventListener('load', () => {
+      this._centerDialog();
+    });
 
     body.appendChild(img);
 
@@ -111,7 +115,7 @@ export default class Dialog extends BaseDialog {
     secureInput.type = 'text';
     secureInput.className = 'dialog-input';
     secureInput.placeholder = 'Digite o trecho...';
-    secureInput.dataset.text = randomString; 
+    secureInput.dataset.text = randomString;
 
     textGroup.appendChild(promptMessage);
     textGroup.appendChild(inputHint);
@@ -130,7 +134,7 @@ export default class Dialog extends BaseDialog {
     const options = this.options ?? {};
     const overlay = document.createElement("div");
     overlay.className = "overlay dialog-overlay";
-    document.body.appendChild(overlay);    
+    document.body.appendChild(overlay);
 
     this.overlay = overlay; // Armazena o overlay para exibição posterior. 
 
@@ -163,7 +167,7 @@ export default class Dialog extends BaseDialog {
     const dialogBody = document.createElement("div");
     dialogBody.className = 'body flexcol';
     dialogBody.innerHTML = this.bodyHTML.outerHTML ?? this.bodyHTML;
-    
+
     // Container dos botões
     const buttons = document.createElement("div");
     buttons.className = 'buttons';
@@ -173,7 +177,7 @@ export default class Dialog extends BaseDialog {
       const newButton = document.createElement("button");
       newButton.id = id;
       newButton.innerHTML = `<i class='${button.icon}'></i> ${button.label}`;
-      newButton.className = button.className || "dialog-button";     
+      newButton.className = button.className || "dialog-button";
 
       newButton.dataset.canClose = button.canClose ?? 'true';
 
@@ -190,22 +194,24 @@ export default class Dialog extends BaseDialog {
   /**
     * Exibe o diálogo na página.
     */
-  render() { 
+  async render(centralize=true) {
     // Prepara o dialog para em seguida renderizá-lo.
-    this._prepare().then(result =>{
-      super.render();
+    const result = await this._prepare()
+    super.render();
+    
+    if(centralize) {
       // Centralizar o diálogo no parentElement
       this._centerDialog();
+    }
 
-      this._activateListeners();
-    }); 
+    this._activateListeners();    
   }
 
   /**
     * Fecha o diálogo e remove o overlay da página.
   */
-  close(){
-    if(this.abort) this.abort();    
+  close() {
+    if (this.abort) this.abort();
     super.close();
   }
 
@@ -241,7 +247,7 @@ export default class Dialog extends BaseDialog {
       let centerX = 0;
       let centerY = 0;
 
-      if(parentRect.x != 0 && parentRect.y != 0) {
+      if (parentRect.x != 0 && parentRect.y != 0) {
         // Calcula as coordenadas para centralizar o diálogo
         centerX = parentRect.left + (parentRect.width - dialogRect.width) / 2;
         centerY = parentRect.top + (parentRect.height - dialogRect.height) / 2;
@@ -262,29 +268,29 @@ export default class Dialog extends BaseDialog {
     * Configura ouvintes de eventos básicos para o dialog.
     * @protected
     */
-  _activateListeners(){
+  _activateListeners() {
     super._activateListeners();
     // Permite fechar o diálogo clicando no overlay
     this.overlay.addEventListener("click", (event) => {
-      if (!event.target.classList.contains('overlay')) return;      
+      if (!event.target.classList.contains('overlay')) return;
       this.abort();
       this.close();
     });
     const buttons = this.querySelectorAll('.dialog-button');
     Object.values(buttons).forEach(button => {
-      button.addEventListener("click", (event, params = {}) => {        
+      button.addEventListener("click", (event, params = {}) => {
         this.buttons[button.id].callback(event, ...Object.values(params));
-        if(this.querySelector(`#${button.id}`).dataset?.canClose === 'true')
+        if (this.querySelector(`#${button.id}`).dataset?.canClose === 'true')
           this.close();
       });
     });
-    
+
     const closeButton = this.querySelector('.close-button');
     closeButton.addEventListener('click', (event) => {
       event.stopPropagation();
       this.close();
     });
-    
+
   }
 
   /**
@@ -343,11 +349,11 @@ export default class Dialog extends BaseDialog {
       const input = document.querySelector('#secureInput');
       const secureText = input.dataset.text;
 
-      if(input.value === secureText) {
+      if (input.value === secureText) {
         resolve(true);
         confirmButton.dataset.canClose = 'true';
       } else CONFIG.msgBox.showWarning('O texto informado não corresponde ao texto de segurança.');
-      
+
     }
     return new Promise((resolve, reject) => {
       const dialogData = {
@@ -360,7 +366,7 @@ export default class Dialog extends BaseDialog {
           },
           confirm: {
             label: "Confirmar",
-            icon: "fas fa-check",            
+            icon: "fas fa-check",
             callback: (event) => onSecureConfirm(event, resolve),
             canClose: 'false'
           }
@@ -381,13 +387,13 @@ export default class Dialog extends BaseDialog {
    * @returns {Promise}    - Retorna uma promessa que é resolvida se o usuário clicar em "Fechar".
    */
   static async showImagem(title, imageUrl) {
-      return new Promise((resolve, reject) => {
+    return new Promise((resolve, reject) => {
       const dialogData = {
         title: title,
         abort: () => resolve()
       };
-      const dialog = new this(dialogData, {imageUrl, width: '75%'});
-      dialog.render();
+      const dialog = new this(dialogData, { imageUrl, width: '75%' });
+      dialog.render(false);
     });
   }
 }
