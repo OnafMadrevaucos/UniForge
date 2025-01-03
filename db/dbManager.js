@@ -1,7 +1,7 @@
+import * as esm from '../scripts/uniforge-esm.js';
+
 export default class DBManager {
     constructor() {
-
-        this.crypto = window.crypto;
 
         this.storedProcedures = {
             createCalendarTable: () => this.createCalendarTable(),
@@ -25,14 +25,14 @@ export default class DBManager {
 
     async getAllTables() {
         const query = 'SELECT name FROM sqlite_master WHERE type=\'table\' ORDER BY name';
-        const rows = await CONFIG.sql.query(query);
+        const rows = await uniforge.sql.query(query);
 
         return rows;
     }
 
     async deleteTable(tableName) {
         const query = `DROP TABLE ${tableName}`;
-        return await CONFIG.sql.exec(query);
+        return await uniforge.sql.exec(query);
     }
 
     async resetDatabase() {
@@ -53,12 +53,12 @@ export default class DBManager {
 
         try {
             // Inicia a transação
-            await CONFIG.sql.exec('BEGIN TRANSACTION');
+            await uniforge.sql.exec('BEGIN TRANSACTION');
 
             let count = 0;
 
             for (let query of queires) {
-                await CONFIG.sql.exec(query);
+                await uniforge.sql.exec(query);
                 count++;
 
                 console.log(`Tabela ${count} de ${totalQueries} deletada.`);
@@ -76,12 +76,12 @@ export default class DBManager {
             this.createSettingsTable(); 
 
             // Comita a transação
-            await CONFIG.sql.exec('COMMIT');
+            await uniforge.sql.exec('COMMIT');
             return true;
             
         } catch (error) {
             // Faz rollback em caso de erro
-            await CONFIG.sql.exec('ROLLBACK');
+            await uniforge.sql.exec('ROLLBACK');
             console.error('Erro ao resetar o banco de dados, operação abortada.', error);            
             return false;
         }
@@ -89,7 +89,7 @@ export default class DBManager {
 
     async getCalendars() {
         let query = 'SELECT * FROM calendars;';
-        const rows = await CONFIG.sql.query(query);
+        const rows = await uniforge.sql.query(query);
         let params = [];
 
         const result = {};
@@ -105,20 +105,20 @@ export default class DBManager {
 
             query = 'SELECT clmid, label FROM calendarsMonths WHERE clid = ?;';
             params = [row.clid];
-            const months = await CONFIG.sql.query(query, params);
+            const months = await uniforge.sql.query(query, params);
 
             for (let month of months) {
                 data.months.push(month.label);
 
                 query = 'SELECT days FROM calendarsDaysInMonths WHERE clmid = ?;';
                 params = [month.clmid];
-                const dayMonths = await CONFIG.sql.query(query, params);
+                const dayMonths = await uniforge.sql.query(query, params);
                 data.daysInMonth.push(dayMonths[0].days);
             }
 
             query = 'SELECT label FROM calendarsDays WHERE clid = ?;';
             params = [row.clid];
-            const days = await CONFIG.sql.query(query, params);
+            const days = await uniforge.sql.query(query, params);
 
             for (let day of days) {
                 data.days.push(day.label);
@@ -132,14 +132,14 @@ export default class DBManager {
 
     async getAllRoots() {
         let query = 'SELECT * FROM roots';
-        const rows = await CONFIG.sql.query(query);
+        const rows = await uniforge.sql.query(query);
 
         return rows;
     }
 
     async getEntryTypes() {
         let query = 'SELECT * FROM entryTypes';
-        const rows = await CONFIG.sql.query(query);
+        const rows = await uniforge.sql.query(query);
 
         return rows;
     }
@@ -148,7 +148,7 @@ export default class DBManager {
         let query = 'SELECT * FROM importance ';
         if (!getExternal) query += 'WHERE isEntry = 1;'
 
-        const rows = await CONFIG.sql.query(query);
+        const rows = await uniforge.sql.query(query);
 
         return rows;
     }
@@ -165,7 +165,7 @@ export default class DBManager {
         params.push(data.htmlString);
         params.push(Number(data.isDraft));
 
-        const result = await CONFIG.sql.exec(query, params);
+        const result = await uniforge.sql.exec(query, params);
 
         return result;
     }
@@ -182,14 +182,14 @@ export default class DBManager {
 
         let query = `UPDATE category SET ${updateSet} WHERE cid = ?`;
         let params = [data.cid];
-        const result = await CONFIG.sql.exec(query, params);
+        const result = await uniforge.sql.exec(query, params);
 
         return result;
     }
     async getCategory(cid) {
         let query = 'SELECT * FROM category WHERE cid = ?';
         const params = [cid];
-        const rows = await CONFIG.sql.query(query, params);
+        const rows = await uniforge.sql.query(query, params);
 
         if (rows.length >= 1) return rows[0];
         else return null;
@@ -198,7 +198,7 @@ export default class DBManager {
         let query = 'SELECT C.*, S.icon FROM category AS C ';
         query += 'INNER JOIN subjectType AS S ON S.sid = C.sid ';
         query += 'WHERE C.isDraft = 0 ORDER BY C.title;';
-        const rows = await CONFIG.sql.query(query);
+        const rows = await uniforge.sql.query(query);
 
         return rows;
     }
@@ -207,10 +207,10 @@ export default class DBManager {
         let query = 'DELETE FROM category WHERE cid = ?;';
         const params = [cid];
 
-        result.categoryQuery = await CONFIG.sql.exec(query, params);
+        result.categoryQuery = await uniforge.sql.exec(query, params);
 
         query = 'DELETE FROM entry WHERE cid = ?;'
-        result.entryQuery = await CONFIG.sql.exec(query, params);
+        result.entryQuery = await uniforge.sql.exec(query, params);
 
         return result;
     }
@@ -219,7 +219,7 @@ export default class DBManager {
             'INNER JOIN subjectType AS S ON S.sid = C.sid ' +
             `WHERE S.root = ?`;
         const params = [root];
-        const rows = await CONFIG.sql.query(query, params);
+        const rows = await uniforge.sql.query(query, params);
 
         return rows;
     }
@@ -227,7 +227,7 @@ export default class DBManager {
         let query = 'SELECT * FROM category AS C WHERE C.sid = ?;';
         const params = [sid];
 
-        const rows = await CONFIG.sql.query(query, params);
+        const rows = await uniforge.sql.query(query, params);
         return rows;
     }
 
@@ -240,7 +240,7 @@ export default class DBManager {
         params.push(data.title);
         params.push(data.icon);
 
-        const result = await CONFIG.sql.exec(query, params);
+        const result = await uniforge.sql.exec(query, params);
 
         return result;
     }
@@ -256,7 +256,7 @@ export default class DBManager {
         query += 'INNER JOIN roots AS R ON S.root = R.root ';
         query += 'WHERE S.sid = ?;';
         const params = [sid];
-        const rows = await CONFIG.sql.query(query, params);
+        const rows = await uniforge.sql.query(query, params);
 
         if (rows.length >= 1) return rows[0];
         else return null;
@@ -265,14 +265,14 @@ export default class DBManager {
         let query = '';
         if (root === '*') {
             query = 'SELECT * FROM subjectType AS S ORDER BY S.title;';
-            return await CONFIG.sql.query(query);
+            return await uniforge.sql.query(query);
         } else {
             const params = [root];
             query = 'SELECT C.cid, C.sid, C.title, C.img, C.htmlString, C.isDraft FROM category AS C ';
             query += 'INNER JOIN subjectType AS S ON S.sid = C.sid ';
             query += 'WHERE S.root = ? AND C.isDraft = 0 ORDER BY S.title;';
 
-            return await CONFIG.sql.query(query, params);
+            return await uniforge.sql.query(query, params);
         }
     }
 
@@ -292,7 +292,7 @@ export default class DBManager {
         params.push(data.ext ?? 'jpeg');
         params.push(Number(data.isDraft));
 
-        const result = await CONFIG.sql.exec(query, params);
+        const result = await uniforge.sql.exec(query, params);
         result.addedId = eid;
 
         return result;
@@ -311,7 +311,7 @@ export default class DBManager {
 
         let query = `UPDATE entry SET ${updateSet} WHERE eid = ?`;
         let params = [data.eid];
-        const result = await CONFIG.sql.exec(query, params);
+        const result = await uniforge.sql.exec(query, params);
 
         return result;
     }
@@ -319,7 +319,7 @@ export default class DBManager {
         let query = 'SELECT * FROM entry WHERE eid = ?;';
         const params = [eid];
 
-        const rows = await CONFIG.sql.query(query, params);
+        const rows = await uniforge.sql.query(query, params);
 
         if (rows.length >= 1) return rows[0];
         else return null;
@@ -331,7 +331,7 @@ export default class DBManager {
         query += 'WHERE eid = ?'
         const params = [eid];
 
-        const rows = await CONFIG.sql.query(query, params);
+        const rows = await uniforge.sql.query(query, params);
 
         if (rows.length >= 1) return rows[0];
         else return null;
@@ -341,7 +341,7 @@ export default class DBManager {
         query += 'INNER JOIN category AS C ON C.cid = E.cid ';
         query += 'INNER JOIN subjectType AS S ON S.sid = C.sid ';
 
-        const rows = await CONFIG.sql.query(query);
+        const rows = await uniforge.sql.query(query);
 
         return rows;
     }
@@ -366,7 +366,7 @@ export default class DBManager {
 
         query += 'ORDER BY S.icon, A.title '
 
-        const rows = await CONFIG.sql.query(query);
+        const rows = await uniforge.sql.query(query);
 
         return rows;
     }
@@ -374,14 +374,14 @@ export default class DBManager {
         const query = 'SELECT * FROM entry WHERE isDraft = ?;';
         const params = [Number(withDraft)];
 
-        const rows = await CONFIG.sql.query(query, params);
+        const rows = await uniforge.sql.query(query, params);
 
         return rows;
     }
     async deleteEntry(eid) {
         let query = 'DELETE FROM entry WHERE eid = ?;';
         const params = [eid];
-        const result = await CONFIG.sql.exec(query, params);
+        const result = await uniforge.sql.exec(query, params);
 
         return result;
     }
@@ -389,7 +389,7 @@ export default class DBManager {
         let query = 'SELECT * FROM entry AS E WHERE E.cid = ?;';
         const params = [cid];
 
-        const rows = await CONFIG.sql.query(query, params);
+        const rows = await uniforge.sql.query(query, params);
         return rows;
     }
     async addEntriesTextImages(data) {
@@ -401,7 +401,7 @@ export default class DBManager {
         params.push(blob.img);
         params.push(blob.ext);
 
-        const result = await CONFIG.sql.exec(query, params);
+        const result = await uniforge.sql.exec(query, params);
 
         return result;
     }
@@ -409,7 +409,7 @@ export default class DBManager {
         let query = 'SELECT * FROM _textImages AS TI WHERE TI.uuid = ?;';
         const params = [uuid];
 
-        const rows = await CONFIG.sql.query(query, params);
+        const rows = await uniforge.sql.query(query, params);
         return rows;
     }
 
@@ -430,7 +430,7 @@ export default class DBManager {
         params.push(data.date.end.day);
         params.push(data.flavor);
 
-        const result = await CONFIG.sql.exec(query, params);
+        const result = await uniforge.sql.exec(query, params);
 
         return result;
     }
@@ -450,7 +450,7 @@ export default class DBManager {
 
         let query = `UPDATE event SET ${updateSet} WHERE evid = ?`;
         let params = [data.evid];
-        const result = await CONFIG.sql.exec(query, params);
+        const result = await uniforge.sql.exec(query, params);
 
         return result;
     }
@@ -458,7 +458,7 @@ export default class DBManager {
         let query = 'SELECT * FROM event WHERE eid = ?;';
         const params = [eid];
 
-        const rows = await CONFIG.sql.query(query, params);
+        const rows = await uniforge.sql.query(query, params);
 
         if (rows.length >= 1) return rows[0];
         else return null;
@@ -468,7 +468,7 @@ export default class DBManager {
         let query = 'SELECT * FROM timeline WHERE tid = ?;';
         const params = [tid];
 
-        const rows = await CONFIG.sql.query(query, params);
+        const rows = await uniforge.sql.query(query, params);
 
         if (rows.length >= 1) return rows[0];
         else return null;
@@ -476,7 +476,7 @@ export default class DBManager {
     async getAllTimelines() {
         let query = 'SELECT * FROM timeline';
 
-        const rows = await CONFIG.sql.query(query);
+        const rows = await uniforge.sql.query(query);
 
         if (rows.length >= 1) return rows[0];
         else return null;
@@ -488,14 +488,14 @@ export default class DBManager {
         query += 'WHERE TE.tid = ?;';
         const params = [tid];
 
-        const rows = await CONFIG.sql.query(query, params);
+        const rows = await uniforge.sql.query(query, params);
         return rows;
     }
     async getTimelineWithIcon(tid) {
         let query = 'SELECT * FROM timeline WHERE tid = ?;';
         const params = [tid];
 
-        const rows = await CONFIG.sql.query(query, params);
+        const rows = await uniforge.sql.query(query, params);
 
         if (rows.length >= 1) return rows[0];
         else return null;
@@ -513,7 +513,7 @@ export default class DBManager {
             'isDraft BOOLEAN NOT NULL DEFAULT 0 )';       // Indica se é um rascunho (falso por padrão)
 
         console.log('Tabela \'entry\' criada....OK.');
-        return await CONFIG.sql.exec(query);
+        return await uniforge.sql.exec(query);
     }
 
     async createEventTable() {
@@ -530,7 +530,7 @@ export default class DBManager {
             'end_year INTEGER)';                          // Ano da data final
 
         console.log('Tabela \'event\' criada....OK.');
-        return await CONFIG.sql.exec(query);
+        return await uniforge.sql.exec(query);
     }
 
     async createTextImagesTable() {
@@ -539,7 +539,7 @@ export default class DBManager {
             'ext VARCHAR(50) NOT NULL)';            // Ano (como número inteiro)'; 
 
         console.log('Tabela \'_textImages\' criada....OK.');
-        return await CONFIG.sql.exec(query);
+        return await uniforge.sql.exec(query);
     }
 
     async createSubjectTypeTable() {
@@ -549,7 +549,7 @@ export default class DBManager {
             'icon TEXT NOT NULL)';                  // Classe do ícone do FontAwesome
 
         console.log('Tabela \'subjectType\' criada....OK.');
-        return await CONFIG.sql.exec(query);
+        return await uniforge.sql.exec(query);
     }
 
     async createCategoryTable() {
@@ -562,7 +562,7 @@ export default class DBManager {
             'isDraft BOOLEAN NOT NULL DEFAULT 0 )';         // Indica se é um rascunho (falso por padrão)
 
         console.log('Tabela \'category\' criada....OK.');
-        return await CONFIG.sql.exec(query);
+        return await uniforge.sql.exec(query);
     }
 
     async createTimelineTable() {
@@ -572,7 +572,7 @@ export default class DBManager {
             'isDraft BOOLEAN NOT NULL DEFAULT 0 )';         // Indica se é um rascunho (falso por padrão)
 
         console.log('Tabela \'timeline\' criada....OK.');
-        return await CONFIG.sql.exec(query);
+        return await uniforge.sql.exec(query);
     }
 
     async createTimelineEventTable() {
@@ -580,13 +580,13 @@ export default class DBManager {
             'evid TEXT NOT NULL)';                        // Identificador do evento           
 
         console.log('Tabela \'_timelineEvent\' criada....OK.');
-        return await CONFIG.sql.exec(query);
+        return await uniforge.sql.exec(query);
     }
 
     async createEntryTypesTable() {
         let query = 'DROP TABLE entryTypes';
         let changes = 0;
-        let result = await CONFIG.sql.exec(query);
+        let result = await uniforge.sql.exec(query);
         changes += result.changes;
 
         query = 'CREATE TABLE IF NOT EXISTS entryTypes (etid TEXT PRIMARY KEY NOT NULL,' +
@@ -594,7 +594,7 @@ export default class DBManager {
             'icon TEXT NOT NULL)';                // Número de DIAS por MÊS do calendário
 
         console.log('Tabela \'entryTypes\' criada....OK.');
-        result = await CONFIG.sql.exec(query);
+        result = await uniforge.sql.exec(query);
         changes += result.changes;
 
         console.log('Populando tabela \'entryTypes\'....');
@@ -636,7 +636,7 @@ export default class DBManager {
             params.push(entryType.label);
             params.push(entryType.icon);
 
-            result = await CONFIG.sql.exec(query, params);
+            result = await uniforge.sql.exec(query, params);
             changes += result.changes;
         });
         console.log('Tabela \'entryTypes\' populada....OK.');
@@ -647,7 +647,7 @@ export default class DBManager {
     async createImportanceTable() {
         let query = 'DROP TABLE importance';
         let changes = 0;
-        let result = await CONFIG.sql.exec(query);
+        let result = await uniforge.sql.exec(query);
 
         changes += result.changes;
 
@@ -655,7 +655,7 @@ export default class DBManager {
         'label TEXT NOT NULL,' +                        // Título da importância
         'isEntry BOOLEAN NOT NULL DEFAULT 1)';          // Se é uma importância de entrada
 
-        result = await CONFIG.sql.exec(query);
+        result = await uniforge.sql.exec(query);
         changes += result.changes;
         console.log('Tabela \'importance\' criada....OK.');
 
@@ -667,13 +667,13 @@ export default class DBManager {
 
         params.push(this.generateUUID());
         params.push('Major');
-        result = await CONFIG.sql.exec(query, params);
+        result = await uniforge.sql.exec(query, params);
         changes += result.changes;
 
         params = [];
         params.push(this.generateUUID());
         params.push('Minor');
-        result = await CONFIG.sql.exec(query, params);
+        result = await uniforge.sql.exec(query, params);
         changes += result.changes;
 
         query = 'INSERT INTO importance (iid, label, isEntry) ';
@@ -683,7 +683,7 @@ export default class DBManager {
         params.push(this.generateUUID());
         params.push('Timeline');
         params.push(Number(false));
-        result = await CONFIG.sql.exec(query, params);
+        result = await uniforge.sql.exec(query, params);
         changes += result.changes;
 
         result.changes = changes;
@@ -698,7 +698,7 @@ export default class DBManager {
             'value TEXT NOT NULL)';             // Valor da configuração
 
         console.log('Tabela \'settings\' criada....OK.');
-        return await CONFIG.sql.exec(query);
+        return await uniforge.sql.exec(query);
     }
 
     async createCalendarTable() {
@@ -706,7 +706,7 @@ export default class DBManager {
             'label TEXT)';                 // Título do calendário
 
         console.log('Tabela \'calendar\' criada....OK.');
-        return await CONFIG.sql.exec(query);
+        return await uniforge.sql.exec(query);
     }
 
     async createMonthsTable() {
@@ -715,7 +715,7 @@ export default class DBManager {
             'label TEXT)';                 // Título do MÊS do calendário
 
         console.log('Tabela \'calendarsMonths\' criada....OK.');
-        return await CONFIG.sql.exec(query);
+        return await uniforge.sql.exec(query);
     }
 
     async createDaysTable() {
@@ -724,7 +724,7 @@ export default class DBManager {
             'label TEXT)';                 // Título do DIAS do calendário
 
         console.log('Tabela \'calendarsDays\' criada....OK.');
-        return await CONFIG.sql.exec(query);
+        return await uniforge.sql.exec(query);
     }
 
     async createDaysInMonthsTable() {
@@ -733,11 +733,11 @@ export default class DBManager {
             'days INTEGER)';                // Número de DIAS por MÊS do calendário
 
         console.log('Tabela \'calendarsDaysInMonths\' criada....OK.');
-        return await CONFIG.sql.exec(query);
+        return await uniforge.sql.exec(query);
     }
 
     async execQuery(query, params = []) {
-        return await CONFIG.sql.exec(query, params);
+        return await uniforge.sql.exec(query, params);
     }
 
     validateCategory(data) {
@@ -787,7 +787,7 @@ export default class DBManager {
     }
 
     generateUUID() {
-        return this.crypto.randomUUID();
+        return esm.utils.randomID();
     }
 
     buildUpdateSet(columns) {

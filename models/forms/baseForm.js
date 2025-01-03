@@ -22,7 +22,7 @@ export default class BaseForm {
      * Gerenciador de conexão de Banco de Dados.
      * @type {DBManager}
      */
-    this.db = CONFIG.db;
+    this.db = uniforge.db;
 
     /**
      * URL da imagem de fundo para o overlay.
@@ -86,13 +86,13 @@ export default class BaseForm {
      * Objeto de controle global para mensagens ao usuário.
      * @type {object}
      */
-    this.msgBox = CONFIG.msgBox;
+    this.msgBox = uniforge.msgBox;
 
     /**
      * Objeto para exibir tooltips.
      * @type {object}
      */
-    this.tooltip = CONFIG.tooltip;
+    this.tooltip = uniforge.tooltip;
 
     /**
      * Representa as seleções atuais no formulário.
@@ -107,8 +107,19 @@ export default class BaseForm {
     this.configureBaseContent(this.form);
   }
 
+  // Propriedade do template Handlebars do formulário.
+  #template;
+
   /* ---------------------------------------------------------------------------------------------------------------- */
-  // GETTERS E SETTERS  
+  // GETTERS E SETTERS
+  /**
+   * Obtém o template Handlebars usado pelo Formulário.
+   * @async
+   * @returns {Object}  - O template Handlebars do formulário.
+   */
+  get template() {
+    return this.#template;
+  }  
   /**
    * Obtém os assuntos de uma dada origem disponíveis no banco de dados.
    * @async
@@ -167,7 +178,7 @@ export default class BaseForm {
     this.clear();
     this.ui.form.classList.add('hidden');
     this.ui.overlay.classList.add('hidden');
-  }
+  }  
 
   /**
    * Inicia a construção do formulário.
@@ -183,7 +194,9 @@ export default class BaseForm {
    * Remove todos os elementos filhos de um elemento especificado ou do formulário principal.
    * @param {HTMLElement} [element={}] - O elemento cujos filhos devem ser removidos. Por padrão, é o formulário principal.
    */
-  clear(element = {}) {
+  clear(element = {}) {   
+    // Limpa todos os editores Tiny MCE inicializados no formulário.
+    tinymce.remove(); 
     if (!element) {
       while (this.form.firstChild) {
         this.form.removeChild(this.form.firstChild);
@@ -525,13 +538,13 @@ export default class BaseForm {
    */
   #handleNavQueueOnClose(event) {
     const overlay = event.target.closest('.overlay');
-    if (overlay.id === 'formOverlay' || CONFIG.navQueue.isFromTimeline()) {
-      CONFIG.navQueue.clearQueue();
+    if (overlay.id === 'formOverlay' || uniforge.navQueue.isFromTimeline()) {
+      uniforge.navQueue.clearQueue();
     } else if (overlay.id === 'entryFormOverlay') {
-      if (CONFIG.navQueue.isFromLibrary()) {
-        const first = CONFIG.navQueue.shift();
-        CONFIG.navQueue.clearQueue();
-        CONFIG.navQueue.push(first);
+      if (uniforge.navQueue.isFromLibrary()) {
+        const first = uniforge.navQueue.shift();
+        uniforge.navQueue.clearQueue();
+        uniforge.navQueue.push(first);
       }
     }
   }

@@ -24,8 +24,8 @@ export class LinkTooltip {
 
     let data = null;
 
-    if (link.type == 'entry') data = await CONFIG.db.getEntryWithIcon(link.id);
-    else data = await CONFIG.db.getTimelineWithIcon(link.id);
+    if (link.type == 'entry') data = await uniforge.db.getEntryWithIcon(link.id);
+    else data = await uniforge.db.getTimelineWithIcon(link.id);
 
     // Verifica se a entrada foi encontrada. Se não, não exibe o tooltip.
     if (!data) return;

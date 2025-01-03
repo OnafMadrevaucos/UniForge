@@ -2,7 +2,7 @@ import Dialog from "./dialog.js";
 
 export default class FilePickerDialog extends Dialog {
     constructor(dialogData = {}, options = {}) {
-        super(dialogData, CONFIG.utils.mergeObjects(options, {
+        super(dialogData, uniforge.utils.mergeObjects(options, {
             height: '150px', 
             width: '475px'
         }));
@@ -99,8 +99,8 @@ export default class FilePickerDialog extends Dialog {
           // Atualiza a imagem exibida.
           chosenFilePath.value = imageURL;
 
-          const data = await CONFIG.utils.imageToBlob(file);
-          CONFIG.utils.associateDataWithElement(chosenFilePath, data);
+          const data = await uniforge.utils.imageToBlob(file);
+          uniforge.utils.associateDataWithElement(chosenFilePath, data);
         }
     }
 
@@ -110,7 +110,7 @@ export default class FilePickerDialog extends Dialog {
             const chosenFilePath = document.querySelector('#chosenFilePath');
             const captionInput = document.querySelector('#captionInput');
 
-            const data = CONFIG.utils.getAsociatedData(chosenFilePath);
+            const data = uniforge.utils.getAsociatedData(chosenFilePath);
             data.caption = captionInput.value;
                         
             return data;

@@ -2,7 +2,7 @@ import Dialog from "./dialog.js";
 
 export default class TimelineDialog extends Dialog {
     constructor(dialogData = {}, options = {}) {
-        super(dialogData, CONFIG.utils.mergeObjects(options, {
+        super(dialogData, uniforge.utils.mergeObjects(options, {
             height: '500px',
             width: '900px'
         }));
@@ -12,7 +12,7 @@ export default class TimelineDialog extends Dialog {
         this.sourceType = options?.type ?? null;
     }
 
-    async getBody() {
+    async getBody() {        
         /**
          * Cria o elemento raiz div principal que conterá toda a estrutura.
          */
@@ -120,7 +120,7 @@ export default class TimelineDialog extends Dialog {
         displayedImage.id = "displayedImage"; // Define o ID da imagem
         displayedImage.className = "img-displayed empty"; // Define classes CSS
         displayedImage.src = "../images/blank-image.svg"; // Define a fonte da imagem
-        displayedImage.alt = "Imagem Padrão"; // Define o texto alternativo
+        displayedImage.alt = "Imagem Padrão"; // Define o texto alternativo        
 
         /**
          * Cria o campo de entrada de arquivo oculto.
@@ -247,7 +247,7 @@ export default class TimelineDialog extends Dialog {
             tinymce.remove('#flavorText');
         }
 
-        const options = CONFIG.utils.mergeObjects(CONFIG.tinymceOptions.lite, {
+        const options = uniforge.utils.mergeObjects(uniforge.tinymceOptions.lite, {
             selector: 'div#flavorText',
             readonly: true,
             init_instance_callback: (editor) => {
@@ -480,7 +480,7 @@ export default class TimelineDialog extends Dialog {
         tinymce.get('flavorText').setContent(data.flavor);
 
         if (data.img) {
-            const imageUrl = await CONFIG.utils.blobToImage(data.img, data.ext);
+            const imageUrl = await uniforge.utils.blobToImage(data.img, data.ext);
 
             displayedImage.src = imageUrl
             displayedImage.classList.remove('empty');

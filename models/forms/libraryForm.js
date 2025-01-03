@@ -75,7 +75,7 @@ export class LibraryForm extends BaseForm {
         // Obter a entrada clicada.
         const entry = event.target.closest('.entry-item');
         const entryId = entry.dataset.id;
-        const data = await CONFIG.db.getEntryWithIcon(entryId);
+        const data = await uniforge.db.getEntryWithIcon(entryId);
 
         this.manager.getEntry(data).addTo('entryContainer', false);
     }

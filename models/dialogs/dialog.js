@@ -12,19 +12,18 @@ export default class Dialog extends BaseDialog {
    * Cria uma instância do diálogo.
    * 
    * @constructor
-   * @param {Object} dialogObject - Configurações iniciais do diálogo.
-   * @param {string} dialogObject.title - Título do diálogo (padrão: "Dialog").
-   * @param {Object} dialogObject.buttons - Conjunto de botões a serem exibidos no diálogo.
-   * @param {Function} dialogObject.abort - Função a ser executada se o dialog fechar inesperadamente.
-   * @param {Object} options - Opções adicionais, como o conteúdo do corpo do diálogo.
+   * @param {DialogData} data               - Dados do diálogo.
+   * @param {DialogOptions} options         - Opções adicionais do diálogo.
+   * @param {Object} dialogObject           - Configurações iniciais do diálogo.
+   * @param {string} dialogObject.title     - Título do diálogo (padrão: "Dialog").
+   * @param {Object} dialogObject.buttons   - Conjunto de botões a serem exibidos no diálogo.
+   * @param {Function} dialogObject.abort   - Função a ser executada se o dialog fechar inesperadamente.
+   * @param {Object} options                - Opções adicionais, como o conteúdo do corpo do diálogo.
    */
-  constructor({ title = "Dialog", buttons = {}, abort = null }, options = {}) {
-    super();
-    /** 
-     * Título do diálogo.
-     * @type {string}
-     */
-    this.title = title;
+  //constructor({ title = "Dialog", buttons = {}, abort = null }, options = {}) {
+  constructor(data, options) {
+    super(options);
+    this.data = data; 
 
     /** 
      * Conjunto de botões do diálogo.
@@ -42,7 +41,7 @@ export default class Dialog extends BaseDialog {
      * Gerenciador de conexão de Banco de Dados.
      * @type {DBManager}
      */
-    this.db = CONFIG.db;
+    this.db = uniforge.db;
 
     /** 
      * Função executada se o dialog fechar inesperadamente.
@@ -56,11 +55,12 @@ export default class Dialog extends BaseDialog {
      */
     this.secure = options?.secure ?? false;
 
-    /**
-     * Opções adicionais fornecidas ao diálogo.
-     * @type {Object}
-     */
+    
     this.options = options;
+  }
+
+  get title() {
+    return this.data.title || "Dialog";
   }
 
   async getBody() {
@@ -95,7 +95,7 @@ export default class Dialog extends BaseDialog {
     const body = document.createElement('div');
     body.className = 'secure-dialog flexcol';
 
-    const randomString = CONFIG.utils.generateRandomString(5, true);
+    const randomString = uniforge.utils.generateRandomString(5, true);
     const hintMessage = `<p>Se é isso que deseja, por favor, copie o seguinte trecho no campo abaixo: <span class='secure-text'>'${randomString}'</span></p>`;
 
     const textGroup = document.createElement('div');
@@ -352,7 +352,7 @@ export default class Dialog extends BaseDialog {
       if (input.value === secureText) {
         resolve(true);
         confirmButton.dataset.canClose = 'true';
-      } else CONFIG.msgBox.showWarning('O texto informado não corresponde ao texto de segurança.');
+      } else uniforge.msgBox.showWarning('O texto informado não corresponde ao texto de segurança.');
 
     }
     return new Promise((resolve, reject) => {

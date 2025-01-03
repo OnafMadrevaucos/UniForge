@@ -2,7 +2,7 @@ import Dialog from "./dialog.js";
 
 export default class SubjectDialog extends Dialog {
   constructor(dialogData = {}, options = {}) {
-    super(dialogData, CONFIG.utils.mergeObjects(options, {
+    super(dialogData, uniforge.utils.mergeObjects(options, {
       height: '375px',
       width: '350px'
     }));
@@ -59,7 +59,7 @@ export default class SubjectDialog extends Dialog {
     roots.forEach(data => {
       const option = document.createElement('option');
       option.value = data.root;
-      option.textContent = CONFIG.utils.capitalizeFirstLetter(data.root);
+      option.textContent = uniforge.utils.capitalizeFirstLetter(data.root);
       rootSelect.appendChild(option);
     });
 
@@ -87,7 +87,7 @@ export default class SubjectDialog extends Dialog {
     iconList.id = 'iconList';
     iconList.name = 'subjectIcon';
 
-    const icons = await CONFIG.utils.extractFontAwesomeIcons();
+    const icons = await uniforge.utils.extractFontAwesomeIcons();
     Object.values(icons).forEach(icon => {
       const iconItem = document.createElement('li');
       iconItem.className = 'icon-item';
@@ -179,7 +179,7 @@ export default class SubjectDialog extends Dialog {
       const icon = event.target.dataset.icon;
 
       if (!title || !root || !icon) {
-        CONFIG.msgBox.showWarning('Por favor, preencha todos os campos.');
+        uniforge.msgBox.showWarning('Por favor, preencha todos os campos.');
         return null;
       }
 

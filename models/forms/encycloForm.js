@@ -127,9 +127,9 @@ export class EncycloForm extends EntryForm {
             }
 
             // Se uma imagem foi informada, prepare-a para o banco de dados.
-            CONFIG.utils.mergeObjects(data, await CONFIG.utils.imageToBlob(file));
+            uniforge.utils.mergeObjects(data, await uniforge.utils.imageToBlob(file));
 
-            const validate = CONFIG.db.validateCategory(data);
+            const validate = uniforge.db.validateCategory(data);
             if (validate !== '') {
                 this.msgBox.showWarning(validate);
                 return;
@@ -137,11 +137,11 @@ export class EncycloForm extends EntryForm {
 
             if (isEntryUpdate) {
                 data.cid = options.id;
-                await CONFIG.db.updateCategory(data);
+                await uniforge.db.updateCategory(data);
                 this.msgBox.showInfo('Categoria atualizada com sucesso.');
             }
             else {
-                await CONFIG.db.addCategory(data);
+                await uniforge.db.addCategory(data);
                 this.msgBox.showInfo('Categoria criada com sucesso.');
             }
         }
@@ -210,7 +210,7 @@ export class EncycloForm extends EntryForm {
 
         const subject = await SubjectDialog.configDialog();
         if (subject) {
-            await CONFIG.db.addSubject(subject);
+            await uniforge.db.addSubject(subject);
             this.updateContent();
         }
     }

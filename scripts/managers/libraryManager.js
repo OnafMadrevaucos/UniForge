@@ -16,7 +16,7 @@ export class LibraryManager extends BaseManager {
         this.entry = new Entry(data, this);
 
         // Registra a nova Entrada na fila de entradas para navegação
-        CONFIG.navQueue.push(this.entry);
+        uniforge.navQueue.push(this.entry);
         return this.entry;
     }
 }
@@ -24,8 +24,8 @@ export class LibraryManager extends BaseManager {
 // Objeto da responsável por manipular qualquer Entrada.
 export class Entry {
     constructor(data, manager) {
-        this.msgBox = CONFIG.msgBox;
-        this.tooltip = CONFIG.tooltip;
+        this.msgBox = uniforge.msgBox;
+        this.tooltip = uniforge.tooltip;
 
         this.manager = manager;
         this.form = manager.form;
@@ -116,7 +116,7 @@ export class Entry {
     async _onLinkClick(event) {
         const span = event.target;
         const entryId = span.dataset.id;
-        const data = await CONFIG.db.getEntryWithIcon(entryId);
+        const data = await uniforge.db.getEntryWithIcon(entryId);
 
         if (data) {
             document.body.style.cursor = 'wait';
@@ -124,7 +124,7 @@ export class Entry {
             const form = new BaseForm(overlay, '');
     
             this.entry = new Entry(data, new LibraryManager(form));
-            CONFIG.navQueue.push(this.entry);
+            uniforge.navQueue.push(this.entry);
     
             const newForm = this.entry.addTo('entryFormContent', true);
             newForm.ui.prev_btn.setAttribute('data-tooltip', this._getQueueText());
@@ -139,11 +139,11 @@ export class Entry {
 
     _onPreviousClick() {
         // Remove a Entrada atual
-        CONFIG.navQueue.pop();
+        uniforge.navQueue.pop();
 
-        if (!CONFIG.navQueue.isEmpty() && !CONFIG.navQueue.hasLastItem()) {
+        if (!uniforge.navQueue.isEmpty() && !uniforge.navQueue.hasLastItem()) {
             // Recupera a próxima Entrada
-            this.prev = CONFIG.navQueue.last();
+            this.prev = uniforge.navQueue.last();
 
             this.entry = new Entry(this.prev.data, this.manager);
             this.form = this.entry.addTo('entryFormContent');
@@ -158,13 +158,13 @@ export class Entry {
 
     _getQueueText() {
         let text = '';
-        const last = CONFIG.navQueue.last();
-        const first = CONFIG.navQueue.first();
+        const last = uniforge.navQueue.last();
+        const first = uniforge.navQueue.first();
 
-        if (CONFIG.navQueue.size() > 2) {
-            const prev = CONFIG.navQueue.at(CONFIG.navQueue.size() - 2);
-            if (CONFIG.navQueue.size() > 3) {
-                text = `${first.data.title} >(${CONFIG.navQueue.size() - 3})> ${prev.data.title} > ${last.data.title}`;
+        if (uniforge.navQueue.size() > 2) {
+            const prev = uniforge.navQueue.at(uniforge.navQueue.size() - 2);
+            if (uniforge.navQueue.size() > 3) {
+                text = `${first.data.title} >(${uniforge.navQueue.size() - 3})> ${prev.data.title} > ${last.data.title}`;
             } else {
                 text = `${first.data.title} > ${prev.data.title} > ${last.data.title}`;
             }
@@ -203,12 +203,12 @@ export class Entry {
             const overlay = document.querySelector('#entryFormOverlay');
             const content = overlay.querySelector('#entryFormContent');
 
-            if (CONFIG.navQueue.isFromLibrary()) {
-                const first = CONFIG.navQueue.shift();
-                CONFIG.navQueue.clearQueue();
-                CONFIG.navQueue.push(first);
+            if (uniforge.navQueue.isFromLibrary()) {
+                const first = uniforge.navQueue.shift();
+                uniforge.navQueue.clearQueue();
+                uniforge.navQueue.push(first);
             } else {
-                CONFIG.navQueue.clearQueue();
+                uniforge.navQueue.clearQueue();
             }
 
             this.form.hideForm();

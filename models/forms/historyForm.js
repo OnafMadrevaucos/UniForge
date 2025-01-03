@@ -157,7 +157,7 @@ export class HistoryForm extends EntryForm {
             tinymce.remove('#flavorEditor');
         }
 
-        const options = CONFIG.utils.mergeObjects(CONFIG.tinymceOptions.simple, {
+        const options = uniforge.utils.mergeObjects(uniforge.tinymceOptions.simple, {
             selector: 'div#flavorEditor',
             placeholder: "Texto de floreio...",
             init_instance_callback: (editor) => {
@@ -259,7 +259,7 @@ export class HistoryForm extends EntryForm {
             data.img = this.selectedImg?.data ?? null;
             data.ext = this.selectedImg?.ext ?? 'jpeg';
 
-            const validate = CONFIG.db.validateEventEntry(data);
+            const validate = uniforge.db.validateEventEntry(data);
             if (validate !== '') {
                 this.msgBox.showWarning(validate);
                 return;
@@ -269,14 +269,14 @@ export class HistoryForm extends EntryForm {
                 data.eid = options.id;
                 data.evid = headerInfo.dataset.evid;
 
-                await CONFIG.db.updateEntry(data);
-                await CONFIG.db.updateEvent(data);
+                await uniforge.db.updateEntry(data);
+                await uniforge.db.updateEvent(data);
                 this.msgBox.showInfo('Entrada atualizada com sucesso.');
             }
             else {
-                const result = await CONFIG.db.addEntry(data);
+                const result = await uniforge.db.addEntry(data);
                 data.eid = result.addedId;
-                await CONFIG.db.addEvent(data);
+                await uniforge.db.addEvent(data);
                 this.msgBox.showInfo('Entrada criada com sucesso.');
             }
         }
@@ -307,7 +307,7 @@ export class HistoryForm extends EntryForm {
         const entry = this.data.entry;        
 
         if (entry) {
-            const entryEvent = await CONFIG.db.getEventOfEntry(entry.eid);
+            const entryEvent = await uniforge.db.getEventOfEntry(entry.eid);
             
             if (entryEvent) {                
                 this.reconfigureDatePickers(entryEvent);

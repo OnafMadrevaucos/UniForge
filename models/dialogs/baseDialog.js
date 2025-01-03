@@ -1,5 +1,11 @@
 export default class BaseDialog {
-    constructor() {
+    constructor(options) {
+        /**
+        * Opções adicionais fornecidas ao diálogo.
+        * @type {Object}
+        */
+        this.options = options;
+
         /** 
          * Estado interno para rastrear a posição e deslocamento do diálogo.
          * @type {Object}
@@ -27,7 +33,7 @@ export default class BaseDialog {
         * Objeto de controle global para mensagens ao usuário.
         * @type {object}
         */
-        this.msgBox = CONFIG.msgBox;
+        this.msgBox = uniforge.msgBox;
 
         /** 
          * Estado de arraste do diálogo.
@@ -41,12 +47,33 @@ export default class BaseDialog {
          */
         this.parentElement = document.querySelector('.entries');
     }
+
+    // Propriedade do template Handlebars do dialog1.
+    #template;
+
+    /**
+   * Obtém o template Handlebars usado pelo Formulário.
+   * @async
+   * @returns {Object}  - O template Handlebars do formulário.
+   */
+    get template() {
+        return this.#template;
+    }
+
     /**
     * Exibe o diálogo na página.
     */
     render() {
         document.body.appendChild(this.overlay);
         this._renderWindow();
+    }
+
+    async renderTemplate(fileName, data) {
+        const template = await uniforge.templates.get(fileName);
+        return template(data || {}, {
+            allowProtoMethodsByDefault: true,
+            allowProtoPropertiesByDefault: true
+        });
     }
 
     /**
@@ -69,7 +96,7 @@ export default class BaseDialog {
     _activateListeners() {
         const titleHeader = this.querySelector('.header');
         titleHeader.addEventListener('mousedown', (event) => { this.onMouseDown(event); });
-        
+
         document.addEventListener('mousemove', (event) => { this.onMouseMove(event); });
         document.addEventListener('mouseup', () => { this.onMouseUp(); });
     }

@@ -23,8 +23,8 @@ export class TimelineManager extends BaseManager {
 
 export class Timeline {
     constructor(data, manager) {
-        this.msgBox = CONFIG.msgBox;
-        this.tooltip = CONFIG.tooltip;
+        this.msgBox = uniforge.msgBox;
+        this.tooltip = uniforge.tooltip;
 
         this.manager = manager;
         this.form = manager.form;
@@ -442,7 +442,7 @@ export class Timeline {
         const a = event.target.closest('.anchor');
         const entryId = a.dataset.id;
 
-        CONFIG.navQueue.push(this);
+        uniforge.navQueue.push(this);
 
         document.body.style.cursor = 'wait';
         const overlay = document.getElementById('entryFormOverlay');

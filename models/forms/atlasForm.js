@@ -36,7 +36,7 @@ export class AtlasForm extends EntryForm {
             tinymce.remove('#captionEditor');
         }
 
-        const options = CONFIG.utils.mergeObjects(CONFIG.tinymceOptions.simple, {
+        const options = uniforge.utils.mergeObjects(uniforge.tinymceOptions.simple, {
             selector: 'div#captionEditor',
             placeholder: "Descrição da imagem...",
             init_instance_callback: (editor) => {
@@ -84,14 +84,14 @@ export class AtlasForm extends EntryForm {
             }
 
             // Validar os dados de entrada de Atlas.
-            const validate = CONFIG.db.validateAtlasEntry(data);
+            const validate = uniforge.db.validateAtlasEntry(data);
             if (validate !== '') {
                 this.msgBox.showWarning(validate);
                 return;
             }
 
             // Se uma imagem foi informada, prepare-a para o banco de dados.
-            CONFIG.utils.mergeObjects(data, await CONFIG.utils.imageToBlob(file));
+            uniforge.utils.mergeObjects(data, await uniforge.utils.imageToBlob(file));
 
             // Atlas deve sempre possuir uma imagem.
             if (!data.img) {
@@ -101,11 +101,11 @@ export class AtlasForm extends EntryForm {
 
             if (isEntryUpdate) {
                 data.eid = options.id;
-                await CONFIG.db.updateEntry(data);
+                await uniforge.db.updateEntry(data);
                 this.msgBox.showInfo('Entrada atualizada com sucesso.');
             }
             else {
-                await CONFIG.db.addEntry(data);
+                await uniforge.db.addEntry(data);
                 this.msgBox.showInfo('Entrada criada com sucesso.');
             }
         }

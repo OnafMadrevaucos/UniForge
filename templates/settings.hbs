@@ -1,0 +1,40 @@
+<div id="settings" class="settings flexcol">
+    <div class="settings-options flexrow">
+        <button id="database" class="flexcol selected" data-panel="databasePanel"><i class="fas fa-database"></i> Banco de Dados</button>
+        <button id="leaflet" class="flexcol" data-panel="leafletPanel"><i class="fas fa-map"></i> Leaflet ®</button>
+    </div>
+    <div class="settings-container">
+        <div id="databasePanel" class="panel flexcol">
+            <div class="data-group combo">
+                <span class="data-label">Executar </span>
+                <div class="data-complex flexcol">
+                    <select id="procedureName" class="data" name="procedureName"></select>
+                    <button id="procedureButton"><i class="fa-solid fa-cloud-arrow-up"></i> Executar</button>
+                </div>                
+            </div>
+            <div class="data-group combo">
+                <span class="data-label">Excluir Tabela </span>
+                <div class="data-complex flexcol">
+                    <select id="tableName" class="data" name="tableName"></select>
+                    <button id="deleteTableButton"><i class="fa-solid fa-cloud-arrow-up"></i> Executar</button>
+                </div>                
+            </div>            
+            <div class="data-group query-input">
+                <span class="data-label">Executar Comando </span>
+                <textarea id="queryText"></textarea>
+                <div class="query-button flexrow">
+                    <button id="queryButton"><i class="fa-solid fa-cloud-arrow-up"></i> Executar</button>
+                </div>
+            </div>
+            <div class="data-group combo">
+                <span class="data-label">Recriar Banco de Dados </span>
+                <div class="data-complex flexcol">
+                    <button id="resetDatabaseButton"><i class="fa-solid fa-arrows-rotate"></i> Recriar </button>
+                </div>                
+            </div>
+        </div>  
+        <div id="leafletPanel" class="panel hidden">
+            Leaflet Panel
+        </div>
+    </div>
+</div>

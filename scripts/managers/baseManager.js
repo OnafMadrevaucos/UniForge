@@ -4,8 +4,8 @@ export class BaseManager {
     constructor(form) {
         this.entryId = '';
 
-        this.msgBox = CONFIG.msgBox; 
-        this.tooltip = CONFIG.tooltip;
+        this.msgBox = uniforge.msgBox; 
+        this.tooltip = uniforge.tooltip;
 
         this.form = form;              
     }

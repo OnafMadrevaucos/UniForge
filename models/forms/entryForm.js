@@ -65,7 +65,7 @@ export default class EntryForm extends BaseForm {
     this.ui.dialog = dialog;
 
     /** @type {Object} - Tooltip de interface do usuário. */
-    this.ui.tooltip = CONFIG.tooltip;
+    this.ui.tooltip = uniforge.tooltip;
   }
 
   /* ---------------------------------------------------------------------------------------------------------------- */
@@ -422,7 +422,7 @@ export default class EntryForm extends BaseForm {
       tinymce.remove('#mainEditor');
     }
 
-    const options = CONFIG.utils.mergeObjects(CONFIG.tinymceOptions.default, {
+    const options = uniforge.utils.mergeObjects(uniforge.tinymceOptions.default, {
       selector: 'textarea#mainEditor',
       init_instance_callback: (editor) => {
         editor.setContent(""); // Garante que o editor seja iniciado vazio.
@@ -563,7 +563,7 @@ export default class EntryForm extends BaseForm {
     event.preventDefault();
 
     if (this.selectedImg.rawData && !displayedImage.classList.contains('empty')) {
-      const imageUrl = await CONFIG.utils.blobToImage(this.selectedImg.rawData, this.selectedImg.ext);
+      const imageUrl = await uniforge.utils.blobToImage(this.selectedImg.rawData, this.selectedImg.ext);
       await Dialog.showImagem('Exibir Imagem', imageUrl);
     }
   }
@@ -585,7 +585,7 @@ export default class EntryForm extends BaseForm {
       displayedImage.dataset.ext = file.type.split('/')[1];
       displayedImage.classList.remove('empty');
 
-      this.selectedImg = await CONFIG.utils.imageToBlob(file);
+      this.selectedImg = await uniforge.utils.imageToBlob(file);
 
       // Libera o URL temporário quando não for mais necessário.
       displayedImage.onload = () => {
@@ -679,8 +679,8 @@ export default class EntryForm extends BaseForm {
     const item = event.target.closest('.entry-item');
     const itemId = item.dataset.id;
     let entry = null;
-    if(this.isEncyclopedia) entry = await CONFIG.db.getCategory(itemId);
-    else entry = await CONFIG.db.getEntry(itemId);
+    if(this.isEncyclopedia) entry = await uniforge.db.getCategory(itemId);
+    else entry = await uniforge.db.getEntry(itemId);
 
     if (entry) {
       const headerInfo = this.querySelector('.header-info');
@@ -695,7 +695,7 @@ export default class EntryForm extends BaseForm {
       draftSwitch.checked = entry.isDraft;
 
       if (entry.img) {
-        const imageUrl = await CONFIG.utils.blobToImage(entry.img, entry.ext);
+        const imageUrl = await uniforge.utils.blobToImage(entry.img, entry.ext);
 
         displayedImage.dataset.ext = entry.ext;
         displayedImage.src = imageUrl
@@ -726,8 +726,8 @@ export default class EntryForm extends BaseForm {
     event.stopPropagation();
     const id = this.ui.dialog.dataset.id;
 
-    if (this.isEncyclopedia) await CONFIG.db.deleteCategory(id);
-    else await CONFIG.db.deleteEntry(id);
+    if (this.isEncyclopedia) await uniforge.db.deleteCategory(id);
+    else await uniforge.db.deleteEntry(id);
 
     this.controlStates(this.states.default);
 
@@ -832,7 +832,7 @@ export default class EntryForm extends BaseForm {
       imgWrapper.contenteditable = 'false';
 
       const newImage = document.createElement('img');
-      const imageURL = await CONFIG.utils.blobToImage(rawData.img, rawData.ext);
+      const imageURL = await uniforge.utils.blobToImage(rawData.img, rawData.ext);
       newImage.src = imageURL;
 
       const newCaption = document.createElement('figcaption');
@@ -846,7 +846,7 @@ export default class EntryForm extends BaseForm {
       // Insira o HTML na posição atual do cursor.
       editor.execCommand('mceInsertContent', false, imgWrapper.outerHTML);
       // Registra o Blob da imagem no banco de dados.
-      await CONFIG.db.addEntriesTextImages(image);
+      await uniforge.db.addEntriesTextImages(image);
       // Atualiza a contagem de imagens no editor.
       this._updateImageCount(editor);
     }
@@ -945,8 +945,8 @@ export default class EntryForm extends BaseForm {
     const imgArray = searchDiv.querySelectorAll('.img-wrapper'); // Seleciona todos os <div> com a classe 'img-wrapper'
     imgArray.forEach(async (img) => {
       const uuid = img.dataset.uuid; // Obtém o uuid armazenado no <div>
-      const data = await CONFIG.db.getEntriesTextImage(uuid); // Obtém a imagem do banco de dados
-      const imageURL = CONFIG.utils.blobToImage(data.img, data.ext); // Converte o blob da imagem para URL
+      const data = await uniforge.db.getEntriesTextImage(uuid); // Obtém a imagem do banco de dados
+      const imageURL = uniforge.utils.blobToImage(data.img, data.ext); // Converte o blob da imagem para URL
     });
   }
 
@@ -958,7 +958,7 @@ export default class EntryForm extends BaseForm {
    */
   async _loadRootIcon(folder) {
     const sid = folder.dataset.sid;
-    let subject = await CONFIG.db.getSubjectRoot(sid);
+    let subject = await uniforge.db.getSubjectRoot(sid);
 
     if (subject) {
       const typeLabel = this.querySelector('#typeLabel');
@@ -967,7 +967,7 @@ export default class EntryForm extends BaseForm {
 
       typeLabel.textContent = subject.title;
 
-      dataIcon.dataset.tooltip = CONFIG.utils.capitalizeFirstLetter(subject.root);
+      dataIcon.dataset.tooltip = subject.root.captalize();
       subjectIcon.classList.remove(...subjectIcon.classList);
       subjectIcon.className = subject.icon;
     }

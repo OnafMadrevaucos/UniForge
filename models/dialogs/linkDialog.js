@@ -2,7 +2,7 @@ import Dialog from "./dialog.js";
 
 export default class LinkDialog extends Dialog {
     constructor(dialogData = {}, options = {}) {
-        super(dialogData, CONFIG.utils.mergeObjects(options, {
+        super(dialogData, uniforge.utils.mergeObjects(options, {
             height: '500px', 
             width: '600px'
         }));
@@ -185,7 +185,7 @@ export default class LinkDialog extends Dialog {
             tinymce.remove('#flavorText');
         }
 
-        const options = CONFIG.utils.mergeObjects(CONFIG.tinymceOptions.lite, {
+        const options = uniforge.utils.mergeObjects(uniforge.tinymceOptions.lite, {
             selector: 'div#flavorText',
             readonly: true,
             init_instance_callback: (editor) => {
@@ -418,7 +418,7 @@ export default class LinkDialog extends Dialog {
         tinymce.get('flavorText').setContent(data.flavor);
 
         if (data.img) {
-            const imageUrl = await CONFIG.utils.blobToImage(data.img, data.ext);
+            const imageUrl = await uniforge.utils.blobToImage(data.img, data.ext);
 
             displayedImage.src = imageUrl
             displayedImage.classList.remove('empty');

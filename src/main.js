@@ -11,27 +11,9 @@ import { LinkTooltip } from "../scripts/linkTooltip.js";
 import { NavQueue } from "../scripts/navQueue.js";
 
 import DBManager from "../db/dbManager.js";
-import Utils from "../scripts/utils.js";
 
-// Constante Global
-/**
- * Objeto global `CONFIG` que armazena configurações e instâncias relacionadas à aplicação,
- * incluindo configurações do mapa, controles, propriedades de navegação e utilitários.
- * 
- * @namespace CONFIG
- */
-window.CONFIG = {
-    /**
-     * Instância de SQL usada pela aplicação.
-     * @type {Object}
-     */
-    sql: window.sql,
-
-    /**
-     * Instância de Crypto usada pela aplicação.
-     * @type {Object}
-     */
-    crypto: window.crypto,
+// Adiciona as propriedades restantes ao objeto uniforge.
+uniforge.utils.mergeObjects(uniforge, {
 
     /**
      * Instância do gerenciador de banco de dados.
@@ -111,13 +93,6 @@ window.CONFIG = {
     drawnItems: new L.FeatureGroup(),
 
     /**
-     * Referência ao corpo do documento HTML.
-     * 
-     * @type {HTMLElement}
-     */
-    html: document.body,
-
-    /**
      * Controles relacionados à interface do usuário.
      * 
      * @type {Object}
@@ -136,74 +111,11 @@ window.CONFIG = {
     },
 
     /**
-     * Referência ao formulário, utilizado em várias partes da aplicação.
-     * 
-     * @type {Object|null}
-     */
-    form: null,
-
-    /**
      * Instância do gerenciador de fila de navegação.
      * 
      * @type {NavQueue}
      */
-    navQueue: new NavQueue(), // Fila de controle de navegação
-
-    /**
-     * Constantes configuráveis, como dimensões de imagem e tamanho do tile.
-     * 
-     * @type {Object}
-     * @property {number} MIN_POINTS - Número mínimo de pontos para alguma operação.
-     * @property {number} IMG_WIDTH - Largura da imagem.
-     * @property {number} IMG_HEIGHT - Altura da imagem.
-     * @property {number} VIEW_WIDTH - Largura da área de visualização.
-     * @property {number} VIEW_HEIGHT - Altura da área de visualização.
-     * @property {number} TILE_SIZE - Tamanho de cada tile do mapa.
-     */
-    contants: {
-        MIN_POINTS: 2000,
-        IMG_WIDTH: 5850,
-        IMG_HEIGHT: 4550,
-        VIEW_WIDTH: 3840,
-        VIEW_HEIGHT: 2160,
-        TILE_SIZE: 240
-    },
-
-    /**
-     * LatLng onde o último clique no mapa ocorreu.
-     * 
-     * @type {L.LatLng|null}
-     */
-    clickLatLang: null,
-
-    /**
-     * Camada de sobreposição do mapa.
-     * 
-     * @type {Object|null}
-     */
-    mapOverlay: null,
-
-    /**
-     * Informações relacionadas ao tempo (como o valor do ano e a era).
-     * 
-     * @type {Object}
-     * @property {Object} y - Objeto com valor e label do ano.
-     * @property {string} era - A era representada (por exemplo, 'd.T.').
-     */
-    time: {
-        y: {
-            value: 1,
-            label: '1'
-        },
-        era: 'd.T.'
-    },
-
-    /**
-     * Instância de utilitários gerais.
-     * 
-     * @type {Utils}
-     */
-    utils: new Utils(),
+    navQueue: new NavQueue(), // Fila de controle de navegação   
 
     /**
      * Função de criação de HTMLElement.1
@@ -211,18 +123,18 @@ window.CONFIG = {
      * @type {Function}
      */
     createElement: createElement
-}
+});
 
 // Inicializa o Mapa, ajustando a visualização com base nas coordenadas de imagem
-const map = CONFIG.map;
+const map = uniforge.map;
 
 // Cria a camada de armazenagem das Layers do Mapa
-const drawnItems = CONFIG.drawnItems;
+const drawnItems = uniforge.drawnItems;
 
 // Atalho para o Controle de Mensagens para o Usuário
-CONFIG.msgBox = CONFIG.ctrls.msgBox;
+uniforge.msgBox = uniforge.ctrls.msgBox;
 // Atalho para o Controle de Tooltips de Entradas
-CONFIG.tooltip = CONFIG.ctrls.tooltip;
+uniforge.tooltip = uniforge.ctrls.tooltip;
 
 /** 
  * ------------------------------------------------------------------
@@ -240,19 +152,19 @@ function ConfigureElements() {
 function ConfigureLeaflet() {
 
     // Calcula os limites de imagem com base na largura/altura
-    const bounds = [[0, 0], [CONFIG.contants.VIEW_HEIGHT, CONFIG.contants.VIEW_WIDTH]];
+    const bounds = [[0, 0], [uniforge.contants.VIEW_HEIGHT, uniforge.contants.VIEW_WIDTH]];
 
-    map.setMaxBounds(CONFIG.contants.IMG_HEIGHT, CONFIG.contants.IMG_WIDTH);
+    map.setMaxBounds(uniforge.contants.IMG_HEIGHT, uniforge.contants.IMG_WIDTH);
     // Ajusta a visualização inicial para se ajustar aos limites da imagem
     map.fitBounds(bounds);
 
     // Adiciona a imagem personalizada como uma camada de tile
-    CONFIG.mapOverlay = L.imageOverlay('../images/map.jpg', bounds, { zIndex: 1 /* Garantir que fique atrás do Layer do Grid */ });
-    CONFIG.mapOverlay.addTo(map);
+    uniforge.mapOverlay = L.imageOverlay('../images/map.jpg', bounds, { zIndex: 1 /* Garantir que fique atrás do Layer do Grid */ });
+    uniforge.mapOverlay.addTo(map);
 
     // Adicionar evento de mousedown ou mousemove para capturar o clique e mover o mapa
     map.on('mousedown', function (e) {
-        CONFIG.clickLatLang = e.latlng;  // Ponto de clique do usuário
+        uniforge.clickLatLang = e.latlng;  // Ponto de clique do usuário
     });
 
     const scale = L.control.scale({
@@ -282,8 +194,8 @@ function ConfigureLeaflet() {
 function ConfigureTopBar() {
     const currentYearInput = document.getElementById('currentYear');
     const timeEraSpan = document.getElementById('timeEra');
-    currentYearInput.value = CONFIG.time.y.label;
-    timeEraSpan.textContent = CONFIG.time.era;
+    currentYearInput.value = uniforge.time.y.label;
+    timeEraSpan.textContent = uniforge.time.era;
 }
 
 // Cria os controles customizados do Leaflet
@@ -325,7 +237,7 @@ function CreateControls() {
         }
     });
 
-    CONFIG.ctrls.main = new MainControl();
+    uniforge.ctrls.main = new MainControl();
 
     // Cria o Menu de Desenho para manipulação dos Layers no mapa.
     const CustomDrawControl = L.Control.Draw.extend({
@@ -405,14 +317,14 @@ function CreateControls() {
         }
     });
 
-    CONFIG.ctrls.draw = new CustomDrawControl();
+    uniforge.ctrls.draw = new CustomDrawControl();
 
     const TransparentGridLayer = L.GridLayer.extend({
         createTile: function (coords) {
             // Create a tile with transparency
             const tile = document.createElement('canvas');
-            tile.width = CONFIG.contants.TILE_SIZE; // Match your map's tile size
-            tile.height = CONFIG.contants.TILE_SIZE;
+            tile.width = uniforge.contants.TILE_SIZE; // Match your map's tile size
+            tile.height = uniforge.contants.TILE_SIZE;
             const ctx = tile.getContext('2d');
 
             // Draw grid lines
@@ -420,15 +332,15 @@ function CreateControls() {
             ctx.lineWidth = 1;
 
             // Draw horizontal and vertical grid lines
-            for (let i = 0; i <= CONFIG.contants.TILE_SIZE; i += 36) { // Adjust the grid cell size (36px here)
+            for (let i = 0; i <= uniforge.contants.TILE_SIZE; i += 36) { // Adjust the grid cell size (36px here)
                 ctx.beginPath();
                 ctx.moveTo(i, 0);
-                ctx.lineTo(i, CONFIG.contants.TILE_SIZE);
+                ctx.lineTo(i, uniforge.contants.TILE_SIZE);
                 ctx.stroke();
 
                 ctx.beginPath();
                 ctx.moveTo(0, i);
-                ctx.lineTo(CONFIG.contants.TILE_SIZE, i);
+                ctx.lineTo(uniforge.contants.TILE_SIZE, i);
                 ctx.stroke();
             }
 
@@ -436,18 +348,18 @@ function CreateControls() {
         },
     });
 
-    CONFIG.ctrls.grid = new TransparentGridLayer({
-        tileSize: CONFIG.contants.TILE_SIZE,
+    uniforge.ctrls.grid = new TransparentGridLayer({
+        tileSize: uniforge.contants.TILE_SIZE,
         opacity: 0.8, // Adjust transparency
         zIndex: 1000, // Ensure the grid is above other layers
     });
 
-    CONFIG.ctrls.grid.addTo(map);
-    CONFIG.ctrls.grid.bringToFront();
+    uniforge.ctrls.grid.addTo(map);
+    uniforge.ctrls.grid.bringToFront();
 
     // Adiciona o Menu de Controle ao Mapa.
-    map.addControl(CONFIG.ctrls.main);
-    map.addControl(CONFIG.ctrls.draw);
+    map.addControl(uniforge.ctrls.main);
+    map.addControl(uniforge.ctrls.draw);
 }
 
 function calculateZoomForTileScaleSimple(desiredTileScale) {
@@ -521,7 +433,7 @@ function onChangeTime(event, amount) {
     // Impedir que o clique no item desencadeie o clique fora do sidebar
     event.stopPropagation();
 
-    _setTime(CONFIG.time.y.value + amount);
+    _setTime(uniforge.time.y.value + amount);
 }
 function onChangeTimeInput(event) {
     var value = event.target.value;
@@ -533,7 +445,7 @@ function onChangeTimeInput(event) {
     if (value) {
         _setTime(value);
     } else {
-        event.target.value = CONFIG.time.y.label;
+        event.target.value = uniforge.time.y.label;
     }
 }
 
@@ -570,30 +482,30 @@ function _loadPartial(id) {
 
             switch (id) {
                 case 'atlas': {
-                    CONFIG.form = new AtlasForm(overlay, 'Atlas');
+                    uniforge.form = new AtlasForm(overlay, 'Atlas');
                 } break;
                 case 'encyclo': {
-                    CONFIG.form = new EncycloForm(overlay, 'Enciclopédia');
+                    uniforge.form = new EncycloForm(overlay, 'Enciclopédia');
                 } break;
                 case 'history': {
-                    CONFIG.form = new HistoryForm(overlay, 'História');
+                    uniforge.form = new HistoryForm(overlay, 'História');
                 } break;
                 case 'politics': {
-                    CONFIG.form = new PoliticsForm(overlay, 'Política');
+                    uniforge.form = new PoliticsForm(overlay, 'Política');
                 } break;
                 case 'library': {
-                    CONFIG.form = new LibraryForm(overlay, 'Biblioteca');
+                    uniforge.form = new LibraryForm(overlay, 'Biblioteca');
                 } break;
                 case 'timeline': {
-                    CONFIG.form = new TimelineForm(overlay, 'Linha do Tempo');
+                    uniforge.form = new TimelineForm(overlay, 'Linha do Tempo');
                 } break;
                 case 'settings': {
-                    CONFIG.form = new SettingsForm(overlay, 'Configurações');
+                    uniforge.form = new SettingsForm(overlay, 'Configurações');
                 } break;
                 default: break;
             }
 
-            CONFIG.form.showForm();
+            uniforge.form.showForm();
         })
         .catch(error => {
             console.error('Ocorreu um erro:', error);
@@ -605,58 +517,58 @@ function _setTime(year) {
     const timeEraSpan = document.getElementById('timeEra');
 
     // Armazena o valor antigo do Ano
-    const oldValue = CONFIG.time.y.value;
+    const oldValue = uniforge.time.y.value;
 
-    CONFIG.time.y.value = Number(year);
+    uniforge.time.y.value = Number(year);
     // Não existe ano 0, salte ou para 1 ou para -1
-    if (CONFIG.time.y.value == 0) {
-        if (CONFIG.time.y.value > oldValue) { // O ano está avançando
-            CONFIG.time.y.value = 1;
+    if (uniforge.time.y.value == 0) {
+        if (uniforge.time.y.value > oldValue) { // O ano está avançando
+            uniforge.time.y.value = 1;
         } else { // O ano está retroagindo
-            CONFIG.time.y.value = -1;
+            uniforge.time.y.value = -1;
         }
     }
-    CONFIG.time.y.label = (Math.abs(CONFIG.time.y.value)).toString();
+    uniforge.time.y.label = (Math.abs(uniforge.time.y.value)).toString();
 
     // Altera a era para antes da Tríade dos Heróis (ano negativo) ou depois da Tríade (ano positivo)
-    CONFIG.time.era = (CONFIG.time.y.value > 0 ? 'd.T.' : 'a.T.');
+    uniforge.time.era = (uniforge.time.y.value > 0 ? 'd.T.' : 'a.T.');
 
-    currentYearInput.value = CONFIG.time.y.label;
-    timeEraSpan.textContent = CONFIG.time.era;
+    currentYearInput.value = uniforge.time.y.label;
+    timeEraSpan.textContent = uniforge.time.era;
 }
 
 // Calcular os limites baseados na posição e zoom atual
 function _checkMapVisibility() {
     var mapBounds = map.getBounds(); // Obtém os limites da área visível do mapa
-    var imageBounds = CONFIG.mapOverlay.getBounds(); // Obtém os limites da CONFIG.mapOverlay
+    var imageBounds = uniforge.mapOverlay.getBounds(); // Obtém os limites da uniforge.mapOverlay
 
-    // Calculando os 8 pontos ao redor da CONFIG.mapOverlay
+    // Calculando os 8 pontos ao redor da uniforge.mapOverlay
     var points = _getWatcherPoints(imageBounds, 0.85); // 25% de padding  
     var isVisible = mapBounds.intersects(points);
 
-    // Se nenhum ponto da CONFIG.mapOverlay estiver visível, ajustar a posição do mapa
+    // Se nenhum ponto da uniforge.mapOverlay estiver visível, ajustar a posição do mapa
     if (!isVisible) {
 
         // Encontrar o ponto mais próximo do centro da tela
         var closestPoint = points[0];
-        var closestDistance = map.distance(CONFIG.clickLatLang, points[0]);
+        var closestDistance = map.distance(uniforge.clickLatLang, points[0]);
 
         points.forEach(function (point) {
-            var distance = map.distance(CONFIG.clickLatLang, point);
+            var distance = map.distance(uniforge.clickLatLang, point);
             if (distance < closestDistance) {
                 closestPoint = point;
                 closestDistance = distance;
             }
         });
 
-        // Ajusta o mapa para garantir que pelo menos um ponto da CONFIG.mapOverlay esteja visível
+        // Ajusta o mapa para garantir que pelo menos um ponto da uniforge.mapOverlay esteja visível
         map.setView(closestPoint, map.getZoom(), {
             animate: true
         });
     }
 }
 
-// Função para calcular os pontos ao redor da CONFIG.mapOverlay com um padding (0.0 a 1.0)
+// Função para calcular os pontos ao redor da uniforge.mapOverlay com um padding (0.0 a 1.0)
 function _getWatcherPoints(bounds, paddingRatio) {
     const southWest = bounds.getSouthWest();
     const northEast = bounds.getNorthEast();
@@ -685,7 +597,7 @@ function _getWatcherPoints(bounds, paddingRatio) {
 
     return points;
 }
-// Função para calcular a quantidade de pontos com base na precisão e no tamanho da CONFIG.mapOverlay
+// Função para calcular a quantidade de pontos com base na precisão e no tamanho da uniforge.mapOverlay
 function _calculatePrecision(bounds) {
     const southWest = bounds.getSouthWest();
     const northEast = bounds.getNorthEast();
@@ -694,9 +606,9 @@ function _calculatePrecision(bounds) {
     const latDiff = northEast.lat - southWest.lat;
     const lngDiff = northEast.lng - southWest.lng;
 
-    // Calculando a quantidade mínima de pontos para cobrir a CONFIG.mapOverlay
-    const totalArea = latDiff * lngDiff;  // Área da CONFIG.mapOverlay
-    const desiredPoints = Math.max(CONFIG.contants.MIN_POINTS, Math.sqrt(totalArea) * 100); // Ajuste para gerar pelo menos 1000 pontos
+    // Calculando a quantidade mínima de pontos para cobrir a uniforge.mapOverlay
+    const totalArea = latDiff * lngDiff;  // Área da uniforge.mapOverlay
+    const desiredPoints = Math.max(uniforge.contants.MIN_POINTS, Math.sqrt(totalArea) * 100); // Ajuste para gerar pelo menos 1000 pontos
 
     // Determinando o número de pontos para latitude e longitude
     const latPoints = Math.ceil(Math.sqrt(desiredPoints * (latDiff / totalArea)));
@@ -706,7 +618,7 @@ function _calculatePrecision(bounds) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    CONFIG.html.classList.add('uniforge');
+    uniforge.html.classList.add('uniforge');
 
     ConfigureElements();
     ConfigureForms();

@@ -25,7 +25,7 @@ export class SettingsForm extends BaseForm {
         * O objeto de manipulação do Banco de Dados.
         * @type {DBManager}
         */
-        this.db = CONFIG.db;
+        this.db = uniforge.db;
     }
 
     /**
@@ -103,7 +103,7 @@ export class SettingsForm extends BaseForm {
         Object.values(procedures).forEach(proc => {
             const option = document.createElement('option');
             option.dataset.name = proc.name;
-            option.textContent = CONFIG.utils.capitalizeFirstLetter(proc.name);
+            option.textContent = uniforge.utils.capitalizeFirstLetter(proc.name);
 
             proceduresSelect.appendChild(option);
         });
@@ -119,7 +119,7 @@ export class SettingsForm extends BaseForm {
         tables.forEach(table => {
             const option = document.createElement('option');
             option.dataset.name = table.name;
-            option.textContent = CONFIG.utils.capitalizeFirstLetter(table.name);
+            option.textContent = uniforge.utils.capitalizeFirstLetter(table.name);
 
             allTablesSelect.appendChild(option);
         });        
