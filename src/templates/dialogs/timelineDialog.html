@@ -1,0 +1,44 @@
+<dialog class="timeline-dialog entries flexrow">
+    <div class="sidebar">
+        <ul class="folder-list" id="folderList">
+            <li class="folder-item" id="entry">Entrada</li>
+            <li class="folder-item" id="timeline">Linhas do Tempo</li>
+        </ul>
+        <div class="footer">
+            <div class="input-container search-bar flexrow" id="searchEntry">
+                <input class="search-data" id="searchInput" placeholder="Pesquisar entrada..." type="text" />
+                <button class="search-button" id="searchBtn">
+                    <i class="fas fa-magnifying-glass"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+    <div class="summary">
+        <div class="content flexcol">
+            <div class="header-info flexrow">
+                <div class="img-container disabled" id="imageContainer">
+                    <img alt="Imagem Padrão" class="img-displayed empty" id="displayedImage"
+                        src="../../images/blank-image.svg" />
+                    <input accept="image/*" class="hidden" id="hiddenFileInput" type="file" />
+                </div>
+                <input class="title" disabled id="titleInput" name="title" type="text"
+                    value="Título da Linha do Tempo" />
+            </div>
+            <div class="date-info flexrow">
+                <div class="date start" data-date="" id="startDate">
+                    <div class="date-display" id="dateDisplay">Data Inicial</div>
+                </div>
+                <div class="date end" data-date="" id="endDate">
+                    <div class="date-display" id="dateDisplay">Data Final</div>
+                </div>
+            </div>
+            <div id="flavorText"></div>
+            <button class="add-button">
+                <i class="fa-solid fa-plus"></i> Adicionar
+            </button>
+        </div>
+    </div>
+    <div class="sidebar inverted" id="eventSidebar">
+        <ul class="event-list" id="eventList"></ul>
+    </div>
+</dialog>
