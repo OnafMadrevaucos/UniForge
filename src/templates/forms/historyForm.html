@@ -27,63 +27,33 @@
         <fieldset class="info-content" disabled>
           <div id="entryTypeGroup" class="data-group combo">
             <span class="data-label">Tipo </span>
-            <select id="entryType" class="data" name="entryType">
-              <option value="0">&#8212</option>
-            </select>
+            <combo id="entryType" value="entryTypes" blank="0"/>            
           </div>
           <div id="importanceGroup" class="data-group combo">
             <span class="data-label">Importância </span>
-            <select id="importance" class="data" name="importance">
-              <option value="0">&#8212</option>
-            </select>
+            <combo id="importance" value="importance" blank="0"/>
           </div>
           <div id="dateTypeGroup" class="data-group combo">
             <span class="data-label">Calendário </span>
-            <select id="calendarType" class="data" name="calendarType">
-            </select>
+            <combo id="calendarType" value="calendarTypes"/>
           </div>
           <div class="date-info flexrow">
             <div id="startDate" class="data-group date start" data-date="">
               <span class="data-label">Início </span>
-              <div class="date-input data" id="dateInput" data-type="" data-date="">
-                <div class="date-display" id="dateDisplay">Selecione uma data</div>
-                <div class="calendar" id="calendar">
-                  <div class="calendar-header">
-                    <button id="prevGroup"><i class="fas fa-caret-left"></i></button>
-                    <span id="monthYearDisplay"></span>
-                    <button id="nextGroup"><i class="fas fa-caret-right"></i></button>
-                  </div>
-                  <div class="calendar-view" id="calendarView">
-                    <div class="calendar-content" id="calendarContent"></div>
-                  </div>
-                </div>
-              </div>
+              <calendar class="start"></calendar>
             </div>
             <div id="endDate" class="data-group date end" data-date="">
-              <span class="data-label">Término <i class="fa-regular fa-circle-question"
-                  data-tooltip="Opcional"></i></span>
-              <div class="date-input data" id="dateInput">
-                <div class="date-display" id="dateDisplay">Selecione uma data</div>
-                <div class="calendar" id="calendar">
-                  <div class="calendar-header">
-                    <button id="prevGroup"><i class="fas fa-caret-left"></i></button>
-                    <span id="monthYearDisplay"></span>
-                    <button id="nextGroup"><i class="fas fa-caret-right"></i></button>
-                  </div>
-                  <div class="calendar-view" id="calendarView">
-                    <div class="calendar-content" id="calendarContent"></div>
-                  </div>
-                </div>
-              </div>
+              <span class="data-label">
+                  Término 
+                  <i class="fa-regular fa-circle-question" data-tooltip="Opcional"></i>
+              </span>
+              <calendar class="end"></calendar>            
             </div>
           </div>
           <div class="data-complex flexrow">
             <div class="data-group check">
               <span class="data-label">Rascunho </span>
-              <label id="isDraftCheck" class="switch">
-                <input type="checkbox" id="checkbox">
-                <div class="slider"></div>
-              </label>
+              <switch id="isDraftCheck"/>
             </div>
             <a class="add-timeline" data-tooltip="Linhas do Tempo"><i class="fa-solid fa-timeline"></i></a>
           </div>

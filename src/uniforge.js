@@ -460,12 +460,12 @@ async function renderForm(targetId, showAfter=true) {
     formOverlay.classList.remove('hidden');
 
     // Carrega o arquivo HTML do formulário correspondente
-    uniforge.form = await _loadTemplate(targetId);
-    if(showAfter) uniforge.form.showForm(true);
+    uniforge.form = _loadTemplate(targetId);
+    if(showAfter) await uniforge.form.showForm(true);
 }
 
 // JavaScript to load partials
-async function _loadTemplate(id) {        
+function _loadTemplate(id) {        
     try {
         let form = null;
 

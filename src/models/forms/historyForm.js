@@ -102,20 +102,25 @@ export class HistoryForm extends EntryForm {
         // Configura o editor TinyMCE de floreio associado ao formulário.
         await this.configureFlavorTinyMCE();
 
+        /*
         // Configura o seletor de importâncias de evento usando o método da classe pai.
         await this.configureImportanceSelect(form);
+        */
 
+        /*
         // Configura o seletor de tipos de entrada usando o método da classe pai.
         await this.configureEntryTypeSelect(form);
+        */
 
+        /*
         // Configura o seletor de calendários usando o método da classe pai.
         await this.configureCalendarSelect(form);
+        */
 
+        /*
         // Carrega os DatePickers associados ao formulário.
         await this.configureDatePickers();
-
-        // Atribui o estado padrão aos controles do formulário.
-        this.controlStates(this.states.default);
+        */
     }
 
     /**
@@ -125,6 +130,7 @@ export class HistoryForm extends EntryForm {
     async configureDataContent(form) {
         await super.configureDataContent(form);
 
+        /*
         // Configura o seletor de importâncias de evento usando o método da classe pai.
         await this.configureImportanceSelect(form);
 
@@ -136,6 +142,7 @@ export class HistoryForm extends EntryForm {
 
         // Carrega os DatePickers associados ao formulário.
         await this.configureDatePickers();
+        */
     }
 
     /**

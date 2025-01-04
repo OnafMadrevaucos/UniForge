@@ -148,6 +148,16 @@ export default class EntryForm extends SidebarForm {
   }
   /* ---------------------------------------------------------------------------------------------------------------- */
   // INTERFACE DE USUÁRIO
+   /**
+    * @inheritdoc
+   * Inicia a construção do formulário.
+   */
+   async _configure() {
+    await super._configure();
+
+    // Atribui o estado padrão aos controles do formulário.
+    this.controlStates(this.states.default);
+   }
   /**
    * Habilita/desabilita os controles do formulário.
    * @param {Number} state - O novo estado do formulário.

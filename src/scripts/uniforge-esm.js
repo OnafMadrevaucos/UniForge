@@ -12,6 +12,8 @@
         * @param {Object} data          - Dados a serem atrelados ao element.
         */
     function associateDataWithElement(element, data) {
+        console.log(`UniForge | Associando um dado ao element '${element.name}'...`);
+
         const uniqueId = randomID(); // Generate a unique ID
         element.dataset.uuid = uniqueId;    // Store the ID in the element's dataset
         store.set(element, { uuid: uniqueId, data });    // Store the Data in the WeakMap
@@ -25,6 +27,7 @@
         * @returns {string}                       - A URL para construção do arquivo.
         */
     async function blobToImage(blob, ext) {
+        console.log(`UniForge | Transformando um dado BLOB em Imagem...`);
         const imageType = `image/${ext}`;
 
         const binaryString = atob(blob); // Decodifica Base64 para binário
@@ -154,6 +157,7 @@
      * @returns {Promise<Object|null>} Um objeto JSON contendo as regras CSS convertidas ou `null` em caso de erro.
      */
     async function extractFontAwesomeIcons() {
+        console.log(`UniForge | Extraindo ícones do Font Awesome...`);
         /**
          * Caminho para o arquivo CSS do FontAwesome.
          * @type {string}
@@ -212,6 +216,7 @@
         * @returns {string}         - A string aleatória gerada.
         */
     function generateRandomString(length, onlySmallCaps = false) {
+        console.log(`UniForge | Gerando uma string randômica...`);
         let characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
         if (onlySmallCaps) characters = 'abcdefghijklmnopqrstuvwxyz0123456789';
         let result = '';
@@ -361,18 +366,18 @@
                 return false;
         }
     }
-   
-    async function loadTemplate(filePath) {     
+
+    async function loadTemplate(filePath) {
         try {
             const response = await fetch(filePath);
-            if (!response.ok) throw new Error('Erro ao carregar o arquivo: ' + response.statusText);   
-            
-            const htmlString = await response.text();    
+            if (!response.ok) throw new Error('Erro ao carregar o arquivo: ' + response.statusText);
+
+            const htmlString = await response.text();
             return htmlString;
         } catch (error) {
             console.error('Ocorreu um erro:', error);
             return null;
-        }  
+        }
     }
 
     /**
@@ -503,6 +508,7 @@
      * // ]
      */
     function parseCssToJson(cssText) {
+        console.log('UniForge | Transformando CSS em JSON...');
         /**
          * Array que armazenará as regras CSS convertidas.
          * @type {Array<Object>}
@@ -582,11 +588,36 @@
     }
 
     /**
+     * Processa um código HTML substituindo as tags <switch>, <combo> e <calendar>, bem como todos os placeholders informados.
+     * @param {string} html - A string HTML contendo as tags e placeholders.
+     * @param {Object} data - O objeto contendo as chaves e valores para substituição.
+     * @returns {string} - A string HTML modificada com as tags e placeholders substituídas.
+     */
+    function parseHTML(html, data) {
+        console.log(`UniForge | Tratando o corpo HTML...`);        
+        
+        // Substitui as tags <switch>
+        html = replaceSwitchTags(html);
+        
+        // Substitui as tags <combo>
+        html = replaceComboTags(html, data);
+
+        // Substitui as tags <calendar>
+        html = replaceCalendarTags(html);
+        
+        // Substitui os placeholders
+        html = replacePlaceholders(html, data);
+
+        return html;
+    }
+
+    /**
        * Gera um ID de string alfanumérica aleatória de um comprimento solicitado usando `crypto.getRandomValues()`.
        * @param {number} length    - O comprimento da string aleatória a ser gerada, que deve ser no máximo 16384.
        * @return {string}          - Uma string contendo letras aleatórias (a-z) e números (0-9).
     */
     function randomID(length = 16) {
+        console.log(`UniForge | Gerando novo ID para um registro do Banco de Dados...`);
         const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
         const cutoff = 0x100000000 - (0x100000000 % chars.length);
         const random = new Uint32Array(length);
@@ -596,6 +627,111 @@
         let id = "";
         for (let i = 0; i < length; i++) id += chars[random[i] % chars.length];
         return id;
+    }
+
+    /**
+    * Substitui os valores entre '{{' e '}}' no código HTML pelo valor correspondente de um objeto 'data'.
+    * @param {string} html - A string HTML contendo os placeholders.
+    * @param {Object} data - O objeto contendo as chaves e valores para substituição.
+    * @returns {string} - A string HTML modificada com os valores substituídos.
+    */
+    function replacePlaceholders(html, data) {
+        console.log('UniForge | Substituindo valores de Placeholders...');
+
+        return html.replace(/{{(.*?)}}/g, (match, key) => {
+            key = key.trim();
+            return key in data ? data[key] : '';
+        });
+    }
+
+    /**
+    * Substitui todas as tags <switch> no HTML pelo código de um switch estilizado.
+    * @param {string} html - A string HTML contendo as tags <switch>.
+    * @returns {string} - A string HTML modificada com as tags <switch> substituídas.
+    */
+    function replaceSwitchTags(html) { 
+        console.log('UniForge | Substituindo tags de Switch...');
+
+        html = html.replace(/<switch\s+id="([^"]+)"\s*\/?>/g, (match, id) => {
+            console.log(`Correspondência encontrada: ${match}`);
+            console.log(`ID: ${id}`);
+            return `
+            <label class="switch" id="${id}">
+                <input type="checkbox" id="checkbox">
+                <div class="slider"></div>
+            </label>`;
+        });
+
+        // Em seguida, remova as tags de fechamento </switch>
+        html = html.replace(/<\/switch>/g, '');
+        return html;
+    }
+
+    /**
+    * Substitui todas as tags <combo> no HTML por um <select> com opções baseadas nos dados fornecidos.
+    * @param {string} html - A string HTML contendo as tags <combo>.
+    * @param {Object} data - O objeto contendo as chaves e valores para substituição.
+    * @returns {string} - A string HTML modificada com as tags <combo> substituídas.
+    */
+    function replaceComboTags(html, data) {
+        console.log('UniForge | Substituindo tags de Combo...');
+
+        html = html.replace(/<combo\s+id="([^"]+)"\s+value="([^"]+)"\s*(blank="([^"]+)")?\s*\/?>/g, (match, id, valueKey, blankAttr, blankValue) => {
+            console.log(`Correspondência encontrada: ${match}`);
+            console.log(`ID: ${id}, ValueKey: ${valueKey}${blankValue ? `, BlankValue: ${blankValue}` : ''}`);
+
+            if (!(valueKey in data)) {
+                console.log(`O identificador '${valueKey}' não foi encontrado no objeto data. Retornando um <select> vazio.`);
+                return `<select id="${id}" class="data" name="${id}"></select>`;
+            }
+
+            const options = data[valueKey].map(val => `<option value="${val.etid}">${val.label}</option>`).join('\n');
+            const blankOption = blankAttr ? `<option value="${blankValue}">&#8212</option>` : '';
+
+            const result = `
+            <select id="${id}" class="data" name="${id}">
+                ${blankOption}
+                ${options}
+            </select>`;
+
+            return result;
+        });
+
+        // Em seguida, remova as tags de fechamento </combo>
+        html = html.replace(/<\/combo>/g, '');
+        return html;
+    }
+
+    /**
+     * Substitui todas as tags <calendar> no HTML pelo código HTML de um calendário.
+     * @param {string} html - A string HTML contendo as tags <calendar>.
+     * @returns {string} - A string HTML modificada com as tags <calendar> substituídas.
+    */
+    function replaceCalendarTags(html) {
+        console.log('UniForge | Substituindo tags de Calendar...');
+
+        html = html.replace(/<calendar\s*(class="([^"]+)")?\s*\/?>/g, (match, classAttr, extraClasses) => { 
+            console.log(`Correspondência encontrada: ${match}`);
+            console.log(`${extraClasses ? `Extra Classes: ${extraClasses}` : ''}`);           
+            return `
+            <div class="date-input data ${extraClasses || ''}" id="dateInput" data-type="" data-date="">
+                <div class="date-display" id="dateDisplay">Selecione uma data</div>
+                <div class="calendar" id="calendar">
+                    <div class="calendar-header">
+                        <button id="prevGroup"><i class="fa-solid fa-caret-left"></i></button>
+                        <span id="monthYearDisplay"></span>
+                        <button id="nextGroup"><i class="fa-solid fa-caret-right"></i></button>
+                    </div>              
+                    <div class="calendar-view" id="calendarView">
+                        <div class="calendar-content" id="calendarContent"></div>
+                    </div>              
+                </div>
+            </div>`;            
+        });
+
+        // Em seguida, remova as tags de fechamento </calendar>
+        html = html.replace(/<\/calendar>/g, '');
+        return html;
     }
 
     /**
@@ -693,7 +829,8 @@
         return Number(n);
     }
 
-    // Define propriedades do Number no ambiente.
+    console.log('UniForge | Atribuindo primitivos ao protótipo dos Numbers...');
+    // Atribui primitivos ao protótipo dos Numbers.
     Object.defineProperties(Number, {
         isNumeric: { value: isNumeric, configurable: true },
         fromString: { value: fromString, configurable: true }
@@ -913,6 +1050,7 @@
         return false;
     }
 
+    console.log('UniForge | Atribuindo primitivos ao protótipo dos Sets...');
     // Atribui primitivos ao protótipo de Set
     Object.defineProperties(Set.prototype, {
         difference: { value: difference, configurable: true },
@@ -967,7 +1105,8 @@
         }, []).join(' ');
     }
 
-    // Define propriedades de String no ambiente.
+    console.log('UniForge | Atribuindo primitivos ao protótipo das Strings...');
+    // Atribui primitivos ao protótipo das Strings
     Object.defineProperties(String.prototype, {
         capitalize: { value: capitalize, configurable: true },
         compare: { value: compare, configurable: true },
@@ -1049,6 +1188,14 @@
         timeSince
     };
 
+    const parser = {
+        parseHTML,
+        replacePlaceholders,
+        replaceSwitchTags,
+        replaceComboTags,
+        replaceCalendarTags
+    }
+
     // Constante Global
     /**
     * Objeto global `uniforge` que armazena configurações e instâncias relacionadas à aplicação,
@@ -1057,6 +1204,7 @@
     * @namespace uniforge
     */
 
+    console.log('UniForge | Gerando variável global \'uniforge\'...');
     globalThis.uniforge = {
         /**
          * Constantes configuráveis, como dimensões de imagem e tamanho do tile.
@@ -1124,6 +1272,13 @@
         utils: utils,
 
         /**
+        * Instância de funções auxiliares de manipulação de código HTML.
+        * 
+        * @type {Parser}
+        */
+        parser: parser,
+
+        /**
         * Referência ao formulário, utilizado em várias partes da aplicação.
         * 
         * @type {Object|null}
@@ -1157,10 +1312,11 @@
                 label: '1'
             },
             era: 'd.T.'
-        }        
+        }
     };
 
     exports.utils = utils;
+    exports.parser = parser;
 
     return exports;
 })({});

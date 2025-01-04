@@ -1,4 +1,3 @@
-import { Database } from "../../scripts/tempDB.js";
 
 /**
  * Classe BaseForm
@@ -59,7 +58,7 @@ export default class BaseForm {
       header: this.overlay.querySelector('.form-header'),
       close_btn: this.overlay.querySelector('.close-button'),
       content: this.overlay.querySelector('.form-content')
-    };
+    };    
 
     /**
      * Indica se o formulário está oculto inicialmente.
@@ -67,13 +66,17 @@ export default class BaseForm {
      */
     this.isHidden = this.ui.form.classList.contains('hidden');
 
-    if (!this.isHidden) this.ui.form.classList.add('hidden');
-
     /**
     * Indica se o formulário está renderizado corretamente.
     * @type {boolean}
     */
     this.rendered = false;
+
+    /**
+    * Indica se o formulário está configurado corretamente. Se 'sim', o formulário está pronto para ser exibido.
+    * @type {boolean}
+    */
+    this.configured = false;
 
     /**
      * Indica se o formulário está oculto inicialmente.
@@ -119,7 +122,7 @@ export default class BaseForm {
   // GETTERS E SETTERS
   /**
    * Obtém o template usado pelo Formulário.
-   * @async
+   * 
    * @returns {String}  - O caminho do template do formulário.
    */
   get template() {
@@ -127,11 +130,20 @@ export default class BaseForm {
   }
   /**
    * Determina o template usado pelo Formulário.
-   * @async
+   * 
    * @param {String}  - O caminho do template do formulário.
    */
   set template(value) {
     this.#template = `./templates/forms/${value}`;
+  }  
+
+  /**
+   * Obtém o corpo HTML do Formulário.
+   * 
+   * @returns {String}  - O corpo HTML do Formulário.
+   */
+  get body() {
+    return this.ui.content.innerHTML;
   }
 
   /**
@@ -165,8 +177,33 @@ export default class BaseForm {
     return this.data;
   }
 
+  /**
+   * Obtém o código HTML do Formulário.
+   * 
+   * @returns {String}  - O código HTML do Formulário.
+   */
+  toHTML() {
+    return this.form.outerHTML;
+  }
+
   /* ---------------------------------------------------------------------------------------------------------------- */
   // INTERFACE DE USUÁRIO
+  async renderForm() {
+    try {
+      const html = await uniforge.utils.loadTemplate(this.template);
+      this.ui.content.innerHTML = html;
+
+      // Obtém objeto com todos os dados unificados necessários para o funcionamento do formulário.
+      this.data = await this.getData();
+
+      // Configura os conteúdos específicos do formulário.
+      await this._configure();
+
+      this.rendered = true;
+    } catch (error) {
+      console.error(error);
+    }
+  }
   /**
    * Exibe o formulário e o overlay associados.
    */
@@ -207,21 +244,20 @@ export default class BaseForm {
 
         await this.configureDataContent();
 
+        this.prepareContent();
+
         if (this.activateListeners) {
           this.activateListeners(this.form);  
-          return true;
+          this.configured = true;
         } else {
-          this.msgBox.showError('Não é possível iniciar a construção do formulário. Método \'activateListeners\' não foi implementado.');
-          return false;  
+          this.msgBox.showError('Não é possível iniciar a construção do formulário. Método \'activateListeners\' não foi implementado.');          
         }
       }
       else {
-        this.msgBox.showError('Não é possível iniciar a construção do formulário. Método \'configureContent\' não foi implementado.');
-        return false;
+        this.msgBox.showError('Não é possível iniciar a construção do formulário. Método \'configureContent\' não foi implementado.');        
       }
     } catch (error) {
-      this.msgBox.showError(error.message);
-      return false;
+      this.msgBox.showError(error.message);      
     }
   }
 
@@ -264,6 +300,13 @@ export default class BaseForm {
   * @async
   */
   async configureDataContent() { }
+
+  /**
+   * Prepara o conteúdo do formulário substituindo seus placeholders e tags customizadas.
+  */
+  prepareContent() { 
+    this.form.outerHTML = uniforge.parser.parseHTML(this.form.outerHTML, this.data);
+  }
 
   /**
    * Limpa o conteúdo do formulário
@@ -310,23 +353,7 @@ export default class BaseForm {
   }
 
   /* ---------------------------------------------------------------------------------------------------------------- */
-  // UTILITÁRIOS
-  async renderForm() {
-    try {
-      const html = await uniforge.utils.loadTemplate(this.template);
-      this.ui.content.innerHTML = html;
-
-      // Obtém objeto com todos os dados unificados necessários para o funcionamento do formulário.
-      this.data = await this.getData();
-
-      // Configura os conteúdos específicos do formulário.
-      this.configured = await this._configure();
-
-      this.rendered = true;
-    } catch (error) {
-      console.error(error);
-    }
-  }
+  // UTILITÁRIOS  
   /**
    * Consulta um seletor CSS dentro do overlay principal.
    * @param {string} selector - O seletor CSS a ser buscado.

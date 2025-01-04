@@ -1,5 +1,3 @@
-import { Database } from "./tempDB.js";
-
 export class LinkTooltip {
   forgeLink(link, text, callback) {
 

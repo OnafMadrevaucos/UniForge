@@ -1,7 +1,6 @@
 import BaseForm from "../../models/forms/baseForm.js";
 import { BaseManager } from "./baseManager.js";
 import { LibraryManager, Entry } from "./libraryManager.js";
-import { Database } from "../tempDB.js";
 
 export class TimelineManager extends BaseManager {
     constructor(form) {

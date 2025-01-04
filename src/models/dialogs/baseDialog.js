@@ -63,17 +63,15 @@ export default class BaseDialog {
     /**
     * Exibe o diálogo na página.
     */
-    render() {
+    async render() {
+        await this.renderDialog()
         document.body.appendChild(this.overlay);
         this._renderWindow();
     }
 
-    async renderTemplate(fileName, data) {
-        const template = await uniforge.templates.get(fileName);
-        return template(data || {}, {
-            allowProtoMethodsByDefault: true,
-            allowProtoPropertiesByDefault: true
-        });
+    async renderDialog() {
+        const html = await uniforge.utils.loadTemplate(this.template);
+        this.ui.content.innerHTML = html;
     }
 
     /**

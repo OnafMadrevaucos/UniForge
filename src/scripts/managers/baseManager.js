@@ -1,5 +1,3 @@
-import { Database } from "../tempDB.js";
-
 export class BaseManager {
     constructor(form) {
         this.entryId = '';

@@ -1,4 +1,3 @@
-import { Database } from "../../scripts/tempDB.js";
 import { LibraryManager } from "../../scripts/managers/libraryManager.js";
 import SidebarForm from "./sidebarForm.js";
 
