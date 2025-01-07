@@ -20,26 +20,20 @@ export class EncycloForm extends EntryForm {
         this.template = 'encycloForm.html'; // Define o template do formulário.
 
         this.type = 'encyclo'; // Define o tipo do formulário.
-
-        /**
-        * O formulário é o de Enciclopédia
-        * @type {boolean}
-        */
-        this.isEncyclopedia = true;
-    }
-
+    }  
+    
+    /* ---------------------------------------------------------------------------------------------------------------- */
+    // GETTERS E SETTERS
     /**
-   * Obtém os assuntos (e suas categorias) disponíveis do banco de dados.
-   * @returns {Object} - Assuntos e suas categorias.
-   * @async
-   */
-    async getSubjects() {
-        const data = await this.db.getAllSubjects();
+    * Obtém os dados unificados necessários para o funcionamento do formulário.
+    * @implements Implemente um método filho para as especificidades de cada formulário.
+    * @async
+    * @returns {object}  - Objeto de dados unificado.
+    */
+    getData() {
+        super.getData();
 
-        for (let entry of Object.values(data)) {
-            entry.entries = Object.values(await this.db.getCategoriesFromSubject(entry.sid));
-        }
-        return data;
+        return this.data;
     }
 
     /**

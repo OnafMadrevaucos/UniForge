@@ -54,12 +54,6 @@ export default class EntryForm extends SidebarForm {
      */
     this.isEntryUpdate = false;
 
-    /**
-    * O formulário não é o de Enciclopédia
-    * @type {boolean}
-    */
-    this.isEncyclopedia = false;
-
     /** 
      * @type {Object} - Tooltip de interface do usuário. 
      * */
@@ -74,9 +68,8 @@ export default class EntryForm extends SidebarForm {
     * @async
     * @returns {object}  - Objeto de dados unificado.
     */
-  async getData() {
-    const data = await super.getData();
-    return data;  
+  getData() {
+    return super.getData();
   }
 
   /**
@@ -96,56 +89,6 @@ export default class EntryForm extends SidebarForm {
       editing: 2
     }
   };
-  /**
-   * Obtém as categorias disponíveis do banco de dados.
-   * @returns {Object} - Assuntos.
-   * @async
-   */
-  async getCategory() {
-    return await this.db.getCategoryFromRoot(this.root);
-  }
-
-  /**
-   * Obtém as importâncias de evnetos disponíveis no banco de dados.
-   * @returns {Object}  - Importâncias.
-   * @async
-   */
-  async getImportances() {
-    return await this.db.getImportances();
-  }
-
-  /**
-   * Obtém os tipos de entrada disponíveis do banco de dados.
-   * @returns {Object} - Tipos de entrada.
-   * @async
-   */
-  async getEntryTypes() {
-    return await this.db.getEntryTypes();
-  }
-
-  /**
-   * Obtém os calendários disponíveis do banco de dados.
-   * @returns {Object} - Calendários.
-   * @async
-   */
-  async getCalendars() {
-    return await this.db.getCalendars();
-  }
-
-  /**
-   * Obtém os dados unificados necessários para o funcionamento do formulário.
-   * @implements Implemente um método filho para as especificidades de cada formulário.
-   * @async
-   * @returns {object}  - Objeto de dados unificado.
-   */
-  async getData() {
-    const data = await super.getData();
-
-    data.entryTypes = await this.getEntryTypes();
-    data.categories = await this.getCategory();
-
-    return data;
-  }
   /* ---------------------------------------------------------------------------------------------------------------- */
   // INTERFACE DE USUÁRIO
    /**
@@ -313,7 +256,7 @@ export default class EntryForm extends SidebarForm {
     await super.configureDataContent();
 
     // Configura a lista de entradas dos Sidebar, adicionando ícones de exclusão.
-    this.addDeleteIconToEntryItems();
+    //this.addDeleteIconToEntryItems();
   }
 
   /**
@@ -322,12 +265,14 @@ export default class EntryForm extends SidebarForm {
    * @async
    */
   async updateDataContent() {
+    /*
     // Atualiza dados antes de atualizar tela.
     this.data = await this.getData();
     await super.updateDataContent();
 
     this.addDeleteIconToEntryItems();
     this.reactivateListeners(this.form);
+    */
   }
 
   /**

@@ -163,11 +163,20 @@ export default class BaseForm {
     this.#type = value;
   }
 
-  async getData() {
+  /**
+    * O formulário é o de Enciclopédia
+    * 
+    * @type {boolean}
+  */
+  get isEncyclopedia() {
+    return this.type == 'encyclo';
+  };
+
+  getData() {
     this.data = {
-      core: {
-        title: this.title,
-        type: this.type,
+      title: this.title,
+      type: this.type,
+      core: {        
         template: this.template,
         imageUrl: this.imageUrl,
         blankImgUrl: this.blankImgUrl
@@ -194,10 +203,27 @@ export default class BaseForm {
       this.ui.content.innerHTML = html;
 
       // Obtém objeto com todos os dados unificados necessários para o funcionamento do formulário.
-      this.data = await this.getData();
+      this.data = this.getData();
+
+      this.prepareContent();
 
       // Configura os conteúdos específicos do formulário.
       await this._configure();
+
+      this.rendered = true;
+    } catch (error) {
+      console.error(error);
+    }
+  }
+  async refreshForm() {
+    try {
+      const html = await uniforge.utils.loadTemplate(this.template);
+      this.ui.content.innerHTML = html;
+
+      // Obtém objeto com todos os dados unificados necessários para o funcionamento do formulário.
+      this.data = this.getData();
+
+      this.prepareContent();      
 
       this.rendered = true;
     } catch (error) {
@@ -214,7 +240,6 @@ export default class BaseForm {
     try {
       if (this.configured) {
         this.ui.overlay.classList.remove('hidden');
-        this.ui.form.classList.remove('hidden');
       }
     } catch (error) {
       this.msgBox.showError(error.message);
@@ -226,7 +251,6 @@ export default class BaseForm {
    */
   hideForm() {
     this.clear();
-    this.ui.form.classList.add('hidden');
     this.ui.overlay.classList.add('hidden');
   }
 
@@ -236,18 +260,23 @@ export default class BaseForm {
   async _configure() {
     try {
       // Configura os conteúdos básicos do formulário.
-      this.configureBaseContent(this.form);
+      this.configureBaseContent(this.form);      
 
       // Configura os conteúdos específicos do formulário.
       if (this.configureContent) {
+        
+
         await this.configureContent(this.form);
 
-        await this.configureDataContent();
-
-        this.prepareContent();
+        const result = await this.configureDataContent();        
 
         if (this.activateListeners) {
+          // Ativa os ouvintes de eventos básicos.
+          this.activateBaseListeners(this.form);
+
+          // Ativa os demais ouvintes.
           this.activateListeners(this.form);  
+          
           this.configured = true;
         } else {
           this.msgBox.showError('Não é possível iniciar a construção do formulário. Método \'activateListeners\' não foi implementado.');          
@@ -288,10 +317,7 @@ export default class BaseForm {
   async configureBaseContent(form) {
     // Configura o título do formulário.
     const formTitle = this.querySelector('.form-title');
-    formTitle.textContent = this.title;
-
-    // Ativa os ouvintes de eventos básicos.
-    this.activateBaseListeners(form);
+    formTitle.textContent = this.title;    
   }
 
   /**

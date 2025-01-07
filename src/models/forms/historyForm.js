@@ -23,13 +23,7 @@ export class HistoryForm extends EntryForm {
 
         this.template = 'historyForm.html'; // Define o template do formulário. 
 
-        this.type = 'history'; // Define o tipo do formulário.
-
-        /**
-         * @property {Array} importances - Os tipos de importância de eventos disponíveis para esta instância.
-         * Esta propriedade é inicializada usando o método `getImportances()` da classe pai.
-         */
-        this.importances = this.getImportances();
+        this.type = 'history'; // Define o tipo do formulário.        
 
         /**
          * @property {Object} datePickers - Um objeto que gerencia os seletores de data para registro de entradas.
@@ -49,13 +43,14 @@ export class HistoryForm extends EntryForm {
     * @async
     * @returns {object}  - Objeto de dados unificado.
     */
-    async getData() {
-        const data = await super.getData();
+    getData() {
+        super.getData();
 
-        data.calendars = await this.getCalendars();
-        data.importances = await this.getImportances();
+        this.data.entryTypes = uniforge.doc.entryTypes.toObject();
+        this.data.importances = uniforge.doc.importances.toObject();
+        this.data.calendars = uniforge.doc.calendars.toObject();
 
-        return data;
+        return this.data;
     }
 
     /* ---------------------------------------------------------------------------------------------------------------- */

@@ -15,27 +15,28 @@ export default class SidebarForm extends BaseForm {
     }
 
     /**
-   * Obtém os assuntos de uma dada origem disponíveis no banco de dados.
-   * @async
-   * @returns {Object} - Assuntos e suas categorias.
-   */
-    async getSubjects() {
-        const data = await this.db.getAllSubjects(this.type);
+     * Obtém os assuntos de uma dada origem disponíveis no banco de dados.
+     * @async
+     * @returns {Object} - Assuntos e suas categorias.
+    */
+    getFolders() {
+        let folder = null
+        if (this.isEncyclopedia) 
+            folder = uniforge.doc.subjects;
+        else 
+            folder = uniforge.doc.categories;        
 
-        for (let category of Object.values(data)) {
-            category.entries = Object.values(await this.db.getEntriesFromCategory(category.cid));
-        }
-        return data;
-    }
+        return folder;
+    }    
 
     /**
      * Obtém as entradas disponíveis em uma categoria no banco de dados.
      * @returns {Object} - Categorias.
      */
     getEntry(data) {
-        const id = data.entryId;
-        const item = Database.entries[id];
-        return (item.deleted ? null : item);
+        const id = data._id;
+        const entry = uniforge.doc.entries.get(id);
+        return entry;
     }
 
     /**
@@ -44,12 +45,10 @@ export default class SidebarForm extends BaseForm {
      * @async
      * @returns {object}  - Objeto de dados unificado.
      */
-    async getData() {
-        const data = await super.getData();
-
-        data.subjects = await this.getSubjects();
-
-        return data;
+    getData() {
+        super.getData();
+        this.data.folders = this.getFolders();
+        return this.data;
     }
 
     /**
@@ -61,33 +60,16 @@ export default class SidebarForm extends BaseForm {
             sidebar: this.querySelector('.sidebar'),
             dialog: this.querySelector('#confirmDialog')
         });        
-    }   
-
-    /**
-    * Propaga as configurações necessárias para os dados do formulário.
-    * 
-    * @async
-    */
-    async configureDataContent() {
-        await super.configureDataContent();
-
-        this.loadSidebarData();
-    }
-
-    /**
-     * Atualiza o conteúdo do formulário após alguma alteração nos dados.
-     * @async
-     */
-    async updateDataContent() {
-        this.loadSidebarData();
-    }
-
+    } 
+    
     /**
      * Limpa o conteúdo do formulário
      */
     clearContent() {
         super.clearContent();
         const folders = this.querySelectorAll('#folderList .folder');
+
+        if(folders.length == 0) return;
 
         folders.forEach(item => {
             item.classList.remove('selected');
@@ -101,8 +83,8 @@ export default class SidebarForm extends BaseForm {
      * Carrega a lista de entradas da barra lateral.
      */
     loadSidebarData() {
-        const data = this.data.subjects;
-        if (data) this.createFolderList(data);
+        const folders = this.data.folders;
+        if (folders) this.createFolderList(folders);
     }
 
     createFolderList(data) {

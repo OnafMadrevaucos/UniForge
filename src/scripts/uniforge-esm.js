@@ -594,17 +594,20 @@
      * @returns {string} - A string HTML modificada com as tags e placeholders substituídas.
      */
     function parseHTML(html, data) {
-        console.log(`UniForge | Tratando o corpo HTML...`);        
-        
-        // Substitui as tags <switch>
-        html = replaceSwitchTags(html);
-        
+        console.log(`UniForge | Tratando o corpo HTML...`);
+
         // Substitui as tags <combo>
         html = replaceComboTags(html, data);
 
         // Substitui as tags <calendar>
         html = replaceCalendarTags(html);
-        
+
+        // Substitui as tags <foldertree>
+        html = replaceFoldertreeTags(html, data);
+
+        // Substitui as tags <switch>
+        html = replaceSwitchTags(html);
+
         // Substitui os placeholders
         html = replacePlaceholders(html, data);
 
@@ -649,7 +652,7 @@
     * @param {string} html - A string HTML contendo as tags <switch>.
     * @returns {string} - A string HTML modificada com as tags <switch> substituídas.
     */
-    function replaceSwitchTags(html) { 
+    function replaceSwitchTags(html) {
         console.log('UniForge | Substituindo tags de Switch...');
 
         html = html.replace(/<switch\s+id="([^"]+)"\s*\/?>/g, (match, id) => {
@@ -685,7 +688,10 @@
                 return `<select id="${id}" class="data" name="${id}"></select>`;
             }
 
-            const options = data[valueKey].map(val => `<option value="${val.etid}">${val.label}</option>`).join('\n');
+            const options = Array.isArray(data[valueKey])
+                ? data[valueKey].map(val => `<option value="${val._id}">${val._label}</option>`).join('\n')
+                : Object.keys(data[valueKey]).map(key => `<option value="${data[valueKey][key]._id}">${data[valueKey][key]._label}</option>`).join('\n');
+
             const blankOption = blankAttr ? `<option value="${blankValue}">&#8212</option>` : '';
 
             const result = `
@@ -710,9 +716,9 @@
     function replaceCalendarTags(html) {
         console.log('UniForge | Substituindo tags de Calendar...');
 
-        html = html.replace(/<calendar\s*(class="([^"]+)")?\s*\/?>/g, (match, classAttr, extraClasses) => { 
+        html = html.replace(/<calendar\s*(class="([^"]+)")?\s*\/?>/g, (match, classAttr, extraClasses) => {
             console.log(`Correspondência encontrada: ${match}`);
-            console.log(`${extraClasses ? `Extra Classes: ${extraClasses}` : ''}`);           
+            console.log(`${extraClasses ? `Extra Classes: ${extraClasses}` : ''}`);
             return `
             <div class="date-input data ${extraClasses || ''}" id="dateInput" data-type="" data-date="">
                 <div class="date-display" id="dateDisplay">Selecione uma data</div>
@@ -726,11 +732,110 @@
                         <div class="calendar-content" id="calendarContent"></div>
                     </div>              
                 </div>
-            </div>`;            
+            </div>`;
         });
 
         // Em seguida, remova as tags de fechamento </calendar>
         html = html.replace(/<\/calendar>/g, '');
+        return html;
+    }
+
+    function replaceFoldertreeTags(html, data) {
+        console.log('UniForge | Substituindo tags de Foldertree...');
+        const regex = /<foldertree id="([^"]+)" item="([^"]+)"( data-([^>]+))?><\/foldertree>/g;
+        html = html.replace(regex, (match, id, itemKey, dataset) => {
+            console.log(`Correspondência encontrada: ${match}`);
+            console.log(`ID: ${id}, Item: ${itemKey}, ${dataset ? `Dados: ${dataset}` : ''}`);
+
+            const datasetObj = {};
+            if (dataset) {
+                const datasetPairs = dataset.split(' ');
+                for (const pair of datasetPairs) {
+                    const [key, value] = pair.split('=');
+                    datasetObj[key] = value.replace(/"/g, '');
+                }
+            }
+
+            if (!('folders' in data)) {
+                console.log(`O identificador 'folders' não foi encontrado no objeto data. Retornando um <ul> vazio.`);
+                return `<ul id="folderList" class="folder-list"></ul>`;
+            }
+
+            // Variavel para armazenar o resultado do 'replace'.
+            let result = '<ul id="folderList" class="folder-list">';
+            const folders = data.folders;
+
+            folders.forEach(folder => {
+                if (!(itemKey in folder)) {
+                    console.log(`O identificador '${itemKey}' não foi encontrado no objeto data ou a lista de itens está vazia. Retornando um <li> vazio.`);
+                    return `<li class="folder created" data-cid="${folder.cid}" data-sid="${folder.sid}" data-tid="${folder.tid ?? null}"></li>`;
+                }
+
+                const itemList = folder[itemKey];
+
+                if(itemList.length > 0) {
+                    const folderHTML =
+                        `<li class="folder created" data-cid="${folder.cid}" data-sid="${folder.sid}" data-tid="${folder.tid ?? null}">
+                            <div class="folder-header flexrow">
+                                <i class="fas fa-folder"></i>
+                                <span>${folder._label}</span>
+                            </div>
+                            <div class="folder-content">
+                                <ul class="entry-list">
+                                    ${_generateFolderItemHTML(itemKey, itemList)}
+                                </ul>
+                            </div>
+                        </li>`;
+                    
+                    result += folderHTML;
+                }
+            });
+
+            result += '</ul>';
+            return result;
+        });
+        /*
+        const matches = html.matchAll(regex);
+
+        for (const match of matches) {
+            const id = match[1];
+            const folder = match[2];
+            const item = match[3];
+            const dataset = match[4];
+
+            const datasetObj = {};
+            const datasetPairs = dataset.split(' ');
+            for (const pair of datasetPairs) {
+                const [key, value] = pair.split('=');
+                datasetObj[key] = value.replace(/"/g, '');
+            }
+
+            const folderHtml = `
+            <li class="folder created" data-cid="${datasetObj.cid}" data-sid="${datasetObj.sid}" data-tid="${datasetObj.tid}">
+                <div class="folder-header flexrow">
+                <i class="fas fa-folder"></i>
+                <span>${folder}</span>
+                </div>
+                <div class="folder-content">
+                <ul class="entry-list">
+                    <li class="entry-item flexrow" data-id="-1">
+                    <i class="fas fa-file"></i>
+                    <span></span>
+                    <a class="remove-button">
+                        <i class="fas fa-trash"></i>
+                    </a>
+                    </li>
+                </ul>
+                </div>
+            </li>
+            `;
+
+            html = html.replace(match[0], folderHtml);
+        }
+        */
+
+        // Em seguida, remova as tags de fechamento </foldertree>
+        html = html.replace(/<\/foldertree>/g, '');
         return html;
     }
 
@@ -837,7 +942,53 @@
     });
 
     /**
+    * Adiciona um método get ao Set.prototype para buscar um membro do conjunto com base no valor da propriedade _id.
+    *
+    * @method get
+    * @memberof Set.prototype
+    * @param {_id} _id - O valor da propriedade _id a ser buscado.
+    * @returns {Object|undefined} O membro do conjunto que tem a propriedade _id igual ao valor fornecido, ou undefined se não encontrar.
+    * Exemplo de uso:
+    *
+    * @example
+    * class Pessoa {
+    *   constructor(_id, nome) {
+    *     this._id = _id;
+    *     this.nome = nome;
+    *   }
+    * }
+    *
+    * // Cria um conjunto de pessoas
+    * let pessoas = new Set([
+    *   new Pessoa(1, 'João'),
+    *   new Pessoa(2, 'Maria'),
+    *   new Pessoa(3, 'Pedro')
+    * ]);
+    *
+    * // Busca uma pessoa pelo _id
+    * let pessoa = pessoas.get(2);
+    *
+    * // Verifica se a pessoa foi encontrada
+    * if (pessoa) {
+    *   console.log(`Encontrada pessoa com _id ${pessoa._id} e nome ${pessoa.nome}`);
+    * } else {
+    *   console.log('Pessoa não encontrada');
+    * }
+    */
+    function get(_id) {
+
+        // Itera sobre os membros do conjunto.        
+        for (const member of this) {
+            // Verifica se o membro tem uma propriedade _id e se ela é igual ao _id fornecido.
+            if (member._id === _id) return member;
+        }
+        return undefined;
+    }
+
+    /**
        * Retorna a diferença entre dois conjuntos.
+       * @memberof Set.prototype
+       * 
        * @param {Set} other       - Outro conjunto para comparar
        * @returns {Set}           - A diferença, definida como os objetos deste conjunto que não estão presentes no outro
        */
@@ -852,6 +1003,8 @@
 
     /**
      * Retorna a diferença simétrica entre dois conjuntos.
+     * @memberof Set.prototype
+     * 
      * @param {Set} other  - Outro conjunto.
      * @returns {Set}      - O conjunto de elementos que existem em este ou no outro, mas não em ambos.
      */
@@ -868,6 +1021,8 @@
     /**
      * Testa se este conjunto é igual a outro conjunto.
      * Os conjuntos são iguais se compartilharem os mesmos membros, independentemente da ordem.
+     * @memberof Set.prototype
+     * 
      * @param {Set} other       - Outro conjunto para comparar
      * @returns {boolean}       - Os conjuntos são iguais?
      */
@@ -882,6 +1037,8 @@
 
     /**
      * Retorna o primeiro valor do conjunto.
+     * @memberof Set.prototype
+     * 
      * @returns {*}             - O primeiro elemento do conjunto, ou undefined
      */
     function first() {
@@ -890,6 +1047,8 @@
 
     /**
      * Retorna a interseção entre dois conjuntos.
+     * @memberof Set.prototype
+     * 
      * @param {Set} other       - Outro conjunto para comparar
      * @returns {Set}           - A interseção entre ambos os conjuntos
      */
@@ -903,6 +1062,8 @@
 
     /**
      * Testa se este conjunto tem uma interseção com outro conjunto.
+     * @memberof Set.prototype
+     * 
      * @param {Set} other       - Outro conjunto para comparar
      * @returns {boolean}       - Os conjuntos se intersectam?
      */
@@ -915,6 +1076,8 @@
 
     /**
      * Retorna a união de dois conjuntos.
+     * @memberof Set.prototype
+     * 
      * @param {Set} other  - O outro conjunto.
      * @returns {Set}
      */
@@ -928,6 +1091,8 @@
     /**
      * Testa se este conjunto é um subconjunto de outro conjunto.
      * Um conjunto é um subconjunto se todos os seus membros também estiverem presentes no outro conjunto.
+     * @memberof Set.prototype
+     * 
      * @param {Set} other       - Outro conjunto que pode ser um subconjunto deste
      * @returns {boolean}       - O outro conjunto é um subconjunto deste?
      */
@@ -942,6 +1107,8 @@
 
     /**
      * Converte um conjunto em um objeto JSON mapeando seu conteúdo para um array.
+     * @memberof Set.prototype
+     * 
      * @returns {Array}           - Os elementos do conjunto como um array.
      */
     function toObject() {
@@ -950,6 +1117,8 @@
 
     /**
      * Testa se cada elemento deste conjunto satisfaz um determinado critério de teste.
+     * @memberof Set.prototype
+     * 
      * @see Array#every
      * @param {function(*,number,Set): boolean} test        - O critério de teste a ser aplicado. Os argumentos posicionais são o valor,
      *                                                      o índice de iteração e o conjunto sendo testado.
@@ -966,6 +1135,8 @@
 
     /**
      * Filtra este conjunto para criar um subconjunto de elementos que satisfaçam um determinado critério de teste.
+     * @memberof Set.prototype
+     * 
      * @see Array#filter
      * @param {function(*,number,Set): boolean} test        - O critério de teste a ser aplicado. Os argumentos posicionais são o valor,
      *                                                      o índice de iteração e o conjunto sendo filtrado.
@@ -983,6 +1154,8 @@
 
     /**
      * Encontra o primeiro elemento deste conjunto que satisfaça um determinado critério de teste.
+     * @memberof Set.prototype
+     * 
      * @see Array#find
      * @param {function(*,number,Set): boolean} test        - O critério de teste a ser aplicado. Os argumentos posicionais são o valor,
      *                                                      o índice de iteração e o conjunto sendo pesquisado.
@@ -999,6 +1172,8 @@
 
     /**
      * Cria um novo conjunto onde cada elemento é modificado por uma função de transformação fornecida.
+     * @memberof Set.prototype
+     * 
      * @see Array#map
      * @param {function(*,number,Set): boolean} transform   - A função de transformação a ser aplicada. Os argumentos posicionais são
      *                                                      o valor, o índice de iteração e o conjunto sendo transformado.
@@ -1019,6 +1194,8 @@
 
     /**
      * Cria um novo conjunto com elementos que são filtrados e transformados por uma função de redução fornecida.
+     * @memberof Set.prototype
+     * 
      * @see Array#reduce
      * @param {function(*,*,number,Set): *} reducer     - Uma função de redução aplicada a cada valor. Os argumentos posicionais são
      *                                                  o acumulador, o valor, o índice de iteração e o conjunto sendo reduzido.
@@ -1036,6 +1213,8 @@
 
     /**
      * Testa se algum elemento deste conjunto satisfaz um determinado critério de teste.
+     * @memberof Set.prototype
+     * 
      * @see Array#some
      * @param {function(*,number,Set): boolean} test    - O critério de teste a ser aplicado. Os argumentos posicionais são o valor,
      *                                                  o índice de iteração e o conjunto sendo testado.
@@ -1053,6 +1232,7 @@
     console.log('UniForge | Atribuindo primitivos ao protótipo dos Sets...');
     // Atribui primitivos ao protótipo de Set
     Object.defineProperties(Set.prototype, {
+        get: { value: get, configurable: true },
         difference: { value: difference, configurable: true },
         symmetricDifference: { value: symmetricDifference, configurable: true },
         equals: { value: equals, configurable: true },
@@ -1163,6 +1343,39 @@
             }
             original[k] = v;
         }
+    }
+
+    /**
+     * Uma função auxiliar para gerar o HTML dos itens de uma lista de pastas.
+     * @param {Array} itemList      - A lista de itens de uma pasta.
+     * @private
+     */
+    function _generateFolderItemHTML(itemKey, itemList) {
+        /* 
+        <li class="entry-item flexrow" data-id="-1">
+            <i class="fas fa-file"></i>
+            <span></span>
+            <a class="remove-button">
+                <i class="fas fa-trash"></i>
+            </a>
+        </li>
+        */
+        let html = '';    
+
+        itemList.forEach(item => {
+            const data = uniforge.doc[itemKey].get(item._id);
+            html += `
+                <li class="entry-item flexrow" data-id="${data._id}">
+                    <i class="fas fa-file"></i>
+                    <span>${data._label}</span>
+                    <a class="remove-button">
+                        <i class="fas fa-trash"></i>
+                    </a>
+                </li>\n
+            `;	
+        });   
+
+        return html;
     }
 
     const utils = {

@@ -11,6 +11,7 @@ import { LinkTooltip } from "./scripts/linkTooltip.js";
 import { NavQueue } from "./scripts/navQueue.js";
 
 import DBManager from "./db/dbManager.js";
+import DBDocuments from "./db/dbDocuments.js";
 
 // Adiciona as propriedades restantes ao objeto uniforge.
 uniforge.utils.mergeObjects(uniforge, {
@@ -125,31 +126,60 @@ uniforge.utils.mergeObjects(uniforge, {
     createElement: createElement
 });
 
-// Inicializa o Mapa, ajustando a visualização com base nas coordenadas de imagem
-const map = uniforge.map;
+document.addEventListener('DOMContentLoaded', async () => {
+    // Atalho para o Controle de Mensagens para o Usuário
+    uniforge.msgBox = uniforge.ctrls.msgBox;
+    // Atalho para o Controle de Tooltips de Entradas
+    uniforge.tooltip = uniforge.ctrls.tooltip;
 
-// Cria a camada de armazenagem das Layers do Mapa
-const drawnItems = uniforge.drawnItems;
+    uniforge.html.classList.add('uniforge');
 
-// Atalho para o Controle de Mensagens para o Usuário
-uniforge.msgBox = uniforge.ctrls.msgBox;
-// Atalho para o Controle de Tooltips de Entradas
-uniforge.tooltip = uniforge.ctrls.tooltip;
+    await configureData();
+
+    configureLeaflet();
+
+    configureTopBar();
+
+    configureForms();
+});
 
 /** 
  * ------------------------------------------------------------------
  * FUNÇÕES DE CONFIGURAÇÕES 
  * ------------------------------------------------------------------
  * */
+// Configura a ferramenta de mapas Leaflet 
+async function configureData() {
+    // Exemplo de uso com dados simulados
+    const data = {
+        subjects: await uniforge.db.getAllSubjectType(),
+        categories: await uniforge.db.getAllCategory(),
+        entries: await uniforge.db.getAllEntry(),
+        events: await uniforge.db.getAllEvent(),
+        timelines: await uniforge.db.getAllTimeline(),
+        calendars: await uniforge.db.getAllCalendars(),
+        calendarsMonths: await uniforge.db.getAllCalendarsMonths(),
+        calendarsDays: await uniforge.db.getAllCalendarsDays(),
+        calendarsDaysInMonths: await uniforge.db.getAllCalendarsDaysInMonths(),
+        roots: await uniforge.db.getAllRoots(),
+        _textImages: await uniforge.db.getAllTextImages(),
+        settings: await uniforge.db.getAllSettings(),
+        importances: await uniforge.db.getAllImportance(),
+        entryTypes: await uniforge.db.getAllEntryTypes(),
+    };
 
-// Funções de configuração dos Elements externos do aplicativo.
-function ConfigureElements() {
-    ConfigureLeaflet();
-    ConfigureTopBar();
+    uniforge.doc = new DBDocuments(data);
+    const i = 0;
 }
 
 // Configura a ferramenta de mapas Leaflet 
-function ConfigureLeaflet() {
+function configureLeaflet() {
+
+    // Inicializa o Mapa, ajustando a visualização com base nas coordenadas de imagem
+    const map = uniforge.map;
+
+    // Cria a camada de armazenagem das Layers do Mapa
+    const drawnItems = uniforge.drawnItems;
 
     // Calcula os limites de imagem com base na largura/altura
     const bounds = [[0, 0], [uniforge.contants.VIEW_HEIGHT, uniforge.contants.VIEW_WIDTH]];
@@ -178,7 +208,7 @@ function ConfigureLeaflet() {
     map.addLayer(drawnItems);
 
     // Cria os Menus de Controle do Mapa.
-    CreateControls();
+    _createControls();
 
     // Evento para capturar o desenho de polígonos
     map.on('draw:created', function (e) {
@@ -191,15 +221,113 @@ function ConfigureLeaflet() {
     });
 }
 // Configura os elementos da Topbar de Ferramentas
-function ConfigureTopBar() {
+function configureTopBar() {
     const currentYearInput = document.getElementById('currentYear');
     const timeEraSpan = document.getElementById('timeEra');
     currentYearInput.value = uniforge.time.y.label;
     timeEraSpan.textContent = uniforge.time.era;
 }
 
+function calculateZoomForTileScaleSimple(desiredTileScale) {
+    const tileSize = 165; // Tile size in pixels
+
+    // Calculate the zoom level
+    const zoomLevel = Math.log2(desiredTileScale / tileSize);
+    return Math.round(zoomLevel); // Return the nearest zoom level
+}
+
+// Função que configura os diversos forms da aplicação
+function configureForms() {
+    activateMainListeners();
+}
+// Configura o listeners que tratam os eventos dos tabs do Menu Lateral e as rotinas de fechamento do Form
+function activateMainListeners() {
+    // Lógica de UI para o Menu Lateral
+    const tabs = document.querySelectorAll('.tab');
+
+    // Lógica de UI para o Menu de Ferramentas Superior.
+    const topBar = document.getElementById('topBarContainer');
+    const toggleTab = document.getElementById('toggleTab');
+    // Lógica de UI para os botões do Menu de Ferramentas Superior.
+    const libraryBtn = document.getElementById('libraryBtn');
+    const timelineBtn = document.getElementById('timelineBtn');
+    const tenYrsBack = document.getElementById('tenYearsBack');
+    const oneYearBack = document.getElementById('yearBack');
+    const oneYearFwr = document.getElementById('yearForward');
+    const tenYrsFwr = document.getElementById('tenYearForward');
+
+    const currentYearInput = document.getElementById('currentYear');
+
+    toggleTab.addEventListener('click', () => {
+        topBar.classList.toggle('visible');
+        toggleTab.classList.toggle('visible');
+    });
+
+    libraryBtn.addEventListener('click', (event) => { onTopbarButtonClick(event); });
+    timelineBtn.addEventListener('click', (event) => { onTopbarButtonClick(event); });
+
+    tenYrsBack.addEventListener('click', (event) => { onChangeTime(event, -10); });
+    oneYearBack.addEventListener('click', (event) => { onChangeTime(event, -1); });
+    oneYearFwr.addEventListener('click', (event) => { onChangeTime(event, 1); });
+    tenYrsFwr.addEventListener('click', (event) => { onChangeTime(event, 10); });
+
+    currentYearInput.addEventListener('change', function (event) { onChangeTimeInput(event); });
+
+    // Adiciona o Listener para chamar o Form correto ao clicar nos itens do menu.
+    tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            renderForm(tab.getAttribute('data-target'));
+        });
+    });
+}
+/** 
+ * ------------------------------------------------------------------
+ * FUNÇÕES DE LISTENERS DOS FORMS
+ * ------------------------------------------------------------------
+ * */
+function onTopbarButtonClick(event) {
+    // Impedir que o clique no item desencadeie o clique fora do sidebar
+    event.stopPropagation();
+    const formContainer = document.getElementById('formContainer');
+    formContainer.classList.add('fullscreen');
+    const button = event.target.closest('.topbarBtn');
+
+    renderForm(button.getAttribute('data-target'));
+}
+
+function onChangeTime(event, amount) {
+    // Impedir que o clique no item desencadeie o clique fora do sidebar
+    event.stopPropagation();
+
+    _setTime(uniforge.time.y.value + amount);
+}
+function onChangeTimeInput(event) {
+    var value = event.target.value;
+
+    // Remove qualquer caractere que não tenha valor numérico
+    value = value.replace(/(?!^-)[^0-9]/g, '').replace(/(?!^)-/g, '');
+
+    // Se for um número atualize o Timer
+    if (value) {
+        _setTime(value);
+    } else {
+        event.target.value = uniforge.time.y.label;
+    }
+}
+
+/** 
+ * ------------------------------------------------------------------
+ * FUNÇÕES DE CONTROLE INTERNO DA PÁGINA 
+ * ------------------------------------------------------------------
+ * */
 // Cria os controles customizados do Leaflet
-function CreateControls() {
+function _createControls() {
+    // Inicializa o Mapa, ajustando a visualização com base nas coordenadas de imagem
+    const map = uniforge.map;
+
+    // Cria a camada de armazenagem das Layers do Mapa
+    const drawnItems = uniforge.drawnItems;
+
     // Cria o Menu de Controle para manipulação do mapa.
     const MainControl = L.Control.extend({
         options: {
@@ -361,111 +489,18 @@ function CreateControls() {
     map.addControl(uniforge.ctrls.main);
     map.addControl(uniforge.ctrls.draw);
 }
-
-function calculateZoomForTileScaleSimple(desiredTileScale) {
-    const tileSize = 165; // Tile size in pixels
-
-    // Calculate the zoom level
-    const zoomLevel = Math.log2(desiredTileScale / tileSize);
-    return Math.round(zoomLevel); // Return the nearest zoom level
-}
-
-// Função que configura os diversos forms da aplicação
-function ConfigureForms() {
-    ConfigureMainListeners();
-}
-// Configura o listeners que tratam os eventos dos tabs do Menu Lateral e as rotinas de fechamento do Form
-function ConfigureMainListeners() {
-    // Lógica de UI para o Menu Lateral
-    const tabs = document.querySelectorAll('.tab');
-
-    // Lógica de UI para o Menu de Ferramentas Superior.
-    const topBar = document.getElementById('topBarContainer');
-    const toggleTab = document.getElementById('toggleTab');
-    // Lógica de UI para os botões do Menu de Ferramentas Superior.
-    const libraryBtn = document.getElementById('libraryBtn');
-    const timelineBtn = document.getElementById('timelineBtn');
-    const tenYrsBack = document.getElementById('tenYearsBack');
-    const oneYearBack = document.getElementById('yearBack');
-    const oneYearFwr = document.getElementById('yearForward');
-    const tenYrsFwr = document.getElementById('tenYearForward');
-
-    const currentYearInput = document.getElementById('currentYear');
-
-    toggleTab.addEventListener('click', () => {
-        topBar.classList.toggle('visible');
-        toggleTab.classList.toggle('visible');
-    });
-
-    libraryBtn.addEventListener('click', (event) => { onTopbarButtonClick(event); });
-    timelineBtn.addEventListener('click', (event) => { onTopbarButtonClick(event); });
-
-    tenYrsBack.addEventListener('click', (event) => { onChangeTime(event, -10); });
-    oneYearBack.addEventListener('click', (event) => { onChangeTime(event, -1); });
-    oneYearFwr.addEventListener('click', (event) => { onChangeTime(event, 1); });
-    tenYrsFwr.addEventListener('click', (event) => { onChangeTime(event, 10); });
-
-    currentYearInput.addEventListener('change', function (event) { onChangeTimeInput(event); });
-
-    // Adiciona o Listener para chamar o Form correto ao clicar nos itens do menu.
-    tabs.forEach(tab => {
-        tab.addEventListener('click', () => {
-            renderForm(tab.getAttribute('data-target'));
-        });
-    });
-}
-/** 
- * ------------------------------------------------------------------
- * FUNÇÕES DE LISTENERS DOS FORMS
- * ------------------------------------------------------------------
- * */
-function onTopbarButtonClick(event) {
-    // Impedir que o clique no item desencadeie o clique fora do sidebar
-    event.stopPropagation();
-    const formContainer = document.getElementById('formContainer');
-    formContainer.classList.add('fullscreen');
-    const button = event.target.closest('.topbarBtn');
-
-    renderForm(button.getAttribute('data-target'));
-}
-
-function onChangeTime(event, amount) {
-    // Impedir que o clique no item desencadeie o clique fora do sidebar
-    event.stopPropagation();
-
-    _setTime(uniforge.time.y.value + amount);
-}
-function onChangeTimeInput(event) {
-    var value = event.target.value;
-
-    // Remove qualquer caractere que não tenha valor numérico
-    value = value.replace(/(?!^-)[^0-9]/g, '').replace(/(?!^)-/g, '');
-
-    // Se for um número atualize o Timer
-    if (value) {
-        _setTime(value);
-    } else {
-        event.target.value = uniforge.time.y.label;
-    }
-}
-
-/** 
- * ------------------------------------------------------------------
- * FUNÇÕES DE CONTROLE INTERNO DA PÁGINA 
- * ------------------------------------------------------------------
- * */
-async function renderForm(targetId, showAfter=true) {
+async function renderForm(targetId, showAfter = true) {
     const formOverlay = document.getElementById('formOverlay');
     // Mostra o overlay do formulário com animação
     formOverlay.classList.remove('hidden');
 
     // Carrega o arquivo HTML do formulário correspondente
     uniforge.form = _loadTemplate(targetId);
-    if(showAfter) await uniforge.form.showForm(true);
+    if (showAfter) await uniforge.form.showForm(true);
 }
 
 // JavaScript to load partials
-function _loadTemplate(id) {        
+function _loadTemplate(id) {
     try {
         let form = null;
 
@@ -498,7 +533,7 @@ function _loadTemplate(id) {
     } catch (error) {
         console.error('Ocorreu um erro:', error);
         return null;
-    }  
+    }
 }
 
 function _setTime(year) {
@@ -528,6 +563,9 @@ function _setTime(year) {
 
 // Calcular os limites baseados na posição e zoom atual
 function _checkMapVisibility() {
+    // Inicializa o Mapa, ajustando a visualização com base nas coordenadas de imagem
+    const map = uniforge.map;
+
     var mapBounds = map.getBounds(); // Obtém os limites da área visível do mapa
     var imageBounds = uniforge.mapOverlay.getBounds(); // Obtém os limites da uniforge.mapOverlay
 
@@ -605,13 +643,6 @@ function _calculatePrecision(bounds) {
 
     return { latPoints, lngPoints };
 }
-
-document.addEventListener('DOMContentLoaded', () => {
-    uniforge.html.classList.add('uniforge');
-
-    ConfigureElements();
-    ConfigureForms();
-});
 
 // Função para criar um elemento com classes e atributos
 function createElement(tag, attributes = {}, children = []) {

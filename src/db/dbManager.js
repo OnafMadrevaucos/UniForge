@@ -21,8 +21,6 @@ export default class DBManager {
         };
     }
 
-
-
     async getAllTables() {
         const query = 'SELECT name FROM sqlite_master WHERE type=\'table\' ORDER BY name';
         const rows = await uniforge.sql.query(query);
@@ -64,25 +62,25 @@ export default class DBManager {
                 console.log(`Tabela ${count} de ${totalQueries} deletada.`);
             }
 
-            this.createEntryTypesTable();            
-            this.createImportanceTable();            
+            this.createEntryTypesTable();
+            this.createImportanceTable();
             this.createTextImagesTable();
             this.createTimelineEventTable();
             this.createSubjectTypeTable();
             this.createCategoryTable();
-            this.createEntryTable(); 
+            this.createEntryTable();
             this.createEventTable();
             this.createTimelineTable();
-            this.createSettingsTable(); 
+            this.createSettingsTable();
 
             // Comita a transação
             await uniforge.sql.exec('COMMIT');
             return true;
-            
+
         } catch (error) {
             // Faz rollback em caso de erro
             await uniforge.sql.exec('ROLLBACK');
-            console.error('Erro ao resetar o banco de dados, operação abortada.', error);            
+            console.error('Erro ao resetar o banco de dados, operação abortada.', error);
             return false;
         }
     }
@@ -96,6 +94,8 @@ export default class DBManager {
 
         for (let row of rows) {
             const data = {
+                _id: row.clid,
+                _label: row.label,
                 clid: row.clid,
                 label: row.label,
                 months: [],
@@ -150,6 +150,11 @@ export default class DBManager {
 
         const rows = await uniforge.sql.query(query);
 
+        rows.forEach(row => {
+            row._id = row.iid,
+                row._label = row.label
+        });
+
         return rows;
     }
 
@@ -195,10 +200,38 @@ export default class DBManager {
         else return null;
     }
     async getAllCategory() {
-        let query = 'SELECT C.*, S.icon FROM category AS C ';
+        /*
+        let query = 'SELECT *, S.icon FROM category AS C ';
         query += 'INNER JOIN subjectType AS S ON S.sid = C.sid ';
         query += 'WHERE C.isDraft = 0 ORDER BY C.title;';
         const rows = await uniforge.sql.query(query);
+        */
+        let query = 'SELECT * FROM category AS C ORDER BY C.title;';
+        const rows = await uniforge.sql.query(query);
+
+        rows.forEach(row => {
+            row._id = row.cid;
+            row._label = row.title;
+        });
+
+        return rows;
+    }
+    async getAllCategoryWithEntries() {
+        query = 'SELECT C.*, S.icon FROM category AS C ';
+        query += 'INNER JOIN subjectType AS S ON S.sid = C.sid ';
+        query += 'ORDER BY S.title, C.title;';
+        const rows = await uniforge.sql.query(query);
+
+        rows.forEach(async row => {
+            row._id = row.cid;
+            row._label = row.title;
+            row.entries = await this.getEntriesFromCategory(row.cid);
+
+            row.entries.forEach(entry => {
+                entry._id = entry.eid;
+                entry._label = entry.title;
+            });
+        });
 
         return rows;
     }
@@ -261,7 +294,32 @@ export default class DBManager {
         if (rows.length >= 1) return rows[0];
         else return null;
     }
-    async getAllSubjects(root = '*') {
+    async getAllSubjects() {
+        /*
+        let query = '';
+        if (root === '*') {
+            query = 'SELECT * FROM subjectType AS S ORDER BY S.title;';
+            return await uniforge.sql.query(query);
+        } else {
+            const params = [root];
+            query = 'SELECT C.cid, C.sid, C.title, C.img, C.htmlString, C.isDraft FROM category AS C ';
+            query += 'INNER JOIN subjectType AS S ON S.sid = C.sid ';
+            query += 'WHERE S.root = ? AND C.isDraft = 0 ORDER BY S.title;';
+
+            return await uniforge.sql.query(query, params);
+        }*/
+        const query = 'SELECT * FROM subjectType AS S ORDER BY S.title;';
+        const rows = await uniforge.sql.query(query);
+
+        rows.forEach(row => {
+            row._id = row.sid;
+            row._label = row.title;
+        });
+
+        return rows;
+    }
+
+    async getAllFolders(root = '*') {
         let query = '';
         if (root === '*') {
             query = 'SELECT * FROM subjectType AS S ORDER BY S.title;';
@@ -370,11 +428,14 @@ export default class DBManager {
 
         return rows;
     }
-    async getAllEntries(withDraft = false) {
-        const query = 'SELECT * FROM entry WHERE isDraft = ?;';
-        const params = [Number(withDraft)];
+    async getAllEntries() {
+        const query = 'SELECT * FROM entry;';
+        const rows = await uniforge.sql.query(query);
 
-        const rows = await uniforge.sql.query(query, params);
+        rows.forEach(row => {
+            row._id = row.eid;
+            row._label = row.title;
+        });
 
         return rows;
     }
@@ -386,7 +447,7 @@ export default class DBManager {
         return result;
     }
     async getEntriesFromCategory(cid) {
-        let query = 'SELECT * FROM entry AS E WHERE E.cid = ?;';
+        let query = 'SELECT * FROM entry WHERE cid = ?;';
         const params = [cid];
 
         const rows = await uniforge.sql.query(query, params);
@@ -499,6 +560,156 @@ export default class DBManager {
 
         if (rows.length >= 1) return rows[0];
         else return null;
+    }
+
+    // Função para a tabela subjectType
+    async getAllSubjectType() {
+        const query = 'SELECT * FROM subjectType';
+        const result = await uniforge.sql.query(query);
+        return result.map(row => ({
+            _id: row.sid,
+            _label: row.title,
+            ...row
+        }));
+    }
+
+    // Função para a tabela category
+    async getAllCategory() {
+        const query = 'SELECT * FROM category';
+        const result = await uniforge.sql.query(query);
+        return result.map(row => ({
+            _id: row.cid,
+            _label: row.title,
+            ...row
+        }));
+    }
+
+    // Função para a tabela entry
+    async getAllEntry() {
+        const query = 'SELECT * FROM entry';
+        const result = await uniforge.sql.query(query);
+        return result.map(row => ({
+            _id: row.eid,
+            _label: row.title,
+            ...row
+        }));
+    }
+
+    // Função para a tabela event
+    async getAllEvent() {
+        const query = 'SELECT * FROM event';
+        const result = await uniforge.sql.query(query);
+        return result.map(row => ({
+            _id: row.evid,
+            ...row
+        }));
+    }
+
+    // Função para a tabela timeline
+    async getAllTimeline() {
+        const query = 'SELECT * FROM timeline';
+        const result = await uniforge.sql.query(query);
+        return result.map(row => ({
+            _id: row.tid,
+            _label: row.title,
+            ...row
+        }));
+    }
+
+    // Função para a tabela calendars
+    async getAllCalendars() {
+        const query = 'SELECT * FROM calendars';
+        const result = await uniforge.sql.query(query);
+        return result.map(row => ({
+            _id: row.clid,
+            _label: row.label,
+            ...row
+        }));
+    }
+
+    // Função para a tabela calendarsMonths
+    async getAllCalendarsMonths() {
+        const query = 'SELECT * FROM calendarsMonths';
+        const result = await uniforge.sql.query(query);
+        return result.map(row => ({
+            _id: row.clmid,
+            _label: row.label,
+            ...row
+        }));
+    }
+
+    // Função para a tabela calendarsDays
+    async getAllCalendarsDays() {
+        const query = 'SELECT * FROM calendarsDays';
+        const result = await uniforge.sql.query(query);
+        return result.map(row => ({
+            _id: row.cldid,
+            _label: row.label,
+            ...row
+        }));
+    }
+
+    // Função para a tabela calendarsDaysInMonths
+    async getAllCalendarsDaysInMonths() {
+        const query = 'SELECT * FROM calendarsDaysInMonths';
+        const result = await uniforge.sql.query(query);
+        return result.map(row => ({
+            _id: row.cldmid,
+            ...row
+        }));
+    }
+
+    // Função para a tabela roots
+    async getAllRoots() {
+        const query = 'SELECT * FROM roots';
+        const result = await uniforge.sql.query(query);
+        return result.map(row => ({
+            _id: row.root,
+            ...row
+        }));
+    }
+
+    // Função para a tabela _textImages
+    async getAllTextImages() {
+        const query = 'SELECT * FROM _textImages';
+        const result = await uniforge.sql.query(query);
+        return result.map(row => ({
+            _id: row.uuid,
+            ...row
+        }));
+    }
+
+    // Função para a tabela settings
+    async getAllSettings() {
+        const query = 'SELECT * FROM settings';
+        const result = await uniforge.sql.query(query);
+        return result.map(row => ({
+            _id: row.tag,
+            _label: row.title,
+            ...row
+        }));
+    }
+
+    // Função para a tabela importance
+    async getAllImportance() {
+        const query = 'SELECT * FROM importance';
+        const result = await uniforge.sql.query(query);
+        return result.map(row => ({
+            _id: row.iid,
+            _label: row.label,
+            ...row
+        }));
+    }
+
+    // Função para a tabela entryTypes
+    async getAllEntryTypes() {
+        const query = 'SELECT * FROM entryTypes';
+        const result = await uniforge.sql.query(query);
+        return result.map(row => ({
+            _id: row.etid,
+            _label: row.label,
+            ...row
+        }));
     }
 
     async createEntryTable() {
@@ -627,7 +838,7 @@ export default class DBManager {
         ];
 
         query = 'INSERT INTO entryTypes (etid, label, icon) ';
-        query += 'VALUES (?,?,?);';        
+        query += 'VALUES (?,?,?);';
 
         entryTypes.forEach(async entryType => {
             let params = [];
@@ -652,8 +863,8 @@ export default class DBManager {
         changes += result.changes;
 
         query = 'CREATE TABLE IF NOT EXISTS importance (iid TEXT PRIMARY KEY NOT NULL,' +
-        'label TEXT NOT NULL,' +                        // Título da importância
-        'isEntry BOOLEAN NOT NULL DEFAULT 1)';          // Se é uma importância de entrada
+            'label TEXT NOT NULL,' +                        // Título da importância
+            'isEntry BOOLEAN NOT NULL DEFAULT 1)';          // Se é uma importância de entrada
 
         result = await uniforge.sql.exec(query);
         changes += result.changes;
@@ -678,7 +889,7 @@ export default class DBManager {
 
         query = 'INSERT INTO importance (iid, label, isEntry) ';
         query += 'VALUES (?,?,?);';
-        
+
         params = [];
         params.push(this.generateUUID());
         params.push('Timeline');

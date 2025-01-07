@@ -1,6 +1,7 @@
 <div id="history" class="entries flexrow">
   <div id="sideBar" class="sidebar">
-    <h3>História</h3>
+    <h3>{{title}}</h3>
+    <foldertree id="categories" item="entries"></foldertree>
     <ul id="folderList" class="folder-list"></ul>
     <div class="footer">
       <div id="confirmDialog" class="confirmation-tooltip hidden" data-item="" data-action="">
@@ -31,11 +32,11 @@
           </div>
           <div id="importanceGroup" class="data-group combo">
             <span class="data-label">Importância </span>
-            <combo id="importance" value="importance" blank="0"/>
+            <combo id="importance" value="importances" blank="0"/>
           </div>
           <div id="dateTypeGroup" class="data-group combo">
             <span class="data-label">Calendário </span>
-            <combo id="calendarType" value="calendarTypes"/>
+            <combo id="calendarType" value="calendars"/>
           </div>
           <div class="date-info flexrow">
             <div id="startDate" class="data-group date start" data-date="">
