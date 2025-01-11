@@ -6,7 +6,6 @@ import LinkDialog from "../dialogs/linkDialog.js";
 import ImagePickerDialog from "../dialogs/imagePickerDialog.js";
 import Dialog from "../dialogs/dialog.js";
 
-
 /**
  * Classe EntryForm estende a funcionalidade da classe BaseForm para gerenciar formulários que manipulem Entradas.
  * @class
@@ -111,8 +110,8 @@ export default class EntryForm extends SidebarForm {
     const imageContainer = this.querySelector('#imageContainer');
     const infoContent = this.querySelector('.info-content');
     const mainEditor = tinymce.get('mainEditor');
-    const deleteSwitch = this.ui.header.querySelector('.switch');
-    const deleteCheckbox = this.ui.header.querySelector('#checkbox');
+    const deleteSwitch = this.querySelector('#deleteSwitch');
+    const deleteCheckbox = deleteSwitch.querySelector('#checkbox');
 
     deleteCheckbox.checked = false;
     deleteSwitch.classList.add('hidden');
@@ -129,7 +128,7 @@ export default class EntryForm extends SidebarForm {
         imageContainer.classList.remove('disabled');
 
         // Limpe qualquer conteúdo, caso uma entrada já estiver sendo manipulada.
-        if (this.currentState > this.states.newEntry) this.clearContent(this.form, false);
+        if (this.currentState > this.states.newEntry) this.clearContent(false);
 
         // Configuração dos Estados dos Botões.
         const saveButton = this.querySelector('#saveButton');
@@ -171,7 +170,7 @@ export default class EntryForm extends SidebarForm {
       } break;
       // ESTADO PADRÃO.
       default: {
-        this.clearContent(this.form);
+        this.clearContent();
 
         // Limpa todo o dataset do Header Info.
         const headerInfo = this.querySelector('.header-info');
@@ -229,57 +228,35 @@ export default class EntryForm extends SidebarForm {
     }
   }
 
+  /**
+   * Cancela a edição atual, retornando o formulário ao estado padrão.
+   * Isso fecha qualquer diálogo aberto e desativa todos os controles.
+   * @protected
+   */
+  cancel() {
+    this.controlStates(this.states.default);
+  }
+
   /* ---------------------------------------------------------------------------------------------------------------- */
   // CONFIGURAÇÃO
   /**
    * Configura o conteúdo do formulário.
    * Sobrescreve a configuração na classe pai.
-   * @param {HTMLElement} form - O elemento que representa o formulário.
-   * @async
-   */
-  async configureContent(form) {
-    await super.configureContent(form);
- 
-    // Configura o editor Tiny MCE principal .
-    await this.configureTinyMCE(); 
-
-    // Configura a caixa de diálogo de categorias.
-    this.configureSidebarDialog();
-  } 
-
-  /**
-   * Propaga as configurações necessárias para os dados do formulário.
    * 
    * @async
    */
-  async configureDataContent() {
-    await super.configureDataContent();
+  async configureContent() {
+    await super.configureContent();
 
-    // Configura a lista de entradas dos Sidebar, adicionando ícones de exclusão.
-    //this.addDeleteIconToEntryItems();
-  }
-
-  /**
-   * Atualiza o conteúdo do formulário
-   * @param {HTMLElement} form - O elemento que representa o formulário.
-   * @async
-   */
-  async updateDataContent() {
-    /*
-    // Atualiza dados antes de atualizar tela.
-    this.data = await this.getData();
-    await super.updateDataContent();
-
-    this.addDeleteIconToEntryItems();
-    this.reactivateListeners(this.form);
-    */
+    // Configura o editor Tiny MCE principal .
+    await this.configureTinyMCE(); 
   }
 
   /**
    * Limpa o conteúdo do formulário
    * @param {Boolean} clearSidebar - Flag para habilitar/desabilitar a limpeza da seleção da sidebar.
    */
-  clearContent(clearSidebar = true) {
+  clearContent(clearSidebar=true) {
     if (clearSidebar) super.clearContent();
 
     const titleInput = this.querySelector('#titleInput');
@@ -301,13 +278,7 @@ export default class EntryForm extends SidebarForm {
    * @private
    */
   configureSidebarDialog() {
-    const dialog = this.ui.dialog;
-
-    const yesBtn = this.querySelector('#confirm-yes');
-    const noBtn = this.querySelector('#confirm-no');
-
-    yesBtn.addEventListener('click', (event) => { this._doAction(event); });
-    noBtn.addEventListener('click', (event) => { this.onCancelSidebarDialogClick(event); });
+    const dialog = this.ui.dialog;    
   }
 
   /**
@@ -397,21 +368,24 @@ export default class EntryForm extends SidebarForm {
   // LISTENERS
   /**
    * Configura ouvintes de eventos básicos para o formulário.
-   * @param {HTMLElement} form - O formulário principal.
-   * @private
+   * @inheritdoc
    */
-  activateListeners(form) {
-    super.activateListeners(form)
+  activateListeners() {
+    super.activateListeners()
     const imageContainer = this.querySelector('#imageContainer');
     const displayedImage = this.querySelector('#displayedImage');
     const fileInput = this.querySelector('#hiddenFileInput');
-    const deleteCheckbox = this.ui.header.querySelector('#checkbox');
+    const deleteSwitch = this.querySelector('#deleteSwitch');
+    const deleteCheckbox = deleteSwitch.querySelector('#checkbox');
 
     const cancelButton = this.querySelector('#cancelButton');
     const newEntryButton = this.querySelector('#newEntryButton');
     const saveButton = this.querySelector('#saveButton');
 
     const entriesList = this.querySelectorAll('.entry-item');
+
+    const yesBtn = this.querySelector('#confirm-yes');
+    const noBtn = this.querySelector('#confirm-no');    
 
     deleteCheckbox.addEventListener('change', (event) => { this.onDeleteSwitchChange(event); });
 
@@ -428,8 +402,11 @@ export default class EntryForm extends SidebarForm {
 
     entriesList.forEach(item => {
       const deleteIcon = item.querySelector('.remove-button');
-      deleteIcon.addEventListener('click', (event) => { this.onDeleteEntryClick(event, item); });
+      deleteIcon.addEventListener('click', (event) => { this.onOpenDialogClick(event, item); });
     });
+
+    yesBtn.addEventListener('click', (event) => { this.onDeleteClick(event); });
+    noBtn.addEventListener('click', (event) => { this.onCancelSidebarDialogClick(event); });
   }
 
   /**
@@ -443,7 +420,7 @@ export default class EntryForm extends SidebarForm {
 
     entriesList.forEach(item => {
       const deleteIcon = item.querySelector('.remove-button');
-      deleteIcon.addEventListener('click', (event) => { this.onDeleteEntryClick(event, item); });
+      deleteIcon.addEventListener('click', (event) => { this.onOpenDialogClick(event, item); });
     });
   }
 
@@ -453,6 +430,7 @@ export default class EntryForm extends SidebarForm {
    * @protected
    */
   onDeleteSwitchChange(event) {
+    event.stopPropagation();
     this.canDelete = event.target.checked;
     const imageContainer = this.querySelector('#imageContainer');
 
@@ -619,8 +597,30 @@ export default class EntryForm extends SidebarForm {
         id: itemId,
         isEntryUpdate: this.isEntryUpdate
       }
-      await this.onSaveClick(event, options);
+      try {
+        await this.onSaveClick(event, options);
+        await this.refresh();
+      } catch (error) {
+        console.error(error);
+        this.msgBox.showError(error.message);
+      }
+
+      this.refresh();
     }
+  }
+
+  /**
+   * Remove uma entrada de uma categoria da lista.
+   * @param {Event} event - Evento de clique no botão para excluir a entrada.
+   */
+  async onDeleteClick(event) {
+    event.stopPropagation();
+    const id = this.ui.dialog.dataset.id;
+
+    if (this.isEncyclopedia) await uniforge.db.deleteCategory(id);
+    else await uniforge.db.deleteEntry(id);
+
+    await this.refresh();    
   }
 
   /**
@@ -634,8 +634,8 @@ export default class EntryForm extends SidebarForm {
     const item = event.target.closest('.entry-item');
     const itemId = item.dataset.id;
     let entry = null;
-    if (this.isEncyclopedia) entry = await uniforge.db.getCategory(itemId);
-    else entry = await uniforge.db.getEntry(itemId);
+    if (this.isEncyclopedia) entry = uniforge.doc.categories.get(itemId);
+    else entry = uniforge.doc.entries.get(itemId);
 
     if (entry) {
       const headerInfo = this.querySelector('.header-info');
@@ -671,31 +671,14 @@ export default class EntryForm extends SidebarForm {
     } else {
       this.msgBox.showWarning('Erro ao carregar a entrada.');
     }
-  }
-
-  /**
-   * Remove uma entrada de uma categoria da lista.
-   * @param {Event} event - Evento de clique no botão para excluir a entrada.
-   */
-  async onDeleteEntryAction(event) {
-    event.stopPropagation();
-    const id = this.ui.dialog.dataset.id;
-
-    if (this.isEncyclopedia) await uniforge.db.deleteCategory(id);
-    else await uniforge.db.deleteEntry(id);
-
-    this.controlStates(this.states.default);
-
-    this.updateContent();
-    this._hideDialog();
-  }
+  } 
 
   /**
    * Rotina para tratamento do tooltip de confirmação de remoção.
    * @param {Event} event - Evento de clique no ícone de exclusão.
    * @param {HTMLElement} item - O item da pasta a ser excluído.
    */
-  onDeleteEntryClick(event, item) {
+  onOpenDialogClick(event, item) {
     event.stopPropagation();
 
     const dataType = (this.isEncyclopedia ? 'do assunto' : 'da categoria');
@@ -724,7 +707,7 @@ export default class EntryForm extends SidebarForm {
   async onCancelClick(event) {
     event.stopPropagation();
 
-    this.controlStates(this.states.default);
+    this.cancel();
   }
   /**
     * Ação personalizada no editor TinyMCE para criar ou modificar links.
@@ -805,22 +788,8 @@ export default class EntryForm extends SidebarForm {
       // Atualiza a contagem de imagens no editor.
       this._updateImageCount(editor);
     }
-  }
-
-  /**
-   * Realiza uma ação com base no tipo configurado no diálogo.
-   * @private
-   * @param {Event} event - Evento disparado no botão de confirmação.
-   */
-  _doAction(event) {
-    switch (this.ui.dialog.dataset.action) {
-      case 'del': {
-        this.onDeleteEntryAction(event);
-      } break;
-      default:
-        this.msgBox.showError("Ação inválida. Não foi possível realizar a ação enviada.");
-    }
-  }
+  } 
+  
   /* ---------------------------------------------------------------------------------------------------------------- */
   // UTILITÁRIOS
   /**
@@ -954,7 +923,7 @@ export default class EntryForm extends SidebarForm {
       // Se o item não possui botão de remoção, adicione-o.
       if (!removeButton) {
         const deleteIcon = this.createDeleteIcon();
-        //deleteIcon.addEventListener('click', (event) => { this.onDeleteEntryClick(event, item); });
+        //deleteIcon.addEventListener('click', (event) => { this.onOpenDialogClick(event, item); });
         item.appendChild(deleteIcon);
       }
     });

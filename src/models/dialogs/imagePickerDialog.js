@@ -8,6 +8,11 @@ export default class FilePickerDialog extends Dialog {
         }));
     }
 
+    /**
+     * Retorna o body do diálogo com os elementos de escolha de imagem e legenda.
+     * @override
+     * @returns {Promise<HTMLDivElement>} - Retorna uma Promise que se resolve com o body do diálogo.
+     */
     async getBody() {
         // Cria o body
         const body = document.createElement('div');

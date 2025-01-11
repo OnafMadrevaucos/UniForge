@@ -87,65 +87,22 @@ export class HistoryForm extends EntryForm {
     * Configura o conteúdo do formulário associado à instância.
     * Este método sobrescreve a implementação da classe pai e adiciona configurações específicas.
     * 
-    * @override
-    * @param {HTMLElement} form - O elemento que representa o formulário a ser configurado.
+    * @inheritdoc
     */
-    async configureContent(form) {
+    async configureContent() {
         // Chama o método de configuração da classe pai para configurar o formulário base.
-        await super.configureContent(form);
+        await super.configureContent();
 
         // Configura o editor TinyMCE de floreio associado ao formulário.
         await this.configureFlavorTinyMCE();
-
-        /*
-        // Configura o seletor de importâncias de evento usando o método da classe pai.
-        await this.configureImportanceSelect(form);
-        */
-
-        /*
-        // Configura o seletor de tipos de entrada usando o método da classe pai.
-        await this.configureEntryTypeSelect(form);
-        */
-
-        /*
-        // Configura o seletor de calendários usando o método da classe pai.
-        await this.configureCalendarSelect(form);
-        */
-
-        /*
-        // Carrega os DatePickers associados ao formulário.
-        await this.configureDatePickers();
-        */
-    }
-
-    /**
-    * Carrega todo conteúdo que seja dependente de dados.
-    * @param {HTMLElement} form - O elemento que representa o formulário.
-    */
-    async configureDataContent(form) {
-        await super.configureDataContent(form);
-
-        /*
-        // Configura o seletor de importâncias de evento usando o método da classe pai.
-        await this.configureImportanceSelect(form);
-
-        // Configura o seletor de tipos de entrada usando o método da classe pai.
-        await this.configureEntryTypeSelect(form);
-
-        // Configura o seletor de calendários usando o método da classe pai.
-        await this.configureCalendarSelect(form);
-
-        // Carrega os DatePickers associados ao formulário.
-        await this.configureDatePickers();
-        */
-    }
+    }    
 
     /**
    * Limpa o conteúdo do formulário
    * 
    * @param {Boolean} clearSidebar - Flag para habilitar/desabilitar a limpeza da seleção da sidebar.
    */
-    clearContent(clearSidebar = true) {
+    clearContent(clearSidebar=true) {
         super.clearContent(clearSidebar);
 
         const flavorEditor = tinymce.get('flavorEditor');
@@ -218,11 +175,10 @@ export class HistoryForm extends EntryForm {
     // LISTENERS
     /**
     * Configura ouvintes de eventos básicos para o formulário.
-    * @protected
-    * @param {HTMLElement} form - O formulário principal.
+    * @inheritdoc
     */
-    activateListeners(form) {
-        super.activateListeners(form);
+    activateListeners() {
+        super.activateListeners();
 
         const calendarType = this.querySelector('#calendarType');
         calendarType.addEventListener('change', (event) => { this.onDateTypeChange(event); });
@@ -294,13 +250,6 @@ export class HistoryForm extends EntryForm {
                 this.msgBox.showInfo('Entrada criada com sucesso.');
             }
         }
-
-        this.clearContent(this.form);
-        const cancelButton = this.querySelector('#cancelButton');
-        cancelButton.dispatchEvent(new Event('click'));
-
-        await this.updateContent();
-        this.controlStates(this.states.default);
     }
     /**
     * Trata o evento de criação de uma nova entrada.
@@ -308,7 +257,7 @@ export class HistoryForm extends EntryForm {
     * @param {Event} event - Evento de clique no botão de Nova Entrada.
     */
     async onNewClick(event) {
-        this.clearContent(this.form, false);
+        this.clearContent(false);
         this.controlStates(this.states.editing);
     }
     /**
@@ -321,7 +270,7 @@ export class HistoryForm extends EntryForm {
         const entry = this.data.entry;        
 
         if (entry) {
-            const entryEvent = await uniforge.db.getEventOfEntry(entry.eid);
+            const entryEvent = uniforge.doc.events.get(entry.event);
             
             if (entryEvent) {                
                 this.reconfigureDatePickers(entryEvent);

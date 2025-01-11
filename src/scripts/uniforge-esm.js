@@ -655,11 +655,11 @@
     function replaceSwitchTags(html) {
         console.log('UniForge | Substituindo tags de Switch...');
 
-        html = html.replace(/<switch\s+id="([^"]+)"\s*\/?>/g, (match, id) => {
+        html = html.replace(/<switch\s*(?:id="([^"]+)")?\s*(?:class="([^"]+)")?\s*\/?>/g, (match, id, classes) => {
             console.log(`Correspondência encontrada: ${match}`);
-            console.log(`ID: ${id}`);
+            console.log(`ID: ${id ?? 'none'}, Classes: ${classes ?? 'none'}`);
             return `
-            <label class="switch" id="${id}">
+            <label ${id ? `id="${id}"` : ''} ${classes ? `class="switch ${classes}"` : 'class="switch"'}>
                 <input type="checkbox" id="checkbox">
                 <div class="slider"></div>
             </label>`;
@@ -772,67 +772,26 @@
                 }
 
                 const itemList = folder[itemKey];
+                const folderHTML =
+                    `<li class="folder created" data-cid="${folder.cid}" data-sid="${folder.sid}" data-tid="${folder.tid ?? null}">
+                        <div class="folder-header flexrow">
+                            <i class="fas fa-folder"></i>
+                            <span>${folder._label}</span>
+                        </div>
+                        <div class="folder-content">
+                            <ul class="entry-list">
+                                ${(itemList.length > 0 ? _generateFolderItemHTML(itemKey, itemList) : '')}
+                            </ul>
+                        </div>
+                    </li>`;
 
-                if(itemList.length > 0) {
-                    const folderHTML =
-                        `<li class="folder created" data-cid="${folder.cid}" data-sid="${folder.sid}" data-tid="${folder.tid ?? null}">
-                            <div class="folder-header flexrow">
-                                <i class="fas fa-folder"></i>
-                                <span>${folder._label}</span>
-                            </div>
-                            <div class="folder-content">
-                                <ul class="entry-list">
-                                    ${_generateFolderItemHTML(itemKey, itemList)}
-                                </ul>
-                            </div>
-                        </li>`;
-                    
-                    result += folderHTML;
-                }
+                result += folderHTML;
+
             });
 
             result += '</ul>';
             return result;
         });
-        /*
-        const matches = html.matchAll(regex);
-
-        for (const match of matches) {
-            const id = match[1];
-            const folder = match[2];
-            const item = match[3];
-            const dataset = match[4];
-
-            const datasetObj = {};
-            const datasetPairs = dataset.split(' ');
-            for (const pair of datasetPairs) {
-                const [key, value] = pair.split('=');
-                datasetObj[key] = value.replace(/"/g, '');
-            }
-
-            const folderHtml = `
-            <li class="folder created" data-cid="${datasetObj.cid}" data-sid="${datasetObj.sid}" data-tid="${datasetObj.tid}">
-                <div class="folder-header flexrow">
-                <i class="fas fa-folder"></i>
-                <span>${folder}</span>
-                </div>
-                <div class="folder-content">
-                <ul class="entry-list">
-                    <li class="entry-item flexrow" data-id="-1">
-                    <i class="fas fa-file"></i>
-                    <span></span>
-                    <a class="remove-button">
-                        <i class="fas fa-trash"></i>
-                    </a>
-                    </li>
-                </ul>
-                </div>
-            </li>
-            `;
-
-            html = html.replace(match[0], folderHtml);
-        }
-        */
 
         // Em seguida, remova as tags de fechamento </foldertree>
         html = html.replace(/<\/foldertree>/g, '');
@@ -1153,6 +1112,30 @@
     }
 
     /**
+    * Ordena um Set usando a mesma lógica da função sort() de um array.
+    * 
+    * @see Array#sort
+    * @returns {Set} - Um novo Set com os elementos ordenados.
+    */
+    function sort() {
+        // Converte o Set em um array.
+      const sorted = Array.from(this);
+      // Ordena o array.
+      sorted.sort((a, b) => {
+        // Verifica se os elementos têm o campo _label
+        if (a._label && b._label) {
+          // Ordena os elementos com base no campo _label
+          return a._label.localeCompare(b._label);
+        } else {
+          // Ordena os elementos com base no valor padrão
+          return a.localeCompare(b);
+        }
+      });
+      // Cria um novo Set com os elementos ordenados.
+      return new Set(sorted);
+    }
+
+    /**
      * Encontra o primeiro elemento deste conjunto que satisfaça um determinado critério de teste.
      * @memberof Set.prototype
      * 
@@ -1247,6 +1230,7 @@
         map: { value: map, configurable: true },
         reduce: { value: reduce, configurable: true },
         some: { value: some, configurable: true },
+        sort: { value: sort, configurable: true },
         toObject: { value: toObject, configurable: true }
     });
 
@@ -1360,7 +1344,7 @@
             </a>
         </li>
         */
-        let html = '';    
+        let html = '';
 
         itemList.forEach(item => {
             const data = uniforge.doc[itemKey].get(item._id);
@@ -1372,8 +1356,8 @@
                         <i class="fas fa-trash"></i>
                     </a>
                 </li>\n
-            `;	
-        });   
+            `;
+        });
 
         return html;
     }

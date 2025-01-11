@@ -9,6 +9,7 @@ import MsgBox from "./models/msgBox.js";
 
 import { LinkTooltip } from "./scripts/linkTooltip.js";
 import { NavQueue } from "./scripts/navQueue.js";
+import { registerHook, triggerHook } from "./scripts/hooks.js";
 
 import DBManager from "./db/dbManager.js";
 import DBDocuments from "./db/dbDocuments.js";
@@ -141,6 +142,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     configureTopBar();
 
     configureForms();
+
+    configureHooks();
 });
 
 /** 
@@ -151,25 +154,25 @@ document.addEventListener('DOMContentLoaded', async () => {
 // Configura a ferramenta de mapas Leaflet 
 async function configureData() {
     // Exemplo de uso com dados simulados
-    const data = {
-        subjects: await uniforge.db.getAllSubjectType(),
-        categories: await uniforge.db.getAllCategory(),
-        entries: await uniforge.db.getAllEntry(),
-        events: await uniforge.db.getAllEvent(),
-        timelines: await uniforge.db.getAllTimeline(),
-        calendars: await uniforge.db.getAllCalendars(),
-        calendarsMonths: await uniforge.db.getAllCalendarsMonths(),
-        calendarsDays: await uniforge.db.getAllCalendarsDays(),
-        calendarsDaysInMonths: await uniforge.db.getAllCalendarsDaysInMonths(),
-        roots: await uniforge.db.getAllRoots(),
-        _textImages: await uniforge.db.getAllTextImages(),
-        settings: await uniforge.db.getAllSettings(),
-        importances: await uniforge.db.getAllImportance(),
-        entryTypes: await uniforge.db.getAllEntryTypes(),
-    };
+    const data = {};
+
+    data.subjects = await uniforge.db.getAllSubjectType();
+    data.categories = await uniforge.db.getAllCategory();
+    data.entries = await uniforge.db.getAllEntry();
+    data.events = await uniforge.db.getAllEvent();
+    data.timelines = await uniforge.db.getAllTimeline();
+    data.calendars = await uniforge.db.getAllCalendars();
+    data.calendarsMonths = await uniforge.db.getAllCalendarsMonths();
+    data.calendarsDays = await uniforge.db.getAllCalendarsDays();
+    data.calendarsDaysInMonths = await uniforge.db.getAllCalendarsDaysInMonths();
+    data.roots = await uniforge.db.getAllRoots();
+    data._textImages = await uniforge.db.getAllTextImages();
+    data.settings = await uniforge.db.getAllSettings();
+    data.importances = await uniforge.db.getAllImportance();
+    data.entryTypes = await uniforge.db.getAllEntryTypes();
 
     uniforge.doc = new DBDocuments(data);
-    const i = 0;
+    return uniforge.doc;
 }
 
 // Configura a ferramenta de mapas Leaflet 
@@ -239,6 +242,10 @@ function calculateZoomForTileScaleSimple(desiredTileScale) {
 // Função que configura os diversos forms da aplicação
 function configureForms() {
     activateMainListeners();
+}
+
+function configureHooks() {
+    registerHook('beforeRenderForm', async () => { await configureData(); });
 }
 // Configura o listeners que tratam os eventos dos tabs do Menu Lateral e as rotinas de fechamento do Form
 function activateMainListeners() {
@@ -489,14 +496,39 @@ function _createControls() {
     map.addControl(uniforge.ctrls.main);
     map.addControl(uniforge.ctrls.draw);
 }
+/**
+ * Renderiza um formulário baseado em um ID de template
+ * e o exibe na tela.
+ *
+ * @param {string} targetId             - O ID do formulário a ser renderizado.
+ * @param {boolean} [showAfter=true]    - Indica se o formulário deve ser exibido imediatamente.
+ * @returns {Promise<void>}             - Uma promessa que resolve quando o formulário for renderizado e exibido.
+ * @throws {Error}                      - Se ocorrer um erro ao renderizar o formulário.
+ */
+
 async function renderForm(targetId, showAfter = true) {
     const formOverlay = document.getElementById('formOverlay');
-    // Mostra o overlay do formulário com animação
+    if (!formOverlay) {
+        console.error('O elemento de overlay não foi encontrado.');
+        return;
+    }
+
     formOverlay.classList.remove('hidden');
 
-    // Carrega o arquivo HTML do formulário correspondente
-    uniforge.form = _loadTemplate(targetId);
-    if (showAfter) await uniforge.form.showForm(true);
+    try {
+        triggerHook('beforeRender');
+
+        const form = _loadTemplate(targetId);
+        if (!form) {
+            console.error('Falha ao carregar template.');
+            return;
+        }
+
+        uniforge.form = form;
+        if (showAfter) await uniforge.form.showForm(true);
+    } catch (error) {
+        console.error('Erro ao renderizar formulário:', error);
+    }
 }
 
 // JavaScript to load partials

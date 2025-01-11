@@ -199,7 +199,7 @@ export default class Dialog extends BaseDialog {
   async render(centralize=true) {
     // Prepara o dialog para em seguida renderizá-lo.
     const result = await this._prepare()
-    super.render();
+    await super.render();
     
     if(centralize) {
       // Centralizar o diálogo no parentElement
@@ -279,6 +279,7 @@ export default class Dialog extends BaseDialog {
       this.close();
     });
     const buttons = this.querySelectorAll('.dialog-button');
+    
     Object.values(buttons).forEach(button => {
       button.addEventListener("click", (event, params = {}) => {
         this.buttons[button.id].callback(event, ...Object.values(params));

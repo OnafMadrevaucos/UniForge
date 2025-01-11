@@ -1,4 +1,5 @@
 
+import { triggerHook } from "../../scripts/hooks.js";
 /**
  * Classe BaseForm
  * Gerencia a exibição, ocultação, e interações de um formulário sobre um overlay.
@@ -58,7 +59,10 @@ export default class BaseForm {
       header: this.overlay.querySelector('.form-header'),
       close_btn: this.overlay.querySelector('.close-button'),
       content: this.overlay.querySelector('.form-content')
-    };    
+    };
+
+    // Limpa o conteúdo do formulário.
+    this.ui.content.innerHTML = '';
 
     /**
      * Indica se o formulário está oculto inicialmente.
@@ -135,7 +139,7 @@ export default class BaseForm {
    */
   set template(value) {
     this.#template = `./templates/forms/${value}`;
-  }  
+  }
 
   /**
    * Obtém o corpo HTML do Formulário.
@@ -176,7 +180,7 @@ export default class BaseForm {
     this.data = {
       title: this.title,
       type: this.type,
-      core: {        
+      core: {
         template: this.template,
         imageUrl: this.imageUrl,
         blankImgUrl: this.blankImgUrl
@@ -197,8 +201,10 @@ export default class BaseForm {
 
   /* ---------------------------------------------------------------------------------------------------------------- */
   // INTERFACE DE USUÁRIO
-  async renderForm() {
+  async render() {
     try {
+      await triggerHook('beforeRenderForm');
+
       const html = await uniforge.utils.loadTemplate(this.template);
       this.ui.content.innerHTML = html;
 
@@ -211,21 +217,17 @@ export default class BaseForm {
       await this._configure();
 
       this.rendered = true;
+      return this.rendered;
     } catch (error) {
       console.error(error);
     }
   }
-  async refreshForm() {
+  async refresh() {
     try {
-      const html = await uniforge.utils.loadTemplate(this.template);
-      this.ui.content.innerHTML = html;
+      this.clear();
+      this.rendered = false;
+      await this.render();
 
-      // Obtém objeto com todos os dados unificados necessários para o funcionamento do formulário.
-      this.data = this.getData();
-
-      this.prepareContent();      
-
-      this.rendered = true;
     } catch (error) {
       console.error(error);
     }
@@ -234,7 +236,7 @@ export default class BaseForm {
    * Exibe o formulário e o overlay associados.
    */
   async showForm(forceLoad = false) {
-    if (forceLoad && !this.rendered) await this.renderForm();
+    if (forceLoad && !this.rendered) await this.render();
     else throw new Error('Não foi possível exibir o formulário. O formulário não foi renderizado.');
 
     try {
@@ -260,33 +262,34 @@ export default class BaseForm {
   async _configure() {
     try {
       // Configura os conteúdos básicos do formulário.
-      this.configureBaseContent(this.form);      
+      this.configureBaseContent(this.form);
 
       // Configura os conteúdos específicos do formulário.
       if (this.configureContent) {
-        
 
-        await this.configureContent(this.form);
-
-        const result = await this.configureDataContent();        
+        await this.configureContent();
 
         if (this.activateListeners) {
           // Ativa os ouvintes de eventos básicos.
-          this.activateBaseListeners(this.form);
+          this.activateBaseListeners();
 
           // Ativa os demais ouvintes.
-          this.activateListeners(this.form);  
-          
+          this.activateListeners();
+
           this.configured = true;
+          return this.configured;
         } else {
-          this.msgBox.showError('Não é possível iniciar a construção do formulário. Método \'activateListeners\' não foi implementado.');          
+          this.msgBox.showError('Não é possível iniciar a construção do formulário. Método \'activateListeners\' não foi implementado.');
+          return false;
         }
       }
       else {
-        this.msgBox.showError('Não é possível iniciar a construção do formulário. Método \'configureContent\' não foi implementado.');        
+        this.msgBox.showError('Não é possível iniciar a construção do formulário. Método \'configureContent\' não foi implementado.');
+        return false;
       }
     } catch (error) {
-      this.msgBox.showError(error.message);      
+      this.msgBox.showError(error.message);
+      return false;
     }
   }
 
@@ -297,6 +300,11 @@ export default class BaseForm {
   clear(element = {}) {
     // Limpa todos os editores Tiny MCE inicializados no formulário.
     tinymce.remove();
+
+    // Limpa o conteúdo do formulário.
+    this.ui.content.innerHTML = '';
+
+    /*
     if (!element) {
       while (this.form.firstChild) {
         this.form.removeChild(this.form.firstChild);
@@ -306,6 +314,7 @@ export default class BaseForm {
         element.removeChild(element.firstChild);
       }
     }
+    */
   }
   /* ---------------------------------------------------------------------------------------------------------------- */
   // CONFIGURAÇÃO
@@ -317,7 +326,7 @@ export default class BaseForm {
   async configureBaseContent(form) {
     // Configura o título do formulário.
     const formTitle = this.querySelector('.form-title');
-    formTitle.textContent = this.title;    
+    formTitle.textContent = this.title;
   }
 
   /**
@@ -330,8 +339,8 @@ export default class BaseForm {
   /**
    * Prepara o conteúdo do formulário substituindo seus placeholders e tags customizadas.
   */
-  prepareContent() { 
-    this.form.outerHTML = uniforge.parser.parseHTML(this.form.outerHTML, this.data);
+  prepareContent() {
+    this.ui.form.innerHTML = uniforge.parser.parseHTML(this.ui.form.innerHTML, this.data);
   }
 
   /**
@@ -359,23 +368,28 @@ export default class BaseForm {
   // LISTENERS
   /**
    * Configura ouvintes de eventos básicos para o formulário.
-   * @param {HTMLElement} form - O formulário principal.
    * @private
    */
-  activateBaseListeners(form) {
-    this.ui.overlay.addEventListener('click', (event) => {
-      event.stopPropagation();
-      if (!event.target.closest('.form-container') && !event.target.closest('.content')) {
-        this.#handleNavQueueOnClose(event);
-        this.hideForm();
-      }
-    }, { once: true });
+  activateBaseListeners() {
+    const overlay = document.getElementById('formOverlay');
+    overlay.addEventListener('click', this.onOverlayClick.bind(this), {once: true});
 
-    this.ui.close_btn.addEventListener('click', (event) => {
-      event.stopPropagation();
+    const closeBtn = document.getElementById('closeForm');
+    closeBtn.addEventListener('click', this.onCloseClick.bind(this), {once: true});
+  }
+
+  onOverlayClick(event) {
+    event.stopPropagation();
+    if (!event.target.closest('.form-container') && !event.target.closest('.content')) {
       this.#handleNavQueueOnClose(event);
       this.hideForm();
-    }, { once: true });
+    }
+  }
+
+  onCloseClick(event) {
+    event.stopPropagation();
+    this.#handleNavQueueOnClose(event);
+    this.hideForm();   
   }
 
   /* ---------------------------------------------------------------------------------------------------------------- */

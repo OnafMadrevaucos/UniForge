@@ -1861,12 +1861,16 @@ folder-list .folder.created.selected .folder-header .fa-trash {
 }
 
 .folder-list .folder-content .entry-list .entry-item a {
-    display: none;
+    color: transparent;
+    display: flex;
+    flex: 1;
+    align-self: center;
+    justify-content: flex-end;
+    margin-left: 5em;
 }
 
-.folder-list .folder-content .entry-list .entry-item.selected a,
-.folder-list .folder-content .entry-list .entry-item:hover a {
-    display: block;
+.folder-list .folder-content .entry-list .entry-item.selected a{
+    color: var(--red);
 }
 
 .folder-list .folder-content .entry-list .entry-item a:hover {

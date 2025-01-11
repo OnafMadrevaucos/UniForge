@@ -168,18 +168,18 @@ export default class DBDocuments {
      */
     createEntrySet(entries, events) {
         const entrySet = new Set();
-
-        entries.forEach((entry) => {                        
-            const eventSet = new Array();
+        
+        entries.forEach((entry) => {  
+            let event = null;
             // Filtra os eventos associados à entrada atual
             events
-                .filter((event) => event.eid === entry.eid)
-                    .forEach((event) => {
-                        eventSet.push({ _id: event.evid });
+                .filter((e) => e.eid === entry.eid)
+                    .forEach((e) => {
+                        event = e.evid;
                 
             });
             // Adiciona a entrada ao conjunto, incluindo seus eventos
-            entrySet.add({ ...entry, events: eventSet });
+            entrySet.add({ ...entry, event: event });
         });
 
         return entrySet;
@@ -196,20 +196,23 @@ export default class DBDocuments {
     createCategorySet(categories, entries, events) {
         const categorySet = new Set();
 
-        categories.forEach((category) => {
-            const entrySet = new Array();
-
-            // Filtra as entradas que possuem o cid correspondente à categoria atual
-            entries
-                .filter((entry) => entry.cid === category.cid)
-                .forEach((entry) => {                    
-                    // Adiciona a entrada ao conjunto, incluindo seus eventos
-                    entrySet.push({ _id: entry.eid });
-                });
-
-            // Adiciona a categoria ao conjunto, incluindo suas entradas
-            categorySet.add({ ...category, entries: entrySet });
-        });
+        if (this.subjects) {            
+            categories.forEach((category) => {
+                const entrySet = new Array();
+                const subject = this.subjects.get(category.sid);
+    
+                // Filtra as entradas que possuem o cid correspondente à categoria atual
+                entries
+                    .filter((entry) => entry.cid === category.cid)
+                    .forEach((entry) => {                    
+                        // Adiciona a entrada ao conjunto, incluindo seus eventos
+                        entrySet.push({ _id: entry.eid });
+                    });
+    
+                // Adiciona a categoria ao conjunto, incluindo suas entradas
+                categorySet.add({ ...category, type: subject.root, entries: entrySet });
+            });
+        } else throw new Error('Não foi possível criar o Set das categorias. O Set dos subjects deve ser criado antes do de categories.');
 
         return categorySet;
     }

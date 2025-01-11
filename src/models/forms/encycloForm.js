@@ -132,13 +132,6 @@ export class EncycloForm extends EntryForm {
                 this.msgBox.showInfo('Categoria criada com sucesso.');
             }
         }
-        this.clearContent(this.form);
-
-        const cancelButton = this.querySelector('#cancelButton');
-        cancelButton.dispatchEvent(new Event('click'));
-
-        await this.updateContent();
-        this.controlStates(this.states.default);
     }
 
     /**
@@ -180,7 +173,7 @@ export class EncycloForm extends EntryForm {
    * @param {MouseEvent} event - O evento de clique duplo.
    */
     async onEntryItemDoubleClick(event) {
-        super.onEntryItemDoubleClick(event);
+        await super.onEntryItemDoubleClick(event);
         const category = this.data.entry;
 
         if (category) {            
@@ -198,7 +191,7 @@ export class EncycloForm extends EntryForm {
         const subject = await SubjectDialog.configDialog();
         if (subject) {
             await uniforge.db.addSubject(subject);
-            this.updateContent();
+            this.refresh();            
         }
     }
 }

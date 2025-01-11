@@ -1,8 +1,7 @@
 <div id="atlas" class="entries atlas flexrow">
     <div class="sidebar">
         <h3>Atlas</h3>
-        <ul id="folderList" class="folder-list">
-        </ul>
+        <foldertree id="categories" item="entries"></foldertree>
         <div class="footer">
             <div id="confirmDialog" class="confirmation-tooltip hidden" data-item="" data-action="">
                 <p id="confirmation-message"></p>
@@ -24,10 +23,7 @@
                 <fieldset class="info-content flexcol" disabled>
                     <div class="data-group check">
                         <span class="data-label">Rascunho </span>
-                        <label id="isDraftCheck" class="switch">
-                            <input type="checkbox" id="checkbox">
-                            <div class="slider"></div>
-                        </label>
+                        <switch id="isDraftSwitch"/>
                     </div>
                 </fieldset>
             </div>

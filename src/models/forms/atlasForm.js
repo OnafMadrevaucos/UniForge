@@ -110,13 +110,6 @@ export class AtlasForm extends EntryForm {
                 this.msgBox.showInfo('Entrada criada com sucesso.');
             }
         }
-        this.clearContent(this.form);
-
-        const cancelButton = this.querySelector('#cancelButton');
-        cancelButton.click();
-
-        await this.updateContent();
-        this.controlStates(this.states.default);
     }
     /**
     * Trata o evento de criação de uma nova entrada.

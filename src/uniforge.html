@@ -100,28 +100,25 @@
 
     <!-- Formulário Genérico -->
     <div id="formOverlay" class="overlay flexrow hidden">
-        <form id="formContainer" class="form-container flexrow">
+        <div id="formContainer" class="form-container flexrow">
             <div class="form-header flexrow">
                 <span class="form-title">Título</span>
-                <label class="switch hidden">
-                    <input type="checkbox" id="checkbox">
-                    <div class="slider"></div>
-                </label>
+                <switch id="deleteSwitch" class="hidden"/>
                 <a id="closeForm" class="close-button flexcol"><i class="fas fa-xmark"></i></a>
             </div>
             <div id="formContent" class="form-content flexrow"></div>
-        </form>
+        </div>
     </div>
 
     <!-- Formulário de Vizualização de Entradas -->
     <div id="entryFormOverlay" class="overlay flexrow hidden">
-        <form id="entryFormContainer" class="form-container entries article flexrow">
+        <div id="entryFormContainer" class="form-container entries article flexrow">
             <div class="form-header flexrow">
                 <span class="form-title">Título</span>                
                 <a id="closeEntryButton" class="close-button flexcol"><i class="fas fa-xmark"></i></a>
             </div>
             <div id="entryFormContent" class="form-content article-container flexcol"></div>
-        </form>
+        </div>
     </div>    
 
     <div id="map"></div>

@@ -64,7 +64,9 @@ export default class BaseDialog {
     * Exibe o diálogo na página.
     */
     async render() {
-        await this.renderDialog()
+        // Renderiza o diálogo especializado. Diálogos simples não possuem templates HTML.
+        if(this.template) await this.renderDialog()
+
         document.body.appendChild(this.overlay);
         this._renderWindow();
     }

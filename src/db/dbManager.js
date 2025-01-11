@@ -1,8 +1,8 @@
-import * as esm from '../scripts/uniforge-esm.js';
+import { registerHook, triggerHook } from "../scripts/hooks.js";
+import DBDocuments from "./dbDocuments.js";
 
 export default class DBManager {
     constructor() {
-
         this.storedProcedures = {
             createCalendarTable: () => this.createCalendarTable(),
             createMonthsTable: () => this.createMonthsTable(),
@@ -998,7 +998,7 @@ export default class DBManager {
     }
 
     generateUUID() {
-        return esm.utils.randomID();
+        return uniforge.utils.randomID();
     }
 
     buildUpdateSet(columns) {

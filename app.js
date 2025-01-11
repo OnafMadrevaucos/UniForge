@@ -3,7 +3,6 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
 import Database from 'better-sqlite3';
-import Handlebars from 'handlebars';
 
 // Para resolver o `__dirname` no modo ESM
 const __filename = fileURLToPath(import.meta.url);
@@ -33,6 +32,18 @@ app.whenReady().then(() => {
    * Combinado: Ctrl+Shift+I.
    */
   globalShortcut.register('Control+Shift+I', () => {
+    if (mainWindow.webContents.isDevToolsOpened()) {
+      mainWindow.webContents.closeDevTools();
+    } else {
+      mainWindow.webContents.openDevTools();
+    }
+  });
+
+  /**
+   * Atalho global para abrir/fechar DevTools.
+   * Combinado: F12.
+   */
+  globalShortcut.register('F12', () => {
     if (mainWindow.webContents.isDevToolsOpened()) {
       mainWindow.webContents.closeDevTools();
     } else {
@@ -99,6 +110,16 @@ function CreateWindow() {
   mainWindow.once('ready-to-show', () => {
     mainWindow.show();
   });
+
+  mainWindow.webContents.on('did-finish-load', () => {
+    // Adiciona um event listener para a tecla F5
+    mainWindow.webContents.on('before-input-event', (event, input) => {
+      if (input.key === 'F5') {
+        // Recarrega a janela principal
+        mainWindow.reload()
+      }
+    })
+  })
 
   mainWindow.on('closed', () => {
     mainWindow = null;

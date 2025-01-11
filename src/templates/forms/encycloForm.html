@@ -2,7 +2,7 @@
   <div id="sideBar" class="sidebar">
     <h3>Enciclopédia</h3>
     <a id="newSubjectButton" class="flyer-button"><i class="fa-solid fa-folder-plus"></i>  Novo Assunto</a>
-    <ul id="folderList" class="folder-list"></ul>
+    <foldertree id="subjects" item="categories"></foldertree>
     <div class="footer">
       <div id="confirmDialog" class="confirmation-tooltip hidden" data-item="" data-action="">
         <p id="confirmation-message"></p>
@@ -35,10 +35,7 @@
           </div>
           <div class="data-group check">
             <span class="data-label">Rascunho </span>
-            <label id="isDraftCheck" class="switch">
-              <input type="checkbox" id="checkbox">
-              <div class="slider"></div>
-            </label>
+            <switch id="isDraftSwitch"/>
           </div>
         </fieldset>
       </div>

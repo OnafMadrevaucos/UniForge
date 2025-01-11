@@ -20,11 +20,15 @@ export default class SidebarForm extends BaseForm {
      * @returns {Object} - Assuntos e suas categorias.
     */
     getFolders() {
-        let folder = null
-        if (this.isEncyclopedia) 
-            folder = uniforge.doc.subjects;
-        else 
-            folder = uniforge.doc.categories;        
+        let folder = uniforge.doc.subjects;
+        if (!this.isEncyclopedia){
+            if (this.type == 'article')
+                folder = uniforge.doc.categories;
+            else 
+                folder = uniforge.doc.categories.filter(category => category.type === this.type);        
+        }
+
+        folder = folder.sort();
 
         return folder;
     }    
@@ -53,9 +57,8 @@ export default class SidebarForm extends BaseForm {
 
     /**
      * Carrega todo conteúdo que seja dependente de dados.
-     * @param {HTMLElement} form - O formulário HTML principal.
     */
-    async configureContent(form) {
+    async configureContent() {
         uniforge.utils.mergeObjects(this.ui, {
             sidebar: this.querySelector('.sidebar'),
             dialog: this.querySelector('#confirmDialog')
@@ -165,12 +168,13 @@ export default class SidebarForm extends BaseForm {
      * @param {HTMLElement} form - O formulário principal.
      * @private
      */
-    activateListeners(form) {
+    activateListeners() {
         const sidebar = this.ui.sidebar;
         if (sidebar) {
             sidebar.addEventListener('click', (event) => {
+                event.stopPropagation();
                 if (event.target.classList.contains('entry-item')) return;
-                this.clearContent(form);
+                this.clearContent();
 
                 if (this.controlStates) this.controlStates(this.states.default);
             });
@@ -283,7 +287,7 @@ export default class SidebarForm extends BaseForm {
      * @private
      */
     #clearFolderList() {
-        const folderList = this.form.querySelectorAll('.folder');
+        const folderList = this.querySelectorAll('.folder');
         folderList.forEach(item => {
             item.classList.remove('selected');
             const folderIcon = item.querySelector('.fas');
@@ -299,7 +303,7 @@ export default class SidebarForm extends BaseForm {
      * @private
      */
     #clearEntryList() {
-        const itemsList = this.form.querySelectorAll('.entry-item');
+        const itemsList = this.querySelectorAll('.entry-item');
         itemsList.forEach(item => {
             item.classList.remove('selected');
             const folderIcon = item.querySelector('i');
