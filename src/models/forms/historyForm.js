@@ -258,7 +258,6 @@ export class HistoryForm extends EntryForm {
     */
     async onNewClick(event) {
         this.clearContent(false);
-        this.controlStates(this.states.editing);
     }
     /**
     * Gerencia cliques duplos em itens de entrada.

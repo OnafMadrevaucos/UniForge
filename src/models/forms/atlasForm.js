@@ -118,7 +118,6 @@ export class AtlasForm extends EntryForm {
     */
     async onNewClick(event) {
         this.clearContent(this.form, false);
-        this.controlStates(this.states.editing);
     }
     /**
     * Trata o evento de cancelamento de uma nova entrada.

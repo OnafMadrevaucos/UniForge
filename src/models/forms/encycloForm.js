@@ -66,9 +66,6 @@ export class EncycloForm extends EntryForm {
      */
     async configureContent(form) {
         await super.configureContent(form);
-
-        // Atribui o estado padrão aos controles do formulário.
-        this.controlStates(this.states.default);
     }
 
     /**
@@ -140,7 +137,6 @@ export class EncycloForm extends EntryForm {
     */
     async onNewClick(event) {
         this.clearContent(this.form, false);
-        this.controlStates(this.states.editing);
     }
 
     /**

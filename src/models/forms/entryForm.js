@@ -77,15 +77,17 @@ export default class EntryForm extends SidebarForm {
   * 
   * @type {Object<number, number>}
   * @protected
-  * @property {number} default - Representa o estado de cancelamento de uma entrada (valor 0).
+  * @property {number} default  - Representa o estado de cancelamento de uma entrada (valor 0).
   * @property {number} newEntry - Representa o estado de criação de uma nova entrada (valor 1).
-  * @property {number} editing - Representa o estado de salvamento de uma entrada (valor 2). 
+  * @property {number} adding   - Representa o estado de salvamento de uma entrada nova (valor 2).
+  * @property {number} editing  - Representa o estado de salvamento de uma entrada pré-existente (valor 3). 
   */
   get _states() {
     return {
       default: 0,
       newEntry: 1,
-      editing: 2
+      adding: 2,
+      editing: 3
     }
   };
   /* ---------------------------------------------------------------------------------------------------------------- */
@@ -143,6 +145,30 @@ export default class EntryForm extends SidebarForm {
         cancelButton.classList.add('hidden');
 
         mainEditor?.mode.set('readonly');
+      } break;
+      // ESTADO DE EDIÇÃO DE ENTRADA.
+      case this.states.adding: {
+        // Está adicionando uma Entrada nova.
+        this.isEntryUpdate = false;
+
+        // Foca no campo de Título.
+        const titleInput = this.querySelector('#titleInput');
+        titleInput.focus();
+        imageContainer.classList.remove('disabled');
+
+        deleteSwitch.classList.remove('hidden');
+
+        // Configuração dos Estados dos Botões.
+        const saveButton = this.querySelector('#saveButton');
+        const cancelButton = this.querySelector('#cancelButton');
+
+        // Configuração do label no botão de Salvar.
+        saveButton.innerHTML = '<i class="fa-regular fa-floppy-disk"></i> Salvar';
+        saveButton.classList.remove('disabled');
+
+        cancelButton.classList.remove('hidden');
+
+        mainEditor?.mode.set('design');
       } break;
       // ESTADO DE EDIÇÃO DE ENTRADA.
       case this.states.editing: {
@@ -575,6 +601,8 @@ export default class EntryForm extends SidebarForm {
       saveButton.innerHTML = '<i class="fa-regular fa-floppy-disk"></i> Salvar';
 
       await this.onNewClick(event);
+      
+      this.controlStates(this.states.newEntry);
     }
   }
 

@@ -55,10 +55,10 @@ export default class BaseForm {
      */
     this.ui = {
       overlay: this.overlay,
-      form: this.overlay.querySelector('.form-container'),
-      header: this.overlay.querySelector('.form-header'),
-      close_btn: this.overlay.querySelector('.close-button'),
-      content: this.overlay.querySelector('.form-content')
+      form: document.getElementById('formContainer'),
+      header: document.getElementById('formHeader'),
+      close_btn: document.getElementById('closeForm'),
+      content: document.getElementById('formContent')
     };
 
     // Limpa o conteúdo do formulário.
@@ -303,18 +303,6 @@ export default class BaseForm {
 
     // Limpa o conteúdo do formulário.
     this.ui.content.innerHTML = '';
-
-    /*
-    if (!element) {
-      while (this.form.firstChild) {
-        this.form.removeChild(this.form.firstChild);
-      }
-    } else {
-      while (element.firstChild) {
-        element.removeChild(element.firstChild);
-      }
-    }
-    */
   }
   /* ---------------------------------------------------------------------------------------------------------------- */
   // CONFIGURAÇÃO
@@ -330,17 +318,11 @@ export default class BaseForm {
   }
 
   /**
-  * Propaga as configurações necessárias para os dados do formulário.
-  * 
-  * @async
-  */
-  async configureDataContent() { }
-
-  /**
    * Prepara o conteúdo do formulário substituindo seus placeholders e tags customizadas.
   */
   prepareContent() {
-    this.ui.form.innerHTML = uniforge.parser.parseHTML(this.ui.form.innerHTML, this.data);
+    const preparedContent = uniforge.parser.parseHTML(this.ui.form.innerHTML, this.data);
+    this.ui.form.innerHTML = preparedContent;
   }
 
   /**
