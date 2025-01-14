@@ -55,61 +55,39 @@ export class AtlasForm extends EntryForm {
     * Trata o evento de registro de uma nova entrada.
     * @interface
     * @param {Event} event      - Evento de clique no botão de Salvar.
+    * @param {Object} data      - Dados padrão de qualquer entrada.
     * @param {Object} options   - Opções de salvamento da entrada.
     */
-    async onSaveClick(event, options = {}) {
+    async onSaveClick(event, data, options = {}) {
         event.stopPropagation();
         const isEntryUpdate = options.isEntryUpdate ?? false;
 
-        const title = (isEntryUpdate ? 'Atualizar' : 'Registrar');
-        const message = (isEntryUpdate ? 'Deseja atualizar a entrada?' : 'Deseja salvar a entrada?');
+        const headerInfo = this.querySelector('.header-info');
+        
+        uniforge.utils.mergeObjects(data, {
+            cid: headerInfo.dataset.cid,
+            etid: 0,
+            flavor: tinymce.get('captionEditor').getContent() ?? '',
+            htmlString: ''
+        });
 
-        if (await Dialog.confirm(title, message)) {
-            const headerInfo = this.querySelector('.header-info');
-
-            const imgInput = this.querySelector('#hiddenFileInput');
-            const titleInput = this.querySelector('#titleInput');
-            const draftSwitch = this.querySelector('#checkbox');
-
-            // Obtém o objeto do arquivo da imagem.
-            const file = imgInput.files[0] ?? null;
-
-            let data = {
-                etid: 0,
-                title: titleInput.value,
-                img: file?.name ?? '',
-                htmlString: '',
-                flavor: tinymce.get('captionEditor').getContent() ?? '',
-                isDraft: draftSwitch.checked,
-                cid: headerInfo.dataset.cid
-            }
-
-            // Validar os dados de entrada de Atlas.
-            const validate = uniforge.db.validateAtlasEntry(data);
-            if (validate !== '') {
-                this.msgBox.showWarning(validate);
-                return;
-            }
-
-            // Se uma imagem foi informada, prepare-a para o banco de dados.
-            uniforge.utils.mergeObjects(data, await uniforge.utils.imageToBlob(file));
-
-            // Atlas deve sempre possuir uma imagem.
-            if (!data.img) {
-                this.showError('Entrada inválida! O arquivo de imagem da Entrada não pôde ser carregado.');
-                return;
-            }
-
-            if (isEntryUpdate) {
-                data.eid = options.id;
-                await uniforge.db.updateEntry(data);
-                this.msgBox.showInfo('Entrada atualizada com sucesso.');
-            }
-            else {
-                await uniforge.db.addEntry(data);
-                this.msgBox.showInfo('Entrada criada com sucesso.');
-            }
+        // Validar os dados de entrada de Atlas.
+        const validate = uniforge.db.validateAtlasEntry(data);
+        if (validate !== '') {
+            this.msgBox.showWarning(validate);
+            return;
         }
+
+        if (isEntryUpdate) {
+            data.eid = options.id;
+            await uniforge.db.updateEntry(data);
+            this.msgBox.showInfo('Entrada atualizada com sucesso.');
+        }
+        else {
+            await uniforge.db.addEntry(data);
+            this.msgBox.showInfo('Entrada criada com sucesso.');
+        }
+
     }
     /**
     * Trata o evento de criação de uma nova entrada.
@@ -139,8 +117,8 @@ export class AtlasForm extends EntryForm {
         super.onEntryItemDoubleClick(event);
         const entry = this.data.entry;
 
-        if (entry) {              
-            tinymce.get('captionEditor').setContent(entry.flavor);            
+        if (entry) {
+            tinymce.get('captionEditor').setContent(entry.flavor);
         }
     }
 }

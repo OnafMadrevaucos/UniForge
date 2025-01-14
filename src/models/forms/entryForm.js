@@ -61,14 +61,33 @@ export default class EntryForm extends SidebarForm {
 
   /* ---------------------------------------------------------------------------------------------------------------- */
   // GETTERS E SETTERS
+
+  /**
+   * @overload
+   * Retorna um objeto com referências para elementos do formulário.
+   * 
+   * @returns {Object}  - Um objeto com as seguintes propriedades:
+   *  - overlay: O elemento HTML que contém o formulário.
+   *  - form: O elemento HTML que representa o formulário.
+   *  - header: O elemento HTML que contém o título do formulário.
+   *  - close_btn: O elemento HTML que fecha o formulário.
+   *  - content: O elemento HTML que contém o conteúdo do formulário.
+   *  - tooltip: O objeto de gerenciamento de tooltips.
+   */
+  get ui() {
+    const ui = {
+      tooltip: uniforge.tooltip
+    };
+    return uniforge.utils.mergeObjects(super.ui, ui);
+  }
   /**
     * Obtém os dados unificados necessários para o funcionamento do formulário.
     * @implements Implemente um método filho para as especificidades de cada formulário.
     * @async
     * @returns {object}  - Objeto de dados unificado.
     */
-  getData() {
-    return super.getData();
+  prepareData() {
+    return super.prepareData();
   }
 
   /**
@@ -92,16 +111,16 @@ export default class EntryForm extends SidebarForm {
   };
   /* ---------------------------------------------------------------------------------------------------------------- */
   // INTERFACE DE USUÁRIO
-   /**
-    * @inheritdoc
-   * Inicia a construção do formulário.
-   */
-   async _configure() {
+  /**
+   * @inheritdoc
+  * Inicia a construção do formulário.
+  */
+  async _configure() {
     await super._configure();
 
     // Atribui o estado padrão aos controles do formulário.
     this.controlStates(this.states.default);
-   }
+  }
   /**
    * Habilita/desabilita os controles do formulário.
    * @param {Number} state - O novo estado do formulário.
@@ -115,8 +134,7 @@ export default class EntryForm extends SidebarForm {
     const deleteSwitch = this.querySelector('#deleteSwitch');
     const deleteCheckbox = deleteSwitch.querySelector('#checkbox');
 
-    deleteCheckbox.checked = false;
-    deleteSwitch.classList.add('hidden');
+    if (this.canDelete) deleteCheckbox.click();
 
     titleInput.disabled = false;
     infoContent.disabled = false;
@@ -275,21 +293,21 @@ export default class EntryForm extends SidebarForm {
     await super.configureContent();
 
     // Configura o editor Tiny MCE principal .
-    await this.configureTinyMCE(); 
+    await this.configureTinyMCE();
   }
 
   /**
    * Limpa o conteúdo do formulário
    * @param {Boolean} clearSidebar - Flag para habilitar/desabilitar a limpeza da seleção da sidebar.
    */
-  clearContent(clearSidebar=true) {
+  clearContent(clearSidebar = true) {
     if (clearSidebar) super.clearContent();
 
     const titleInput = this.querySelector('#titleInput');
     titleInput.value = '';
 
-    const isDraftCheck = this.querySelector('#checkbox');
-    isDraftCheck.checked = false;
+    const isDraftSwitch = this.querySelector('#checkbox');
+    isDraftSwitch.checked = false;
 
     // Limpa todos os editores Tiny MCE inicializados.
     tinymce.get().forEach(editor => {
@@ -297,14 +315,14 @@ export default class EntryForm extends SidebarForm {
     });
 
     this.closeDialog();
-  }  
+  }
 
   /**
    * Configura o diálogo de categorias.
    * @private
    */
   configureSidebarDialog() {
-    const dialog = this.ui.dialog;    
+    const dialog = this.ui.dialog;
   }
 
   /**
@@ -411,7 +429,7 @@ export default class EntryForm extends SidebarForm {
     const entriesList = this.querySelectorAll('.entry-item');
 
     const yesBtn = this.querySelector('#confirm-yes');
-    const noBtn = this.querySelector('#confirm-no');    
+    const noBtn = this.querySelector('#confirm-no');
 
     deleteCheckbox.addEventListener('change', (event) => { this.onDeleteSwitchChange(event); });
 
@@ -477,13 +495,6 @@ export default class EntryForm extends SidebarForm {
 
     const clickedFolder = event.target.closest('.folder');
     const isSelected = clickedFolder.classList.contains('selected');
-
-    // Se formulário for o da Enciclopédia, e o estado do formulário seja o 'newEntry' ou 
-    // o 'default', carregue ícone do Assunto.
-    if (this.isEncyclopedia && this.currentState <= this.states.newEntry) {
-      // Carregue ícone apenas se a pasta estiver sendo selecionada.
-      if (isSelected) this._loadRootIcon(clickedFolder);
-    }
 
     // A seleção de folders somente afeta o estado do formulário, se ele estiver no 
     // estado padrão.
@@ -601,8 +612,7 @@ export default class EntryForm extends SidebarForm {
       saveButton.innerHTML = '<i class="fa-regular fa-floppy-disk"></i> Salvar';
 
       await this.onNewClick(event);
-      
-      this.controlStates(this.states.newEntry);
+      this.controlStates(this.states.adding);
     }
   }
 
@@ -620,20 +630,41 @@ export default class EntryForm extends SidebarForm {
     if (!this.onSaveClick) {
       const message = 'Método de tratamento do clique de salvamento não foi implementado no formulário filho.';
       this.msgBox.showWarning(message);
-    } else {
-      const options = {
-        id: itemId,
-        isEntryUpdate: this.isEntryUpdate
-      }
+    } else {      
       try {
-        await this.onSaveClick(event, options);
-        await this.refresh();
+        const options = {
+          id: itemId,
+          isEntryUpdate: this.isEntryUpdate
+        }
+
+        const title = (this.isEntryUpdate ? 'Atualizar' : 'Registrar');
+        let message = '';
+
+        if(this.isEncyclopedia) message = (this.isEntryUpdate ? 'Deseja atualizar a categoria?' : 'Deseja salvar a categoria?');
+        else message = (this.isEntryUpdate ? 'Deseja atualizar a entrada?' : 'Deseja salvar a entrada?');
+
+        if (await Dialog.confirm(title, message)) {
+          const imgInput = this.querySelector('#hiddenFileInput');
+          const titleInput = this.querySelector('#titleInput');
+          const draftSwitch = this.querySelector('#isDraftSwitch');
+          const draftCheckbox = draftSwitch.querySelector('#checkbox');
+
+          const data = {
+            title: titleInput.value,
+            isDraft: Number(draftCheckbox.checked),
+          };         
+
+          // Se uma imagem foi informada, prepare-a para o banco de dados.
+          uniforge.utils.mergeObjects(data, this.selectedImg);
+
+          await this.onSaveClick(event, data, options);
+        }
       } catch (error) {
         console.error(error);
         this.msgBox.showError(error.message);
       }
 
-      this.refresh();
+      await this.refresh();
     }
   }
 
@@ -648,7 +679,7 @@ export default class EntryForm extends SidebarForm {
     if (this.isEncyclopedia) await uniforge.db.deleteCategory(id);
     else await uniforge.db.deleteEntry(id);
 
-    await this.refresh();    
+    await this.refresh();
   }
 
   /**
@@ -672,10 +703,12 @@ export default class EntryForm extends SidebarForm {
 
       const displayedImage = this.querySelector('#displayedImage');
       const titleInput = this.querySelector('#titleInput');
-      const draftSwitch = this.querySelector('#checkbox');
+
+      const draftSwitch = this.querySelector('#isDraftSwitch');
+      const draftCheckbox = draftSwitch.querySelector('#checkbox');
 
       titleInput.value = entry.title;
-      draftSwitch.checked = entry.isDraft;
+      draftCheckbox.checked = entry.isDraft;
 
       if (entry.img) {
         const imageUrl = await uniforge.utils.blobToImage(entry.img, entry.ext);
@@ -699,7 +732,7 @@ export default class EntryForm extends SidebarForm {
     } else {
       this.msgBox.showWarning('Erro ao carregar a entrada.');
     }
-  } 
+  }
 
   /**
    * Rotina para tratamento do tooltip de confirmação de remoção.
@@ -816,8 +849,8 @@ export default class EntryForm extends SidebarForm {
       // Atualiza a contagem de imagens no editor.
       this._updateImageCount(editor);
     }
-  } 
-  
+  }
+
   /* ---------------------------------------------------------------------------------------------------------------- */
   // UTILITÁRIOS
   /**
@@ -900,45 +933,6 @@ export default class EntryForm extends SidebarForm {
       const data = await uniforge.db.getEntriesTextImage(uuid); // Obtém a imagem do banco de dados
       const imageURL = uniforge.utils.blobToImage(data.img, data.ext); // Converte o blob da imagem para URL
     });
-  }
-
-  /**
-   * Carrega ícone da raíz do assunto.
-   * @protected
-   * @async
-   * @param {HTMLElement} folder - Objeto com os dados da pasta do Assunto.
-   */
-  async _loadRootIcon(folder) {
-    const sid = folder.dataset.sid;
-    let subject = await uniforge.db.getSubjectRoot(sid);
-
-    if (subject) {
-      const typeLabel = this.querySelector('#typeLabel');
-      const dataIcon = this.querySelector('#dataIcon');
-      const subjectIcon = this.querySelector('#subjectIcon');
-
-      typeLabel.textContent = subject.title;
-
-      dataIcon.dataset.tooltip = subject.root.capitalize();
-      subjectIcon.classList.remove(...subjectIcon.classList);
-      subjectIcon.className = subject.icon;
-    }
-  }
-  /**
-   * Carrega ícone da raíz do assunto.
-   * @protected
-   * @async
-   */
-  async _clearRootIcon() {
-    const typeLabel = this.querySelector('#typeLabel');
-    const dataIcon = this.querySelector('#dataIcon');
-    const subjectIcon = this.querySelector('#subjectIcon');
-
-    typeLabel.innerHTML = '&#8212';
-
-    dataIcon.dataset.tooltip = 'Escolha um assunto...';
-    subjectIcon.classList.remove(...subjectIcon.classList);
-    subjectIcon.className = 'fa-regular fa-file';
   }
   /**
    * Habilita todas as entradas de uma pasta (categoria) para poderem ser atualizadas.

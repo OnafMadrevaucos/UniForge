@@ -14,32 +14,120 @@ export default class DatePicker
     this.currentMonth = this.selectedDate.month;
     this.currentYear = this.selectedDate.year;  
 
-    // Modos de visualização
-    this.currentView = 'days'; // 'days', 'months', 'years'
+    // Modos de visualização.
+    this.currentView = 'days'; // 'days', 'months', 'years'.
 
-    // Defina meses, dias e anos customizados
+    // Defina meses, dias e anos customizados.
     this.months = null;
     this.days = null;
     this.daysInMonth = null;
+
+    this.nextButtonClickCount = 0;
+    this.prevButtonClickCount = 0;
+
+    this.lastNextButtonClickTime = 0;
+    this.lastPrevButtonClickTime = 0;
+
+    this.decrementInterval = null;
+  }
+
+  get dataGroup() {
+    return document.getElementById(`${this.pickerId}`);;
+  }
+  get dateInput() {
+    return this.dataGroup.querySelector('#dateInput');
+  }
+  get dateDisplay() {
+    return this.dataGroup.querySelector('#dateDisplay');
+  }
+  get calendar() {
+    return this.dataGroup.querySelector('#calendar');
+  }
+  get calendarView() {
+    return this.dataGroup.querySelector('#calendarView');
+  }
+  get calendarContent() {
+    return this.dataGroup.querySelector('#calendarContent');
+  }
+  get monthYearDisplay() {
+    return this.dataGroup.querySelector('#monthYearDisplay');
+  }
+  get prevGroupButton() {
+    return this.dataGroup.querySelector('#prevGroup');
+  }
+  get nextGroupButton() {
+    return this.dataGroup.querySelector('#nextGroup');
   }
   
   _setupDatePicker() {  
-    this.dataGroup = document.getElementById(`${this.pickerId}`);
-
-    this.dateInput = this.dataGroup.querySelector('#dateInput');
-    this.dateDisplay = this.dataGroup.querySelector('#dateDisplay');
-    this.calendar = this.dataGroup.querySelector('#calendar');
-    this.calendarView = this.dataGroup.querySelector('#calendarView');
-    this.calendarContent = this.dataGroup.querySelector('#calendarContent');
-    this.monthYearDisplay = this.dataGroup.querySelector('#monthYearDisplay');
-    this.prevGroupButton = this.dataGroup.querySelector('#prevGroup');
-    this.nextGroupButton = this.dataGroup.querySelector('#nextGroup');
-
     // Abre ou fecha o calendário ao clicar
     this.dateInput.addEventListener('click', () => {
       this.calendar.classList.toggle('open');
     });
-  
+    
+    this.nextGroupButton.addEventListener('click', (event) => {
+      event.stopPropagation(); // Impede que o clique "vaze" para o container e feche o calendário.
+
+      this.prevButtonClickCount = 0;
+      const currentTime = Date.now();
+
+      if(this.currentView === "days") {
+        this.currentMonth++;
+        if (this.currentMonth >= this.months.length) {
+          this.currentMonth = 0;  // Volta para o primeiro mês
+          this.currentYear++;  // Incrementa o ano
+        }
+      } else if(this.currentView === "months") {
+        this.currentYear++;
+      } else if(this.currentView === "years") {
+        if (this.nextButtonClickCount < 10) {
+          this.currentYear += 10;
+        } else if (this.nextButtonClickCount < 20) {
+          this.currentYear += 100;
+        } else {
+          this.currentYear += 1000;
+        }
+
+        // A alteração no incremento de 10 para 100 e para 1000 anos deve ser feito apenas se o último clique
+        // ocorreu a menos de 500 ms.
+        if (currentTime - this.lastNextButtonClickTime < 500) this.nextButtonClickCount++;
+        this.lastNextButtonClickTime = currentTime;
+      }
+      this.updateCalendar();
+    });
+
+    // Navegação entre meses
+    this.prevGroupButton.addEventListener('click', (event) => {
+      event.stopPropagation(); // Impede que o clique "vaze" para o container e feche o calendário.
+
+      this.nextButtonClickCount = 0;
+      const currentTime = Date.now();
+
+      if(this.currentView === "days") {
+        this.currentMonth--;
+        if (this.currentMonth < 0) {
+          this.currentMonth = this.months.length - 1;  // Volta para o último mês.
+          this.currentYear--;  // Decrementa o ano.
+        }
+      } else if(this.currentView === "months") {
+        this.currentYear--;
+      } else if(this.currentView === "years") {
+        if (this.prevButtonClickCount < 10) {
+          this.currentYear -= 10;
+        } else if (this.prevButtonClickCount < 20) {
+          this.currentYear -= 100;
+        } else {
+          this.currentYear -= 1000;
+        }
+        this.prevButtonClickCount++;
+
+        // A alteração no decremento de 10 para 100 e para 1000 anos deve ser feito apenas se o último clique
+        // ocorreu a menos de 500 ms.
+        if (currentTime - this.lastPrevButtonClickTime < 500) this.prevButtonClickCount++;
+        this.lastPrevButtonClickTime = currentTime;
+      }
+      this.updateCalendar();
+    });
     
     // Fecha o calendário se clicar fora
     document.addEventListener('click', (e) => {
@@ -49,57 +137,24 @@ export default class DatePicker
   
         this.calendar.classList.remove('open');
       }
-    });
-    
-
-    this.nextGroupButton.addEventListener('click', (event) => {
-      event.stopPropagation(); // Impede que o clique "vaze" para o container e feche o calendário
-      if(this.currentView === "days") {
-        this.currentMonth++;
-        if (this.currentMonth >= this.months.length) {
-          this.currentMonth = 0;  // Volta para o primeiro mês
-          this.currentYear++;  // Incrementa o ano
-        }
-      } else 
-      {
-        this.currentYear++;
-        if (this.currentView === "years") {
-          showYears();
-        }
-      }
-      this.updateCalendar();
-    });
+    });  
   
     // Alterna a visualização de acordo com o clique no monthYearDisplay
     this.monthYearDisplay.addEventListener('click', (event) => {
-      event.stopPropagation(); // Impede que o clique "vaze" para o container e feche o calendário
-      if (this.currentView === 'days') {
-        this.currentView = 'months';  // Primeira troca: mostra meses do ano
-      } else if (this.currentView === 'months') {
-        this.currentView = 'years';  // Segunda troca: mostra anos
-      } else if (this.currentView === 'years') {
-        this.currentView = 'days';  // Terceira troca: volta para dias
-      }
-      this.updateCalendar();
-    });
+      event.stopPropagation(); // Impede que o clique "vaze" para o container e feche o calendário.
 
-    // Navegação entre meses
-    this.prevGroupButton.addEventListener('click', (event) => {
-      event.stopPropagation(); // Impede que o clique "vaze" para o container e feche o calendário
-      if(this.currentView === "days") {
-        this.currentMonth--;
-        if (this.currentMonth < 0) {
-          this.currentMonth = this.months.length - 1;  // Volta para o último mês
-          this.currentYear--;  // Decrementa o ano
-        }
-      } else {
-        this.currentYear--;
-        if (this.currentView === "years") {
-          showYears();
-        }
+      this.nextButtonClickCount = 0;
+      this.prevButtonClickCount = 0;
+
+      if (this.currentView === 'days') {
+        this.currentView = 'months';  // Primeira troca: mostra meses do ano.
+      } else if (this.currentView === 'months') {
+        this.currentView = 'years';  // Segunda troca: mostra anos.
+      } else if (this.currentView === 'years') {
+        this.currentView = 'days';  // Terceira troca: volta para dias.
       }
       this.updateCalendar();
-    });
+    });    
 
     this.ready = true;
   }
@@ -125,6 +180,20 @@ export default class DatePicker
   // Função para atualizar o calendário conforme o modo
   updateCalendar() {
     this.refreshCalendar();
+
+    if (this.currentView === "years") {
+      clearInterval(this.decrementInterval);
+      this.decrementInterval = setInterval(() => {
+        if (this.nextButtonClickCount > 0) {
+          this.nextButtonClickCount--;
+        }
+        if (this.prevButtonClickCount > 0) {
+          this.prevButtonClickCount--;
+        }
+      }, 1000); // Decrementa as contagens a cada 1 segundo de inatividade.
+    } else {
+      clearInterval(this.decrementInterval);
+    }
 
     this.changeView(this.currentView);
   }

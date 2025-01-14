@@ -24,7 +24,7 @@ export default class DBDocuments {
      * @param {Array<Object>} data.importances - Dados da tabela importance.
      * @param {Array<Object>} data.entryTypes - Dados da tabela entryTypes.
      */
-    constructor(data) {
+    constructor(data) {        
         this.subjects = this.createSubjectTypeSet(data.subjects, data.categories, data.entries, data.events);
         this.timelines = this.createTimelineSet(data.timelines, data.events, data._timelineEvents);
         this.calendars = this.createCalendarsMergedSet(data.calendars, data.calendarsMonths, data.calendarsDays, data.calendarsDaysInMonths);
@@ -36,7 +36,29 @@ export default class DBDocuments {
         this.settings = this.createSimpleSet(data.settings);
         this.importances = this.createSimpleSet(data.importances);
         this.entryTypes = this.createSimpleSet(data.entryTypes);
-    }    
+    }
+
+    static async UniForgeData() {
+        // Exemplo de uso com dados simulados
+        const data = {};
+
+        data.subjects = await uniforge.db.getAllSubjectType();
+        data.categories = await uniforge.db.getAllCategory();
+        data.entries = await uniforge.db.getAllEntry();
+        data.events = await uniforge.db.getAllEvent();
+        data.timelines = await uniforge.db.getAllTimeline();
+        data.calendars = await uniforge.db.getAllCalendars();
+        data.calendarsMonths = await uniforge.db.getAllCalendarsMonths();
+        data.calendarsDays = await uniforge.db.getAllCalendarsDays();
+        data.calendarsDaysInMonths = await uniforge.db.getAllCalendarsDaysInMonths();
+        data.roots = await uniforge.db.getAllRoots();
+        data._textImages = await uniforge.db.getAllTextImages();
+        data.settings = await uniforge.db.getAllSettings();
+        data.importances = await uniforge.db.getAllImportance();
+        data.entryTypes = await uniforge.db.getAllEntryTypes();
+
+        return data;
+    }
 
     /**
      * Cria um conjunto de SubjectTypes, contendo categorias, entradas e eventos relacionados.
@@ -58,7 +80,7 @@ export default class DBDocuments {
                 .filter((category) => category.sid === subjectType.sid)
                 .forEach((category) => {
                     // Adiciona a categoria ao conjunto, incluindo suas entradas
-                    categorySet.push({ _id: category.cid});
+                    categorySet.push({ _id: category.cid });
                 });
 
             // Adiciona o SubjectType ao conjunto, incluindo suas categorias
@@ -168,16 +190,15 @@ export default class DBDocuments {
      */
     createEntrySet(entries, events) {
         const entrySet = new Set();
-        
-        entries.forEach((entry) => {  
+
+        entries.forEach((entry) => {
             let event = null;
             // Filtra os eventos associados à entrada atual
             events
                 .filter((e) => e.eid === entry.eid)
-                    .forEach((e) => {
-                        event = e.evid;
-                
-            });
+                .forEach((e) => {
+                    event = e.evid;
+                });
             // Adiciona a entrada ao conjunto, incluindo seus eventos
             entrySet.add({ ...entry, event: event });
         });
@@ -196,19 +217,19 @@ export default class DBDocuments {
     createCategorySet(categories, entries, events) {
         const categorySet = new Set();
 
-        if (this.subjects) {            
+        if (this.subjects) {
             categories.forEach((category) => {
                 const entrySet = new Array();
                 const subject = this.subjects.get(category.sid);
-    
+
                 // Filtra as entradas que possuem o cid correspondente à categoria atual
                 entries
                     .filter((entry) => entry.cid === category.cid)
-                    .forEach((entry) => {                    
+                    .forEach((entry) => {
                         // Adiciona a entrada ao conjunto, incluindo seus eventos
                         entrySet.push({ _id: entry.eid });
                     });
-    
+
                 // Adiciona a categoria ao conjunto, incluindo suas entradas
                 categorySet.add({ ...category, type: subject.root, entries: entrySet });
             });

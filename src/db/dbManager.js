@@ -165,7 +165,7 @@ export default class DBManager {
         params.push(this.generateUUID());
         params.push(data.sid);
         params.push(data.title);
-        params.push(data.img ?? null);
+        params.push(data.rawData ?? null);
         params.push(data.ext ?? 'jpeg');
         params.push(data.htmlString);
         params.push(Number(data.isDraft));
@@ -179,11 +179,11 @@ export default class DBManager {
         const updateSet = this.buildUpdateSet([
             ['sid', data.sid],
             ['title', data.title],
-            ['img', data.img],
+            ['img', data.rawData],
             ['ext', data.ext],
             ['htmlString', data.htmlString],
             ['isDraft', Number(data.isDraft)]
-        ]);
+        ], { withNulls: true });
 
         let query = `UPDATE category SET ${updateSet} WHERE cid = ?`;
         let params = [data.cid];
@@ -346,7 +346,7 @@ export default class DBManager {
         params.push(data.title);
         params.push(data.flavor);
         params.push(data.htmlString);
-        params.push(data.img ?? null);
+        params.push(data.rawData ?? null);
         params.push(data.ext ?? 'jpeg');
         params.push(Number(data.isDraft));
 
@@ -361,11 +361,11 @@ export default class DBManager {
             ['title', data.title],
             ['flavor', data.flavor],
             ['htmlString', data.htmlString],
-            ['isDraft', data.isDraft],
+            ['isDraft', Number(data.isDraft)],
             ['cid', data.cid],
             ['ext', data.ext],
-            ['img', data.img]
-        ]);
+            ['img', data.rawData]
+        ], { withNulls: true });
 
         let query = `UPDATE entry SET ${updateSet} WHERE eid = ?`;
         let params = [data.eid];
@@ -947,10 +947,22 @@ export default class DBManager {
         return await uniforge.sql.exec(query);
     }
 
+    /**
+     * Executa uma consulta SQL no banco de dados.
+     * @param {string} query - A consulta SQL a ser executada.
+     * @param {Array} [params=[]] - Parâmetros opcionais para a consulta.
+     * @returns {Object} - Resultado da execução.
+     * @throws {Error} - Caso ocorra algum erro no banco de dados.
+     */
     async execQuery(query, params = []) {
         return await uniforge.sql.exec(query, params);
     }
 
+    /**
+     * Valida se os dados de uma Categoria são válidos.
+     * @param {Object} data - Dados da Categoria a ser validada.
+     * @returns {string} - Erro(s) encontrado(s) ou uma string vazia se a Categoria for válida.
+     */
     validateCategory(data) {
 
         if (!data.sid || data.sid < 1)
@@ -961,6 +973,11 @@ export default class DBManager {
         return '';
     }
 
+    /**
+     * Valida se os dados de uma Entrada de Atlas são válidos.
+     * @param {Object} data - Dados da Entrada a ser validada.
+     * @returns {string} - Erro(s) encontrado(s) ou uma string vazia se a Entrada for válida.
+     */
     validateAtlasEntry(data) {
 
         if (!data.cid || data.cid < 1)
@@ -969,12 +986,17 @@ export default class DBManager {
             return 'O identificador de Categoria da Entrada é inválido.';
         if (!data.title || data.title == '')
             return 'É necessário informar um título válido para a Entrada.';
-        if (!data.img || data.img == '')
+        if (!data.rawData || data.rawData == '')
             return 'É necessário informar uma imagem válida para a Entrada de Atlas.';
 
         return '';
     }
 
+    /**
+     * Valida se os dados de uma Entrada de Evento Histórico são válidos.
+     * @param {Object} data - Dados da Entrada a ser validada.
+     * @returns {string} - Erro(s) encontrado(s) ou uma string vazia se a Entrada for válida.
+     */
     validateEventEntry(data) {
 
         if (!data.cid || data.cid < 1)
@@ -997,14 +1019,22 @@ export default class DBManager {
         return '';
     }
 
+    /**
+     * Gera um identificador único aleatório (UUID) em formato de string de 16 caracteres.
+     * @returns {string} O UUID gerado.
+     */
     generateUUID() {
         return uniforge.utils.randomID();
     }
 
-    buildUpdateSet(columns) {
+    buildUpdateSet(columns, updateOptions={}) {
+        const withNulls = updateOptions.withNulls || false;
+
         const updateSet = columns
-            .filter(([label, value]) => label.trim() && value !== null && value !== undefined && value !== '') // Remove colunas ou valores vazios
+            .filter(([label, value]) => label.trim() && (withNulls || value !== null && value !== undefined && value !== '')) // Remove colunas ou valores vazios
             .map(([label, value]) => {
+                if(value === undefined || value === '') value = null;
+                
                 if (typeof value === 'string') {
                     // Strings cercadas por aspas simples
                     return `${label} = '${value}'`;

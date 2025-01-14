@@ -153,24 +153,7 @@ document.addEventListener('DOMContentLoaded', async () => {
  * */
 // Configura a ferramenta de mapas Leaflet 
 async function configureData() {
-    // Exemplo de uso com dados simulados
-    const data = {};
-
-    data.subjects = await uniforge.db.getAllSubjectType();
-    data.categories = await uniforge.db.getAllCategory();
-    data.entries = await uniforge.db.getAllEntry();
-    data.events = await uniforge.db.getAllEvent();
-    data.timelines = await uniforge.db.getAllTimeline();
-    data.calendars = await uniforge.db.getAllCalendars();
-    data.calendarsMonths = await uniforge.db.getAllCalendarsMonths();
-    data.calendarsDays = await uniforge.db.getAllCalendarsDays();
-    data.calendarsDaysInMonths = await uniforge.db.getAllCalendarsDaysInMonths();
-    data.roots = await uniforge.db.getAllRoots();
-    data._textImages = await uniforge.db.getAllTextImages();
-    data.settings = await uniforge.db.getAllSettings();
-    data.importances = await uniforge.db.getAllImportance();
-    data.entryTypes = await uniforge.db.getAllEntryTypes();
-
+    const data = await DBDocuments.UniForgeData();
     uniforge.doc = new DBDocuments(data);
     return uniforge.doc;
 }
@@ -239,9 +222,23 @@ function calculateZoomForTileScaleSimple(desiredTileScale) {
     return Math.round(zoomLevel); // Return the nearest zoom level
 }
 
-// Função que configura os diversos forms da aplicação
+// Função que configura os diversos forms da aplicação.
 function configureForms() {
     activateMainListeners();
+
+    configureMainForm();
+    configureEntryForm();
+}
+function configureMainForm() {
+    const mainForm = document.getElementById('formContainer');
+    const preparedContent = uniforge.parser.parseHTML(mainForm.innerHTML, {});
+    mainForm.innerHTML = preparedContent;
+}
+
+function configureEntryForm() {
+    const entryForm = document.getElementById('entryFormContainer');
+    const preparedContent = uniforge.parser.parseHTML(entryForm.innerHTML, {});
+    entryForm.innerHTML = preparedContent;
 }
 
 function configureHooks() {

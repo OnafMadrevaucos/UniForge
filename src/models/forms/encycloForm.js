@@ -20,8 +20,8 @@ export class EncycloForm extends EntryForm {
         this.template = 'encycloForm.html'; // Define o template do formulário.
 
         this.type = 'encyclo'; // Define o tipo do formulário.
-    }  
-    
+    }
+
     /* ---------------------------------------------------------------------------------------------------------------- */
     // GETTERS E SETTERS
     /**
@@ -47,10 +47,10 @@ export class EncycloForm extends EntryForm {
         switch (state) {
             // ESTADO DE HABILITAÇÃO DE NOVA ENTRADA.
             case this.states.newEntry: break;
+            // ESTADO DE ADIÇÃO DE DADOS.
+            case this.states.adding: break;
             // ESTADO DE EDIÇÃO DE ENTRADA.
             case this.states.editing: break;
-            // ESTADO DE DELEÇÃO DE DADOS.
-            case this.states.delete: break;
             // ESTADO PADRÃO.
             default: {
                 this._clearRootIcon();
@@ -81,62 +81,63 @@ export class EncycloForm extends EntryForm {
     }
 
     /**
-    * Trata o evento de registro de uma nova categoria.
-    * @param {Event} event      - Evento de clique no botão de Salvar.
-    * @param {Object} options   - Opções de salvamento.
-    */
-    async onSaveClick(event, options = {}) {
-        event.stopPropagation();
-        const isEntryUpdate = options.isEntryUpdate ?? false;
+   * Gerencia cliques em pastas.
+   * @param {MouseEvent} event - O evento de clique.
+   * @protected
+   */
+    onFolderClick(event) {
+        super.onFolderClick(event);
 
-        const title = (isEntryUpdate ? 'Atualizar' : 'Registrar');
-        const message = (isEntryUpdate ? 'Deseja atualizar a categoria?' : 'Deseja salvar a vategoria?');
+        const clickedFolder = event.target.closest('.folder');
+        const isSelected = clickedFolder.classList.contains('selected');
 
-        if (await Dialog.confirm(title, message)) {
-
-            const headerInfo = this.querySelector('.header-info');
-
-            const imgInput = this.querySelector('#hiddenFileInput');
-            const titleInput = this.querySelector('#titleInput');
-            const draftSwitch = this.querySelector('#checkbox');
-
-            // Obtém o objeto do arquivo da imagem.
-            const file = imgInput.files[0] ?? null;
-
-            const data = {
-                sid: headerInfo.dataset.sid,
-                title: titleInput.value,
-                htmlString: tinymce.activeEditor?.getContent() ?? '',
-                isDraft: draftSwitch.checked
-            }
-
-            // Se uma imagem foi informada, prepare-a para o banco de dados.
-            uniforge.utils.mergeObjects(data, await uniforge.utils.imageToBlob(file));
-
-            const validate = uniforge.db.validateCategory(data);
-            if (validate !== '') {
-                this.msgBox.showWarning(validate);
-                return;
-            }
-
-            if (isEntryUpdate) {
-                data.cid = options.id;
-                await uniforge.db.updateCategory(data);
-                this.msgBox.showInfo('Categoria atualizada com sucesso.');
-            }
-            else {
-                await uniforge.db.addCategory(data);
-                this.msgBox.showInfo('Categoria criada com sucesso.');
-            }
+        // Se formulário for o da Enciclopédia, e o estado do formulário seja o 'newEntry' ou 
+        // o 'default', carregue ícone do Assunto.
+        if (this.currentState <= this.states.newEntry) {
+            // Carregue ícone apenas se a pasta estiver sendo selecionada.
+            if (isSelected) this._loadRootIcon(clickedFolder);
         }
     }
 
+    /**
+    * Trata o evento de registro de uma nova categoria.
+    * @param {Event} event      - Evento de clique no botão de Salvar.
+    * @param {Object} data      - Dados padrão de qualquer entrada.
+    * @param {Object} options   - Opções de salvamento.
+    */
+    async onSaveClick(event, data, options = {}) {
+        event.stopPropagation();
+        const isEntryUpdate = options.isEntryUpdate ?? false;
+        
+        const headerInfo = this.querySelector('.header-info');
+
+        uniforge.utils.mergeObjects(data, {
+            sid: headerInfo.dataset.sid,
+            htmlString: tinymce.activeEditor?.getContent() ?? ''
+        });
+
+        const validate = uniforge.db.validateCategory(data);
+        if (validate !== '') {
+            this.msgBox.showWarning(validate);
+            return;
+        }
+
+        if (isEntryUpdate) {
+            data.cid = options.id;
+            await uniforge.db.updateCategory(data);
+            this.msgBox.showInfo('Categoria atualizada com sucesso.');
+        }
+        else {
+            await uniforge.db.addCategory(data);
+            this.msgBox.showInfo('Categoria criada com sucesso.');
+        }
+    }
     /**
     * Trata o evento de criação de uma nova entrada.
     * @param {Event} event - Evento de clique no botão de Nova Categoria.
     */
     async onNewClick(event) {
-        this.clearContent(this.form, false);
+        this.clearContent(false);
     }
 
     /**
@@ -172,8 +173,12 @@ export class EncycloForm extends EntryForm {
         await super.onEntryItemDoubleClick(event);
         const category = this.data.entry;
 
-        if (category) {            
-            tinymce.get('mainEditor').setContent(category.htmlString);            
+        const clickedFolder = event.target.closest('.folder');
+        const isSelected = clickedFolder.classList.contains('selected');
+
+        if (category) {
+            tinymce.get('mainEditor').setContent(category.htmlString);
+            if (isSelected) this._loadRootIcon(clickedFolder);
         }
     }
 
@@ -187,7 +192,46 @@ export class EncycloForm extends EntryForm {
         const subject = await SubjectDialog.configDialog();
         if (subject) {
             await uniforge.db.addSubject(subject);
-            this.refresh();            
+            this.refresh();
         }
+    }
+
+    /**
+   * Carrega ícone da raíz do assunto.
+   * @protected
+   * @async
+   * @param {HTMLElement} folder - Objeto com os dados da pasta do Assunto.
+   */
+    async _loadRootIcon(folder) {
+        const sid = folder.dataset.sid;
+        let subject = await uniforge.db.getSubjectRoot(sid);
+
+        if (subject) {
+            const typeLabel = this.querySelector('#typeLabel');
+            const dataIcon = this.querySelector('#dataIcon');
+            const subjectIcon = this.querySelector('#subjectIcon');
+
+            typeLabel.textContent = subject.title;
+
+            dataIcon.dataset.tooltip = subject.root.capitalize();
+            subjectIcon.classList.remove(...subjectIcon.classList);
+            subjectIcon.className = subject.icon;
+        }
+    }
+    /**
+     * Carrega ícone da raíz do assunto.
+     * @protected
+     * @async
+     */
+    async _clearRootIcon() {
+        const typeLabel = this.querySelector('#typeLabel');
+        const dataIcon = this.querySelector('#dataIcon');
+        const subjectIcon = this.querySelector('#subjectIcon');
+
+        typeLabel.innerHTML = '&#8212';
+
+        dataIcon.dataset.tooltip = 'Escolha um assunto...';
+        subjectIcon.classList.remove(...subjectIcon.classList);
+        subjectIcon.className = 'fa-regular fa-file';
     }
 }

@@ -1,4 +1,3 @@
-
 import { triggerHook } from "../../scripts/hooks.js";
 /**
  * Classe BaseForm
@@ -48,22 +47,7 @@ export default class BaseForm {
         * 
         */
     this.selectedIcon = 'fas fa-eye';
-
-    /**
-     * Elementos da interface do usuário (UI) associados ao formulário.
-     * @type {{ overlay: HTMLElement, form: HTMLElement, header: HTMLElement, close_btn: HTMLElement, content: HTMLElement, sidebar: HTMLElement }}
-     */
-    this.ui = {
-      overlay: this.overlay,
-      form: document.getElementById('formContainer'),
-      header: document.getElementById('formHeader'),
-      close_btn: document.getElementById('closeForm'),
-      content: document.getElementById('formContent')
-    };
-
-    // Limpa o conteúdo do formulário.
-    this.ui.content.innerHTML = '';
-
+    
     /**
      * Indica se o formulário está oculto inicialmente.
      * @type {boolean}
@@ -142,13 +126,24 @@ export default class BaseForm {
   }
 
   /**
-   * Obtém o corpo HTML do Formulário.
+   * Propriedade que retorna um objeto com referências para elementos do formulário.
    * 
-   * @returns {String}  - O corpo HTML do Formulário.
+   * @returns {Object}  - Um objeto com as seguintes propriedades:
+   *  - overlay: O elemento HTML que contém o formulário.
+   *  - form: O elemento HTML que representa o formulário.
+   *  - header: O elemento HTML que contém o título do formulário.
+   *  - close_btn: O elemento HTML que fecha o formulário.
+   *  - content: O elemento HTML que contém o conteúdo do formulário.
    */
-  get body() {
-    return this.ui.content.innerHTML;
-  }
+  get ui() {
+    return {
+      overlay: this.overlay,
+      form: document.getElementById('formContainer'),
+      header: document.getElementById('formHeader'),
+      close_btn: document.getElementById('closeForm'),
+      content: document.getElementById('formContent')
+    };
+  }  
 
   /**
    * Obtém o tipo do Formulário.
@@ -176,8 +171,8 @@ export default class BaseForm {
     return this.type == 'encyclo';
   };
 
-  getData() {
-    this.data = {
+  prepareBaseData() {
+    const data = {
       title: this.title,
       type: this.type,
       core: {
@@ -187,7 +182,7 @@ export default class BaseForm {
       }
     };
 
-    return this.data;
+    return data;
   }
 
   /**
@@ -201,6 +196,12 @@ export default class BaseForm {
 
   /* ---------------------------------------------------------------------------------------------------------------- */
   // INTERFACE DE USUÁRIO
+  /**
+   * Renderiza o formulário.
+   * 
+   * @async
+   * @returns {Boolean} - Uma flag indicando se o form foi renderizado (true) ou não (false).
+   */
   async render() {
     try {
       await triggerHook('beforeRenderForm');
@@ -209,7 +210,9 @@ export default class BaseForm {
       this.ui.content.innerHTML = html;
 
       // Obtém objeto com todos os dados unificados necessários para o funcionamento do formulário.
-      this.data = this.getData();
+      this.data = this.prepareBaseData();
+      
+      if(this.prepareData) this.prepareData();
 
       this.prepareContent();
 
@@ -222,6 +225,12 @@ export default class BaseForm {
       console.error(error);
     }
   }
+  /**
+   * Limpa o formulário e re-exibe o conteúdo com os dados atuais.
+   * 
+   * @async
+   * @returns {Promise<void>} - Uma promessa que resolve quando o formulário for re-exibido.
+   */
   async refresh() {
     try {
       this.clear();
@@ -231,6 +240,17 @@ export default class BaseForm {
     } catch (error) {
       console.error(error);
     }
+  }
+  /**
+   * Remove todos os elementos filhos de um elemento especificado ou do formulário principal.
+   * @param {HTMLElement} [element={}] - O elemento cujos filhos devem ser removidos. Por padrão, é o formulário principal.
+   */
+  clear() {
+    // Limpa todos os editores Tiny MCE inicializados no formulário.
+    tinymce.remove();
+
+    // Limpa o conteúdo do formulário.
+    this.ui.content.innerHTML = '';
   }
   /**
    * Exibe o formulário e o overlay associados.
@@ -254,8 +274,9 @@ export default class BaseForm {
   hideForm() {
     this.clear();
     this.ui.overlay.classList.add('hidden');
-  }
-
+  }    
+  /* ---------------------------------------------------------------------------------------------------------------- */
+  // CONFIGURAÇÃO
   /**
    * Inicia a construção do formulário.
    */
@@ -292,20 +313,6 @@ export default class BaseForm {
       return false;
     }
   }
-
-  /**
-   * Remove todos os elementos filhos de um elemento especificado ou do formulário principal.
-   * @param {HTMLElement} [element={}] - O elemento cujos filhos devem ser removidos. Por padrão, é o formulário principal.
-   */
-  clear(element = {}) {
-    // Limpa todos os editores Tiny MCE inicializados no formulário.
-    tinymce.remove();
-
-    // Limpa o conteúdo do formulário.
-    this.ui.content.innerHTML = '';
-  }
-  /* ---------------------------------------------------------------------------------------------------------------- */
-  // CONFIGURAÇÃO
   /**
    * Configura o conteúdo do formulário
    * @param {HTMLElement} form - O elemento que representa o formulário.
@@ -321,8 +328,8 @@ export default class BaseForm {
    * Prepara o conteúdo do formulário substituindo seus placeholders e tags customizadas.
   */
   prepareContent() {
-    const preparedContent = uniforge.parser.parseHTML(this.ui.form.innerHTML, this.data);
-    this.ui.form.innerHTML = preparedContent;
+    const preparedContent = uniforge.parser.parseHTML(this.ui.content.innerHTML, this.data);
+    this.ui.content.innerHTML = preparedContent;
   }
 
   /**

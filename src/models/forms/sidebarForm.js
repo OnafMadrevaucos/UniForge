@@ -15,23 +15,39 @@ export default class SidebarForm extends BaseForm {
     }
 
     /**
+     * @overload
+     * Retorna um objeto com as seguintes propriedades:
+     *  - sidebar: O elemento HTML que representa a barra lateral do formulário.
+     *  - dialog: O elemento HTML que representa o diálogo de confirmação.
+     * 
+     * @returns {Object}  - Um objeto com as propriedades mencionadas acima.
+     */
+    get ui() {
+        const ui = {
+            sidebar: this.querySelector('.sidebar'),
+            dialog: this.querySelector('#confirmDialog')
+        };
+        return uniforge.utils.mergeObjects(super.ui, ui);
+    }
+
+    /**
      * Obtém os assuntos de uma dada origem disponíveis no banco de dados.
      * @async
      * @returns {Object} - Assuntos e suas categorias.
     */
     getFolders() {
         let folder = uniforge.doc.subjects;
-        if (!this.isEncyclopedia){
+        if (!this.isEncyclopedia) {
             if (this.type == 'article')
                 folder = uniforge.doc.categories;
-            else 
-                folder = uniforge.doc.categories.filter(category => category.type === this.type);        
+            else
+                folder = uniforge.doc.categories.filter(category => category.type === this.type);
         }
 
         folder = folder.sort();
 
         return folder;
-    }    
+    }
 
     /**
      * Obtém as entradas disponíveis em uma categoria no banco de dados.
@@ -49,22 +65,17 @@ export default class SidebarForm extends BaseForm {
      * @async
      * @returns {object}  - Objeto de dados unificado.
      */
-    getData() {
-        super.getData();
+    prepareData() {
         this.data.folders = this.getFolders();
+
         return this.data;
     }
 
     /**
      * Carrega todo conteúdo que seja dependente de dados.
     */
-    async configureContent() {
-        uniforge.utils.mergeObjects(this.ui, {
-            sidebar: this.querySelector('.sidebar'),
-            dialog: this.querySelector('#confirmDialog')
-        });        
-    } 
-    
+    async configureContent() { }
+
     /**
      * Limpa o conteúdo do formulário
      */
@@ -72,7 +83,7 @@ export default class SidebarForm extends BaseForm {
         super.clearContent();
         const folders = this.querySelectorAll('#folderList .folder');
 
-        if(folders.length == 0) return;
+        if (folders.length == 0) return;
 
         folders.forEach(item => {
             item.classList.remove('selected');

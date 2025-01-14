@@ -78,13 +78,14 @@
 
     /* Borders */
     --filled-border: 1px solid var(--border-yellow);
-    --focus-border: 1px solid ver(var(--focus-red));
+    --focus-border: 1px solid var(--border-yellow);
     --info-content-border: 2px groove var(--blue);
     --sidebar-border: 1px solid var(--light-blue);
     --tab-item-border: 1px solid var(--dark-redT87);
     --tooltip-border: 1px solid var(--shadow-header);
     --img-border: 2px groove var(--blue);
-    --data-group-border: 2px groove var(--blue);
+    --data-group-border: 1px solid var(--light-blue);
+    --focused-data-group-border: 1px solid var(--dark-redT87);
     --blockquote-border: 5px solid var(--red);
 
     /* Borders Radius */
@@ -135,6 +136,9 @@ body.uniforge {
 }
 *:disabled {
     cursor: default;
+}
+*:focus-visible {
+    outline: var(--focus-border);
 }
 
 h1 {
@@ -2228,8 +2232,13 @@ folder-list .folder.created.selected .folder-header .fa-trash {
     position: relative;
     cursor: pointer;
     user-select: none;
+    background-color: var(--dark-blue);
+    border-radius: var(--default-border-radius);
 }
-
+.date-input:has(.calendar.open) {
+    outline: var(--focus-border);
+    background-color: var(--dark-redT87);
+}
 :disabled .date-input {
     opacity: 0.7;
     pointer-events: none;
@@ -2239,8 +2248,7 @@ folder-list .folder.created.selected .folder-header .fa-trash {
     padding: 5px;
     font-size: var(--default-size);
     text-align: center;
-    background-color: var(--dark-blue);
-    border-radius: var(--default-border-radius);
+    background-color: transparent;    
 }
 
 .calendar {
@@ -2283,6 +2291,7 @@ folder-list .folder.created.selected .folder-header .fa-trash {
 
 .calendar.open {
     display: block;
+    margin-top: 5px;
 }
 
 .calendar .calendar-view {
@@ -2446,6 +2455,7 @@ folder-list .folder.created.selected .folder-header .fa-trash {
     padding: 5px;
     height: 100%;
     margin: 0;
+    outline: none;
 }
 
 #captionEditor::before,

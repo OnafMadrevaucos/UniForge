@@ -43,8 +43,8 @@ export class HistoryForm extends EntryForm {
     * @async
     * @returns {object}  - Objeto de dados unificado.
     */
-    getData() {
-        super.getData();
+    prepareData() {
+        super.prepareData();
 
         this.data.entryTypes = uniforge.doc.entryTypes.toObject();
         this.data.importances = uniforge.doc.importances.toObject();
@@ -70,11 +70,13 @@ export class HistoryForm extends EntryForm {
                 flavorEditor.mode.set('readonly');
             } break;
             // ESTADO DE EDIÇÃO DE ENTRADA.
-            case this.states.editing: {
+            case this.states.adding: {
                 flavorEditor.mode.set('design');
             } break;
             // ESTADO DE DELEÇÃO DE DADOS.
-            case this.states.delete: break;
+            case this.states.editing: {
+                flavorEditor.mode.set('design');
+            } break;
             // ESTADO PADRÃO.
             default: {
                 flavorEditor.mode.set('readonly');
@@ -95,14 +97,14 @@ export class HistoryForm extends EntryForm {
 
         // Configura o editor TinyMCE de floreio associado ao formulário.
         await this.configureFlavorTinyMCE();
-    }    
+    }
 
     /**
    * Limpa o conteúdo do formulário
    * 
    * @param {Boolean} clearSidebar - Flag para habilitar/desabilitar a limpeza da seleção da sidebar.
    */
-    clearContent(clearSidebar=true) {
+    clearContent(clearSidebar = true) {
         super.clearContent(clearSidebar);
 
         const flavorEditor = tinymce.get('flavorEditor');
@@ -167,7 +169,7 @@ export class HistoryForm extends EntryForm {
         calendarType.dispatchEvent(new Event('change'));
 
         this.datePickers.start.selectFullDate(event.start_day, event.start_month, event.start_year);
-        if(event.end_day)
+        if (event.end_day)
             this.datePickers.end.selectFullDate(event.end_day, event.end_month, event.end_year);
     }
 
@@ -190,66 +192,54 @@ export class HistoryForm extends EntryForm {
     * Trata o evento de registro de uma nova entrada.
     * @interface
     * @param {Event} event      - Evento de clique no botão de Salvar.
+    * @param {Object} data      - Dados padrão de qualquer entrada.
     * @param {Object} options   - Opções de salvamento da entrada.
     */
-    async onSaveClick(event, options = {}) {
+    async onSaveClick(event, data, options = {}) {
         event.stopPropagation();
-        const isEntryUpdate = options.isEntryUpdate ?? false;
+        const isEntryUpdate = options.isEntryUpdate ?? false;        
 
-        const title = (isEntryUpdate ? 'Atualizar' : 'Registrar');
-        const message = (isEntryUpdate ? 'Deseja atualizar a entrada?' : 'Deseja salvar a entrada?');
+        const headerInfo = this.querySelector('.header-info');
 
-        if (await Dialog.confirm(title, message)) {
-            const headerInfo = this.querySelector('.header-info');
+        const entryType = this.querySelector('#entryType');
+        const importance = this.querySelector('#importance');
+        const calendarType = this.querySelector('#calendarType');
 
-            const imgInput = this.querySelector('#hiddenFileInput');
-            const titleInput = this.querySelector('#titleInput');
-            const entryType = this.querySelector('#entryType');
-            const importance = this.querySelector('#importance');
-            const calendarType = this.querySelector('#calendarType');
-            const draftSwitch = this.querySelector('#checkbox');
+        uniforge.utils.mergeObjects(data, {
+            etid: entryType.value,
+            cid: headerInfo.dataset.cid,
+            iid: importance.value,
+            clid: calendarType.value,
+            flavor: tinymce.get('flavorEditor').getContent() ?? '',
+            htmlString: tinymce.get('mainEditor').getContent() ?? '',
+            date: {
+                start: this.datePickers.start.selectedDate,
+                end: this.datePickers.end.selectedDate
+            },
+            text: ''
+        });
 
-            let data = {
-                etid: entryType.value,
-                cid: headerInfo.dataset.cid,
-                iid: importance.value,
-                clid:calendarType.value,
-                title: titleInput.value,
-                flavor: tinymce.get('flavorEditor').getContent() ?? '',
-                htmlString: tinymce.get('mainEditor').getContent() ?? '',
-                date: {
-                    start: this.datePickers.start.selectedDate,
-                    end: this.datePickers.end.selectedDate
-                },
-                img: imgInput.value,
-                isDraft: Number(draftSwitch.checked),                
-                text: ''
-            }
-
-            data.img = this.selectedImg?.data ?? null;
-            data.ext = this.selectedImg?.ext ?? 'jpeg';
-
-            const validate = uniforge.db.validateEventEntry(data);
-            if (validate !== '') {
-                this.msgBox.showWarning(validate);
-                return;
-            }
-
-            if (isEntryUpdate) {
-                data.eid = options.id;
-                data.evid = headerInfo.dataset.evid;
-
-                await uniforge.db.updateEntry(data);
-                await uniforge.db.updateEvent(data);
-                this.msgBox.showInfo('Entrada atualizada com sucesso.');
-            }
-            else {
-                const result = await uniforge.db.addEntry(data);
-                data.eid = result.addedId;
-                await uniforge.db.addEvent(data);
-                this.msgBox.showInfo('Entrada criada com sucesso.');
-            }
+        const validate = uniforge.db.validateEventEntry(data);
+        if (validate !== '') {
+            this.msgBox.showWarning(validate);
+            return;
         }
+
+        if (isEntryUpdate) {
+            data.eid = options.id;
+            data.evid = headerInfo.dataset.evid;
+
+            await uniforge.db.updateEntry(data);
+            await uniforge.db.updateEvent(data);
+            this.msgBox.showInfo('Entrada atualizada com sucesso.');
+        }
+        else {
+            const result = await uniforge.db.addEntry(data);
+            data.eid = result.addedId;
+            await uniforge.db.addEvent(data);
+            this.msgBox.showInfo('Entrada criada com sucesso.');
+        }
+
     }
     /**
     * Trata o evento de criação de uma nova entrada.
@@ -266,26 +256,24 @@ export class HistoryForm extends EntryForm {
     */
     async onEntryItemDoubleClick(event) {
         await super.onEntryItemDoubleClick(event);
-        const entry = this.data.entry;        
+        const entry = this.data.entry;
 
         if (entry) {
             const entryEvent = uniforge.doc.events.get(entry.event);
-            
-            if (entryEvent) {                
+
+            if (entryEvent) {
                 this.reconfigureDatePickers(entryEvent);
 
-                const headerInfo = this.querySelector('.header-info');                
+                const headerInfo = this.querySelector('.header-info');
                 headerInfo.dataset.evid = entryEvent.evid;
 
                 const entryType = this.querySelector('#entryType');
-                const importance = this.querySelector('#importance');               
+                const importance = this.querySelector('#importance');
 
                 entryType.value = entry.etid;
                 importance.value = entryEvent.iid;
                 tinymce.get('mainEditor').setContent(entry.htmlString);
                 tinymce.get('flavorEditor').setContent(entry.flavor);
-                
-                entry.event = entryEvent;                
             } else {
                 this.msgBox.showWarning('Erro ao carregar eventos da entrada.');
             }

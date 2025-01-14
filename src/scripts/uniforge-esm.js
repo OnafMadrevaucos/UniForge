@@ -339,6 +339,9 @@
 
             data.rawData = base64;
             data.ext = fileExt;
+        } else {
+            data.rawData = null;
+            data.ext = null;
         }
 
         return data;
