@@ -1,4 +1,7 @@
 <div id="history" class="entries flexrow">
+  <a id="minimizeButton" class="minimize-button">
+    <i class="fa-solid fa-chevron-left"></i>
+  </a>
   <div id="sideBar" class="sidebar">
     <h3>{{title}}</h3>
     <foldertree id="categories" item="entries"></foldertree>
@@ -7,8 +10,8 @@
       <div id="confirmDialog" class="confirmation-tooltip hidden" data-item="" data-action="">
         <p id="confirmation-message"></p>
         <div class="confirmation-buttons">
-          <button id="confirm-yes" class="confirm-btn">Yes</button>
-          <button id="confirm-no" class="confirm-btn">No</button>
+          <button id="confirm-yes" class="confirm-btn">Sim</button>
+          <button id="confirm-no" class="confirm-btn">Não</button>
         </div>
       </div>
       <div id="searchEntry" class="input-container search-bar flexrow">
@@ -28,15 +31,15 @@
         <fieldset class="info-content" disabled>
           <div id="entryTypeGroup" class="data-group combo">
             <span class="data-label">Tipo </span>
-            <combo id="entryType" value="entryTypes" blank="0"/>            
+            <combo id="entryType" value="entryTypes" blank="0" />
           </div>
           <div id="importanceGroup" class="data-group combo">
             <span class="data-label">Importância </span>
-            <combo id="importance" value="importances" blank="0"/>
+            <combo id="importance" value="importances" blank="0" />
           </div>
           <div id="dateTypeGroup" class="data-group combo">
             <span class="data-label">Calendário </span>
-            <combo id="calendarType" value="calendars"/>
+            <combo id="calendarType" value="calendars" />
           </div>
           <div class="date-info flexrow">
             <div id="startDate" class="data-group date start" data-date="">
@@ -45,16 +48,16 @@
             </div>
             <div id="endDate" class="data-group date end" data-date="">
               <span class="data-label">
-                  Término 
-                  <i class="fa-regular fa-circle-question" data-tooltip="Opcional"></i>
+                Término
+                <i class="fa-regular fa-circle-question" data-tooltip="Opcional"></i>
               </span>
-              <calendar class="end"></calendar>            
+              <calendar class="end"></calendar>
             </div>
           </div>
           <div class="data-complex flexrow">
             <div class="data-group check">
               <span class="data-label">Rascunho </span>
-              <switch id="isDraftSwitch"/>
+              <switch id="isDraftSwitch" />
             </div>
             <a class="add-timeline" data-tooltip="Linhas do Tempo"><i class="fa-solid fa-timeline"></i></a>
           </div>

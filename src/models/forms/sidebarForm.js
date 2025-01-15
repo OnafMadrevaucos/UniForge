@@ -182,13 +182,10 @@ export default class SidebarForm extends BaseForm {
     activateListeners() {
         const sidebar = this.ui.sidebar;
         if (sidebar) {
-            sidebar.addEventListener('click', (event) => {
-                event.stopPropagation();
-                if (event.target.classList.contains('entry-item')) return;
-                this.clearContent();
+            sidebar.addEventListener('click', (event) => { this.onSidebarClick(event); });
 
-                if (this.controlStates) this.controlStates(this.states.default);
-            });
+            const minimizeButton = this.querySelector('#minimizeButton');
+            minimizeButton.addEventListener('click', (event) => { this.onMinimizeClick(event); });
 
             const folders = this.querySelectorAll('.folder');
             const items = this.querySelectorAll('.entry-item');
@@ -239,11 +236,28 @@ export default class SidebarForm extends BaseForm {
             });
         }
     }
+    /**
+    * Gerencia cliques no sidebar.
+    * @param {MouseEvent} event - O evento de clique.
+    */
+    onSidebarClick(event) {
+        event.stopPropagation();
+        if (event.target.classList.contains('entry-item')) return;
+        
+        this.clearContent();
+        if (this.controlStates) this.controlStates(this.states.default);
+    }
+
+    onMinimizeClick(event) {
+        event.stopPropagation();
+        const sidebar = this.ui.sidebar;
+        sidebar.classList.toggle('minimized');
+    }
 
     /**
-   * Gerencia cliques em pastas.
-   * @param {MouseEvent} event - O evento de clique.
-   */
+    * Gerencia cliques em pastas.
+    * @param {MouseEvent} event - O evento de clique.
+    */
     onFolderClick(event) {
         event.stopPropagation();
         const clickedFolder = event.target.closest('.folder');

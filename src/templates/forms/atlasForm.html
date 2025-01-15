@@ -1,4 +1,7 @@
 <div id="atlas" class="entries atlas flexrow">
+    <a id="minimizeButton" class="minimize-button">
+        <i class="fa-solid fa-chevron-left"></i>
+    </a>
     <div class="sidebar">
         <h3>Atlas</h3>
         <foldertree id="categories" item="entries"></foldertree>
@@ -19,11 +22,12 @@
     <div class="content flexcol">
         <div class="header flexcol">
             <div class="header-info flexcol">
-                <input id="titleInput" type="text" class="title" name="title" placeholder="Título da Entrada" disabled/>
+                <input id="titleInput" type="text" class="title" name="title" placeholder="Título da Entrada"
+                    disabled />
                 <fieldset class="info-content flexcol" disabled>
                     <div class="data-group check">
                         <span class="data-label">Rascunho </span>
-                        <switch id="isDraftSwitch"/>
+                        <switch id="isDraftSwitch" />
                     </div>
                 </fieldset>
             </div>

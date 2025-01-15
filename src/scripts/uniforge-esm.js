@@ -6,6 +6,60 @@
     const crypto = window.crypto;
     const store = globalThis.store;
 
+    const _loremIpsum = [
+        "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+        "Integer nec mi a enim posuere dictum.",
+        "Etiam vel augue id leo elementum aliquam id sit amet elit.",
+        "Nam molestie risus sit amet eros sagittis, eget congue tortor tempus.",
+        "Nullam nibh mauris, sagittis ut tempus sed, congue at turpis.",
+        "Etiam posuere ligula eu lacus pharetra tincidunt.",
+        "Integer iaculis est id nibh mollis, vel finibus turpis feugiat.",
+        "Cras eget tempus nisl.",
+        "Etiam a posuere tellus.",
+        "Pellentesque sagittis mollis nulla et bibendum.",
+        "Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos.",
+        "Phasellus malesuada erat non euismod consectetur.",
+        "Mauris ut quam sit amet enim convallis egestas.",
+        "Curabitur velit turpis, gravida id lacus sit amet, lobortis finibus tortor.",
+        "Sed hendrerit at metus sed lobortis.",
+        "Fusce nec ex ac libero varius dapibus convallis ut nisl.",
+        "Vestibulum a tortor turpis.",
+        "Fusce eleifend rhoncus augue, sit amet cursus lacus ullamcorper nec.",
+        "Phasellus posuere dui rhoncus elementum mattis.",
+        "Pellentesque mattis velit non venenatis mattis.",
+        "Cras ut tellus pulvinar, tempus ligula ut, dignissim enim.",
+        "Vivamus purus nunc, posuere in commodo et, ornare id nisi.",
+        "Morbi a lacus tempus, varius lorem a, mollis nunc.",
+        "Nunc nibh justo, interdum ac ante a, pulvinar mattis ipsum.",
+        "Praesent sed sapien augue.",
+        "Aliquam rutrum, velit et vulputate ultrices, nibh nulla ornare elit, id eleifend purus purus a odio.",
+        "Integer lacinia, magna et lobortis aliquam, metus purus congue nisi, id porta ex nisi eu arcu.",
+        "Mauris venenatis malesuada risus a vehicula.",
+        "Fusce augue mauris, ullamcorper in semper sed, tempor sit amet sapien.",
+        "Nunc mi dolor, lacinia quis sodales at, gravida a erat.",
+        "Etiam laoreet leo at lectus gravida, et elementum dolor mattis.",
+        "Sed id nulla accumsan, elementum quam id, consectetur sapien.",
+        "Sed eu aliquam velit.",
+        "Maecenas maximus nunc id mollis ullamcorper.",
+        "Praesent condimentum non diam blandit semper.",
+        "Vivamus non pretium lacus.",
+        "Donec id ultricies erat, sed eleifend mi.",
+        "Curabitur iaculis lacus elit, ut suscipit ipsum hendrerit et.",
+        "Nunc justo nisi, blandit at vestibulum in, sodales eget dui.",
+        "Nam semper, magna vitae venenatis sagittis, libero odio mollis neque, ac tristique orci libero nec mauris.",
+        "Integer accumsan arcu sit amet urna posuere, quis cursus diam egestas.",
+        "Praesent in fermentum nibh.",
+        "Aenean facilisis, leo bibendum convallis aliquam, erat lacus porta ex, eu tristique nunc lorem auctor nibh.",
+        "Proin semper fringilla mauris ac ullamcorper.",
+        "Nam at dapibus nibh, non fermentum odio.",
+        "In tempus convallis nulla at tempus.",
+        "Phasellus lobortis odio et sodales pellentesque.",
+        "Suspendisse accumsan gravida mi, in sagittis tortor ornare eu.",
+        "Suspendisse ut metus vulputate, volutpat tortor nec, porttitor magna.",
+        "Vestibulum egestas diam et ante aliquet, sit amet efficitur eros feugiat.",
+        "Donec in aliquet ipsum."
+    ];
+
     /**
         * Associa uma imagem a um elemento HTML.
         * @param {HTMLElement} element  - O element que receberá os dados.
@@ -224,6 +278,44 @@
             result += characters.charAt(Math.floor(Math.random() * characters.length));
         }
         return result;
+    }
+    /**
+        * Gera um Number aleatório entre valores determinados.
+        * @param {number} min    - Valor mínimo do sorteio (padrão 0).
+        * @param {number} max    - Valor mínimo do sorteio.
+        * @returns {number}      - Um número aleatório entre o valor Min e o Max.
+        */
+    function generateRandomNumber(max, min=0) {
+        return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+    /**
+        * Gera uma string aleatória de caracteres.
+        * @param {number} length    - O comprimento da string aleatória.
+        * @returns {string}         - A string aleatória gerada.
+        */
+    function loremIpsum(numParagraphs) {
+        console.log(`UniForge | Gerando ${numParagraphs} parágrafos de Lorem Ipsum...`);
+        let paragraphs = '';
+        for (let i = 0; i < numParagraphs; i++) {
+            const numParagraphsToMerge = generateRandomNumber(40, 5); // Gera um número aleatório entre 5 e 40.
+            const indices = [];
+            const paragraphsToMerge = [];
+    
+            for (let j = 0; j < numParagraphsToMerge; j++) {
+                let randomIndex;
+                do {
+                    randomIndex = generateRandomNumber(_loremIpsum.length - 1);
+                } while (indices.includes(randomIndex));
+                indices.push(randomIndex);
+                paragraphsToMerge.push(_loremIpsum[randomIndex]);
+            }
+    
+            const mergedParagraph = paragraphsToMerge.join(' ');
+            paragraphs += `<p>${mergedParagraph}</p>`;
+        }
+
+        return paragraphs;
     }
 
     /**
@@ -1122,20 +1214,20 @@
     */
     function sort() {
         // Converte o Set em um array.
-      const sorted = Array.from(this);
-      // Ordena o array.
-      sorted.sort((a, b) => {
-        // Verifica se os elementos têm o campo _label
-        if (a._label && b._label) {
-          // Ordena os elementos com base no campo _label
-          return a._label.localeCompare(b._label);
-        } else {
-          // Ordena os elementos com base no valor padrão
-          return a.localeCompare(b);
-        }
-      });
-      // Cria um novo Set com os elementos ordenados.
-      return new Set(sorted);
+        const sorted = Array.from(this);
+        // Ordena o array.
+        sorted.sort((a, b) => {
+            // Verifica se os elementos têm o campo _label
+            if (a._label && b._label) {
+                // Ordena os elementos com base no campo _label
+                return a._label.localeCompare(b._label);
+            } else {
+                // Ordena os elementos com base no valor padrão
+                return a.localeCompare(b);
+            }
+        });
+        // Cria um novo Set com os elementos ordenados.
+        return new Set(sorted);
     }
 
     /**
@@ -1373,6 +1465,7 @@
         duplicate,
         extractFontAwesomeIcons,
         generateRandomString,
+        loremIpsum,
         getAsociatedData,
         getProperty,
         getType,

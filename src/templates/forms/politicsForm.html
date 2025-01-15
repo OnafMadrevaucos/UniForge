@@ -1,7 +1,10 @@
 <div id="politics" class="entries flexrow">
+  <a id="minimizeButton" class="minimize-button">
+    <i class="fa-solid fa-chevron-left"></i>
+  </a>
   <div id="sideBar" class="sidebar">
-    <h3>Política</h3>
-    <ul id="folderList" class="folder-list"></ul>
+    <h3>{{title}}</h3>
+    <foldertree id="categories" item="entries"></foldertree>
     <div class="footer">
       <div id="confirmDialog" class="confirmation-tooltip hidden" data-item="" data-action="">
         <p id="confirmation-message"></p>
@@ -19,81 +22,57 @@
   <div class="content flexcol">
     <div class="header flexrow">
       <div id="imageContainer" class="img-container">
-        <img id="displayedImage" class="img-displayed empty" src="../images/blank-image.svg" alt="Imagem Padrão">
+        <img id="displayedImage" class="img-displayed empty" src="./images/blank-image.svg" alt="Imagem Padrão">
         <input type="file" class="hidden" id="hiddenFileInput" accept="image/*" />
       </div>
       <div class="header-info flexcol">
-        <input type="text" class="title" name="title" placeholder="Título da Entrada" />
-        <div class="info-content">
-          <div id="subjectGroup" class="data-group combo">
-            <span class="data-label">Assunto </span>
-            <select id="subjectType" class="data" name="subjectType">
-            </select>
-          </div>
+        <input id="titleInput" type="text" class="title" name="title" placeholder="Título da Entrada" disabled />
+        <fieldset class="info-content" disabled>
           <div id="entryTypeGroup" class="data-group combo">
             <span class="data-label">Tipo </span>
-            <select id="entryType" class="data" name="entryType">
-            </select>
+            <combo id="entryType" value="entryTypes" blank="0" />
           </div>
           <div id="dateTypeGroup" class="data-group combo">
             <span class="data-label">Calendário </span>
-            <select id="calendarType" class="data" name="calendarType">
-            </select>
+            <combo id="calendarType" value="calendars" />
           </div>
           <div class="date-info flexrow">
             <div id="startDate" class="data-group date start" data-date="">
               <span class="data-label">Início </span>
-              <div class="date-input data" id="dateInput" data-type="" data-date="">
-                <div class="date-display" id="dateDisplay">Selecione uma data</div>
-                <div class="calendar" id="calendar">
-                  <div class="calendar-header">
-                    <button id="prevGroup"><i class="fas fa-caret-left"></i></button>
-                    <span id="monthYearDisplay"></span>
-                    <button id="nextGroup"><i class="fas fa-caret-right"></i></button>
-                  </div>
-                  <div class="calendar-view" id="calendarView">
-                    <div class="calendar-content" id="calendarContent"></div>
-                  </div>
-                </div>
-              </div>
+              <calendar class="start"></calendar>
             </div>
             <div id="endDate" class="data-group date end" data-date="">
-              <span class="data-label">Término <i class="fa-regular fa-circle-question"
-                  data-tooltip="Opcional"></i></span>
-              <div class="date-input data" id="dateInput">
-                <div class="date-display" id="dateDisplay">Selecione uma data</div>
-                <div class="calendar" id="calendar">
-                  <div class="calendar-header">
-                    <button id="prevGroup"><i class="fas fa-caret-left"></i></button>
-                    <span id="monthYearDisplay"></span>
-                    <button id="nextGroup"><i class="fas fa-caret-right"></i></button>
-                  </div>
-                  <div class="calendar-view" id="calendarView">
-                    <div class="calendar-content" id="calendarContent"></div>
-                  </div>
-                </div>
-              </div>
+              <span class="data-label">
+                Término
+                <i class="fa-regular fa-circle-question" data-tooltip="Opcional"></i>
+              </span>
+              <calendar class="end"></calendar>
             </div>
           </div>
-          <div class="data-group check">
-            <span class="data-label">Rascunho </span>
-            <label id="isDraftSwitch" class="switch">
-              <input type="checkbox" id="checkbox">
-              <div class="slider"></div>
-            </label>
+          <div class="data-complex flexrow">
+            <div class="data-group check">
+              <span class="data-label">Rascunho </span>
+              <switch id="isDraftSwitch" />
+            </div>
+            <a class="add-timeline" data-tooltip="Linhas do Tempo"><i class="fa-solid fa-timeline"></i></a>
           </div>
-        </div>
+        </fieldset>
       </div>
     </div>
 
     <div class="separator"></div>
 
-    <textarea id="textEditor">
-          <div class="text-content editable"></div>
-        </textarea>
+    <textarea id="mainEditor">
+      <div class="text-content editable"></div>
+   </textarea>
     <div class="footer flexrow">
-      <button id="newEntryButton" class="new-entry"><i class="fas fa-square-plus"></i> Nova Entrada</button>
-      <button id="saveButton"><i class="fa-regular fa-floppy-disk"></i> Salvar</button>
+      <div class="extra buttons flexrow">
+        <button id="cancelButton" class="cancel-entry hidden"><i class="fa-solid fa-square-xmark"></i> Cancelar</button>
+      </div>
+      <div class="fixed buttons flexrow">
+        <button id="newEntryButton" class="new-entry disabled"><i class="fas fa-square-plus"></i> Nova Entrada</button>
+        <button id="saveButton" class="disabled"><i class="fa-regular fa-floppy-disk"></i> Salvar</button>
+      </div>
     </div>
   </div>
 </div>

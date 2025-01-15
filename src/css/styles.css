@@ -1904,12 +1904,14 @@ folder-list .folder.created.selected .folder-header .fa-trash {
 }
 
 .entries .sidebar {
+    width: 20%;
     white-space: nowrap;
     background: var(--dark-blue);
     color: var(--light-text-color);
     padding: 20px;
     box-shadow: var(--sidebar-shadow);
     overflow-y: auto;
+    overflow-x: clip;
     border-right: var(--sidebar-border);
     box-sizing: border-box;
     border-bottom-left-radius: var(--default-border-radius);
@@ -1921,7 +1923,15 @@ folder-list .folder.created.selected .folder-header .fa-trash {
     justify-content: flex-start;
     /* Garante que o conteúdo começa no topo */
     align-items: flex-start;
-    /* Alinhamento à esquerda */
+
+    transition: width 0.3s ease-in-out;
+}
+.entries .sidebar * {
+    overflow-x: clip;
+}
+.entries .sidebar.minimized {
+    width: 0%;
+    pointer-events: none;
 }
 .entries .sidebar.inverted {
     border-right: none;
@@ -1937,6 +1947,32 @@ folder-list .folder.created.selected .folder-header .fa-trash {
 .timeline-dialog.entries .sidebar.inverted {
     margin-left: 5px;
 }
+
+.entries .minimize-button {
+    position: absolute;
+    top: 20px;
+    left: 310px;
+    width: 25px;
+    height: 25px;
+    align-content: center;
+    text-align: center;    
+    transition: transform 0.3s ease-in-out;
+}
+.entries .minimize-button i {
+    transition: transform 0.1s linear;
+}
+.entries .minimize-button:hover{
+    cursor: pointer;
+    color: var(--focus-red);
+    text-shadow: var(--text-shadow);
+}
+.entries .minimize-button:has(+.sidebar.minimized) {
+    transform: translateX(-303px);
+}
+.entries .minimize-button:has(+.sidebar.minimized) i {
+    transform: rotate(-180deg);
+}
+
 .dialog .timeline-dialog.entries .summary .content .header-info input {
     font-size: var(--heading-3-size);
 }

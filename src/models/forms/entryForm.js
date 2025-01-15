@@ -498,9 +498,9 @@ export default class EntryForm extends SidebarForm {
 
     // A seleção de folders somente afeta o estado do formulário, se ele estiver no 
     // estado padrão.
-    if (this.currentState == this.states.default) {
+    if (this.currentState <= this.states.newEntry) {
       if (isSelected) this.controlStates(this.states.newEntry);
-      else this.controlStates(this.states.cancelEntry);
+      else this.controlStates(this.states.default);
     }
   }
 
@@ -630,7 +630,7 @@ export default class EntryForm extends SidebarForm {
     if (!this.onSaveClick) {
       const message = 'Método de tratamento do clique de salvamento não foi implementado no formulário filho.';
       this.msgBox.showWarning(message);
-    } else {      
+    } else {
       try {
         const options = {
           id: itemId,
@@ -640,7 +640,7 @@ export default class EntryForm extends SidebarForm {
         const title = (this.isEntryUpdate ? 'Atualizar' : 'Registrar');
         let message = '';
 
-        if(this.isEncyclopedia) message = (this.isEntryUpdate ? 'Deseja atualizar a categoria?' : 'Deseja salvar a categoria?');
+        if (this.isEncyclopedia) message = (this.isEntryUpdate ? 'Deseja atualizar a categoria?' : 'Deseja salvar a categoria?');
         else message = (this.isEntryUpdate ? 'Deseja atualizar a entrada?' : 'Deseja salvar a entrada?');
 
         if (await Dialog.confirm(title, message)) {
@@ -652,7 +652,7 @@ export default class EntryForm extends SidebarForm {
           const data = {
             title: titleInput.value,
             isDraft: Number(draftCheckbox.checked),
-          };         
+          };
 
           // Se uma imagem foi informada, prepare-a para o banco de dados.
           uniforge.utils.mergeObjects(data, this.selectedImg);
@@ -851,6 +851,35 @@ export default class EntryForm extends SidebarForm {
     }
   }
 
+  /*
+  Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer nec mi a enim posuere dictum. Etiam vel augue id leo elementum aliquam id sit amet elit. 
+  Nam molestie risus sit amet eros sagittis, eget congue tortor tempus. Nullam nibh mauris, sagittis ut tempus sed, congue at turpis. Etiam posuere ligula eu lacus pharetra tincidunt. 
+  Integer iaculis est id nibh mollis, vel finibus turpis feugiat. Cras eget tempus nisl. Etiam a posuere tellus.
+
+  Pellentesque sagittis mollis nulla et bibendum. Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos. Phasellus malesuada erat non euismod consectetur. 
+  Mauris ut quam sit amet enim convallis egestas. Curabitur velit turpis, gravida id lacus sit amet, lobortis finibus tortor. Sed hendrerit at metus sed lobortis. Fusce nec ex ac libero varius 
+  dapibus convallis ut nisl. Vestibulum a tortor turpis. Fusce eleifend rhoncus augue, sit amet cursus lacus ullamcorper nec. Phasellus posuere dui rhoncus elementum mattis. Pellentesque mattis 
+  velit non venenatis mattis. Cras ut tellus pulvinar, tempus ligula ut, dignissim enim.
+
+  Vivamus purus nunc, posuere in commodo et, ornare id nisi. Morbi a lacus tempus, varius lorem a, mollis nunc. Nunc nibh justo, interdum ac ante a, pulvinar mattis ipsum. 
+  Praesent sed sapien augue. Aliquam rutrum, velit et vulputate ultrices, nibh nulla ornare elit, id eleifend purus purus a odio. Integer lacinia, magna et lobortis aliquam, metus purus congue nisi,
+  id porta ex nisi eu arcu. Mauris venenatis malesuada risus a vehicula. Fusce augue mauris, ullamcorper in semper sed, tempor sit amet sapien. Nunc mi dolor, lacinia quis sodales at, gravida a erat. 
+  Etiam laoreet leo at lectus gravida, et elementum dolor mattis. Sed id nulla accumsan, elementum quam id, consectetur sapien. Sed eu aliquam velit. Maecenas maximus nunc id mollis ullamcorper.
+
+  Praesent condimentum non diam blandit semper. Vivamus non pretium lacus. Donec id ultricies erat, sed eleifend mi. Curabitur iaculis lacus elit, ut suscipit ipsum hendrerit et. Nunc justo nisi, 
+  blandit at vestibulum in, sodales eget dui. Nam semper, magna vitae venenatis sagittis, libero odio mollis neque, ac tristique orci libero nec mauris. Integer accumsan arcu sit amet urna posuere, 
+  quis cursus diam egestas. Praesent in fermentum nibh. Aenean facilisis, leo bibendum convallis aliquam, erat lacus porta ex, eu tristique nunc lorem auctor nibh.
+
+  Proin semper fringilla mauris ac ullamcorper. Nam at dapibus nibh, non fermentum odio. In tempus convallis nulla at tempus. Phasellus lobortis odio et sodales pellentesque. Suspendisse accumsan 
+  gravida mi, in sagittis tortor ornare eu. Suspendisse ut metus vulputate, volutpat tortor nec, porttitor magna. Vestibulum egestas diam et ante aliquet, sit amet efficitur eros feugiat. Donec in 
+  aliquet ipsum.
+  */
+
+  onAddLoremIpsum(editor) {
+    const  loremIpsum = uniforge.utils.loremIpsum(5);
+    editor.execCommand('mceInsertContent', false, loremIpsum);
+  }
+
   /* ---------------------------------------------------------------------------------------------------------------- */
   // UTILITÁRIOS
   /**
@@ -981,19 +1010,28 @@ export default class EntryForm extends SidebarForm {
     editor.on('change', () => this._updateImageCount(editor));
     editor.on('NodeChange', () => this._updateImageCount(editor));
 
+    // Adiciona um botão para criar link no corpo do editor.
     editor.ui.registry.addButton('entryLink', {
       tooltip: 'Criar link',
       icon: 'bookmark',
       onAction: () => { this.onEntryLinkCreation(editor); }
     });
 
-    // Adiciona um botão de imagem customizado na toolbar
+    // Adiciona um botão para enviar ao corpo do editor.
     editor.ui.registry.addButton('sendImage', {
-      icon: 'image',
       tooltip: 'Enviar Imagem',
+      icon: 'image',      
       onAction: () => { this.onUploadImage(editor); }
     });
 
+    // Adiciona um botão para adicionar Lorem Ipsum ao corpo do editor.
+    editor.ui.registry.addButton('addLoremIpsum', {
+      tooltip: 'Adicionar Lorem Ipsum',
+      icon: 'format-code',
+      onAction: () => { this.onAddLoremIpsum(editor); }
+    });
+
+    /*
     editor.on('mouseover', (event) => {
       const span = event.target.closest('span.linked-text');
       if (span) {
@@ -1006,6 +1044,7 @@ export default class EntryForm extends SidebarForm {
     editor.on('mouseout', () => {
       tooltip._hideLinkTooltip();
     });
+    */
   }
   /**
    * Configura o editor TinyMCE com funcionalidades inline.

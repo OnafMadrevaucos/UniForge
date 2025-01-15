@@ -51,7 +51,7 @@ uniforge.utils.mergeObjects(uniforge, {
             editable_class: 'editable',
             license_key: 'gpl',
             plugins: ['anchor', 'autolink', 'codesample', 'link', 'lists', 'searchreplace', 'table', 'visualblocks', 'image'],
-            toolbar: 'undo redo | blocks | bold italic backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | entryLink blockquote sendImage',
+            toolbar: 'undo redo | blocks | bold italic backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | entryLink blockquote sendImage | addLoremIpsum',
             toolbar_mode: 'wrap',
             placeholder: 'Descrição do registro...',
             block_formats: 'Heading 1=h1; Heading 2=h2; Heading 3=h3; Paragraph=p;',

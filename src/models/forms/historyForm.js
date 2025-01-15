@@ -100,10 +100,10 @@ export class HistoryForm extends EntryForm {
     }
 
     /**
-   * Limpa o conteúdo do formulário
-   * 
-   * @param {Boolean} clearSidebar - Flag para habilitar/desabilitar a limpeza da seleção da sidebar.
-   */
+    * Limpa o conteúdo do formulário
+    * 
+    * @param {Boolean} clearSidebar - Flag para habilitar/desabilitar a limpeza da seleção da sidebar.
+    */
     clearContent(clearSidebar = true) {
         super.clearContent(clearSidebar);
 
