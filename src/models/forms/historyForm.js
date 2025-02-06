@@ -1,6 +1,5 @@
 import DatePicker from "../datePicker.js";
 import EntryForm from "./entryForm.js";
-import Dialog from "../dialogs/dialog.js";
 import TimelineDialog from "../dialogs/timelineDialog.js";
 
 /**
@@ -9,7 +8,7 @@ import TimelineDialog from "../dialogs/timelineDialog.js";
   * @extends EntryForm
   * 
   */
-export class HistoryForm extends EntryForm {
+export default class HistoryForm extends EntryForm {
     /**
       * Constrói uma instância da classe derivada, inicializando as propriedades e configurando o conteúdo.
       * @class
@@ -21,7 +20,7 @@ export class HistoryForm extends EntryForm {
         // Chama o construtor da classe pai com o parâmetro overlay.
         super(title);
 
-        this.template = 'historyForm.html'; // Define o template do formulário. 
+        this.template = 'historyForm'; // Define o template do formulário. 
 
         this.type = 'history'; // Define o tipo do formulário.        
 
@@ -183,10 +182,7 @@ export class HistoryForm extends EntryForm {
         super.activateListeners();
 
         const calendarType = this.querySelector('#calendarType');
-        calendarType.addEventListener('change', (event) => { this.onDateTypeChange(event); });
-
-        const timelineButton = this.querySelector('.add-timeline');
-        timelineButton.addEventListener('click', (event) => { this.onTimelineClick(event); });
+        calendarType.addEventListener('change', (event) => { this.onDateTypeChange(event); });        
     }
     /**
     * Trata o evento de registro de uma nova entrada.
@@ -280,15 +276,5 @@ export class HistoryForm extends EntryForm {
         } else {
             this.msgBox.showWarning('Erro ao carregar a entrada.');
         }
-    }
-
-    /**
-    * Gerencia cliques do botão de criar linha de tempo.
-    * @inheritdoc
-    * @param {MouseEvent} event - O evento de clique.
-    */
-    async onTimelineClick(event) {
-        event.stopPropagation();
-        await TimelineDialog.configDialog();
-    }
+    }    
 }

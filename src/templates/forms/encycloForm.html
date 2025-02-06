@@ -28,7 +28,7 @@
       </div>
       <div class="header-info flexcol">
         <input id="titleInput" type="text" class="title" name="title" placeholder="Título da Entrada" disabled />
-        <fieldset class="info-content flexcol" disabled>
+        <fieldset class="info-set flexcol" disabled>
           <div class="data-group icon">
             <span class="data-label">Tipo </span>
             <div class="icon-container flexrow">
@@ -37,9 +37,12 @@
             </div>
             <span id="typeLabel" class="type-label">&#8212</span>
           </div>
-          <div class="data-group check">
-            <span class="data-label">Rascunho </span>
-            <switch id="isDraftSwitch" />
+          <div class="data-complex flexrow">
+            <div class="data-group check">
+              <span class="data-label">Rascunho </span>
+              <switch id="isDraftSwitch" />
+            </div>           
+            <a id="lineageIcon" class="lineage-icon hidden" data-tooltip="Linhagem" data-tooltip-left><i class="fas fa-people-group"></i></a>            
           </div>
         </fieldset>
       </div>

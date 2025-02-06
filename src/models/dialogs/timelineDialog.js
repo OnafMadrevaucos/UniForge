@@ -1,6 +1,6 @@
-import Dialog from "./dialog.js";
+import BaseDialog from "./baseDialog.js";
 
-export default class TimelineDialog extends Dialog {
+export default class TimelineDialog extends BaseDialog {
     constructor(dialogData = {}, options = {}) {
         super(dialogData, uniforge.utils.mergeObjects(options, {
             height: '500px',
@@ -10,19 +10,16 @@ export default class TimelineDialog extends Dialog {
         this.sourceId = options?.id ?? null;
 
         this.sourceType = options?.type ?? null;
-    }
 
-   async getBody() {
-        const html = await uniforge.utils.loadTemplate(this.template);
-        this.ui.content.innerHTML = html;
-   }
+        this.template = 'timelineDialog'; // Define o template do diálog.
+    }    
 
     /**
    * Inicializa e configura o editor TinyMCE.
    * Remove qualquer instância existente antes de reconfigurar.
    * @private
    */
-    async getTinyMCE() {
+    async prepareTinyMCE() {
         if (tinymce.get('flavorText')) {
             tinymce.remove('#flavorText');
         }
@@ -41,26 +38,10 @@ export default class TimelineDialog extends Dialog {
     }
 
     async _prepare() {
-        await super._prepare(); // Gera a estrutura base do diálogo   
+        this.data.items = await this.db.getAllEntriesAndTimelinesExcept(this.sourceId, this.sourceType);       
 
-        const entryFolder = this.querySelector('#entry');
-        const timelineFolder = this.querySelector('#timeline');
-
-        const entryList = entryFolder.querySelector('.entry-list');
-        const timelineList = timelineFolder.querySelector('.entry-list');
-
-        const items = await this.db.getAllEntriesAndTimelinesExcept(this.sourceId, this.sourceType);
-        items.forEach(item => {
-            if (item.type == 'entry') {
-                const entryItem = this.createItem(item);
-                entryList.appendChild(entryItem);
-            } else if (item.type == 'timeline') {
-                const timelineItem = this.createItem(item);
-                timelineList.appendChild(timelineItem);
-            }
-        });
-
-        await this.getTinyMCE();
+        await super._prepare(); // Gera a estrutura base do diálogo.  
+        await this.prepareTinyMCE();
     }
 
     /**
@@ -137,7 +118,7 @@ export default class TimelineDialog extends Dialog {
         return entryItem;
     }
 
-    static async configDialog(source) {
+    static async configDialog() {
         function getTimelineData(event) {
             const button = event.target.closest('.dialog-button');
             const item = JSON.parse(button.dataset.item);
@@ -163,7 +144,7 @@ export default class TimelineDialog extends Dialog {
                 abort: () => resolve(null)
             };
 
-            const dialog = new this(dialogData, source);
+            const dialog = new this(dialogData);
             dialog.render();
         });
     }

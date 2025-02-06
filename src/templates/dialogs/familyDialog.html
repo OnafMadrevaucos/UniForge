@@ -1,0 +1,78 @@
+<div class="family-dialog entries flexcol">
+    <div class="info-header">
+        <div class="img-container family-portrait">
+            <img id="familyPortrait" class="family-portrait empty" src="./images/blank-image.svg" alt="Imagem Padrão">
+        </div>
+        <div class="family-name">
+            <combo id="familySelect" value="families" blank="0" />
+        </div>
+    </div>
+    <div class="separator"></div>
+    <div class="content">
+        <fieldset class="info-set flexcol">
+            <h4>Informações Pessoais</h4>
+            <div class="data-complex flexrow">
+                <div class="data-group text">
+                    <span class="data-label">Título </span>
+                    <input id="title" type="text" class="small-text title" name="title" />
+                </div>
+                <div class="data-group text">
+                    <span class="data-label">Sufixo </span>
+                    <input id="suffix" type="text" class="small-text suffix" name="suffix" />
+                </div>
+            </div>
+            <div class="data-group text">
+                <span class="data-label">Sobrenome Nascimento </span>
+                <input id="birthSurname" type="text" class="birthName" name="birthSurname" />
+            </div>
+            <div class="data-group text">
+                <span class="data-label">Apelido </span>
+                <input id="nickName" type="text" class="nickName" name="nickName" />
+            </div>
+            <div class="data-group combo">
+                <span class="data-label">Gênero </span>
+                <combo id="gender" value="genders" blank="0" />
+            </div>
+            <div class="tiny separator"></div>
+            <div class="data-complex flexrow">
+                <div class="data-group date">
+                    <span class="data-label">Nascimento </span>
+                    <calendar class="birth"></calendar>
+                </div>
+                <div class="data-complex flexcol">
+                    <div class="data-group date">
+                        <span class="data-label">Morte </span>
+                        <calendar class="death"></calendar>
+                    </div>
+                    <div class="data-group check">
+                        <span class="data-label">Está morto? </span>
+                        <switch id="deceasedSwitch" />
+                    </div>
+                </div>
+            </div>
+            <div class="tiny separator"></div>
+            <div class="data-group combo">
+                <span class="data-label">Ordem de Nasc. </span>
+                <input type="number" id="birthOrder" class="dial" min="0" max="100" value="0">
+            </div>
+            <div class="tiny separator"></div>
+            <h4>Relações Familiares</h4>
+            <div class="data-group combo">
+                <span class="data-label">Mãe </span>
+                <combo id="genitorA" value="adults" blank="0"></combo>
+                <a class="add-button"><i class="fas fa-plus"></i></a>
+            </div>
+            <ul id="genitorsA" class="genitor-list"></ul>
+            <div class="data-group combo">
+                <span class="data-label">Pai </span>
+                <combo id="genitorB" value="adults" blank="0"></combo>
+                <a class="add-button"><i class="fas fa-plus"></i></a>
+            </div>
+            <ul id="genitorsB" class="genitor-list"></ul>
+            <div class="data-group combo">
+                <span class="data-label">Companheiro(a) </span>
+                <combo id="partner" value="adults" blank="0"></combo>
+            </div>
+        </fieldset>
+    </div>
+</div>

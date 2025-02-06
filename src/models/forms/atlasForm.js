@@ -1,11 +1,10 @@
 import EntryForm from "./entryForm.js";
-import Dialog from "../dialogs/dialog.js";
 
-export class AtlasForm extends EntryForm {
+export default class AtlasForm extends EntryForm {
     constructor(title) {
         super(title);
 
-        this.template = 'atlasForm.html'; // Define o template do formulário.
+        this.template = 'atlasForm'; // Define o template do formulário.
 
         this.type = 'atlas'; // Define o tipo do formulário.
     }

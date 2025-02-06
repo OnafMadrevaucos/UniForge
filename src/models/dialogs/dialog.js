@@ -5,80 +5,54 @@ import BaseDialog from "./baseDialog.js";
  * O diálogo pode ser configurado com título, botões e conteúdo.
  * Suporta funcionalidades de arraste e interação com botões de confirmação.
  * 
- * @class Dialog
+ * @class Dialogs
  */
-export default class Dialog extends BaseDialog {
+export default class Dialogs extends BaseDialog {
+  static Type = {
+    CONFIRM: 0,
+    SECURE: 1,
+    IMAGE: 2
+  };
+
   /**
    * Cria uma instância do diálogo.
    * 
    * @constructor
-   * @param {DialogData} data               - Dados do diálogo.
-   * @param {DialogOptions} options         - Opções adicionais do diálogo.
-   * @param {Object} dialogObject           - Configurações iniciais do diálogo.
-   * @param {string} dialogObject.title     - Título do diálogo (padrão: "Dialog").
-   * @param {Object} dialogObject.buttons   - Conjunto de botões a serem exibidos no diálogo.
-   * @param {Function} dialogObject.abort   - Função a ser executada se o dialog fechar inesperadamente.
-   * @param {Object} options                - Opções adicionais, como o conteúdo do corpo do diálogo.
+   * @param {DialogData} data                   - Dados do diálogo.
+   * @param {DialogOptions} options             - Opções adicionais do diálogo.
+   * @param {Object} dialogObject               - Configurações iniciais do diálogo.
+   * @param {string} dialogObject.title         - Título do diálogo (padrão: "Dialogs").
+   * @param {Object} dialogObject.buttons       - Conjunto de botões a serem exibidos no diálogo.
+   * @param {Function} dialogObject.abort       - Função a ser executada se o dialog fechar inesperadamente.   
+   * @param {Object} options                    - Opções adicionais, como o conteúdo do corpo do diálogo.
+   * @param {Function} options.hasTemplate      - Flag que indica se o diálogo deve possuir um template.
    */
-  //constructor({ title = "Dialog", buttons = {}, abort = null }, options = {}) {
-  constructor(data, options) {
-    super(options);
+  //constructor({ title = "Dialog", buttons = {}, abort = null}, options = { hasTemplate = false }) {
+  constructor(data, options = {}) {
+    super(data, options);
 
-    // Atribui os dados do diálogo.
-    this.data = data; 
-
-    /** 
-     * Conjunto de botões do diálogo.
-     * @type {Object<string, {label: string, icon: string, callback: Function}>}
-     */
-    this.buttons = data.buttons;
-
-    /**
-     * Corpo do diálogo (HTML ou string).
-     * @type {HTMLElement|string}
-     */
-    this.bodyHTML = '';
-
-    /**
-     * Gerenciador de conexão de Banco de Dados.
-     * @type {DBManager}
-     */
-    this.db = uniforge.db;
-
-    /** 
-     * Função executada se o dialog fechar inesperadamente.
-     * @type {Function}
-     */
-    this.abort = data.abort;
-
-    /**
-     * Se o dialog deve assumir as configurações seguras.
-     * @type {Object}
-     */
-    this.secure = options?.secure ?? false;
-
-    
-    this.options = options;
+    this.type = options?.type ?? Dialogs.Type.CONFIRM;
   }
 
-  get title() {
-    return this.data.title || "Caixa de Diálogo";
+  getBody() {
+    switch (this.type) {
+      case Dialogs.Type.SECURE:
+        return this.SecureConfirmBody;
+      case Dialogs.Type.IMAGE:
+        return this.ImageBody;
+      default:
+        return this.ConfirmBody;
+    }
   }
 
-  async getBody() {
-    if (this.secure) return this.getSecureConfirmBody();
-    else if (this.options.imageUrl) return await this.getImageBody();
-    else return this.getConfirmBody();
-  }
-
-  getConfirmBody() {
+  get ConfirmBody() {
     return this.options?.prompt ?? '';
   }
 
-  getImageBody() {
+  get ImageBody() {
     // Cria o body
     const body = document.createElement('div');
-    body.className = 'image-dialog flexcol';    
+    body.className = 'image-dialog flexcol';
 
     const img = document.createElement('img');
     img.src = this.options.imageUrl;
@@ -89,10 +63,10 @@ export default class Dialog extends BaseDialog {
 
     body.appendChild(img);
 
-    return body;
+    return body.outerHTML;
   }
 
-  getSecureConfirmBody() {
+  get SecureConfirmBody() {
     // Cria o body
     const body = document.createElement('div');
     body.className = 'secure-dialog flexcol';
@@ -125,176 +99,23 @@ export default class Dialog extends BaseDialog {
 
     body.appendChild(textGroup);
 
-    return body;
+    return body.outerHTML;
   }
 
   /**
-   * Cria a estrutura do diálogo, incluindo overlay, cabeçalho, corpo e botões.
-   * @private
-   */
-  async _prepare() {
-    const options = this.options ?? {};
-    const overlay = document.createElement("div");
-    overlay.className = "overlay dialog-overlay";
-    document.body.appendChild(overlay);
-
-    this.overlay = overlay; // Armazena o overlay para exibição posterior. 
-
-    // Obtem o corpo do dialog.
-    this.bodyHTML = await this.getBody(); // Conteúdo do corpo do diálogo.      
-
-    // Container do diálogo
-    this.dialog = document.createElement("div");
-    this.dialog.id = 'dialog';
-    this.dialog.className = 'dialog flexcol';
-
-    this.dialog.style = `height: ${this.options.height ?? 'auto'}; width: ${this.options.width ?? 'auto'}`;
-
-    // Cabeçalho
-    const titleHeader = document.createElement('div');
-    titleHeader.className = 'header flexrow';
-
-    // Título do diálogo
-    const title = document.createElement("h2");
-    title.textContent = this.title;
-
-    const closeButton = document.createElement("a");
-    closeButton.className = 'close-button';
-    closeButton.innerHTML = '<i class="fas fa-xmark"></i>';
-
-    titleHeader.appendChild(title);
-    titleHeader.appendChild(closeButton);
-
-    // Corpo do diálogo
-    const dialogBody = document.createElement("div");
-    dialogBody.className = 'body flexcol';
-    dialogBody.innerHTML = this.bodyHTML.outerHTML ?? this.bodyHTML;
-
-    // Container dos botões
-    const buttons = document.createElement("div");
-    buttons.className = 'buttons';
-
-    // Criar os botões
-    Object.entries(this.buttons).forEach(([id, button]) => {
-      const newButton = document.createElement("button");
-      newButton.id = id;
-      newButton.innerHTML = `<i class='${button.icon}'></i> ${button.label}`;
-      newButton.className = button.className || "dialog-button";
-
-      newButton.dataset.canClose = button.canClose ?? 'true';
-
-      buttons.appendChild(newButton);
-    });
-
-    this.dialog.appendChild(titleHeader);
-    this.dialog.appendChild(dialogBody);
-    this.dialog.appendChild(buttons);
-
-    this.overlay.appendChild(this.dialog);
-  }
-
-  /**
-    * Exibe o diálogo na página.
-    */
-  async render(centralize=true) {
-    // Prepara o dialog para em seguida renderizá-lo.
-    const result = await this._prepare()
-    await super.render();
-    
-    if(centralize) {
-      // Centralizar o diálogo no parentElement
-      this._centerDialog();
+     * Renderiza o diálogo com o template Handlebars.
+     * Se o diálogo possuir um template, ele é carregado e renderizado
+     * no corpo do diálogo.
+     * @async
+     * @throws {Error} - Se ocorrer um erro ao carregar o template.
+     */
+  async renderDialog() {
+    try {
+      this.ui.body.innerHTML = this.getBody();
+    } catch (error) {
+      this.msgBox.showError(error);
     }
-
-    this._activateListeners();    
-  }
-
-  /**
-    * Fecha o diálogo e remove o overlay da página.
-  */
-  close() {
-    if (this.abort) this.abort();
-    super.close();
-  }
-
-  /**
-   * Seleciona o primeiro elemento correspondente ao seletor dentro do diálogo.
-   * 
-   * @param {string} selector - Seletor CSS.
-   * @returns {HTMLElement|null} O primeiro elemento encontrado ou null.
-   */
-  querySelector(selector) {
-    return this.dialog.querySelector(selector);
-  }
-
-  /**
-   * Seleciona todos os elementos correspondentes ao seletor dentro do diálogo.
-   * 
-   * @param {string} selector - Seletor CSS.
-   * @returns {NodeListOf<HTMLElement>} Lista de elementos encontrados.
-   */
-  querySelectorAll(selector) {
-    return this.dialog.querySelectorAll(selector);
-  }
-
-  /**
-   * Centraliza o diálogo ao element pai.
-   * 
-   * */
-  _centerDialog() {
-    if (this.parentElement && this.dialog) {
-      const parentRect = this.parentElement.getBoundingClientRect();
-      const dialogRect = this.dialog.getBoundingClientRect();
-
-      let centerX = 0;
-      let centerY = 0;
-
-      if (parentRect.x != 0 && parentRect.y != 0) {
-        // Calcula as coordenadas para centralizar o diálogo
-        centerX = parentRect.left + (parentRect.width - dialogRect.width) / 2;
-        centerY = parentRect.top + (parentRect.height - dialogRect.height) / 2;
-      } else {
-        // Calcula as coordenadas para centralizar o diálogo
-        centerX = (dialogRect.width) / 2;
-        centerY = (dialogRect.height) / 2;
-      }
-
-      // Define a posição do diálogo
-      this.dialog.style.position = "absolute";
-      this.dialog.style.left = `${centerX}px`;
-      this.dialog.style.top = `${centerY}px`;
-    }
-  }
-
-  /**
-    * Configura ouvintes de eventos básicos para o dialog.
-    * @protected
-    */
-  _activateListeners() {
-    super._activateListeners();
-    // Permite fechar o diálogo clicando no overlay
-    this.overlay.addEventListener("click", (event) => {
-      if (!event.target.classList.contains('overlay')) return;
-      this.abort();
-      this.close();
-    });
-    const buttons = this.querySelectorAll('.dialog-button');
-    
-    Object.values(buttons).forEach(button => {
-      button.addEventListener("click", (event, params = {}) => {
-        this.buttons[button.id].callback(event, ...Object.values(params));
-        if (this.querySelector(`#${button.id}`).dataset?.canClose === 'true')
-          this.close();
-      });
-    });
-
-    const closeButton = this.querySelector('.close-button');
-    closeButton.addEventListener('click', (event) => {
-      event.stopPropagation();
-      this.close();
-    });
-
-  }
+  } 
 
   /**
    * Configura ouvintes de eventos para elementos no diálogo.
@@ -376,7 +197,7 @@ export default class Dialog extends BaseDialog {
         },
         abort: () => resolve(false)
       };
-      const dialog = new this(dialogData, { secure: true });
+      const dialog = new this(dialogData, { hasTemplate: false, type: Dialogs.Type.SECURE });
       dialog.render();
     });
   }
@@ -395,7 +216,7 @@ export default class Dialog extends BaseDialog {
         title: title,
         abort: () => resolve()
       };
-      const dialog = new this(dialogData, { imageUrl, width: '75%' });
+      const dialog = new this(dialogData, { hasTemplate: false, imageUrl, width: '75%', type: Dialogs.Type.IMAGE });
       dialog.render(false);
     });
   }

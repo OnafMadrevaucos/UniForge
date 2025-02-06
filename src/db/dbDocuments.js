@@ -14,6 +14,7 @@ export default class DBDocuments {
      * @param {Array<Object>} data.events - Dados da tabela event.
      * @param {Array<Object>} data.timelines - Dados da tabela timeline.
      * @param {Array<Object>} data._timelineEvents - Dados da tabela _timelineEvent.
+     * @param {Array<Object>} data.familyTrees - Dados da tabela familyTrees.
      * @param {Array<Object>} data.calendars - Dados da tabela calendars.
      * @param {Array<Object>} data.calendarsMonths - Dados da tabela calendarsMonths.
      * @param {Array<Object>} data.calendarsDays - Dados da tabela calendarsDays.
@@ -36,6 +37,7 @@ export default class DBDocuments {
         this.settings = this.createSimpleSet(data.settings);
         this.importances = this.createSimpleSet(data.importances);
         this.entryTypes = this.createSimpleSet(data.entryTypes);
+        this.familyTrees = this.createSimpleSet(data.familyTrees);
     }
 
     static async UniForgeData() {
@@ -231,7 +233,7 @@ export default class DBDocuments {
                     });
 
                 // Adiciona a categoria ao conjunto, incluindo suas entradas
-                categorySet.add({ ...category, type: subject.root, entries: entrySet });
+                categorySet.add({ ...category, type: subject.root, isLineage: (subject.isLineage == 1), entries: entrySet });
             });
         } else throw new Error('Não foi possível criar o Set das categorias. O Set dos subjects deve ser criado antes do de categories.');
 

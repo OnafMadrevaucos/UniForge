@@ -1,10 +1,11 @@
-import { AtlasForm } from "./models/forms/atlasForm.js";
-import { EncycloForm } from "./models/forms/encycloForm.js";
-import { HistoryForm } from "./models/forms/historyForm.js";
-import { LibraryForm } from "./models/forms/libraryForm.js";
-import { PoliticsForm } from "./models/forms/politicsForm.js";
-import { SettingsForm } from "./models/forms/settingsForm.js";
-import { TimelineForm } from "./models/forms/timelineForm.js";
+import AtlasForm from "./models/forms/atlasForm.js";
+import LineageForm from "./models/forms/lineageForm.js";
+import HistoryForm from "./models/forms/historyForm.js";
+import PoliticsForm from "./models/forms/politicsForm.js";
+import SettingsForm from "./models/forms/settingsForm.js";
+import LibraryForm from "./models/forms/libraryForm.js";
+import TimelineForm from "./models/forms/timelineForm.js";
+
 import MsgBox from "./models/msgBox.js";
 
 import { LinkTooltip } from "./scripts/linkTooltip.js";
@@ -14,6 +15,7 @@ import { registerHook, triggerHook } from "./scripts/hooks.js";
 import DBManager from "./db/dbManager.js";
 import DBDocuments from "./db/dbDocuments.js";
 
+import FamilyManager from "./scripts/managers/familyManger.js";
 // Adiciona as propriedades restantes ao objeto uniforge.
 uniforge.utils.mergeObjects(uniforge, {
 
@@ -143,8 +145,60 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     configureForms();
 
-    configureHooks();
+    configureHooks();    
 });
+
+function testFamilyScript() {
+    const family = new FamilyManager(); 
+    
+    
+    const lucas = {
+        givenName: 'Lucas',
+        title: 'Sr',
+        surnameNow: 'Carvalho Macedo',
+        surnameAtBirth: 'Rodrigues Macedo',
+        gender: 'm',
+        birthDate: '19921222'
+    };
+    const idLucas = family.newIndividual(lucas);
+
+    const jessica = {
+        givenName: 'Jéssica Cristina',
+        title: 'Sra',
+        surnameAtBirth: 'Carvalho Silva',
+        gender: 'f',
+        birthDate: '19910725'
+    };
+    const idJessica = family.newIndividual(jessica);
+
+    const emilly = {
+        givenName: 'Emilly Suzane',
+        surnameNow: 'Silva Lima',
+        gender: 'f',
+        birthDate: '20100428',
+        mother: idJessica,
+        birthOrder: '1'
+    };
+    const idEmilly = family.newIndividual(emilly);
+
+    const branch = {
+        id1: idLucas,
+        id2: idJessica,
+        partners: '2',
+        type: 'm',
+        startDate: '20250510'
+    }
+    family.newBranch(branch);
+
+    const script = 'iR3QK8\tpLucas\tTSr\tlCarvalho Macedo\tqRodrigues Macedo\tgm\tb19921222\n'+
+                   'iDKP41\tpJéssica Cristina\tTSra\tlCarvalho Silva\tgf\tb19910725\n'+
+                   'iPWAN7\tpEmilly Suzane\tlSilva Lima\tgf\tb20100428\tmDKP41\tO1\n'+
+                   'pR3QK8 DKP41\te2\tgm\tb20250510\n';
+
+    console.log(script);
+    console.log(family.Tree);
+    console.log(family.ToFamilyScript());
+}
 
 /** 
  * ------------------------------------------------------------------
@@ -168,9 +222,9 @@ function configureLeaflet() {
     const drawnItems = uniforge.drawnItems;
 
     // Calcula os limites de imagem com base na largura/altura
-    const bounds = [[0, 0], [uniforge.contants.VIEW_HEIGHT, uniforge.contants.VIEW_WIDTH]];
+    const bounds = [[0, 0], [uniforge.constants.VIEW_HEIGHT, uniforge.constants.VIEW_WIDTH]];
 
-    map.setMaxBounds(uniforge.contants.IMG_HEIGHT, uniforge.contants.IMG_WIDTH);
+    map.setMaxBounds(uniforge.constants.IMG_HEIGHT, uniforge.constants.IMG_WIDTH);
     // Ajusta a visualização inicial para se ajustar aos limites da imagem
     map.fitBounds(bounds);
 
@@ -455,8 +509,8 @@ function _createControls() {
         createTile: function (coords) {
             // Create a tile with transparency
             const tile = document.createElement('canvas');
-            tile.width = uniforge.contants.TILE_SIZE; // Match your map's tile size
-            tile.height = uniforge.contants.TILE_SIZE;
+            tile.width = uniforge.constants.TILE_SIZE; // Match your map's tile size
+            tile.height = uniforge.constants.TILE_SIZE;
             const ctx = tile.getContext('2d');
 
             // Draw grid lines
@@ -464,15 +518,15 @@ function _createControls() {
             ctx.lineWidth = 1;
 
             // Draw horizontal and vertical grid lines
-            for (let i = 0; i <= uniforge.contants.TILE_SIZE; i += 36) { // Adjust the grid cell size (36px here)
+            for (let i = 0; i <= uniforge.constants.TILE_SIZE; i += 36) { // Adjust the grid cell size (36px here)
                 ctx.beginPath();
                 ctx.moveTo(i, 0);
-                ctx.lineTo(i, uniforge.contants.TILE_SIZE);
+                ctx.lineTo(i, uniforge.constants.TILE_SIZE);
                 ctx.stroke();
 
                 ctx.beginPath();
                 ctx.moveTo(0, i);
-                ctx.lineTo(uniforge.contants.TILE_SIZE, i);
+                ctx.lineTo(uniforge.constants.TILE_SIZE, i);
                 ctx.stroke();
             }
 
@@ -481,7 +535,7 @@ function _createControls() {
     });
 
     uniforge.ctrls.grid = new TransparentGridLayer({
-        tileSize: uniforge.contants.TILE_SIZE,
+        tileSize: uniforge.constants.TILE_SIZE,
         opacity: 0.8, // Adjust transparency
         zIndex: 1000, // Ensure the grid is above other layers
     });
@@ -508,23 +562,23 @@ async function renderForm(targetId, showAfter = true) {
     if (!formOverlay) {
         console.error('O elemento de overlay não foi encontrado.');
         return;
-    }
-
-    formOverlay.classList.remove('hidden');
+    }    
 
     try {
         triggerHook('beforeRender');
 
         const form = _loadTemplate(targetId);
         if (!form) {
-            console.error('Falha ao carregar template.');
+            uniforge.msgBox.showError(`O template para o formulário '${targetId}' não foi encontrado.`);
             return;
         }
+
+        formOverlay.classList.remove('hidden');
 
         uniforge.form = form;
         if (showAfter) await uniforge.form.showForm(true);
     } catch (error) {
-        console.error('Erro ao renderizar formulário:', error);
+        uniforge.msgBox.showError(error.message);
     }
 }
 
@@ -537,8 +591,8 @@ function _loadTemplate(id) {
             case 'atlas': {
                 form = new AtlasForm('Atlas');
             } break;
-            case 'encyclo': {
-                form = new EncycloForm('Enciclopédia');
+            case 'lineage': {
+                form = new LineageForm('Linhagem');
             } break;
             case 'history': {
                 form = new HistoryForm('História');
@@ -664,7 +718,7 @@ function _calculatePrecision(bounds) {
 
     // Calculando a quantidade mínima de pontos para cobrir a uniforge.mapOverlay
     const totalArea = latDiff * lngDiff;  // Área da uniforge.mapOverlay
-    const desiredPoints = Math.max(uniforge.contants.MIN_POINTS, Math.sqrt(totalArea) * 100); // Ajuste para gerar pelo menos 1000 pontos
+    const desiredPoints = Math.max(uniforge.constants.MIN_POINTS, Math.sqrt(totalArea) * 100); // Ajuste para gerar pelo menos 1000 pontos
 
     // Determinando o número de pontos para latitude e longitude
     const latPoints = Math.ceil(Math.sqrt(desiredPoints * (latDiff / totalArea)));

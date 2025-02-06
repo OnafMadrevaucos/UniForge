@@ -31,44 +31,27 @@ export default class SidebarForm extends BaseForm {
     }
 
     /**
-     * Obtém os assuntos de uma dada origem disponíveis no banco de dados.
-     * @async
-     * @returns {Object} - Assuntos e suas categorias.
-    */
-    getFolders() {
-        let folder = uniforge.doc.subjects;
-        if (!this.isEncyclopedia) {
-            if (this.type == 'article')
-                folder = uniforge.doc.categories;
-            else
-                folder = uniforge.doc.categories.filter(category => category.type === this.type);
-        }
-
-        folder = folder.sort();
-
-        return folder;
-    }
-
-    /**
-     * Obtém as entradas disponíveis em uma categoria no banco de dados.
-     * @returns {Object} - Categorias.
-     */
-    getEntry(data) {
-        const id = data._id;
-        const entry = uniforge.doc.entries.get(id);
-        return entry;
-    }
-
-    /**
      * Obtém os dados unificados necessários para o funcionamento do formulário.
      * @implements Implemente um método filho para as especificidades de cada formulário.
      * @async
      * @returns {object}  - Objeto de dados unificado.
      */
     prepareData() {
-        this.data.folders = this.getFolders();
-
+        this.prepareFolders(this.data);
         return this.data;
+    }
+
+    prepareFolders(data) {
+        let folders = uniforge.doc.subjects;
+        if (!this.isSettings) {
+            if (this.type === 'article')
+                folders = uniforge.doc.categories; 
+            else
+                folders = uniforge.doc.categories.filter(c => c.type === this.type);
+        } else if(this.type === 'lineage')
+            folders = folders.filter(s => s.isLineage === true);
+
+        data.folders = folders.sort();
     }
 
     /**
@@ -185,7 +168,7 @@ export default class SidebarForm extends BaseForm {
             sidebar.addEventListener('click', (event) => { this.onSidebarClick(event); });
 
             const minimizeButton = this.querySelector('#minimizeButton');
-            minimizeButton.addEventListener('click', (event) => { this.onMinimizeClick(event); });
+            if(minimizeButton) minimizeButton.addEventListener('click', (event) => { this.onMinimizeClick(event); });
 
             const folders = this.querySelectorAll('.folder');
             const items = this.querySelectorAll('.entry-item');

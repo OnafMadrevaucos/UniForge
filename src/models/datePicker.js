@@ -32,31 +32,31 @@ export default class DatePicker
   }
 
   get dataGroup() {
-    return document.getElementById(`${this.pickerId}`);;
+    return document.getElementById(`${this.pickerId}`);
   }
   get dateInput() {
-    return this.dataGroup.querySelector('#dateInput');
+    return this.dataGroup?.querySelector('#dateInput') ?? null;
   }
   get dateDisplay() {
-    return this.dataGroup.querySelector('#dateDisplay');
+    return this.dataGroup?.querySelector('#dateDisplay') ?? null;
   }
   get calendar() {
-    return this.dataGroup.querySelector('#calendar');
+    return this.dataGroup?.querySelector('#calendar') ?? null;
   }
   get calendarView() {
-    return this.dataGroup.querySelector('#calendarView');
+    return this.dataGroup?.querySelector('#calendarView') ?? null;
   }
   get calendarContent() {
-    return this.dataGroup.querySelector('#calendarContent');
+    return this.dataGroup?.querySelector('#calendarContent') ?? null;
   }
   get monthYearDisplay() {
-    return this.dataGroup.querySelector('#monthYearDisplay');
+    return this.dataGroup?.querySelector('#monthYearDisplay') ?? null;
   }
   get prevGroupButton() {
-    return this.dataGroup.querySelector('#prevGroup');
+    return this.dataGroup?.querySelector('#prevGroup') ?? null;
   }
   get nextGroupButton() {
-    return this.dataGroup.querySelector('#nextGroup');
+    return this.dataGroup?.querySelector('#nextGroup') ?? null;
   }
   
   _setupDatePicker() {  
@@ -131,7 +131,7 @@ export default class DatePicker
     
     // Fecha o calendário se clicar fora
     document.addEventListener('click', (e) => {
-      if (this.calendar.classList.contains('open') && !this.dateInput.contains(e.target)) {
+      if (this.calendar?.classList.contains('open') && !this.dateInput?.contains(e.target)) {
         this.currentView = 'days';
         this.updateCalendar();
   

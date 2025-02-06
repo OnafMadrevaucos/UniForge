@@ -1,4 +1,6 @@
+import FamilyManager from "../../scripts/managers/familyManger.js";
 import DatePicker  from "../datePicker.js";
+import FamilyDialog from "../dialogs/familyDialog.js";
 import EntryForm from "./entryForm.js";
 
 /**
@@ -7,7 +9,7 @@ import EntryForm from "./entryForm.js";
   * @extends EntryForm
   * 
   */
-export class PoliticsForm extends EntryForm {
+export default class PoliticsForm extends EntryForm {
     /**
       * Constrói uma instância da classe derivada, inicializando as propriedades e configurando o conteúdo.
       * @class
@@ -19,9 +21,11 @@ export class PoliticsForm extends EntryForm {
         // Chama o construtor da classe pai com o parâmetro overlay.
         super(title);
 
-        this.template = 'politicsForm.html'; // Define o template do formulário. 
+        this.template = 'politicsForm'; // Define o template do formulário. 
 
-        this.type = 'politics'; // Define o tipo do formulário.        
+        this.type = 'politics'; // Define o tipo do formulário.   
+        
+        this.manager = new FamilyManager(this); // Define o gerenciador de árvores genealógicas.
 
         /**
          * @property {Object} datePickers - Um objeto que gerencia os seletores de data para registro de entradas.
@@ -49,6 +53,36 @@ export class PoliticsForm extends EntryForm {
         return this.data;
     }
     /* ---------------------------------------------------------------------------------------------------------------- */
+    // INTERFACE DE USUÁRIO
+    /**
+       * Habilita/desabilita os controles do formulário.
+       * @param {Number} state - O novo estado do formulário.
+       * @protected
+       */
+    controlStates(state) {
+        super.controlStates(state);
+        const flavorEditor = tinymce.get('flavorEditor');
+
+        switch (state) {
+            // ESTADO DE HABILITAÇÃO DE NOVA ENTRADA.
+            case this.states.newEntry: {
+                flavorEditor.mode.set('readonly');
+            } break;
+            // ESTADO DE EDIÇÃO DE ENTRADA.
+            case this.states.adding: {
+                flavorEditor.mode.set('design');
+            } break;
+            // ESTADO DE DELEÇÃO DE DADOS.
+            case this.states.editing: {
+                flavorEditor.mode.set('design');
+            } break;
+            // ESTADO PADRÃO.
+            default: {
+                flavorEditor.mode.set('readonly');
+            } break;
+        }
+    }
+    /* ---------------------------------------------------------------------------------------------------------------- */
     // CONFIGURAÇÕES
     /**
     * Configura o conteúdo do formulário associado à instância.
@@ -57,9 +91,12 @@ export class PoliticsForm extends EntryForm {
     * @override
     * @param {HTMLElement} form - O elemento que representa o formulário a ser configurado.
     */
-    configureContent(form) {
+    async configureContent(form) {
         // Chama o método de configuração da classe pai para configurar o formulário base.
-        super.configureContent(form);        
+        await super.configureContent(form);   
+        
+        // Configura o editor TinyMCE de floreio associado ao formulário.
+        await this.configureFlavorTinyMCE();
     }
 
     /**
@@ -77,6 +114,26 @@ export class PoliticsForm extends EntryForm {
         calendarTypeSelect.value = 1;
 
         this.configureDatePickers();
+    }
+
+    /**
+    * Configura o editor TinyMCE para o texto de floreio da Entrada.
+    */
+    async configureFlavorTinyMCE() {
+        if (tinymce.get('flavorEditor')) {
+            tinymce.remove('#flavorEditor');
+        }
+
+        const options = uniforge.utils.mergeObjects(uniforge.tinymceOptions.simple, {
+            selector: 'div#flavorEditor',
+            placeholder: "Texto de floreio...",
+            init_instance_callback: (editor) => {
+                editor.setContent(""); // Garante que o editor seja iniciado vazio.
+            },
+            setup: (editor) => { this._setupInlineTinyMCE(editor); }
+        });
+
+        await tinymce.init(options);
     }
 
     /**
@@ -119,6 +176,9 @@ export class PoliticsForm extends EntryForm {
 
         const calendarType = this.querySelector('#calendarType');
         calendarType.addEventListener('change', (event) => { this.onDateTypeChange(event); });
+
+        const addFamilyButton = this.querySelector('.add-button.family');
+        addFamilyButton.addEventListener('click', (event) => { this.onAddFamilyClick(event); });
     }
     /**
     * Trata o evento de registro de uma nova entrada.
@@ -141,6 +201,7 @@ export class PoliticsForm extends EntryForm {
             etid: entryType.value,
             cid: headerInfo.dataset.cid,
             clid: calendarType.value,
+            iid: uniforge.constants.DEFAULT_IMPORTANCE,
             htmlString: tinymce.get('mainEditor').getContent() ?? '',
             date: {
                 start: this.datePickers.start.selectedDate,
@@ -207,5 +268,10 @@ export class PoliticsForm extends EntryForm {
         } else {
             this.msgBox.showWarning('Erro ao carregar a entrada.');
         }
+    }    
+
+    onAddFamilyClick(event) {
+        event.stopPropagation();
+        FamilyDialog.configDialog();
     }
 }

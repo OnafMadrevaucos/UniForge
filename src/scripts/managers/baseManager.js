@@ -8,14 +8,6 @@ export class BaseManager {
         this.form = form;              
     }
 
-    getSubjects() {
-        return Database.subjectTypes;
-    }
-
-    getEntryTypes() {
-        return Database.entryTypes;
-    }
-
     // Função para pré-carregar a imagem
     _preloadBackground(url) {
         const img = new Image();

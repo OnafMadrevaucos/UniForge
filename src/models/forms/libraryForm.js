@@ -1,12 +1,12 @@
 import { LibraryManager } from "../../scripts/managers/libraryManager.js";
 import SidebarForm from "./sidebarForm.js";
 
-export class LibraryForm extends SidebarForm {
+export default class LibraryForm extends SidebarForm {
     constructor(title) {
         const form = super(title);
         this.form = form;
 
-        this.template = 'libraryForm.html'; // Define o template do formulário. 
+        this.template = 'libraryForm'; // Define o template do formulário. 
 
         this.manager = new LibraryManager(form);
     }

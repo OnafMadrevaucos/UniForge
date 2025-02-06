@@ -4,7 +4,7 @@
 import SidebarForm from "./sidebarForm.js";
 import LinkDialog from "../dialogs/linkDialog.js";
 import ImagePickerDialog from "../dialogs/imagePickerDialog.js";
-import Dialog from "../dialogs/dialog.js";
+import Dialogs from "../dialogs/dialog.js";
 
 /**
  * Classe EntryForm estende a funcionalidade da classe BaseForm para gerenciar formulários que manipulem Entradas.
@@ -129,7 +129,7 @@ export default class EntryForm extends SidebarForm {
   controlStates(state) {
     const titleInput = this.querySelector('#titleInput');
     const imageContainer = this.querySelector('#imageContainer');
-    const infoContent = this.querySelector('.info-content');
+    const infoSet = this.querySelector('.info-set:not(.not-disable)');
     const mainEditor = tinymce.get('mainEditor');
     const deleteSwitch = this.querySelector('#deleteSwitch');
     const deleteCheckbox = deleteSwitch.querySelector('#checkbox');
@@ -137,13 +137,13 @@ export default class EntryForm extends SidebarForm {
     if (this.canDelete) deleteCheckbox.click();
 
     titleInput.disabled = false;
-    infoContent.disabled = false;
+    infoSet.disabled = false;
 
     switch (state) {
       // ESTADO DE HABILITAÇÃO DE NOVA ENTRADA.
       case this.states.newEntry: {
         titleInput.disabled = true;
-        infoContent.disabled = true;
+        infoSet.disabled = true;
 
         imageContainer.classList.remove('disabled');
 
@@ -216,6 +216,8 @@ export default class EntryForm extends SidebarForm {
       default: {
         this.clearContent();
 
+        deleteSwitch.classList.add('hidden');
+
         // Limpa todo o dataset do Header Info.
         const headerInfo = this.querySelector('.header-info');
         Object.keys(headerInfo.dataset).forEach(key => {
@@ -227,7 +229,7 @@ export default class EntryForm extends SidebarForm {
 
         // As entradas de dados nesse estado estão desativadas.
         titleInput.disabled = true;
-        infoContent.disabled = true;
+        infoSet.disabled = true;
 
         // -----------------------------------------------------------------------
         //    Configuração dos Estados dos Botões.
@@ -512,7 +514,7 @@ export default class EntryForm extends SidebarForm {
    */
   async onImageClick(event, fileInput, displayedImage) {
     if (this.canDelete) {
-      const confirm = await Dialog.confirm('Apagar Imagem', 'Deseja remover a imagem?')
+      const confirm = await Dialogs.confirm('Apagar Imagem', 'Deseja remover a imagem?')
       if (confirm) {
 
         this.selectedImg.rawData = null;
@@ -534,7 +536,7 @@ export default class EntryForm extends SidebarForm {
 
     if (this.selectedImg.rawData && !displayedImage.classList.contains('empty')) {
       const imageUrl = await uniforge.utils.blobToImage(this.selectedImg.rawData, this.selectedImg.ext);
-      await Dialog.showImagem('Exibir Imagem', imageUrl);
+      await Dialogs.showImagem('Exibir Imagem', imageUrl);
     }
   }
   /**
@@ -597,7 +599,7 @@ export default class EntryForm extends SidebarForm {
     }
 
     const headerInfo = this.querySelector('.header-info');
-    if (this.isEncyclopedia) headerInfo.dataset.sid = selectedFolder.dataset.sid ?? null;
+    if (this.isSettings) headerInfo.dataset.sid = selectedFolder.dataset.sid ?? null;
     else headerInfo.dataset.cid = selectedFolder.dataset.cid ?? null;
 
     const titleInput = this.querySelector('#titleInput');
@@ -640,10 +642,10 @@ export default class EntryForm extends SidebarForm {
         const title = (this.isEntryUpdate ? 'Atualizar' : 'Registrar');
         let message = '';
 
-        if (this.isEncyclopedia) message = (this.isEntryUpdate ? 'Deseja atualizar a categoria?' : 'Deseja salvar a categoria?');
+        if (this.isSettings) message = (this.isEntryUpdate ? 'Deseja atualizar a categoria?' : 'Deseja salvar a categoria?');
         else message = (this.isEntryUpdate ? 'Deseja atualizar a entrada?' : 'Deseja salvar a entrada?');
 
-        if (await Dialog.confirm(title, message)) {
+        if (await Dialogs.confirm(title, message)) {
           const imgInput = this.querySelector('#hiddenFileInput');
           const titleInput = this.querySelector('#titleInput');
           const draftSwitch = this.querySelector('#isDraftSwitch');
@@ -676,7 +678,7 @@ export default class EntryForm extends SidebarForm {
     event.stopPropagation();
     const id = this.ui.dialog.dataset.id;
 
-    if (this.isEncyclopedia) await uniforge.db.deleteCategory(id);
+    if (this.isSettings) await uniforge.db.deleteCategory(id);
     else await uniforge.db.deleteEntry(id);
 
     await this.refresh();
@@ -693,7 +695,7 @@ export default class EntryForm extends SidebarForm {
     const item = event.target.closest('.entry-item');
     const itemId = item.dataset.id;
     let entry = null;
-    if (this.isEncyclopedia) entry = uniforge.doc.categories.get(itemId);
+    if (this.isSettings) entry = uniforge.doc.categories.get(itemId);
     else entry = uniforge.doc.entries.get(itemId);
 
     if (entry) {
@@ -742,7 +744,7 @@ export default class EntryForm extends SidebarForm {
   onOpenDialogClick(event, item) {
     event.stopPropagation();
 
-    const dataType = (this.isEncyclopedia ? 'do assunto' : 'da categoria');
+    const dataType = (this.isSettings ? 'do assunto' : 'da categoria');
 
     this.ui.dialog.dataset.id = item.dataset.id;
     this.ui.dialog.dataset.action = 'del';

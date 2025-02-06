@@ -33,13 +33,13 @@ export default class BaseForm {
      * URL da imagem de fundo para o overlay.
      * @type {string}
      */
-    this.imageUrl = './images/lib-background.png';
+    this.imageUrl = uniforge.urls.background;
 
     /**
      * O caminho para quando a entrada não possui imagem.
      * @type {string}
      */
-    this.blankImgUrl = './images/blank-image.svg';
+    this.blankImgUrl = uniforge.urls.blankImg;
 
     /**
         * O ícone Font Awesome para quando uma entrada é selecionada.
@@ -122,7 +122,7 @@ export default class BaseForm {
    * @param {String}  - O caminho do template do formulário.
    */
   set template(value) {
-    this.#template = `./templates/forms/${value}`;
+    this.#template = `./templates/forms/${value}.html`;
   }
 
   /**
@@ -167,8 +167,8 @@ export default class BaseForm {
     * 
     * @type {boolean}
   */
-  get isEncyclopedia() {
-    return this.type == 'encyclo';
+  get isSettings() {
+    return this.type == 'settings';
   };
 
   prepareBaseData() {
@@ -285,14 +285,15 @@ export default class BaseForm {
       // Configura os conteúdos básicos do formulário.
       this.configureBaseContent(this.form);
 
+      // Ativa os ouvintes de eventos básicos.
+      this.activateBaseListeners();
+
       // Configura os conteúdos específicos do formulário.
       if (this.configureContent) {
 
-        await this.configureContent();
+        await this.configureContent();        
 
-        if (this.activateListeners) {
-          // Ativa os ouvintes de eventos básicos.
-          this.activateBaseListeners();
+        if (this.activateListeners) {          
 
           // Ativa os demais ouvintes.
           this.activateListeners();

@@ -60,6 +60,14 @@
         "Donec in aliquet ipsum."
     ];
 
+    async function loadTemplate(filePath) {
+        const response = await fetch(filePath);
+        if (!response.ok) throw new Error('Erro ao carregar o arquivo. Detalhes: ' + response.statusText);
+
+        const htmlString = await response.text();
+        return htmlString;
+    }
+
     /**
         * Associa uma imagem a um elemento HTML.
         * @param {HTMLElement} element  - O element que receberá os dados.
@@ -237,7 +245,17 @@
              * @type {Object}
              */
             const json = this.parseCssToJson(cssContent);
-            return json;
+            Object.keys(json).forEach((key) => {
+                const item = json[key];
+                const selector = item.selector.replace('fa-','');
+                item._icon = `<i class="fas ${item.selector}"></i>`;
+                item._label = selector.capitalize();
+                item._value = item.selector;
+            });  
+
+            // Ordenar o objeto json alfabeticamente
+            const orderedJson = Object.values(json).sort((a, b) => a._label.localeCompare(b._label));
+            return orderedJson;
         } catch (error) {
             console.error('Erro ao converter CSS para JSON:', error);
             return null;
@@ -269,10 +287,11 @@
         * @param {number} length    - O comprimento da string aleatória.
         * @returns {string}         - A string aleatória gerada.
         */
-    function generateRandomString(length, onlySmallCaps = false) {
+    function generateRandomString(length, onlySmallCaps = false, onlyBigCaps = false) {
         console.log(`UniForge | Gerando uma string randômica...`);
         let characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
         if (onlySmallCaps) characters = 'abcdefghijklmnopqrstuvwxyz0123456789';
+        else if (onlyBigCaps) characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
         let result = '';
         for (let i = 0; i < length; i++) {
             result += characters.charAt(Math.floor(Math.random() * characters.length));
@@ -285,7 +304,8 @@
         * @param {number} max    - Valor mínimo do sorteio.
         * @returns {number}      - Um número aleatório entre o valor Min e o Max.
         */
-    function generateRandomNumber(max, min=0) {
+    function generateRandomNumber(max, min = 0) {
+        console.log(`UniForge | Gerando um número randômico...`);
         return Math.floor(Math.random() * (max - min + 1)) + min;
     }
 
@@ -301,7 +321,7 @@
             const numParagraphsToMerge = generateRandomNumber(40, 5); // Gera um número aleatório entre 5 e 40.
             const indices = [];
             const paragraphsToMerge = [];
-    
+
             for (let j = 0; j < numParagraphsToMerge; j++) {
                 let randomIndex;
                 do {
@@ -310,7 +330,7 @@
                 indices.push(randomIndex);
                 paragraphsToMerge.push(_loremIpsum[randomIndex]);
             }
-    
+
             const mergedParagraph = paragraphsToMerge.join(' ');
             paragraphs += `<p>${mergedParagraph}</p>`;
         }
@@ -459,19 +479,6 @@
                 return !value.size;
             default:
                 return false;
-        }
-    }
-
-    async function loadTemplate(filePath) {
-        try {
-            const response = await fetch(filePath);
-            if (!response.ok) throw new Error('Erro ao carregar o arquivo: ' + response.statusText);
-
-            const htmlString = await response.text();
-            return htmlString;
-        } catch (error) {
-            console.error('Ocorreu um erro:', error);
-            return null;
         }
     }
 
@@ -697,6 +704,9 @@
         // Substitui as tags <calendar>
         html = replaceCalendarTags(html);
 
+        // Substitui as tags <list>
+        html = replaceListTags(html, data);
+
         // Substitui as tags <foldertree>
         html = replaceFoldertreeTags(html, data);
 
@@ -707,23 +717,18 @@
         html = replacePlaceholders(html, data);
 
         return html;
-    }
+    }    
 
     /**
        * Gera um ID de string alfanumérica aleatória de um comprimento solicitado usando `crypto.getRandomValues()`.
        * @param {number} length    - O comprimento da string aleatória a ser gerada, que deve ser no máximo 16384.
        * @return {string}          - Uma string contendo letras aleatórias (a-z) e números (0-9).
     */
-    function randomID(length = 16) {
+    function randomID() {
         console.log(`UniForge | Gerando novo ID para um registro do Banco de Dados...`);
-        const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-        const cutoff = 0x100000000 - (0x100000000 % chars.length);
-        const random = new Uint32Array(length);
-        do {
-            crypto.getRandomValues(random);
-        } while (random.some(x => x >= cutoff));
-        let id = "";
-        for (let i = 0; i < length; i++) id += chars[random[i] % chars.length];
+        const length = 16;
+
+        const id = generateRandomString(length);
         return id;
     }
 
@@ -736,10 +741,24 @@
     function replacePlaceholders(html, data) {
         console.log('UniForge | Substituindo valores de Placeholders...');
 
-        return html.replace(/{{(.*?)}}/g, (match, key) => {
+        /*
+        const ifRegex = /{{#if\s+([^}]+)}}(.*?){{\/if}}/gs;
+
+        html = html.replace(ifRegex, (match, condition, content) => {
+            if((condition in data) == false || data[condition] == false) {
+                return '';
+            } else return content;
+        });
+        */
+
+        const valueRegex = /{{(.*?)}}/g;
+
+        html = html.replace(valueRegex, (match, key) => {
             key = key.trim();
             return key in data ? data[key] : '';
-        });
+        })
+
+        return html;
     }
 
     /**
@@ -773,8 +792,10 @@
     */
     function replaceComboTags(html, data) {
         console.log('UniForge | Substituindo tags de Combo...');
+        
+        const regex = /<combo\s+id="([^"]+)"\s+value="([^"]+)"\s*(blank="([^"]+)")?\s*\/?>/g;
 
-        html = html.replace(/<combo\s+id="([^"]+)"\s+value="([^"]+)"\s*(blank="([^"]+)")?\s*\/?>/g, (match, id, valueKey, blankAttr, blankValue) => {
+        html = html.replace(regex, (match, id, valueKey, blankAttr, blankValue) => {
             console.log(`Correspondência encontrada: ${match}`);
             console.log(`ID: ${id}, ValueKey: ${valueKey}${blankValue ? `, BlankValue: ${blankValue}` : ''}`);
 
@@ -890,6 +911,41 @@
 
         // Em seguida, remova as tags de fechamento </foldertree>
         html = html.replace(/<\/foldertree>/g, '');
+        return html;
+    }
+
+    function replaceListTags(html, data) {
+        console.log('UniForge | Substituindo tags de List...');
+        const regex = /<list id="([^"]+)" value="([^"]+)"( class="([^"]+)")?( item-class="([^"]+)")?><\/list>/g;
+        html = html.replace(regex, (match, id, valueKey, classAttr, extraClasses, itemClassAttr, itemClass) => {
+            console.log(`Correspondência encontrada: ${match}`);
+            console.log(`ID: ${id}, Item: ${valueKey}${extraClasses ? `, Extra Classes: ${extraClasses}` : ''}${itemClass ? `, Classes dos Itens: ${itemClass}` : ''}`);
+
+            if (!(valueKey in data)) {
+                console.log(`O identificador da lista não foi encontrado no objeto data. Retornando um <ul> vazio.`);
+                return `<ul id="${id}" class="list"></ul>`;
+            }
+
+            // Variavel para armazenar o resultado do 'replace'.
+            let result = `<ul id="${id}"${extraClasses ? ` class="${extraClasses}"` : 'list'}">`;
+            const listItems = data[valueKey];
+
+            listItems.forEach(item => {
+                const itemHTML =
+                    `<li class="${itemClass ?? 'item'}"${item._value ? ` data-value="${item._value}"` : ''}>
+                        ${item._icon ?? ''}
+                        <span>${item._label}</span>                        
+                    </li>`;
+
+                result += itemHTML;
+            });
+
+            result += '</ul>';
+            return result;
+        });
+
+        // Em seguida, remova as tags de fechamento </list>
+        html = html.replace(/<\/list>/g, '');
         return html;
     }
 
@@ -1339,6 +1395,14 @@
     }
 
     /**
+       * Capitaliza uma string, transformando o primeiro caractere em maiúsculo.
+       * @returns {string}
+       */
+    function isEmpty() {        
+        return (!this || this === '');;
+    }
+
+    /**
        * Compara esta string (x) com outra string (y) comparando o valor do ponto de código Unicode de cada caractere.
        * Retorna um número negativo se x < y, um número positivo se x > y, ou zero caso contrário.
        * Esta é a mesma função de comparação usada pelo Array#sort se o argumento da função de comparação for omitido.
@@ -1369,6 +1433,7 @@
     Object.defineProperties(String.prototype, {
         capitalize: { value: capitalize, configurable: true },
         compare: { value: compare, configurable: true },
+        isEmpty: { value: isEmpty, configurable: true },
         titleCase: { value: titleCase, configurable: true }
     });
 
@@ -1509,14 +1574,28 @@
          * @property {number} VIEW_WIDTH - Largura da área de visualização.
          * @property {number} VIEW_HEIGHT - Altura da área de visualização.
          * @property {number} TILE_SIZE - Tamanho de cada tile do mapa.
+         * @property {number} DEFAULT_IMPORTANCE - Identificador do valor padrão de Importância de uma Entrada (Minor).
         */
-        contants: {
+        constants: {
             MIN_POINTS: 2000,
             IMG_WIDTH: 5850,
             IMG_HEIGHT: 4550,
             VIEW_WIDTH: 3840,
             VIEW_HEIGHT: 2160,
-            TILE_SIZE: 240
+            TILE_SIZE: 240,
+            DEFAULT_IMPORTANCE: '4f4cfa80-0b2f-4e36-9502-d34904570b60'
+        },
+
+        /**
+        * Urls de Imagens padrões usadas pelo sistema.
+        * 
+        * @type {Object}
+        * @property {string} background - Imagem utilizada como fundo das entradas da Biblioteca e das Timelines.
+        * @property {string} blankImg   - Imagem padrão usada para campos de imagem vazios.
+        */
+        urls: {
+            background: './images/lib-background.png',
+            blankImg: './images/blank-image.svg'
         },
 
         /**

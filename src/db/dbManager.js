@@ -162,7 +162,7 @@ export default class DBManager {
         let query = 'INSERT INTO category (cid, sid, title, img, ext, htmlString, isDraft) VALUES (?,?,?,?,?,?,?);';
         const params = [];
 
-        params.push(this.generateUUID());
+        params.push(this.generateID());
         params.push(data.sid);
         params.push(data.title);
         params.push(data.rawData ?? null);
@@ -265,13 +265,14 @@ export default class DBManager {
     }
 
     async addSubject(data) {
-        let query = 'INSERT INTO subjectType (sid, root, title, icon) VALUES (?,?,?,?);';
+        let query = 'INSERT INTO subjectType (sid, root, title, icon, isLineage) VALUES (?,?,?,?,?);';
         let params = [];
 
-        params.push(this.generateUUID());
+        params.push(this.generateID());
         params.push(data.root);
         params.push(data.title);
         params.push(data.icon);
+        params.push(Number(data.isLineage) ?? 0);
 
         const result = await uniforge.sql.exec(query, params);
 
@@ -338,7 +339,7 @@ export default class DBManager {
         let query = 'INSERT INTO entry (eid, etid, cid, title, flavor, htmlString, img, ext, isDraft) VALUES (?,?,?,?,?,?,?,?,?);';
         let params = [];
 
-        const eid = this.generateUUID();
+        const eid = this.generateID();
 
         params.push(eid);
         params.push(data.etid);
@@ -479,7 +480,7 @@ export default class DBManager {
         query += 'VALUES (?,?,?,?,?,?,?,?,?,?,?);';
         const params = [];
 
-        params.push(this.generateUUID());
+        params.push(this.generateID());
         params.push(data.eid);
         params.push(data.iid);
         params.push(data.clid);
@@ -555,6 +556,49 @@ export default class DBManager {
     async getTimelineWithIcon(tid) {
         let query = 'SELECT * FROM timeline WHERE tid = ?;';
         const params = [tid];
+
+        const rows = await uniforge.sql.query(query, params);
+
+        if (rows.length >= 1) return rows[0];
+        else return null;
+    }
+
+    async addFamilyTree(data) {
+        let query = 'INSERT INTO familyTree (ftid, tree) ';
+        query += 'VALUES (?,?);';
+        const params = [];
+
+        params.push(this.generateID());
+        params.push(data.tree);
+
+        const result = await uniforge.sql.exec(query, params);
+
+        return result;
+    }
+
+    async updateFamilyTree(data) {
+        const updateSet = this.buildUpdateSet([
+            ['tree', data.tree]
+        ]);
+
+        let query = `UPDATE familyTree SET ${updateSet} WHERE ftvid = ?`;
+        let params = [data.ftid];
+        const result = await uniforge.sql.exec(query, params);
+
+        return result;
+    }
+
+    async deleteFamilyTree(ftid) {
+        let query = 'DELETE FROM familyTree WHERE ftid = ?;';
+        let params = [ftid];
+        const result = await uniforge.sql.exec(query, params);
+
+        return result;
+    }
+
+    async getFamilyTree(ftid) {
+        let query = 'SELECT * FROM familyTree WHERE ftid = ?;';
+        const params = [ftid];
 
         const rows = await uniforge.sql.query(query, params);
 
@@ -712,6 +756,16 @@ export default class DBManager {
         }));
     }
 
+    // Função para a tabela entryTypes
+    async getAllFamilyTrees() {
+        const query = 'SELECT * FROM familyTree';
+        const result = await uniforge.sql.query(query);
+        return result.map(row => ({
+            _id: row.ftid,
+            ...row
+        }));
+    }
+
     async createEntryTable() {
         const query = 'CREATE TABLE IF NOT EXISTS entry (eid TEXT PRIMARY KEY NOT NULL,' +
             'cid TEXT NOT NULL,' +                        // Identificador da Categoria
@@ -843,7 +897,7 @@ export default class DBManager {
         entryTypes.forEach(async entryType => {
             let params = [];
 
-            params.push(this.generateUUID());
+            params.push(this.generateID());
             params.push(entryType.label);
             params.push(entryType.icon);
 
@@ -876,13 +930,13 @@ export default class DBManager {
         query += 'VALUES (?,?);';
         let params = [];
 
-        params.push(this.generateUUID());
+        params.push(this.generateID());
         params.push('Major');
         result = await uniforge.sql.exec(query, params);
         changes += result.changes;
 
         params = [];
-        params.push(this.generateUUID());
+        params.push(this.generateID());
         params.push('Minor');
         result = await uniforge.sql.exec(query, params);
         changes += result.changes;
@@ -891,7 +945,7 @@ export default class DBManager {
         query += 'VALUES (?,?,?);';
 
         params = [];
-        params.push(this.generateUUID());
+        params.push(this.generateID());
         params.push('Timeline');
         params.push(Number(false));
         result = await uniforge.sql.exec(query, params);
@@ -901,6 +955,14 @@ export default class DBManager {
 
         console.log('Tabela \'importance\' populada....OK.');
         return result;
+    }
+
+    async createFamilyTreeTable() {
+        let query = 'CREATE TABLE IF NOT EXISTS familyTree (ftid TEXT PRIMARY KEY NOT NULL,' +
+            'tree TEXT NOT NULL)'; // Script da árvore genealógica
+
+        console.log('Tabela \'familyTree\' criada....OK.');
+        return await uniforge.sql.exec(query);
     }
 
     async createSettingsTable() {
@@ -965,9 +1027,9 @@ export default class DBManager {
      */
     validateCategory(data) {
 
-        if (!data.sid || data.sid < 1)
+        if (data.sid.isEmpty())
             return 'O identificador de Assunto da Categoria é inválido.';
-        if (!data.title || data.title == '')
+        if (data.title.isEmpty())
             return 'É necessário informar um título válido para a Categoria.';
 
         return '';
@@ -980,13 +1042,13 @@ export default class DBManager {
      */
     validateAtlasEntry(data) {
 
-        if (!data.cid || data.cid < 1)
+        if (data.cid.isEmpty())
             return 'O identificador de Categoria da Entrada é inválido.';
-        if (!data.cid || data.cid < 1)
+        if (data.cid.isEmpty())
             return 'O identificador de Categoria da Entrada é inválido.';
-        if (!data.title || data.title == '')
+        if (data.title.isEmpty())
             return 'É necessário informar um título válido para a Entrada.';
-        if (!data.rawData || data.rawData == '')
+        if (data.rawData.isEmpty())
             return 'É necessário informar uma imagem válida para a Entrada de Atlas.';
 
         return '';
@@ -999,11 +1061,11 @@ export default class DBManager {
      */
     validateEventEntry(data) {
 
-        if (!data.cid || data.cid < 1)
+        if (data.cid.isEmpty())
             return 'O identificador de Categoria da Entrada é inválido.';
-        if (!data.iid || data.iid < 1)
+        if (data.iid.isEmpty())
             return 'O identificador de Importância da Entrada é inválido.';
-        if (!data.cid || data.cid < 1)
+        if (data.clid.isEmpty())
             return 'O identificador de Categoria da Entrada é inválido.';
         if (!data.date.start)
             return 'Um evento histórico deve sempre informar uma data inicial.';
@@ -1013,7 +1075,7 @@ export default class DBManager {
             return 'Um evento histórico deve sempre informar uma data inicial. O mês informado é inválido.';
         if (!data.date.start.day || data.date.start.day < 1)
             return 'Um evento histórico deve sempre informar uma data inicial. O dia informado é inválido.';
-        if (!data.title || data.title == '')
+        if (data.title.isEmpty())
             return 'É necessário informar um título válido para a Entrada.';
 
         return '';
@@ -1023,7 +1085,7 @@ export default class DBManager {
      * Gera um identificador único aleatório (UUID) em formato de string de 16 caracteres.
      * @returns {string} O UUID gerado.
      */
-    generateUUID() {
+    generateID() {
         return uniforge.utils.randomID();
     }
 

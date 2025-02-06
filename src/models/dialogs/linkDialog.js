@@ -1,6 +1,6 @@
-import Dialog from "./dialog.js";
+import Dialogs from "./dialog.js";
 
-export default class LinkDialog extends Dialog {
+export default class LinkDialog extends Dialogs {
     constructor(dialogData = {}, options = {}) {
         super(dialogData, uniforge.utils.mergeObjects(options, {
             height: '500px', 

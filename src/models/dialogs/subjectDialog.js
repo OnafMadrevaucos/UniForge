@@ -1,111 +1,30 @@
-import Dialog from "./dialog.js";
+import BaseDialog from "./baseDialog.js";
 
-export default class SubjectDialog extends Dialog {
+export default class SubjectDialog extends BaseDialog {
   constructor(dialogData = {}, options = {}) {
     super(dialogData, uniforge.utils.mergeObjects(options, {
       height: '375px',
       width: '350px'
     }));
+
+    this.template = 'subjectDialog'; // Define o template do diálog.
   }
 
   /**
-   * Obtém as raízes dos assuntos.
-   * @returns {Object} - Raízes dos assuntos.
+   * Prepara os dados do diálogo e configura o diálogo com os dados preparados.
+   * @inheritdoc
    * @async
    */
-  async getRoots() {
-    const data = await this.db.getAllRoots();
-    return data;
-  }
+  async _prepare() {
+    this.data.roots = uniforge.doc.roots.toObject(); 
+    Object.keys(this.data.roots).forEach((key) => {
+      const item = this.data.roots[key];
+      item._label = item.root.capitalize();
+    });   
+    
+    this.data.icons = await uniforge.utils.extractFontAwesomeIcons();
 
-  async getBody() {
-    // Cria o body
-    const body = document.createElement('div');
-    body.className = 'subject-dialog flexcol';
-
-    const titleGroup = document.createElement('div');
-    titleGroup.className = 'data-group text';
-
-    const titleLabel = document.createElement('span');
-    titleLabel.className = 'data-label';
-    titleLabel.textContent = 'Assunto ';
-
-    const titleInput = document.createElement('input');
-    titleInput.id = 'titleInput';
-    titleInput.type = 'text';
-
-    titleGroup.appendChild(titleLabel);
-    titleGroup.appendChild(titleInput);
-
-    const rootGroup = document.createElement('div');
-    rootGroup.className = 'data-group combo';
-
-    const rootLabel = document.createElement('span');
-    rootLabel.className = 'data-label';
-    rootLabel.textContent = 'Raiz ';
-
-    const rootSelect = document.createElement('select');
-    rootSelect.id = 'rootSelect';
-    rootSelect.className = 'data';
-    rootSelect.name = 'subjectRoot';
-
-    const blankOption = document.createElement('option');
-    blankOption.innerHTML = '&#8212';
-    blankOption.value = '';
-    rootSelect.appendChild(blankOption);
-
-    const roots = await this.getRoots();
-
-    roots.forEach(data => {
-      const option = document.createElement('option');
-      option.value = data.root;
-      option.textContent = data.root.capitalize();
-      rootSelect.appendChild(option);
-    });
-
-    rootGroup.appendChild(rootLabel);
-    rootGroup.appendChild(rootSelect);
-
-    const iconGroup = document.createElement('div');
-    iconGroup.className = 'data-group list';
-
-    const iconLabel = document.createElement('span');
-    iconLabel.className = 'data-label';
-    iconLabel.textContent = 'Ícone ';
-
-    const searchDiv = document.createElement('div');
-    searchDiv.className = 'search-box';
-
-    const searchInput = document.createElement('input');
-    searchInput.id = 'iconSearch';
-    searchInput.type = 'text';
-    searchInput.placeholder = 'Buscar ícone...';
-
-    searchDiv.appendChild(searchInput);
-
-    const iconList = document.createElement('ul');
-    iconList.id = 'iconList';
-    iconList.name = 'subjectIcon';
-
-    const icons = await uniforge.utils.extractFontAwesomeIcons();
-    Object.values(icons).forEach(icon => {
-      const iconItem = document.createElement('li');
-      iconItem.className = 'icon-item';
-      iconItem.dataset.value = `fas ${icon.selector}`;
-      const innerHTML = `<i class="fas ${icon.selector}"></i> ${icon.selector}`;
-      iconItem.innerHTML = innerHTML;
-      iconList.appendChild(iconItem);
-    });
-
-    iconGroup.appendChild(iconLabel);
-    iconGroup.appendChild(searchDiv);
-    iconGroup.appendChild(iconList);
-
-    body.appendChild(titleGroup);
-    body.appendChild(rootGroup);
-    body.appendChild(iconGroup);
-
-    return body;
+    await super._prepare(); // Gera a estrutura base do diálogo.
   }
 
   /**
@@ -118,10 +37,12 @@ export default class SubjectDialog extends Dialog {
     const titleInput = this.querySelector('#titleInput');
     const searchInput = this.querySelector('#iconSearch');
     const rootSelect = this.querySelector('#rootSelect');
+    const lineageSwitch = this.querySelector('#lineageSwitch');
     const iconItems = this.querySelectorAll('.icon-item');    
 
-    titleInput.addEventListener('input', (event) => { this._onChanceTitle(event); });
+    titleInput.addEventListener('input', (event) => { this._onChangeTitle(event); });
     rootSelect.addEventListener('change', (event) => { this._onChangeRoot(event); });
+    lineageSwitch.addEventListener('change', (event) => { this._onChangeLineage(event); });
     searchInput.addEventListener('input', (event) => { this._onIconSearch(event); });
 
     iconItems.forEach(item => {
@@ -129,7 +50,9 @@ export default class SubjectDialog extends Dialog {
     });
   }
 
-  _onChanceTitle(event) {
+  _onChangeTitle(event) {
+    event.stopPropagation();
+
     const createButton = this.querySelector('#create');
     const title = event.target.value;
 
@@ -137,23 +60,37 @@ export default class SubjectDialog extends Dialog {
   }
 
   _onChangeRoot(event) {
+    event.stopPropagation();
+
     const createButton = this.querySelector('#create');
     const root = event.target.value;
 
     createButton.dataset.root = root;
   }
 
-  onIconItemClick(event) {
+  _onChangeLineage(event) {
+    event.stopPropagation();
+    const lineageSwitch = event.target.closest('#lineageSwitch');
+    const checkbox = lineageSwitch.querySelector('input[type="checkbox"]');
+    const checked = checkbox.checked ? '1' : '0';
+
     const createButton = this.querySelector('#create');
-    const iconItem = event.target;
+    createButton.dataset.lineage = checked;
+  }
+
+  onIconItemClick(event) {
+    event.stopPropagation();
+
+    const createButton = this.querySelector('#create');
+    const clickedItem = event.target.closest('.icon-item');
     const iconItems = this.querySelectorAll('.icon-item');
 
     iconItems.forEach(item => {
       item.classList.remove('selected');
     });
 
-    iconItem.classList.add('selected');
-    createButton.dataset.icon = iconItem.dataset.value;
+    clickedItem.classList.add('selected');
+    createButton.dataset.icon = clickedItem.dataset.value;
   }
 
   _onIconSearch(event) {
@@ -176,7 +113,8 @@ export default class SubjectDialog extends Dialog {
       const button = event.target;
       const title = event.target.dataset.title;
       const root = event.target.dataset.root;
-      const icon = event.target.dataset.icon;
+      const isLineage = (event.target.dataset.lineage === '1');
+      const icon = event.target.dataset.icon;      
 
       if (!title || !root || !icon) {
         uniforge.msgBox.showWarning('Por favor, preencha todos os campos.');
@@ -187,6 +125,7 @@ export default class SubjectDialog extends Dialog {
       return {
         title,
         root,
+        isLineage,
         icon
       };
     }

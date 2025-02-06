@@ -27,7 +27,7 @@
       </div>
       <div class="header-info flexcol">
         <input id="titleInput" type="text" class="title" name="title" placeholder="Título da Entrada" disabled />
-        <fieldset class="info-content" disabled>
+        <fieldset class="info-set" disabled>
           <div id="entryTypeGroup" class="data-group combo">
             <span class="data-label">Tipo </span>
             <combo id="entryType" value="entryTypes" blank="0" />
@@ -54,7 +54,7 @@
               <span class="data-label">Rascunho </span>
               <switch id="isDraftSwitch" />
             </div>
-            <a class="add-timeline" data-tooltip="Linhas do Tempo"><i class="fa-solid fa-timeline"></i></a>
+            <a class="add-button family" data-tooltip="Linhagem" data-tooltip-left><i class="fas fa-people-group"></i></a>
           </div>
         </fieldset>
       </div>
@@ -62,6 +62,9 @@
 
     <div class="separator"></div>
 
+    <div id="flavorEditor" class="simple-tmce">
+      <div class="text-content editable"></div>
+    </div>
     <textarea id="mainEditor">
       <div class="text-content editable"></div>
    </textarea>
