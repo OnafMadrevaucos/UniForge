@@ -90,6 +90,15 @@ export default class EntryForm extends SidebarForm {
     return super.prepareData();
   }
 
+  /** @inheritdoc */
+  prepareFolders(data) {
+    const folders = uniforge.doc.categories.filter(c => {
+      const s = uniforge.doc.subjects.get(c.sid);
+      return c.type === this.type && (s && s.isLineage === 0);
+    });
+    data.folders = folders.sort();
+  }
+
   /**
   * Conjunto de filtros de item que representam os estados aplicáveis na classe EntryForm.
   * Os estados estão mapeados para números inteiros que representam ações específicas.
@@ -1032,21 +1041,6 @@ export default class EntryForm extends SidebarForm {
       icon: 'format-code',
       onAction: () => { this.onAddLoremIpsum(editor); }
     });
-
-    /*
-    editor.on('mouseover', (event) => {
-      const span = event.target.closest('span.linked-text');
-      if (span) {
-        tooltip._showLinkTooltip(span);
-      } else {
-        tooltip._hideLinkTooltip();
-      }
-    });
-
-    editor.on('mouseout', () => {
-      tooltip._hideLinkTooltip();
-    });
-    */
   }
   /**
    * Configura o editor TinyMCE com funcionalidades inline.

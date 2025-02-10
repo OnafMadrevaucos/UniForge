@@ -41,16 +41,13 @@ export default class SidebarForm extends BaseForm {
         return this.data;
     }
 
+    /**
+     * Prepara a lista de pastas para o formulário com base no tipo do formulário.
+     * @implements Implemente um método filho para as especificidades de cada formulário.
+     * @param {object} data - O objeto de dados do formulário.
+     */
     prepareFolders(data) {
-        let folders = uniforge.doc.subjects;
-        if (!this.isSettings) {
-            if (this.type === 'article')
-                folders = uniforge.doc.categories; 
-            else
-                folders = uniforge.doc.categories.filter(c => c.type === this.type);
-        } else if(this.type === 'lineage')
-            folders = folders.filter(s => s.isLineage === true);
-
+        const folders = uniforge.doc.categories; 
         data.folders = folders.sort();
     }
 

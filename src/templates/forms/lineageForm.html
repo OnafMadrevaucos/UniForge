@@ -1,0 +1,85 @@
+<div id="history" class="entries flexrow">
+    <a id="minimizeButton" class="minimize-button">
+      <i class="fa-solid fa-chevron-left"></i>
+    </a>
+    <div id="sideBar" class="sidebar">
+      <h3>{{title}}</h3>
+      <foldertree id="categories" item="entries"></foldertree>
+      <ul id="folderList" class="folder-list"></ul>
+      <div class="footer">
+        <div id="confirmDialog" class="confirmation-tooltip hidden" data-item="" data-action="">
+          <p id="confirmation-message"></p>
+          <div class="confirmation-buttons">
+            <button id="confirm-yes" class="confirm-btn">Sim</button>
+            <button id="confirm-no" class="confirm-btn">Não</button>
+          </div>
+        </div>
+        <div id="searchEntry" class="input-container search-bar flexrow">
+          <input type="text" id="searchInput" class="search-data" placeholder="Pesquisar entrada...">
+          <button id="searchBtn" class="search-button"><i class="fas fa-magnifying-glass"></i></button>
+        </div>
+      </div>
+    </div>
+    <div class="content flexcol">
+      <div class="header flexrow">
+        <div id="imageContainer" class="img-container disabled">
+          <img id="displayedImage" class="img-displayed empty" src="./images/blank-image.svg" alt="Imagem Padrão">
+          <input id="hiddenFileInput" type="file" class="hidden" accept="image/*" />
+        </div>
+        <div class="header-info flexcol">
+          <input id="titleInput" type="text" class="title" name="title" placeholder="Título da Entrada" disabled />
+          <fieldset class="info-set" disabled>
+            <div id="entryTypeGroup" class="data-group combo">
+              <span class="data-label">Tipo </span>
+              <combo id="entryType" value="entryTypes" blank="0" />
+            </div>
+            <div id="importanceGroup" class="data-group combo">
+              <span class="data-label">Importância </span>
+              <combo id="importance" value="importances" blank="0" />
+            </div>
+            <div id="dateTypeGroup" class="data-group combo">
+              <span class="data-label">Calendário </span>
+              <combo id="calendarType" value="calendars" />
+            </div>
+            <div class="date-info flexrow">
+              <div id="startDate" class="data-group date start" data-date="">
+                <span class="data-label">Início </span>
+                <calendar class="start"></calendar>
+              </div>
+              <div id="endDate" class="data-group date end" data-date="">
+                <span class="data-label">
+                  Término
+                  <i class="fa-regular fa-circle-question" data-tooltip="Opcional"></i>
+                </span>
+                <calendar class="end"></calendar>
+              </div>
+            </div>
+            <div class="data-complex flexrow">
+              <div class="data-group check">
+                <span class="data-label">Rascunho </span>
+                <switch id="isDraftSwitch"/>
+              </div>            
+            </div>
+          </fieldset>
+        </div>
+      </div>
+  
+      <div class="separator"></div>
+  
+      <div id="flavorEditor" class="simple-tmce">
+        <div class="text-content editable"></div>
+      </div>
+      <textarea id="mainEditor">
+          <div class="text-content editable"></div>
+      </textarea>
+      <div class="footer flexrow">
+        <div class="extra buttons flexrow">
+          <button id="cancelButton" class="cancel-entry hidden"><i class="fa-solid fa-square-xmark"></i> Cancelar</button>
+        </div>
+        <div class="fixed buttons flexrow">
+          <button id="newEntryButton" class="new-entry disabled"><i class="fas fa-square-plus"></i> Nova Entrada</button>
+          <button id="saveButton" class="disabled"><i class="fa-regular fa-floppy-disk"></i> Salvar</button>
+        </div>
+      </div>
+    </div>
+  </div>

@@ -69,6 +69,12 @@ export default class SettingsForm extends EntryForm {
         return this.data;
     }
 
+    /** @inheritdoc */
+    prepareFolders(data) {
+        data.folders = uniforge.doc.subjects.sort();
+    }
+    
+
     /**
      * Configura o conteúdo do formulário.
      * @param {HTMLElement} form - O elemento que representa o formulário.
@@ -338,6 +344,7 @@ export default class SettingsForm extends EntryForm {
 
             this.msgBox.showInfo(`Procedure '${procedure}' executada com sucesso. (${result.changes}) linhas alteradas.`);
             this.onPanelSelect(selectedPanel);
+            await this.refresh();
         }
     }
 
@@ -356,6 +363,7 @@ export default class SettingsForm extends EntryForm {
 
             this.msgBox.showInfo(`Tabela '${tableName}' excluída com sucesso.`);
             this.onPanelSelect(selectedPanel);
+            await this.refresh();
         }
     }
 
@@ -374,6 +382,7 @@ export default class SettingsForm extends EntryForm {
 
             this.msgBox.showInfo(`Query executada com sucesso. (${result.changes}) linhas alteradas.`);
             this.onPanelSelect(selectedPanel);
+            await this.refresh();
         }
     }
 
@@ -386,8 +395,10 @@ export default class SettingsForm extends EntryForm {
         const confirmed = await Dialogs.secureConfirm('Recriar Banco de Dados');
         if (confirmed) {
             const commited = await this.db.resetDatabase();
-            if (commited)
+            if (commited) {
                 this.msgBox.showInfo(`Toda estrutura do banco de dados foi recriada com sucesso.`);
+                await this.refresh();
+            }
         }
     }
 

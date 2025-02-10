@@ -1583,7 +1583,7 @@
             VIEW_WIDTH: 3840,
             VIEW_HEIGHT: 2160,
             TILE_SIZE: 240,
-            DEFAULT_IMPORTANCE: '4f4cfa80-0b2f-4e36-9502-d34904570b60'
+            DEFAULT_IMPORTANCE: '1'
         },
 
         /**

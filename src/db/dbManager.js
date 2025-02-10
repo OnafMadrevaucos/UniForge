@@ -16,6 +16,7 @@ export default class DBManager {
             createEventTable: () => this.createEventTable(),
             createTimelineTable: () => this.createTimelineTable(),
             createTimelineEventTable: () => this.createTimelineEventTable(),
+            createLineageTreeTable: () => this.createLineageTreeTable(),
             createTextImagesTable: () => this.createTextImagesTable(),
             createSettingsTable: () => this.createSettingsTable()
         };
@@ -29,22 +30,23 @@ export default class DBManager {
     }
 
     async deleteTable(tableName) {
-        const query = `DROP TABLE ${tableName}`;
+        const query = `DROP TABLE IF EXISTS ${tableName}`;
         return await uniforge.sql.exec(query);
     }
 
     async resetDatabase() {
         const queires = [
-            'DROP TABLE _textImages',
-            'DROP TABLE _timelineEvent',
-            'DROP TABLE category',
-            'DROP TABLE entry',
-            'DROP TABLE entryTypes',
-            'DROP TABLE event',
-            'DROP TABLE importance',
-            'DROP TABLE settings',
-            'DROP TABLE subjectType',
-            'DROP TABLE timeline'
+            'DROP TABLE IF EXISTS _textImages',
+            'DROP TABLE IF EXISTS _timelineEvent',
+            'DROP TABLE IF EXISTS category',
+            'DROP TABLE IF EXISTS entry',
+            'DROP TABLE IF EXISTS entryTypes',
+            'DROP TABLE IF EXISTS event',
+            'DROP TABLE IF EXISTS importance',
+            'DROP TABLE IF EXISTS settings',
+            'DROP TABLE IF EXISTS subjectType',
+            'DROP TABLE IF EXISTS timeline',
+            'DROP TABLE IF EXISTS lineageTree'
         ];
 
         const totalQueries = queires.length;
@@ -62,16 +64,25 @@ export default class DBManager {
                 console.log(`Tabela ${count} de ${totalQueries} deletada.`);
             }
 
-            this.createEntryTypesTable();
-            this.createImportanceTable();
-            this.createTextImagesTable();
-            this.createTimelineEventTable();
-            this.createSubjectTypeTable();
-            this.createCategoryTable();
-            this.createEntryTable();
-            this.createEventTable();
-            this.createTimelineTable();
-            this.createSettingsTable();
+            await this.createEntryTypesTable();
+            await this.createImportanceTable();
+            await this.createTextImagesTable();
+            await this.createTimelineEventTable();
+            await this.createSubjectTypeTable();
+            await this.createCategoryTable();
+            await this.createEntryTable();
+            await this.createEventTable();
+            await this.createTimelineTable();
+            await this.createLineageTreeTable();
+            await this.createSettingsTable();
+
+            // Comita a transação
+            await uniforge.sql.exec('COMMIT');
+            // Inicia a transação
+            await uniforge.sql.exec('BEGIN TRANSACTION');
+
+            await this.populateEntryTypesTable();
+            await this.populateImportanceTable();
 
             // Comita a transação
             await uniforge.sql.exec('COMMIT');
@@ -94,9 +105,9 @@ export default class DBManager {
 
         for (let row of rows) {
             const data = {
-                _id: row.clid,
+                _id: Number(row.clid),
                 _label: row.label,
-                clid: row.clid,
+                clid: Number(row.clid),
                 label: row.label,
                 months: [],
                 days: [],
@@ -104,7 +115,7 @@ export default class DBManager {
             }
 
             query = 'SELECT clmid, label FROM calendarsMonths WHERE clid = ?;';
-            params = [row.clid];
+            params = [Number(row.clid)];
             const months = await uniforge.sql.query(query, params);
 
             for (let month of months) {
@@ -117,14 +128,14 @@ export default class DBManager {
             }
 
             query = 'SELECT label FROM calendarsDays WHERE clid = ?;';
-            params = [row.clid];
+            params = [Number(row.clid)];
             const days = await uniforge.sql.query(query, params);
 
             for (let day of days) {
                 data.days.push(day.label);
             }
 
-            result[data.clid] = data;
+            result[Number(data.clid)] = data;
         }
 
         return result;
@@ -482,8 +493,8 @@ export default class DBManager {
 
         params.push(this.generateID());
         params.push(data.eid);
-        params.push(data.iid);
-        params.push(data.clid);
+        params.push(Number(data.iid));
+        params.push(Number(data.clid));
         params.push(data.date.start.year);
         params.push(data.date.start.month);
         params.push(data.date.start.day);
@@ -499,8 +510,8 @@ export default class DBManager {
     async updateEvent(data) {
         const updateSet = this.buildUpdateSet([
             ['eid', data.eid],
-            ['iid', data.iid],
-            ['clid', data.clid],
+            ['iid', Number(data.iid)],
+            ['clid', Number(data.clid)],
             ['start_year', data.date.start.year],
             ['start_month', data.date.start.month],
             ['start_day', data.date.start.day],
@@ -665,7 +676,7 @@ export default class DBManager {
         const query = 'SELECT * FROM calendars';
         const result = await uniforge.sql.query(query);
         return result.map(row => ({
-            _id: row.clid,
+            _id: Number(row.clid),
             _label: row.label,
             ...row
         }));
@@ -784,8 +795,8 @@ export default class DBManager {
     async createEventTable() {
         const query = 'CREATE TABLE IF NOT EXISTS event (evid TEXT PRIMARY KEY NOT NULL,' +
             'eid TEXT NOT NULL,' +                        // Identificador da Entrada
-            'iid TEXT NOT NULL,' +                        // Identificador da importância
-            'clid TEXT NOT NULL,' +                       // Identificador do calendário
+            'iid INTEGER NOT NULL,' +                        // Identificador da importância
+            'clid INTEGER NOT NULL,' +                       // Identificador do calendário
             'flavor TEXT,' +                              // Descrição adicional
             'start_day INTEGER,' +                        // Dia da data inicial
             'start_month INTEGER,' +                      // Mês da data inicial
@@ -811,7 +822,8 @@ export default class DBManager {
         const query = 'CREATE TABLE IF NOT EXISTS subjectType (sid TEXT PRIMARY KEY NOT NULL,' +
             'root TEXT NOT NULL,' +                 // Origem do tipo
             'title TEXT NOT NULL,' +                // Título do tipo
-            'icon TEXT NOT NULL)';                  // Classe do ícone do FontAwesome
+            'icon TEXT NOT NULL,' +                 // Classe do ícone do FontAwesome
+            'isLineage BOOLEAN NULL DEFAULT 0)';    // Indica se é um tipo de linhagem (falso por padrão)              
 
         console.log('Tabela \'subjectType\' criada....OK.');
         return await uniforge.sql.exec(query);
@@ -849,19 +861,22 @@ export default class DBManager {
     }
 
     async createEntryTypesTable() {
-        let query = 'DROP TABLE entryTypes';
+        let query = 'DROP TABLE IF EXISTS entryTypes';
         let changes = 0;
         let result = await uniforge.sql.exec(query);
         changes += result.changes;
 
-        query = 'CREATE TABLE IF NOT EXISTS entryTypes (etid TEXT PRIMARY KEY NOT NULL,' +
+        query = 'CREATE TABLE IF NOT EXISTS entryTypes (etid INTEGER PRIMARY KEY NOT NULL,' +
             'label TEXT NOT NULL,' +
             'icon TEXT NOT NULL)';                // Número de DIAS por MÊS do calendário
 
         console.log('Tabela \'entryTypes\' criada....OK.');
         result = await uniforge.sql.exec(query);
-        changes += result.changes;
-
+        changes += result.changes; 
+        
+        return result;
+    }
+    async populateEntryTypesTable() {
         console.log('Populando tabela \'entryTypes\'....');
 
         const entryTypes = [
@@ -882,6 +897,10 @@ export default class DBManager {
                 icon: 'fas fa-file'
             },
             {
+                label: 'Evento',
+                icon: 'fas fa-calendar-day'
+            },
+            {
                 label: 'Pessoa',
                 icon: 'fas fa-user-large'
             },
@@ -891,13 +910,15 @@ export default class DBManager {
             }
         ];
 
-        query = 'INSERT INTO entryTypes (etid, label, icon) ';
-        query += 'VALUES (?,?,?);';
+        let query = 'INSERT INTO entryTypes (label, icon) ';
+        query += 'VALUES (?,?);';
+
+        let result = {};
+        let changes = 0;
 
         entryTypes.forEach(async entryType => {
             let params = [];
 
-            params.push(this.generateID());
             params.push(entryType.label);
             params.push(entryType.icon);
 
@@ -910,13 +931,13 @@ export default class DBManager {
         return result;
     }
     async createImportanceTable() {
-        let query = 'DROP TABLE importance';
+        let query = 'DROP TABLE IF EXISTS importance';
         let changes = 0;
         let result = await uniforge.sql.exec(query);
 
         changes += result.changes;
 
-        query = 'CREATE TABLE IF NOT EXISTS importance (iid TEXT PRIMARY KEY NOT NULL,' +
+        query = 'CREATE TABLE IF NOT EXISTS importance (iid INTEGER PRIMARY KEY NOT NULL,' +
             'label TEXT NOT NULL,' +                        // Título da importância
             'isEntry BOOLEAN NOT NULL DEFAULT 1)';          // Se é uma importância de entrada
 
@@ -924,28 +945,29 @@ export default class DBManager {
         changes += result.changes;
         console.log('Tabela \'importance\' criada....OK.');
 
+        return result;
+    }
+    async populateImportanceTable() {
         console.log('Populando tabela \'importance\'....');
 
-        query = 'INSERT INTO importance (iid, label) ';
-        query += 'VALUES (?,?);';
+        let query = 'INSERT INTO importance (label) ';
+        query += 'VALUES (?);';
         let params = [];
+        let changes = 0;
+        
+        params.push('Minor');
+        let result = await uniforge.sql.exec(query, params);
+        changes += result.changes;
 
-        params.push(this.generateID());
+        params = [];
         params.push('Major');
         result = await uniforge.sql.exec(query, params);
-        changes += result.changes;
+        changes += result.changes;        
+
+        query = 'INSERT INTO importance (label, isEntry) ';
+        query += 'VALUES (?,?);';
 
         params = [];
-        params.push(this.generateID());
-        params.push('Minor');
-        result = await uniforge.sql.exec(query, params);
-        changes += result.changes;
-
-        query = 'INSERT INTO importance (iid, label, isEntry) ';
-        query += 'VALUES (?,?,?);';
-
-        params = [];
-        params.push(this.generateID());
         params.push('Timeline');
         params.push(Number(false));
         result = await uniforge.sql.exec(query, params);
@@ -957,8 +979,8 @@ export default class DBManager {
         return result;
     }
 
-    async createFamilyTreeTable() {
-        let query = 'CREATE TABLE IF NOT EXISTS familyTree (ftid TEXT PRIMARY KEY NOT NULL,' +
+    async createLineageTreeTable() {
+        let query = 'CREATE TABLE IF NOT EXISTS lineageTree (ftid TEXT PRIMARY KEY NOT NULL,' +
             'tree TEXT NOT NULL)'; // Script da árvore genealógica
 
         console.log('Tabela \'familyTree\' criada....OK.');
@@ -972,7 +994,7 @@ export default class DBManager {
 
         console.log('Tabela \'settings\' criada....OK.');
         return await uniforge.sql.exec(query);
-    }
+    }   
 
     async createCalendarTable() {
         let query = 'CREATE TABLE IF NOT EXISTS calendars (clid INTEGER PRIMARY KEY,' +
@@ -1063,9 +1085,9 @@ export default class DBManager {
 
         if (data.cid.isEmpty())
             return 'O identificador de Categoria da Entrada é inválido.';
-        if (data.iid.isEmpty())
+        if (!data.iid)
             return 'O identificador de Importância da Entrada é inválido.';
-        if (data.clid.isEmpty())
+        if (!data.clid)
             return 'O identificador de Categoria da Entrada é inválido.';
         if (!data.date.start)
             return 'Um evento histórico deve sempre informar uma data inicial.';
