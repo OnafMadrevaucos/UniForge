@@ -47,7 +47,7 @@ export default class SidebarForm extends BaseForm {
      * @param {object} data - O objeto de dados do formulário.
      */
     prepareFolders(data) {
-        const folders = uniforge.doc.categories; 
+        const folders = uniforge.doc.sections; 
         data.folders = folders.sort();
     }
 

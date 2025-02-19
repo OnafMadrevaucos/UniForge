@@ -194,14 +194,13 @@ export default class PoliticsForm extends EntryForm {
         const headerInfo = this.querySelector('.header-info');
 
         const entryType = this.querySelector('#entryType');
-        const importance = this.querySelector('#importance');
         const calendarType = this.querySelector('#calendarType');
 
         uniforge.utils.mergeObjects(data, {
             etid: entryType.value,
             cid: headerInfo.dataset.cid,
             clid: calendarType.value,
-            iid: uniforge.constants.DEFAULT_IMPORTANCE,
+            iid: uniforge.defaults.importance,
             htmlString: tinymce.get('mainEditor').getContent() ?? '',
             date: {
                 start: this.datePickers.start.selectedDate,

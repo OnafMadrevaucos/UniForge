@@ -1,4 +1,5 @@
 import EntryForm from "./entryForm.js";
+import FamilyManager from "../../scripts/managers/familyManger.js";
 import DatePicker from "../datePicker.js";
 
 export default class LineageForm extends EntryForm {
@@ -16,6 +17,8 @@ export default class LineageForm extends EntryForm {
     this.template = 'lineageForm'; // Define o template do formulário. 
 
     this.type = 'lineage'; // Define o tipo do formulário. 
+
+    this.manager = new FamilyManager(); // Define o gerenciador de árvores genealógicas.
 
     /**
     * @property {object} datePickers - Um objeto que gerencia os seletores de data para registro de entradas.
@@ -39,19 +42,26 @@ export default class LineageForm extends EntryForm {
     super.prepareData();
 
     this.data.entryTypes = uniforge.doc.entryTypes.toObject();
-    this.data.importances = uniforge.doc.importances.toObject();
+    this.data.relevances = uniforge.doc.relevances.toObject();
     this.data.calendars = uniforge.doc.calendars.toObject();
+
+    this.preparePeople(this.data);
 
     return this.data;
   }
 
   /** @inheritdoc */
   prepareFolders(data) {
-    const folders = uniforge.doc.categories.filter(c=> {
-      const s = uniforge.doc.subjects.get(c.sid);
-      return (s && s.isLineage === 1);
+    const folders = uniforge.doc.sections.filter(s=> {
+      const c = uniforge.doc.chapters.get(s.cid);
+      return (c && c.isLineage === 3);
     });
     data.folders = folders.sort();
+  }
+
+  preparePeople(data) {
+    const people = uniforge.doc.entries.toObject().filter(e => e.etid == 6);
+    data.people = people.sort();
   }
 
   /* ---------------------------------------------------------------------------------------------------------------- */
@@ -114,7 +124,7 @@ export default class LineageForm extends EntryForm {
     const entryTypeSelect = this.querySelector('#entryType');
     entryTypeSelect.value = 0;
 
-    const importanceSelect = this.querySelector('#importance');
+    const importanceSelect = this.querySelector('#relevance');
     importanceSelect.value = 0;
 
     const calendarTypeSelect = this.querySelector('#calendarType');
@@ -185,7 +195,25 @@ export default class LineageForm extends EntryForm {
 
     const calendarType = this.querySelector('#calendarType');
     calendarType.addEventListener('change', (event) => { this.onDateTypeChange(event); });
+
+    const founder = this.querySelector('#founder');
+    //founder.addEventListener('change', (event) => { this.onFounderChange(event); });
+    founder.addEventListener('input', (event) => { this.onFounderChange(event); });
   }
+
+  onFounderChange(event) {
+    event.stopPropagation();
+    const input = event.target;    
+    const options = this.querySelectorAll(`datalist#founder-list option`);
+    for (const option of options) {
+      if (option.value === input.value.trim()) {
+        input.dataset.valueId = option.label;
+        break;
+      }
+      input.dataset.valueId = '';
+    }
+  }
+
   /**
   * Trata o evento de registro de uma nova entrada.
   * @interface
@@ -200,13 +228,14 @@ export default class LineageForm extends EntryForm {
     const headerInfo = this.querySelector('.header-info');
 
     const entryType = this.querySelector('#entryType');
-    const importance = this.querySelector('#importance');
+    const relevance = this.querySelector('#relevance');
     const calendarType = this.querySelector('#calendarType');
+    const founder = this.querySelector('#founder');
 
     uniforge.utils.mergeObjects(data, {
       etid: entryType.value,
       cid: headerInfo.dataset.cid,
-      iid: importance.value,
+      iid: relevance.value,
       clid: calendarType.value,
       flavor: tinymce.get('flavorEditor').getContent() ?? '',
       htmlString: tinymce.get('mainEditor').getContent() ?? '',
@@ -266,10 +295,10 @@ export default class LineageForm extends EntryForm {
         headerInfo.dataset.evid = entryEvent.evid;
 
         const entryType = this.querySelector('#entryType');
-        const importance = this.querySelector('#importance');
+        const relevance = this.querySelector('#relevance');
 
         entryType.value = entry.etid;
-        importance.value = entryEvent.iid;
+        relevance.value = entryEvent.iid;
         tinymce.get('mainEditor').setContent(entry.htmlString);
         tinymce.get('flavorEditor').setContent(entry.flavor);
       } else {

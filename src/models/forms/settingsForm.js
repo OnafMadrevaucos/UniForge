@@ -71,7 +71,7 @@ export default class SettingsForm extends EntryForm {
 
     /** @inheritdoc */
     prepareFolders(data) {
-        data.folders = uniforge.doc.subjects.sort();
+        data.folders = uniforge.doc.chapters.sort();
     }
     
 

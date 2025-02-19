@@ -366,6 +366,9 @@ export default class BaseForm {
 
     const closeBtn = document.getElementById('closeForm');
     closeBtn.addEventListener('click', this.onCloseClick.bind(this), {once: true});
+
+    const inputs = document.querySelectorAll('input[list]');
+    inputs.forEach(input => input.addEventListener('input', this.onSearchInputList.bind(this)), {once: true});
   }
 
   onOverlayClick(event) {
@@ -380,6 +383,26 @@ export default class BaseForm {
     event.stopPropagation();
     this.#handleNavQueueOnClose(event);
     this.hideForm();   
+  }
+
+  onSearchInputList(event) {
+    event.stopPropagation();
+    const input = event.target;
+    // Verifica se o valor do input corresponde a uma opção da datalist
+    const options = document.querySelectorAll(`datalist#${input.name} option`);
+    let isValid = false;
+    options.forEach(option => {
+        if (option.value === input.value) {
+            isValid = true;
+        }
+    });
+
+    // Aplica a cor de fundo personalizada se o valor for válido
+    if (isValid) {
+        input.style.backgroundColor = '#e0f7fa'; // Cor personalizada
+    } else {
+        input.style.backgroundColor = ''; // Volta ao padrão
+    }
   }
 
   /* ---------------------------------------------------------------------------------------------------------------- */

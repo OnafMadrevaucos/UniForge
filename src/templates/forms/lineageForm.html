@@ -31,11 +31,11 @@
           <fieldset class="info-set" disabled>
             <div id="entryTypeGroup" class="data-group combo">
               <span class="data-label">Tipo </span>
-              <combo id="entryType" value="entryTypes" blank="0" />
+              <combo id="entryType" value="entryTypes" />
             </div>
             <div id="importanceGroup" class="data-group combo">
               <span class="data-label">Importância </span>
-              <combo id="importance" value="importances" blank="0" />
+              <combo id="relevance" value="relevances" blank="0" />
             </div>
             <div id="dateTypeGroup" class="data-group combo">
               <span class="data-label">Calendário </span>
@@ -53,6 +53,10 @@
                 </span>
                 <calendar class="end"></calendar>
               </div>
+            </div>
+            <div id="founderGroup" class="data-group combo">
+              <span class="data-label">Fundador </span>
+              <combo id="founder" value="people" search="true" />
             </div>
             <div class="data-complex flexrow">
               <div class="data-group check">

@@ -225,6 +225,13 @@ input.dial[type="number"] {
     font-size: var(--default-size);
 }
 
+input[list] {
+    margin: 0;
+}
+/* Estilização quando o input está em foco */
+input[list]:focus {    
+}
+
 input[type="text"]:focus,
 input[type="password"]:focus {
     outline: none;
@@ -244,6 +251,7 @@ fieldset {
     border: none;
 }
 
+input[list],
 select {
     padding: 5px;
     background-color: var(--dark-blue);
@@ -1177,8 +1185,7 @@ input:checked+.slider::before {
     border-radius: var(--default-border-radius);
 }
 
-.data-group select.data,
-.data-group input[type="text"].data {
+.data-group .data:not(div) {
     flex: 5;
 }
 

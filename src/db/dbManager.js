@@ -8,15 +8,15 @@ export default class DBManager {
             createMonthsTable: () => this.createMonthsTable(),
             createDaysTable: () => this.createDaysTable(),
             createDaysInMonthsTable: () => this.createDaysInMonthsTable(),
-            createEntryTypesTable: () => this.createEntryTypesTable(),
-            createImportanceTable: () => this.createImportanceTable(),
-            createSubjectTypeTable: () => this.createSubjectTypeTable(),
-            createCategoryTable: () => this.createCategoryTable(),
+            createEntryTypeTable: () => this.createEntryTypeTable(),
+            createRelevanceTable: () => this.createRelevanceTable(),
+            createChapterTable: () => this.createChapterTable(),
+            createSectionTable: () => this.createSectionTable(),
             createEntryTable: () => this.createEntryTable(),
             createEventTable: () => this.createEventTable(),
-            createTimelineTable: () => this.createTimelineTable(),
-            createTimelineEventTable: () => this.createTimelineEventTable(),
             createLineageTreeTable: () => this.createLineageTreeTable(),
+            createTimelineTable: () => this.createTimelineTable(),
+            createTimelineEventTable: () => this.createTimelineEventTable(),            
             createTextImagesTable: () => this.createTextImagesTable(),
             createSettingsTable: () => this.createSettingsTable()
         };
@@ -34,25 +34,29 @@ export default class DBManager {
         return await uniforge.sql.exec(query);
     }
 
+    /**
+     * Reseta o banco de dados, deletando todas as tabelas e recriando-as com seus índices e constraints.
+     * @returns {Promise<boolean>} - true se a operação for bem sucedida, false caso contrário.
+    */
     async resetDatabase() {
         const queires = [
             'DROP TABLE IF EXISTS _textImages',
             'DROP TABLE IF EXISTS _timelineEvent',
-            'DROP TABLE IF EXISTS category',
-            'DROP TABLE IF EXISTS entry',
-            'DROP TABLE IF EXISTS entryTypes',
+            'DROP TABLE IF EXISTS chapter',
+            'DROP TABLE IF EXISTS section',
+            'DROP TABLE IF EXISTS entry',            
             'DROP TABLE IF EXISTS event',
-            'DROP TABLE IF EXISTS importance',
-            'DROP TABLE IF EXISTS settings',
-            'DROP TABLE IF EXISTS subjectType',
+            'DROP TABLE IF EXISTS lineageTree',
             'DROP TABLE IF EXISTS timeline',
-            'DROP TABLE IF EXISTS lineageTree'
+            'DROP TABLE IF EXISTS relevance',
+            'DROP TABLE IF EXISTS entryType', 
+            'DROP TABLE IF EXISTS settings'
         ];
 
         const totalQueries = queires.length;
 
         try {
-            // Inicia a transação
+            // Inicia a transação principal.
             await uniforge.sql.exec('BEGIN TRANSACTION');
 
             let count = 0;
@@ -64,38 +68,653 @@ export default class DBManager {
                 console.log(`Tabela ${count} de ${totalQueries} deletada.`);
             }
 
-            await this.createEntryTypesTable();
-            await this.createImportanceTable();
-            await this.createTextImagesTable();
-            await this.createTimelineEventTable();
-            await this.createSubjectTypeTable();
-            await this.createCategoryTable();
+            await this.createEntryTypeTable();
+            await this.createRelevanceTable();
+            await this.createTextImagesTable();            
+            await this.createChapterTable();
+            await this.createSectionTable();
             await this.createEntryTable();
             await this.createEventTable();
-            await this.createTimelineTable();
             await this.createLineageTreeTable();
+            await this.createTimelineTable();            
+            await this.createTimelineEventTable();
             await this.createSettingsTable();
+            
 
-            // Comita a transação
+            // Comita a transação principal.
             await uniforge.sql.exec('COMMIT');
-            // Inicia a transação
-            await uniforge.sql.exec('BEGIN TRANSACTION');
-
-            await this.populateEntryTypesTable();
-            await this.populateImportanceTable();
-
-            // Comita a transação
-            await uniforge.sql.exec('COMMIT');
-            return true;
-
         } catch (error) {
-            // Faz rollback em caso de erro
+            // Faz rollback em caso de erro ao criar as tabelas do banco de dados.
             await uniforge.sql.exec('ROLLBACK');
             console.error('Erro ao resetar o banco de dados, operação abortada.', error);
             return false;
         }
+
+        try {
+            // Inicia a transação para popular o Banco de Dados com informações padrão.
+            await uniforge.sql.exec('BEGIN TRANSACTION');
+
+            await this.populateEntryTypeTable();
+            await this.populateRelevanceTable();
+
+            // Comita a transação.
+            await uniforge.sql.exec('COMMIT');
+            return true;
+        } catch (error) {
+            // Faz rollback em caso de erro ao popular as tabelas.
+            await uniforge.sql.exec('ROLLBACK');
+            console.error('Erro ao popular o banco de dados, apenas as tabelas foram criadas.', error);
+            return false;
+        }        
     }
 
+    /**
+     * Adiciona uma nova capítulo na tabela `chapter`.
+     * 
+     * @param {Object} data - Dados do capítulo a ser adicionado.
+     * @param {number} data.tome - Número do tomo.
+     * @param {string} data.title - Título do capítulo.
+     * @param {string} data.icon - Ícone do capítulo.
+     * @param {number} [data.type] - Tipo do capítulo, padrão é 0.
+     * 
+     * @returns {Promise<Object>} - Resultado da execução do comando, incluindo o ID do capítulo adicionado.
+    */
+    async addChapter(data) {
+        let query = 'INSERT INTO chapter (sid, tome, title, icon, type) VALUES (?,?,?,?,?);';
+        let params = [];
+
+        params.push(this.generateID());
+        params.push(data.tome);
+        params.push(data.title);
+        params.push(data.icon);
+        params.push(Number(data.type) ?? 0);
+
+        const result = await uniforge.sql.exec(query, params);
+
+        return result;
+    }
+
+    /**
+     * Adiciona uma nova Seção na tabela `section`.
+     * 
+     * @param {Object} data - Dados da Seção a ser adicionada.
+     * @param {string} data.cid - Identificador do Capítulo a que a Seção pertence.
+     * @param {string} data.title - Título da Seção.
+     * @param {string} data.htmlString - String HTML a ser associada à Seção.
+     * @param {boolean} data.isDraft - Indica se a Seção é um rascunho.
+     * 
+     * @returns {Promise<Object>} - Resultado da execução do comando, incluindo o ID da Seção adicionada.
+    */
+    async addSection(data) {
+        let query = 'INSERT INTO section (sid, cid, title, htmlString, isDraft) VALUES (?,?,?,?,?);';
+        const params = [];
+
+        params.push(this.generateID());
+        params.push(data.cid);
+        params.push(data.title);
+        params.push(data.htmlString);
+        params.push(Number(data.isDraft));
+
+        const result = await uniforge.sql.exec(query, params);
+
+        return result;
+    }
+    
+    /**
+     * Adiciona uma nova entrada na tabela `entry`.
+     * 
+     * @param {Object} data - Dados da entrada a ser adicionada.
+     * @param {string} data.sid - Identificador da categoria.
+     * @param {number} data.etid - Identificador do tipo de entrada.
+     * @param {string} data.title - Título da entrada.
+     * @param {string} data.flavor - Texto de descrição ou sabor.
+     * @param {string} data.htmlString - String HTML a ser associada à entrada.
+     * @param {string|Buffer} [data.rawData] - Dados binários da imagem associada, opcional.
+     * @param {string} [data.ext='jpeg'] - Extensão da imagem, padrão é 'jpeg'.
+     * @param {boolean} data.isDraft - Indica se a entrada é um rascunho.
+     * 
+     * @returns {Promise<Object>} - Resultado da execução do comando, incluindo o ID da entrada adicionada.
+    */
+    async addEntry(data) {
+        let query = 'INSERT INTO entry (eid, sid, etid, title, flavor, htmlString, img, ext, isDraft) VALUES (?,?,?,?,?,?,?,?,?);';
+        let params = [];
+
+        const eid = this.generateID();
+
+        params.push(eid);
+        params.push(data.sid);
+        params.push(Number(data.etid));        
+        params.push(data.title);
+        params.push(data.flavor);
+        params.push(data.htmlString);
+        params.push(data.rawData ?? null);
+        params.push(data.ext ?? 'jpeg');
+        params.push(Number(data.isDraft));
+
+        const result = await uniforge.sql.exec(query, params);
+        result.addedId = eid;
+
+        return result;
+    }
+
+    /**
+     * Adiciona um registro na tabela `event` para armazenar um evento.
+     * 
+     * @param {Object} data - Dados contendo as informa es do evento.
+     * @param {string} data.sid - Identificador do assunto do evento.
+     * @param {string} data.etid - Identificador do tipo de evento.
+     * @param {string} data.title - Título do evento.
+     * @param {string} data.flavor - Sabor do evento (um texto adicional para o título do evento).
+     * @param {number} data.relevance - Nível de relevância do evento.
+     * @param {string} data.source - Fonte do evento (um texto que indica de onde o evento foi retirado).
+     * @param {Object} data.date - Um objeto contendo informa es sobre a data do evento.
+     * @param {number} data.date.start.year - Ano do in cio do evento.
+     * @param {number} data.date.start.month - Mês do in cio do evento.
+     * @param {number} data.date.start.day - Dia do in cio do evento.
+     * @param {number} data.date.end.year - Ano do final do evento.
+     * @param {number} data.date.end.month - Mês do final do evento.
+     * @param {number} data.date.end.day - Dia do final do evento.
+     * @param {boolean} data.isDraft - Seção evento é um rascunho.
+     * 
+     * @returns {Promise<Object>} - Resultado da execu o do comando.
+    */
+    async addEvent(data) {
+        let query = 'INSERT INTO event (evid, sid, etid, title, flavor, relevance, source, s_year, s_month, s_day, e_year, e_month, e_day, isDraft) ';
+        query += 'VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?);';
+        const params = [];
+
+        params.push(this.generateID());
+        params.push(data.sid);
+        params.push(Number(data.etid));
+        params.push(data.title);
+        params.push(data.flavor);
+        params.push(Number(data.relevance));
+        params.push(data.source);
+        params.push(data.date.start.year);
+        params.push(data.date.start.month);
+        params.push(data.date.start.day);
+        params.push(data.date.end.year);
+        params.push(data.date.end.month);
+        params.push(data.date.end.day); 
+        params.push(Number(data.isDraft));        
+
+        const result = await uniforge.sql.exec(query, params);
+
+        return result;
+    }            
+
+    /**
+     * Adiciona uma nova Árvore de Linhagem ao banco de dados.
+     * @param {Object} data             - Os dados da Árvore de Linhagem a serem adicionados.
+     * @param {string} data.sid         - O ID da Seção a qual a Árvore de Linhagem pertence.
+     * @param {string} data.founder     - O ID do fundador da Árvore de Linhagem.
+     * @param {string} data.tree        - A estrutura da Árvore de Linhagem em FamilyScript.
+     * @param {boolean} data.isDraft    - Indica se a Árvore de Linhagem é um rascunho.
+     * @returns {Promise<Object>} A resposta do banco de dados.
+     */
+    async addLineageTree(data) {
+        let query = 'INSERT INTO lineageTree (ltid, sid, founder, tree, isDraft) ';
+        query += 'VALUES (?,?,?,?,?);';
+        const params = [];
+
+        params.push(this.generateID());
+        params.push(data.sid);
+        params.push(data.founder);
+        params.push(data.tree);
+        params.push(data.isDraft);
+
+        const result = await uniforge.sql.exec(query, params);
+
+        return result;
+    }
+
+    /**
+     * Adiciona um registro na tabela `_textImages` para armazenar uma imagem associada a um uuid.
+     * 
+     * @param {Object} data - Dados contendo o uuid e a imagem em blob.
+     * @param {string} data.uuid - Identificador único da imagem.
+     * @param {Object} data.data - Dados contendo a imagem em blob e sua extens o.
+     * @param {string|Buffer} data.data.img - Imagem em si, pode ser um string em base64 ou um Buffer.
+     * @param {string} data.data.ext - Extens o da imagem.
+     * 
+     * @returns {Promise<Object>} - Resultado da execu o do comando.
+     */
+    async addTextImages(data) {
+        let query = 'INSERT INTO _textImages (uuid, img, ext) VALUES (?,?,?);';
+        const params = [];
+        const blob = data.data;
+
+        params.push(data.uuid);
+        params.push(blob.img);
+        params.push(blob.ext);
+
+        const result = await uniforge.sql.exec(query, params);
+
+        return result;
+    }
+
+    /**
+     * Atualiza uma seção no banco de dados com base nos dados fornecidos.
+     * 
+     * @param {Object} data - Dados da seção a serem atualizados.
+     * @param {string} data.sid - ID da seção a ser atualizada.
+     * @param {string} data.cid - ID da categoria associada à seção.
+     * @param {string} data.title - Título da seção.
+     * @param {string} data.htmlString - String HTML a ser associada à seção.
+     * @param {boolean} data.isDraft - Indica se a seção é um rascunho.
+     * 
+     * @returns {Promise<Object>} - Resultado da execução do comando de atualização.
+    */
+    async updateSection(data) {
+
+        const updateSet = this.buildUpdateSet([
+            ['cid', data.cid],
+            ['title', data.title],            
+            ['htmlString', data.htmlString],
+            ['isDraft', Number(data.isDraft)]
+        ]);
+
+        let query = `UPDATE category SET ${updateSet} WHERE sid = ?`;
+        let params = [data.sid];
+        const result = await uniforge.sql.exec(query, params);
+
+        return result;
+    }
+
+    /**
+     * Atualiza uma entrada no banco de dados com base nos dados fornecidos.
+     * 
+     * @param {Object} data - Dados da entrada a serem atualizados.
+     * @param {string} data.sid - ID da seção associada à entrada.
+     * @param {string} data.etid - ID do tipo de entrada.
+     * @param {string} data.title - Título da entrada.
+     * @param {string} data.flavor - Texto de descrição ou sabor.
+     * @param {string} data.htmlString - String HTML a ser associada à entrada.
+     * @param {string|Buffer} [data.rawData] - Dados binários da imagem associada, opcional.
+     * @param {string} [data.ext='jpeg'] - Extensão da imagem, padrão é 'jpeg'.
+     * @param {boolean} data.isDraft - Indica se a entrada é um rascunho.
+     * @param {string} data.eid - ID da entrada a ser atualizada.
+     * 
+     * @returns {Promise<Object>} - Resultado da execução do comando de atualização.
+    */
+    async updateEntry(data) {
+        const updateSet = this.buildUpdateSet([
+            ['sid', data.sid],
+            ['etid', data.etid],
+            ['title', data.title],
+            ['flavor', data.flavor],
+            ['htmlString', data.htmlString],
+            ['img', data.rawData],
+            ['ext', data.ext],
+            ['isDraft', Number(data.isDraft)]
+        ], { withNulls: true });
+
+        let query = `UPDATE entry SET ${updateSet} WHERE eid = ?`;
+        let params = [data.eid];
+        const result = await uniforge.sql.exec(query, params);
+
+        return result;
+    }
+
+    /**
+     * Atualiza o Evento com o ID especificado.
+     * @param {Object} data                     - Os dados a serem atualizados.
+     * @param {string} data.sid                 - ID da Seção a qual o Evento pertence.
+     * @param {string} data.etid                - ID do Tipo de Evento a ser atualizado.
+     * @param {string} data.title               - Título do Evento.
+     * @param {string} data.relevance           - Relevância do Evento.
+     * @param {string} data.source              - Fonte do Evento.
+     * @param {Object} data.date                - Data do Evento.
+     * @param {number} data.date.start.year     - Ano de início do Evento.
+     * @param {number} data.date.start.month    - Mês de início do Evento.
+     * @param {number} data.date.start.day      - Dia de início do Evento.
+     * @param {number} data.date.end.year       - Ano de fim do Evento.
+     * @param {number} data.date.end.month      - Mês de fim do Evento.
+     * @param {number} data.date.end.day        - Dia de fim do Evento.
+     * @param {string} data.isDraft             - O Evento é um rascunho?
+     * @returns {Promise<Object>} A resposta do banco de dados.
+     */
+    async updateEvent(data) {
+        const updateSet = this.buildUpdateSet([
+            ['sid', data.sid],
+            ['etid', data.etid],
+            ['title', data.title],
+            ['relevance', data.relevance],
+            ['source', data.source],
+            ['s_year', data.date.start.year],
+            ['s_month', data.date.start.month],
+            ['s_day', data.date.start.day],
+            ['e_year', data.date.end.year],
+            ['e_month', data.date.end.month],
+            ['e_day', data.date.end.day],
+            ['isDraft', data.isDraft]
+        ]);
+
+        let query = `UPDATE event SET ${updateSet} WHERE evid = ?`;
+        let params = [data.evid];
+        const result = await uniforge.sql.exec(query, params);
+
+        return result;
+    }
+
+    /**
+     * Atualiza a Árvore de Linhagem com o ID especificado.
+     * @param {Object} data         - Os dados a serem atualizados.
+     * @param {string} data.ltid    - O ID da Árvore de Linhagem a ser atualizada.
+     * @param {string} data.sid     - ID da Seção a qual a Árvore de Linhagem pertence.
+     * @param {string} data.founder - O ID da Árvore de Linhagem a ser atualizada.
+     * @param {string} data.tree    - A estrutura da Árvore de Linhagem em FamilyScript.
+     * @param {string} data.isDraft - A Linhagem é um rascunho?
+     * @returns {Promise<Object>} A resposta do banco de dados.
+     */
+    async updateLineageTree(data) {
+        const updateSet = this.buildUpdateSet([
+            ['tree', data.tree]
+        ]);
+
+        let query = `UPDATE lineageTree SET ${updateSet} WHERE ltid = ?`;
+        let params = [data.ltid];
+        const result = await uniforge.sql.exec(query, params);
+
+        return result;
+    }
+
+    /**
+     * Atualiza a Linha do Tempo com o ID especificado.
+     * @param {Object} data             - Os dados a serem atualizados.
+     * @param {string} data.title       - A estrutura da Árvore de Linhagem em FamilyScript.
+     * @param {string} data.flavor      - O ID da Árvore de Linhagem a ser atualizada.
+     * @param {string} data.isDraft     - A Linha do Tempo é um rascunho?
+     * @returns {Promise<Object>} A resposta do banco de dados.
+     */
+    async updateTimeline(data) {
+        const updateSet = this.buildUpdateSet([
+            ['sid', data.sid],
+            ['founder', data.founder],
+            ['tree', data.tree],
+            ['isDraft', data.isDraft]
+        ]);
+
+        let query = `UPDATE lineageTree SET ${updateSet} WHERE ltid = ?`;
+        let params = [data.ltid];
+        const result = await uniforge.sql.exec(query, params);
+
+        return result;
+    }
+
+    /**
+     * Deleta a Seção com o ID especificado e todas as suas Entradas, Eventos e Linhagens.
+     * @param {number} sid - O ID da Seção a ser deletada.
+     * @returns {Promise<Object>} A resposta do banco de dados, com as queries executadas para deletar a Seção e as Entradas.
+     */
+    async deleteSection(sid) {
+        let result = {};
+        let query = 'DELETE FROM section WHERE sid = ?;';
+        const params = [sid];
+
+        result.sectionQuery = await uniforge.sql.exec(query, params);
+
+        query = 'DELETE FROM entry WHERE sid = ?;'
+        result.entryQuery = await uniforge.sql.exec(query, params);
+
+        query = 'DELETE FROM event WHERE sid = ?;'
+        result.eventQuery = await uniforge.sql.exec(query, params);
+
+        query = 'DELETE FROM lineageTree WHERE sid = ?;'
+        result.lineageQuery = await uniforge.sql.exec(query, params);
+
+        return result;
+    }
+
+    /**
+     * Deleta a Entrada com o ID especificado.
+     * @param {number} eid - O ID da Entrada a ser deletada.
+     * @returns {Promise<Object>} A resposta do banco de dados.
+     */
+    async deleteEntry(eid) {
+        let result = {};
+        let query = 'DELETE FROM entry WHERE eid = ?;';
+        let params = [eid];
+
+        result.entryQuery = await uniforge.sql.exec(query, params);
+
+        query = 'DELETE FROM event WHERE source = ?;';
+        result.eventQuery = await uniforge.sql.exec(query, params);
+
+        return result;
+    }
+
+    /**
+     * Deleta o Evento com o ID especificado.
+     * @param {string} evid - O ID do Evento a ser deletado.
+     * @returns {Promise<Object>} A resposta do banco de dados.
+     */
+    async deleteEvent(evid) {
+        let query = 'DELETE FROM event WHERE evid = ?;';
+        const params = [evid];
+        const result = await uniforge.sql.exec(query, params);
+
+        return result;
+    }
+
+    /**
+     * Deleta a Árvore de Linhagem com o ID especificado.
+     * @param {string} ltid         - O ID da Árvore de Linhagem a ser deletada.
+     * @returns {Promise<Object>} A resposta do banco de dados.
+     */
+    async deleteLineageTree(ltid) {
+        let query = 'DELETE FROM lineageTree WHERE ltid = ?;';
+        let params = [ltid];
+        const result = await uniforge.sql.exec(query, params);
+
+        return result;
+    }
+
+    /**
+     * Deleta a Linha do Tempo com o ID especificado.
+     * @param {string} tid          - O ID da Linha do Tempo a ser deletada.
+     * @returns {Promise<Object>} A resposta do banco de dados.
+     */
+    async deleteTimeline(tid) {
+        let query = 'DELETE FROM timeline WHERE tid = ?;';
+        let params = [tid];
+        const result = await uniforge.sql.exec(query, params);
+
+        return result;
+    }
+
+    /**
+     * Obtém um Capítulo.
+     * 
+     * @async
+     * @param {string} cid - Identificador do Capítulo.
+     * @returns {Object} - O Capítulo com suas informações ou null se não encontrado.
+     */
+    async getChapter(cid) {
+        let query = 'SELECT * FROM chapter AS C WHERE C.cid = ?';
+        const params = [cid];
+
+        const rows = await uniforge.sql.query(query, params);
+
+        if (rows.length >= 1) return rows[0];
+        else return null;
+    }
+    /**
+     * Obtém o Tomo a que o capítulo pertence.
+     * 
+     * @async
+     * @param {string} cid - Identificador do Capítulo.
+     * @returns {Object} - Um objeto contendo título e icone do Tomo.
+     */
+    async getChapterTome(cid) {
+        let query = 'SELECT C.title, C.tome, T.icon FROM chapter AS C ';
+        query += 'INNER JOIN tome AS T ON T.title = T.tome ';
+        query += 'WHERE C.cid = ?;';
+        const params = [cid];
+        const rows = await uniforge.sql.query(query, params);
+
+        if (rows.length >= 1) return rows[0];
+        else return null;
+    }
+
+    /**
+     * Recupera a Seção com o ID especificado.
+     * @param {string} sid - O ID da Seção a ser recuperada.
+     * @returns {Promise<Object>} - Uma promessa que resolve para um objeto representando a Seção, ou null se não for encontrado.
+     * @property {string} _id        - ID da Seção.
+     * @property {string} _label     - Título da Seção.
+     * @property {string} sid        - ID da Seção.
+     * @property {string} cid        - ID do Cap tulo a qual a Seção pertence.
+     * @property {string} title      - Título da Seção.
+     * @property {string} htmlString - Conte do HTML da Seção.
+     * @property {boolean} isDraft   - A Seção é um rascunho? (falso por padrão).
+     */
+    async getSection(sid) {
+        let query = 'SELECT * FROM section WHERE sid = ?';
+        const params = [sid];
+        const rows = await uniforge.sql.query(query, params);
+
+        if (rows.length >= 1) return rows[0];
+        else return null;
+    }
+
+    /**
+     * Obtém as seções pertencentes a um tomo específico.
+     * 
+     * @async
+     * @param {string} tome - Identificador do Tomo.
+     * @returns {Promise<Array<Object>>} - Uma promessa que resolve para um array de objetos representando as seções.
+    */
+    async getSectionsFromTome(tome) {
+        let query = 'SELECT S.cid, S.title AS label FROM section AS S ' +
+            'INNER JOIN chapter AS C ON C.cid = S.cid ' +
+            `WHERE S.tome = ?`;
+        const params = [tome];
+        const rows = await uniforge.sql.query(query, params);
+
+        return rows;
+    }
+    
+    /**
+     * Obtém as seções pertencentes a um capítulo específico.
+     * 
+     * @async
+     * @param {string} cid - Identificador do Capítulo.
+     * @returns {Promise<Array<Object>>} - Uma promessa que resolve para um array de objetos representando as seções.
+    */
+    async getSectionsFromChapter(cid) {
+        let query = 'SELECT * FROM section AS S WHERE S.cid = ?;';
+        const params = [cid];
+
+        const rows = await uniforge.sql.query(query, params);
+        return rows;
+    }
+
+    /**
+     * Retorna uma entrada com base no seu ID.
+     * 
+     * @param {string} eid - O ID da Entrada a ser buscada.
+     * @returns {Promise<Object|null>} - Uma promessa que resolve para um objeto representando a Entrada, ou null se a Entrada não existir.
+     */
+    async getEntry(eid) {
+        let query = 'SELECT * FROM entry WHERE eid = ?;';
+        const params = [eid];
+
+        const rows = await uniforge.sql.query(query, params);
+
+        if (rows.length >= 1) return rows[0];
+        else return null;
+    }
+
+    /**
+     * Retorna uma entrada com o icone da Seção a qual ela pertence.
+     * @param {string} eid - Identificador da Entrada a ser buscada.
+     * @returns {Promise<Object>} - Uma promessa que resolve para um objeto representando a Entrada com o icone da Seção.
+     */
+    async getEntryWithIcon(eid) {
+        let query = 'SELECT E.*, S.title AS section, C.icon FROM entry AS E ';
+        query += 'INNER JOIN section AS S ON S.cid = E.cid ';
+        query += 'INNER JOIN chapter AS C ON C.sid = C.sid ';
+        query += 'WHERE eid = ?'
+        const params = [eid];
+
+        const rows = await uniforge.sql.query(query, params);
+
+        if (rows.length >= 1) return rows[0];
+        else return null;
+    }    
+    
+    /**
+     * Recupera todas as entradas de uma seção específica.
+     * 
+     * @param {string} sid - O ID da seção cujas entradas devem ser recuperadas.
+     * @returns {Promise<Array<Object>>} - Uma promessa que resolve para um array de objetos representando as entradas da seção.
+    */
+    async getEntriesFromSection(sid) {
+        let query = 'SELECT * FROM entry WHERE sid = ?;';
+        const params = [sid];
+
+        const rows = await uniforge.sql.query(query, params);
+        return rows;
+    } 
+
+    /**
+     * Recupera a Árvore de Linhagem de um Tomo.
+     * @param {string} ltid         - ID da Árvore de Linhagem.
+     * @return {Promise<Object>} Retorna um objeto com as informações da Árvore de Linhagem.
+     * @property {string} _id       - ID da Árvore de Linhagem.
+     * @property {string} ltid      - ID da Árvore de Linhagem.
+     * @property {string} sid       - ID da Seção a qual a Árvore de Linhagem pertence.
+     * @property {string} founder   - ID da Entrada que serve de fundador para a Árvore de Linhagem.
+     * @property {string} tree      - String contendo a estrutura da Árvore de Linhagem em FamilyScript.
+     * @property {boolean} isDraft  - A Árvore de Linhagem é rascunho? (falso por padrão).
+    */
+    async getLineageTree(ltid) {
+        let query = 'SELECT * FROM lineageTree WHERE ltid = ?;';
+        const params = [ltid];
+
+        const rows = await uniforge.sql.query(query, params);
+
+        if (rows.length >= 1) return rows[0];
+        else return null;
+    }
+
+    /**
+     * Recupera uma Linha do Tempo pelo ID especificado.
+     * @param {string} tid - O ID da Linha do Tempo.
+     * @returns {Promise<Object|null>} Retorna um objeto com as informações da Linha do Tempo ou null se não encontrada.
+    */
+    async getTimeline(tid) {
+        let query = 'SELECT * FROM timeline WHERE tid = ?;';
+        const params = [tid];
+
+        const rows = await uniforge.sql.query(query, params);
+
+        if (rows.length >= 1) return rows[0];
+        else return null;
+    } 
+
+    /**
+     * Retorna uma imagem associada a um uuid da tabela `_textImages`.
+     * 
+     * @param {string} uuid - Identificador nico da imagem.
+     * 
+     * @returns {Promise<Object>} - Resultado da execu o do comando.
+     */
+    async getTextImage(uuid) {
+        let query = 'SELECT * FROM _textImages AS TI WHERE TI.uuid = ?;';
+        const params = [uuid];
+
+        const rows = await uniforge.sql.query(query, params);
+        return rows;
+    }
+
+    /**
+     * Retorna todos os calendários cadastrados no banco de dados.
+     * 
+     * @returns {Promise<Object>} - Um objeto cujas chaves s o os IDs dos calendários e os valores s o objetos 
+     *                              contendo as informa es dos calendários, incluindo os meses e os dias.
+     */
     async getCalendars() {
         let query = 'SELECT * FROM calendars;';
         const rows = await uniforge.sql.query(query);
@@ -141,192 +760,15 @@ export default class DBManager {
         return result;
     }
 
-    async getAllRoots() {
-        let query = 'SELECT * FROM roots';
-        const rows = await uniforge.sql.query(query);
-
-        return rows;
-    }
-
+    /**
+     * Retorna todos os Tipos de Entradas do banco de dados.
+     * 
+     * @returns {Promise<Object[]>} Uma promessa que resolve em um array de objetos com
+     *  os dados de cada Tipo de Entrada encontrado no banco de dados.
+     */
     async getEntryTypes() {
-        let query = 'SELECT * FROM entryTypes';
+        let query = 'SELECT * FROM entryType';
         const rows = await uniforge.sql.query(query);
-
-        return rows;
-    }
-
-    async getImportances(getExternal = false) {
-        let query = 'SELECT * FROM importance ';
-        if (!getExternal) query += 'WHERE isEntry = 1;'
-
-        const rows = await uniforge.sql.query(query);
-
-        rows.forEach(row => {
-            row._id = row.iid,
-                row._label = row.label
-        });
-
-        return rows;
-    }
-
-    async addCategory(data) {
-        let query = 'INSERT INTO category (cid, sid, title, img, ext, htmlString, isDraft) VALUES (?,?,?,?,?,?,?);';
-        const params = [];
-
-        params.push(this.generateID());
-        params.push(data.sid);
-        params.push(data.title);
-        params.push(data.rawData ?? null);
-        params.push(data.ext ?? 'jpeg');
-        params.push(data.htmlString);
-        params.push(Number(data.isDraft));
-
-        const result = await uniforge.sql.exec(query, params);
-
-        return result;
-    }
-    async updateCategory(data) {
-
-        const updateSet = this.buildUpdateSet([
-            ['sid', data.sid],
-            ['title', data.title],
-            ['img', data.rawData],
-            ['ext', data.ext],
-            ['htmlString', data.htmlString],
-            ['isDraft', Number(data.isDraft)]
-        ], { withNulls: true });
-
-        let query = `UPDATE category SET ${updateSet} WHERE cid = ?`;
-        let params = [data.cid];
-        const result = await uniforge.sql.exec(query, params);
-
-        return result;
-    }
-    async getCategory(cid) {
-        let query = 'SELECT * FROM category WHERE cid = ?';
-        const params = [cid];
-        const rows = await uniforge.sql.query(query, params);
-
-        if (rows.length >= 1) return rows[0];
-        else return null;
-    }
-    async getAllCategory() {
-        /*
-        let query = 'SELECT *, S.icon FROM category AS C ';
-        query += 'INNER JOIN subjectType AS S ON S.sid = C.sid ';
-        query += 'WHERE C.isDraft = 0 ORDER BY C.title;';
-        const rows = await uniforge.sql.query(query);
-        */
-        let query = 'SELECT * FROM category AS C ORDER BY C.title;';
-        const rows = await uniforge.sql.query(query);
-
-        rows.forEach(row => {
-            row._id = row.cid;
-            row._label = row.title;
-        });
-
-        return rows;
-    }
-    async getAllCategoryWithEntries() {
-        query = 'SELECT C.*, S.icon FROM category AS C ';
-        query += 'INNER JOIN subjectType AS S ON S.sid = C.sid ';
-        query += 'ORDER BY S.title, C.title;';
-        const rows = await uniforge.sql.query(query);
-
-        rows.forEach(async row => {
-            row._id = row.cid;
-            row._label = row.title;
-            row.entries = await this.getEntriesFromCategory(row.cid);
-
-            row.entries.forEach(entry => {
-                entry._id = entry.eid;
-                entry._label = entry.title;
-            });
-        });
-
-        return rows;
-    }
-    async deleteCategory(cid) {
-        let result = {};
-        let query = 'DELETE FROM category WHERE cid = ?;';
-        const params = [cid];
-
-        result.categoryQuery = await uniforge.sql.exec(query, params);
-
-        query = 'DELETE FROM entry WHERE cid = ?;'
-        result.entryQuery = await uniforge.sql.exec(query, params);
-
-        return result;
-    }
-    async getCategoryFromRoot(root) {
-        let query = 'SELECT C.cid, C.title AS label FROM category AS C ' +
-            'INNER JOIN subjectType AS S ON S.sid = C.sid ' +
-            `WHERE S.root = ?`;
-        const params = [root];
-        const rows = await uniforge.sql.query(query, params);
-
-        return rows;
-    }
-    async getCategoriesFromSubject(sid) {
-        let query = 'SELECT * FROM category AS C WHERE C.sid = ?;';
-        const params = [sid];
-
-        const rows = await uniforge.sql.query(query, params);
-        return rows;
-    }
-
-    async addSubject(data) {
-        let query = 'INSERT INTO subjectType (sid, root, title, icon, isLineage) VALUES (?,?,?,?,?);';
-        let params = [];
-
-        params.push(this.generateID());
-        params.push(data.root);
-        params.push(data.title);
-        params.push(data.icon);
-        params.push(Number(data.isLineage) ?? 0);
-
-        const result = await uniforge.sql.exec(query, params);
-
-        return result;
-    }
-    async getSubject(sid) {
-        let query = 'SELECT * FROM subjectType AS S WHERE S.sid = ?';
-        const params = [sid];
-
-        if (rows.length >= 1) return rows[0];
-        else return null;
-    }
-    async getSubjectRoot(sid) {
-        let query = 'SELECT S.title, S.root, R.icon FROM subjectType AS S ';
-        query += 'INNER JOIN roots AS R ON S.root = R.root ';
-        query += 'WHERE S.sid = ?;';
-        const params = [sid];
-        const rows = await uniforge.sql.query(query, params);
-
-        if (rows.length >= 1) return rows[0];
-        else return null;
-    }
-    async getAllSubjects() {
-        /*
-        let query = '';
-        if (root === '*') {
-            query = 'SELECT * FROM subjectType AS S ORDER BY S.title;';
-            return await uniforge.sql.query(query);
-        } else {
-            const params = [root];
-            query = 'SELECT C.cid, C.sid, C.title, C.img, C.htmlString, C.isDraft FROM category AS C ';
-            query += 'INNER JOIN subjectType AS S ON S.sid = C.sid ';
-            query += 'WHERE S.root = ? AND C.isDraft = 0 ORDER BY S.title;';
-
-            return await uniforge.sql.query(query, params);
-        }*/
-        const query = 'SELECT * FROM subjectType AS S ORDER BY S.title;';
-        const rows = await uniforge.sql.query(query);
-
-        rows.forEach(row => {
-            row._id = row.sid;
-            row._label = row.title;
-        });
 
         return rows;
     }
@@ -344,77 +786,121 @@ export default class DBManager {
 
             return await uniforge.sql.query(query, params);
         }
+    }   
+    
+    /**
+     * Recupera todos os Tomos.
+     * @return {Promise<Array<Object>>} Retorna um array de objetos com as informações de cada Tomo.
+     * @property {string} title     - Título / Identificador do Tomo.
+     * @property {string} icon      - Ícone do Tomo.
+     */
+    async getAllTomes() {
+        const query = 'SELECT * FROM tome';
+        const result = await uniforge.sql.query(query);
+        return result.map(row => ({
+            _id: row.title,
+            ...row
+        }));
+    }
+    
+    /**
+     * Recupera todos os Capítulos.
+     * @return {Promise<Array<Object>>} Retorna um array de objetos com as informações de cada Capítulo.
+     * @property {string} _id       - ID do Capítulo.
+     * @property {string} _label    - Título do Capítulo.
+     * @property {string} cid       - ID do Capítulo.
+     * @property {string} tome      - ID do Tomo a qual o Capítulo pertence.
+     * @property {string} title     - Título do Capítulo.
+     * @property {string} icon      - Ícone do Capítulo.
+     * @property {number} type      - Tipo do Capítulo.
+     */
+    async getAllChapters() {
+        const query = 'SELECT * FROM chapter ORDER BY title';
+        const result = await uniforge.sql.query(query);
+        return result.map(row => ({
+            _id: row.cid,
+            _label: row.title,
+            ...row
+        }));
+    }
+    
+    /**
+     * Recupera todas as Seções.
+     * @return {Promise<Array<Object>>} Retorna um array de objetos com as informações de cada Seções.
+     * @property {string} _id           - ID da Seção.
+     * @property {string} _label        - Título da Seção.
+     * @property {string} sid           - ID da Seção.
+     * @property {string} cid           - ID do Capítulo a qual a Seção pertence.
+     * @property {string} title         - Título da Seção.
+     * @property {string} htmlString    - Conteúdo HTML da Seção.
+     * @property {boolean} isDraft      - Seção é rascunho? (false por padrão).
+     */
+    async getAllSections() {
+        const query = 'SELECT * FROM section';
+        const result = await uniforge.sql.query(query);
+        return result.map(row => ({
+            _id: row.sid,
+            _label: row.title,
+            ...row
+        }));
     }
 
-    async addEntry(data) {
-        let query = 'INSERT INTO entry (eid, etid, cid, title, flavor, htmlString, img, ext, isDraft) VALUES (?,?,?,?,?,?,?,?,?);';
-        let params = [];
-
-        const eid = this.generateID();
-
-        params.push(eid);
-        params.push(data.etid);
-        params.push(data.cid);
-        params.push(data.title);
-        params.push(data.flavor);
-        params.push(data.htmlString);
-        params.push(data.rawData ?? null);
-        params.push(data.ext ?? 'jpeg');
-        params.push(Number(data.isDraft));
-
-        const result = await uniforge.sql.exec(query, params);
-        result.addedId = eid;
-
-        return result;
-    }
-    async updateEntry(data) {
-        const updateSet = this.buildUpdateSet([
-            ['etid', data.etid],
-            ['title', data.title],
-            ['flavor', data.flavor],
-            ['htmlString', data.htmlString],
-            ['isDraft', Number(data.isDraft)],
-            ['cid', data.cid],
-            ['ext', data.ext],
-            ['img', data.rawData]
-        ], { withNulls: true });
-
-        let query = `UPDATE entry SET ${updateSet} WHERE eid = ?`;
-        let params = [data.eid];
-        const result = await uniforge.sql.exec(query, params);
-
-        return result;
-    }
-    async getEntry(eid) {
-        let query = 'SELECT * FROM entry WHERE eid = ?;';
-        const params = [eid];
-
-        const rows = await uniforge.sql.query(query, params);
-
-        if (rows.length >= 1) return rows[0];
-        else return null;
-    }
-    async getEntryWithIcon(eid) {
-        let query = 'SELECT E.*, C.title AS category, S.icon FROM entry AS E ';
-        query += 'INNER JOIN category AS C ON C.cid = E.cid ';
-        query += 'INNER JOIN subjectType AS S ON S.sid = C.sid ';
-        query += 'WHERE eid = ?'
-        const params = [eid];
-
-        const rows = await uniforge.sql.query(query, params);
-
-        if (rows.length >= 1) return rows[0];
-        else return null;
-    }
-    async getAllEntriesWithIcon() {
-        let query = 'SELECT E.*, C.title AS category, S.icon FROM entry AS E ';
-        query += 'INNER JOIN category AS C ON C.cid = E.cid ';
-        query += 'INNER JOIN subjectType AS S ON S.sid = C.sid ';
-
+    /**
+     * Retorna todas as categorias com suas respectivas entradas e icones.
+     * @returns {Promise<Array<Object>>} - Uma promessa que resolve para um array de objetos.
+     * @property {string} _id - ID da seção (sid).
+     * @property {string} _label - Título da seção.
+     * @property {string} icon - URL do icone da seção.
+     * @property {Array<Object>} entries - Entradas da seção.
+     * @property {string} _id - ID da entrada (eid).
+     * @property {string} _label - Título da entrada.
+     */
+    async getAllSectionWithEntries() {
+        query = 'SELECT S.*, C.icon FROM section AS S ';
+        query += 'INNER JOIN chapter AS C ON C.cid = S.cid ';
+        query += 'ORDER BY C.title, s.title;';
         const rows = await uniforge.sql.query(query);
+
+        rows.forEach(async row => {
+            row._id = row.cid;
+            row._label = row.title;
+            row.entries = await this.getEntriesFromSection(row.sid);
+
+            row.entries.forEach(entry => {
+                entry._id = entry.eid;
+                entry._label = entry.title;
+            });
+        });
 
         return rows;
     }
+    
+    /**
+     * Recupera todas as Entradas.
+     * @return {Promise<Array<Object>>} Retorna um array de objetos com as informações de cada Entrada.
+     * @property {string} _id           - ID da Entrada.
+     * @property {string} _label        - Título da Entrada.
+     * @property {string} eid           - ID da Entrada.
+     * @property {string} sid           - ID da Seção a qual a Entrada pertence.
+     * @property {number} etid          - Tipo da Entrada (EntryType).
+     * @property {string} title         - Título da Entrada.
+     * @property {string} flavor        - Descrição adicional da Entrada.
+     * @property {string} htmlString    - Conteúdo HTML da Entrada.
+     * @property {blob} img             - Dados em BLOB do arquivo de imagem da Entrada.
+     * @property {string} ext           - Extensão do arquivo de imagem da Entrada.
+     * @property {boolean} isDraft      - Entrada é rascunho? (false por padrão).
+     */
+
+    async getAllEntries() {
+        const query = 'SELECT * FROM entry';
+        const result = await uniforge.sql.query(query);
+        return result.map(row => ({
+            _id: row.eid,
+            _label: row.title,
+            ...row
+        }));
+    }
+
     async getAllEntriesAndTimelinesExcept(id, type) {
         let query = 'SELECT A.eid AS id, A.title, \'entry\' AS type, S.icon FROM entry AS A ';
         query += 'INNER JOIN category AS C ON C.cid = A.cid ';
@@ -440,218 +926,49 @@ export default class DBManager {
 
         return rows;
     }
-    async getAllEntries() {
-        const query = 'SELECT * FROM entry;';
-        const rows = await uniforge.sql.query(query);
 
-        rows.forEach(row => {
-            row._id = row.eid;
-            row._label = row.title;
-        });
-
-        return rows;
-    }
-    async deleteEntry(eid) {
-        let query = 'DELETE FROM entry WHERE eid = ?;';
-        const params = [eid];
-        const result = await uniforge.sql.exec(query, params);
-
-        return result;
-    }
-    async getEntriesFromCategory(cid) {
-        let query = 'SELECT * FROM entry WHERE cid = ?;';
-        const params = [cid];
-
-        const rows = await uniforge.sql.query(query, params);
-        return rows;
-    }
-    async addEntriesTextImages(data) {
-        let query = 'INSERT INTO _textImages (uuid, img, ext) VALUES (?,?,?);';
-        const params = [];
-        const blob = data.data;
-
-        params.push(data.uuid);
-        params.push(blob.img);
-        params.push(blob.ext);
-
-        const result = await uniforge.sql.exec(query, params);
-
-        return result;
-    }
-    async getEntriesTextImage(uuid) {
-        let query = 'SELECT * FROM _textImages AS TI WHERE TI.uuid = ?;';
-        const params = [uuid];
-
-        const rows = await uniforge.sql.query(query, params);
-        return rows;
-    }
-
-    async addEvent(data) {
-        let query = 'INSERT INTO event (evid, eid, iid, clid, start_year, start_month, start_day, end_year, end_month, end_day, flavor) ';
-        query += 'VALUES (?,?,?,?,?,?,?,?,?,?,?);';
-        const params = [];
-
-        params.push(this.generateID());
-        params.push(data.eid);
-        params.push(Number(data.iid));
-        params.push(Number(data.clid));
-        params.push(data.date.start.year);
-        params.push(data.date.start.month);
-        params.push(data.date.start.day);
-        params.push(data.date.end.year);
-        params.push(data.date.end.month);
-        params.push(data.date.end.day);
-        params.push(data.flavor);
-
-        const result = await uniforge.sql.exec(query, params);
-
-        return result;
-    }
-    async updateEvent(data) {
-        const updateSet = this.buildUpdateSet([
-            ['eid', data.eid],
-            ['iid', Number(data.iid)],
-            ['clid', Number(data.clid)],
-            ['start_year', data.date.start.year],
-            ['start_month', data.date.start.month],
-            ['start_day', data.date.start.day],
-            ['end_year', data.date.end.year],
-            ['end_month', data.date.end.month],
-            ['end_day', data.date.end.day],
-            ['flavor', data.flavor]
-        ]);
-
-        let query = `UPDATE event SET ${updateSet} WHERE evid = ?`;
-        let params = [data.evid];
-        const result = await uniforge.sql.exec(query, params);
-
-        return result;
-    }
-    async getEventOfEntry(eid) {
-        let query = 'SELECT * FROM event WHERE eid = ?;';
-        const params = [eid];
-
-        const rows = await uniforge.sql.query(query, params);
-
-        if (rows.length >= 1) return rows[0];
-        else return null;
-    }
-
-    async getTimeline(tid) {
-        let query = 'SELECT * FROM timeline WHERE tid = ?;';
-        const params = [tid];
-
-        const rows = await uniforge.sql.query(query, params);
-
-        if (rows.length >= 1) return rows[0];
-        else return null;
-    }
-    async getAllTimelines() {
-        let query = 'SELECT * FROM timeline';
+    /**
+     * Retorna todas as entradas (com seus respectivos IDs de Seção e Categoria) 
+     * juntamente com o icone da Seção a qual a entrada pertence.
+     * @returns {Promise<Array<Object>>}    - Uma promessa que resolve para um array de objetos.
+     * @property {string} _id               - ID da Entrada.
+     * @property {string} eid               - ID da Entrada.
+     * @property {string} sid               - ID da Seção a qual a Entrada pertence.
+     * @property {string} cid               - ID do Capítulo a qual a Entrada pertence.
+     * @property {string} title             - Título da Entrada.
+     * @property {string} section           - Título da Seção a qual a Entrada pertence.
+     * @property {string} icon              - URL do icone da Seção a qual a Entrada pertence.
+    */
+    async getAllEntriesWithIcon() {
+        let query = 'SELECT E.*, S.title AS section, C.icon FROM entry AS E ';
+        query += 'INNER JOIN section AS S ON S.cid = E.cid ';
+        query += 'INNER JOIN chapter AS C ON C.sid = S.sid ';
 
         const rows = await uniforge.sql.query(query);
 
-        if (rows.length >= 1) return rows[0];
-        else return null;
-    }
-    async getEventsFromTimeline(tid) {
-        let query = 'SELECT TE.tid, E.title, EV.* FROM _timelineEvent AS TE ';
-        query += 'INNER JOIN event AS EV ON TE.evid = EV.evid ';
-        query += 'INNER JOIN entry AS E ON EV.eid = E.eid ';
-        query += 'WHERE TE.tid = ?;';
-        const params = [tid];
-
-        const rows = await uniforge.sql.query(query, params);
         return rows;
     }
-    async getTimelineWithIcon(tid) {
-        let query = 'SELECT * FROM timeline WHERE tid = ?;';
-        const params = [tid];
-
-        const rows = await uniforge.sql.query(query, params);
-
-        if (rows.length >= 1) return rows[0];
-        else return null;
-    }
-
-    async addFamilyTree(data) {
-        let query = 'INSERT INTO familyTree (ftid, tree) ';
-        query += 'VALUES (?,?);';
-        const params = [];
-
-        params.push(this.generateID());
-        params.push(data.tree);
-
-        const result = await uniforge.sql.exec(query, params);
-
-        return result;
-    }
-
-    async updateFamilyTree(data) {
-        const updateSet = this.buildUpdateSet([
-            ['tree', data.tree]
-        ]);
-
-        let query = `UPDATE familyTree SET ${updateSet} WHERE ftvid = ?`;
-        let params = [data.ftid];
-        const result = await uniforge.sql.exec(query, params);
-
-        return result;
-    }
-
-    async deleteFamilyTree(ftid) {
-        let query = 'DELETE FROM familyTree WHERE ftid = ?;';
-        let params = [ftid];
-        const result = await uniforge.sql.exec(query, params);
-
-        return result;
-    }
-
-    async getFamilyTree(ftid) {
-        let query = 'SELECT * FROM familyTree WHERE ftid = ?;';
-        const params = [ftid];
-
-        const rows = await uniforge.sql.query(query, params);
-
-        if (rows.length >= 1) return rows[0];
-        else return null;
-    }
-
-    // Função para a tabela subjectType
-    async getAllSubjectType() {
-        const query = 'SELECT * FROM subjectType';
-        const result = await uniforge.sql.query(query);
-        return result.map(row => ({
-            _id: row.sid,
-            _label: row.title,
-            ...row
-        }));
-    }
-
-    // Função para a tabela category
-    async getAllCategory() {
-        const query = 'SELECT * FROM category';
-        const result = await uniforge.sql.query(query);
-        return result.map(row => ({
-            _id: row.cid,
-            _label: row.title,
-            ...row
-        }));
-    }
-
-    // Função para a tabela entry
-    async getAllEntry() {
-        const query = 'SELECT * FROM entry';
-        const result = await uniforge.sql.query(query);
-        return result.map(row => ({
-            _id: row.eid,
-            _label: row.title,
-            ...row
-        }));
-    }
-
-    // Função para a tabela event
-    async getAllEvent() {
+    
+    /**
+     * Recupera todos os Eventos.
+     * @return {Promise<Array<Object>>} Retorna um array de objetos com as informações de cada Evento.
+     * @property {string} _id           - ID do Evento.
+     * @property {string} evid          - ID do Evento.
+     * @property {string} sid           - ID da Seção a qual o Evento pertence.
+     * @property {number} etid          - Tipo do Evento (EntryType).
+     * @property {string} title         - Título do Evento.
+     * @property {string} flavor        - Descrição adicional do Evento.     
+     * @property {number} relevance     - Relevância do Evento.
+     * @property {string} source        - ID da Entrada que serve de fonte para o Evento.
+     * @property {string} s_day         - Data de início do Evento.
+     * @property {string} s_month       - Data de início do Evento.
+     * @property {string} s_year        - Data de início do Evento.
+     * @property {string} e_day         - Data de término do Evento.
+     * @property {string} e_month       - Data de término do Evento.
+     * @property {string} e_year        - Data de término do Evento.     
+     * @property {boolean} isDraft      - Evento é rascunho? (false por padrão).
+    */
+    async getAllEvents() {
         const query = 'SELECT * FROM event';
         const result = await uniforge.sql.query(query);
         return result.map(row => ({
@@ -660,8 +977,38 @@ export default class DBManager {
         }));
     }
 
-    // Função para a tabela timeline
-    async getAllTimeline() {
+    
+    /**
+     * Recupera todas as árvores de linhagem.
+     * @return {Promise<Array<Object>>} Retorna um array de objetos com as informações de cada Árvore de Linhagem.
+     * @property {string} _id           - ID da Árvore de Linhagem.
+     * @property {string} ltid          - ID da Árvore de Linhagem.
+     * @property {string} sid           - ID da Seção a qual a Árvore de Linhagem pertence.
+     * @property {string} founder       - ID da Entrada que serve de fundador para a Árvore de Linhagem.
+     * @property {string} tree          - String contendo a estrutura da Árvore de Linhagem em FamilyScript.
+     * @property {boolean} isDraft      - A Árvore de Linhagem é rascunho? (false por padrão).
+    */
+    async getAllLineageTrees() {
+        const query = 'SELECT * FROM lineageTree';
+        const result = await uniforge.sql.query(query);
+        return result.map(row => ({
+            _id: row.ltid,
+            ...row
+        }));
+    }
+
+    
+    /**
+     * Recupera todas as Linhas do Tempo.
+     * @return {Promise<Array<Object>>} Retorna um array de objetos com as informações de cada Linha do Tempo.
+     * @property {string} _id           - ID da Linha do Tempo.
+     * @property {string} _label        - Título da Linha do Tempo.
+     * @property {string} tid           - ID da Linha do Tempo.
+     * @property {string} title         - Título da Linha do Tempo.
+     * @property {string} flavor        - Descrição adicional da Linha do Tempo.
+     * @property {boolean} isDraft      - Linha do Tempo é rascunho? (false por padrão).
+    */
+    async getAllTimelines() {
         const query = 'SELECT * FROM timeline';
         const result = await uniforge.sql.query(query);
         return result.map(row => ({
@@ -669,6 +1016,18 @@ export default class DBManager {
             _label: row.title,
             ...row
         }));
+    }
+
+    /**
+     * Recupera todas os Eventos associados a uma Linhas do Tempo.
+     * @return {Promise<Array<Object>>} Retorna um array de objetos com as informações de cada Linha do Tempo.
+     * @property {string} tid           - ID da Linha do Tempo.
+     * @property {string} evid         - ID do Evento da Linha do Tempo.
+    */
+    async getAllTimelineEvents() {
+        const query = 'SELECT * FROM _timelineEvent';
+        const result = await uniforge.sql.query(query);
+        return result;
     }
 
     // Função para a tabela calendars
@@ -712,17 +1071,7 @@ export default class DBManager {
             _id: row.cldmid,
             ...row
         }));
-    }
-
-    // Função para a tabela roots
-    async getAllRoots() {
-        const query = 'SELECT * FROM roots';
-        const result = await uniforge.sql.query(query);
-        return result.map(row => ({
-            _id: row.root,
-            ...row
-        }));
-    }
+    }    
 
     // Função para a tabela _textImages
     async getAllTextImages() {
@@ -732,7 +1081,29 @@ export default class DBManager {
             _id: row.uuid,
             ...row
         }));
+    }    
+
+    // Função para a tabela relevance
+    async getAllRelevances() {
+        const query = 'SELECT * FROM relevance';
+        const result = await uniforge.sql.query(query);
+        return result.map(row => ({
+            _id: row.iid,
+            _label: row.label,
+            ...row
+        }));
     }
+
+    // Função para a tabela entryTypes
+    async getAllEntryTypes() {
+        const query = 'SELECT * FROM entryType';
+        const result = await uniforge.sql.query(query);
+        return result.map(row => ({
+            _id: row.etid,
+            _label: row.label,
+            ...row
+        }));
+    }    
 
     // Função para a tabela settings
     async getAllSettings() {
@@ -745,173 +1116,302 @@ export default class DBManager {
         }));
     }
 
-    // Função para a tabela importance
-    async getAllImportance() {
-        const query = 'SELECT * FROM importance';
-        const result = await uniforge.sql.query(query);
-        return result.map(row => ({
-            _id: row.iid,
-            _label: row.label,
-            ...row
-        }));
+    /**
+     * Cria a tabela 'tome' no banco de dados.
+     * 
+     * Essa tabela é usada para armazenar informações sobre os Tomos.
+     * 
+     * @returns {Promise<void>} Uma promessa que informa se a tabela foi criada com sucesso.
+     */
+    async createTomeTable() {
+        const query = 'CREATE TABLE IF NOT EXISTS `tome` (' +
+            '`title` VARCHAR(16) NOT NULL,' + // Identificador do Tomo.
+            '`icon` VARCHAR(255) NOT NULL,' + // Ícone do Tomo.
+            'PRIMARY KEY (`title`))';
+
+        console.log('Tabela \'tome\' criada....OK.');
+        return await uniforge.sql.exec(query);
     }
 
-    // Função para a tabela entryTypes
-    async getAllEntryTypes() {
-        const query = 'SELECT * FROM entryTypes';
-        const result = await uniforge.sql.query(query);
-        return result.map(row => ({
-            _id: row.etid,
-            _label: row.label,
-            ...row
-        }));
+    /**
+     * Cria a tabela 'chapter' no banco de dados.
+     * 
+     * Essa tabela é usada para armazenar informações sobre os Capítulos.
+     * 
+     * @returns {Promise<void>} Uma promessa que informa se a tabela foi criada com sucesso.
+     */
+    async createChapterTable() {
+        const query = 'CREATE TABLE IF NOT EXISTS `chapter` (' +
+            '`cid` VARCHAR(16) NOT NULL,' +         // Identificador do Capítulo.
+            '`tome` VARCHAR(16) NOT NULL,' +        // Identificador do Tomo a que o Capítulo pertence.
+            '`title` TEXT NOT NULL,' +              // Título do Capítulo.
+            '`icon` VARCHAR(255) NOT NULL,' +       // Ícone do Capítulo.
+            '`type` INTEGER NOT NULL,' +            // Tipo do Capítulo (material, imaterial, linhagem).
+            'PRIMARY KEY (`cid`))';
+
+        console.log('Tabela \'chapter\' criada....OK.');
+        return await uniforge.sql.exec(query);
     }
 
-    // Função para a tabela entryTypes
-    async getAllFamilyTrees() {
-        const query = 'SELECT * FROM familyTree';
-        const result = await uniforge.sql.query(query);
-        return result.map(row => ({
-            _id: row.ftid,
-            ...row
-        }));
+    /**
+     * Cria a tabela 'section' no banco de dados.
+     * 
+     * Essa tabela é usada para armazenar informações sobre as Seções.
+     * 
+     * @returns {Promise<void>} Uma promessa que informa se a tabela foi criada com sucesso.
+     */
+    async createSectionTable() {
+        const query = 'CREATE TABLE IF NOT EXISTS `section` (' +
+            '`sid` VARCHAR(16) NOT NULL,' +             // Identificador da Seção.
+            '`cid` VARCHAR(16) NOT NULL,' +             // Identificador do Capítulo a que a Seção pertence.
+            '`title` TEXT NOT NULL,' +                  // Título da Seção.
+            '`htmlString` TEXT NULL,' +                 // Corpo do texto de descrição da Seção.
+            '`isDraft` BOOLEAN NOT NULL DEFAULT 0,' +   // A Seção é um rascunho (falso por padrão).
+            'PRIMARY KEY (`sid`,`cid`))';
+
+        console.log('Tabela \'section\' criada....OK.');
+        return await uniforge.sql.exec(query);
     }
 
+    /**
+     * Cria a tabela 'entry' no banco de dados.
+     * 
+     * Essa tabela é usada para armazenar informações sobre as Entradas.
+     * 
+     * @returns {Promise<void>} Uma promessa que informa se a tabela foi criada com sucesso.
+     */
     async createEntryTable() {
-        const query = 'CREATE TABLE IF NOT EXISTS entry (eid TEXT PRIMARY KEY NOT NULL,' +
-            'cid TEXT NOT NULL,' +                        // Identificador da Categoria
-            'etid TEXT NOT NULL,' +                       // Texto para representar a importância
-            'title TEXT NOT NULL,' +                      // Título da entrada
-            'flavor TEXT,' +                              // Descrição adicional
-            'htmlString TEXT,' +                          // HTML associado à entrada
-            'img BLOB,' +                                 // BLOB associado à imagem da entrada
-            'ext VARCHAR(50),' +                          // Extensão do arquivo de imagem
-            'isDraft BOOLEAN NOT NULL DEFAULT 0 )';       // Indica se é um rascunho (falso por padrão)
+        const query = 'CREATE TABLE IF NOT EXISTS `entry` (' +
+        '`eid` VARCHAR(16) NOT NULL,' +             // Identificador da Entrada.
+        '`sid` VARCHAR(16) NOT NULL,' +             // Identificador da Seção a que a Entrada pertence.
+        '`etid` INTEGER NOT NULL,' +                // Tipo de Entrada.
+        '`title` TEXT NOT NULL,' +                  // Título da Entrada.
+        '`flavor` TEXT NULL,' +                     // Texto de floreio da Entrada.
+        '`htmlString` TEXT NULL,' +                 // Corpo do texto de descrição da Entrada.
+        '`img` BLOB NULL,' +                        // BLOB da imagem da Entrada.
+        '`ext` VARCHAR(5) NULL,' +                  // Extensão original do arquivo da imagem da Entrada.
+        '`isDraft` BOOLEAN NOT NULL DEFAULT 0,' +   // A Entrada é um rascunho (falso por padrão).
+        'PRIMARY KEY (`eid`,`sid`))';        
 
         console.log('Tabela \'entry\' criada....OK.');
         return await uniforge.sql.exec(query);
     }
 
+    /**
+     * Cria a tabela 'event' no banco de dados.
+     * 
+     * Essa tabela é usada para armazenar informações sobre os Eventos.
+     * 
+     * @returns {Promise<void>} Uma promessa que informa se a tabela foi criada com sucesso.
+     */
     async createEventTable() {
-        const query = 'CREATE TABLE IF NOT EXISTS event (evid TEXT PRIMARY KEY NOT NULL,' +
-            'eid TEXT NOT NULL,' +                        // Identificador da Entrada
-            'iid INTEGER NOT NULL,' +                        // Identificador da importância
-            'clid INTEGER NOT NULL,' +                       // Identificador do calendário
-            'flavor TEXT,' +                              // Descrição adicional
-            'start_day INTEGER,' +                        // Dia da data inicial
-            'start_month INTEGER,' +                      // Mês da data inicial
-            'start_year INTEGER,' +                       // Ano da data inicial
-            'end_day INTEGER,' +                          // Dia da data final
-            'end_month INTEGER,' +                        // Mês da data final
-            'end_year INTEGER)';                          // Ano da data final
+        const query = 'CREATE TABLE IF NOT EXISTS `event` (' +
+        '`evid` VARCHAR(16) NOT NULL,' +            // Identificador do Evento.
+        '`sid` VARCHAR(16) NOT NULL,' +             // Identificador da Seção a que o Evento pertence.
+        '`etid` INTEGER NOT NULL,' +                // Tipo de Evento.
+        '`tid` VARCHAR(16) NOT NULL,' +             // Timeline do Evento.
+        '`title` TEXT NOT NULL,' +                  // Título da Evento.
+        '`flavor` TEXT NULL,' +                     // Texto de floreio do Evento. 
+        '`relevance` INTEGER NOT NULL,' +           // Relevância da Evento.       
+        '`source` VARCHAR(16) NULL,' +              // Entrada fonte do Evento.
+        '`s_day` INTEGER NOT NULL DEFAULT 1,' +     // Dia de Início do Evento.
+        '`s_month` INTEGER NOT NULL DEFAULT 1,' +   // Mês de Início do Evento.
+        '`s_year` INTEGER NOT NULL DEFAULT 1,' +    // Ano de Início do Evento.
+        '`e_day` INTEGER NULL,' +                   // Dia de Final do Evento.
+        '`e_month` INTEGER NULL,' +                 // Mês de Final do Evento.
+        '`e_year` INTEGER NULL,' +                  // Ano de Final do Evento.
+        '`isDraft` BOOLEAN NOT NULL DEFAULT 0,' +   // O Evento é um rascunho (falso por padrão).
+        'PRIMARY KEY (`evid`,`sid`))';        
 
         console.log('Tabela \'event\' criada....OK.');
         return await uniforge.sql.exec(query);
     }
 
-    async createTextImagesTable() {
-        const query = 'CREATE TABLE IF NOT EXISTS _textImages (uuid TEXT PRIMARY KEY NOT NULL,' +
-            'img BLOB NOT NULL,' +                 // Texto para representar a importância
-            'ext VARCHAR(50) NOT NULL)';            // Ano (como número inteiro)'; 
+    /**
+     * Cria a tabela 'lineageTree' no banco de dados.
+     * 
+     * Essa tabela é usada para armazenar informações sobre as Linhagens.
+     * 
+     * @returns {Promise<void>} Uma promessa que informa se a tabela foi criada com sucesso.
+     */
+    async createLineageTreeTable() {
+        const query = 'CREATE TABLE IF NOT EXISTS `lineageTree` (' +
+        '`ltid` VARCHAR(16) NOT NULL,' +            // Identificador da Linhagem.
+        '`sid` VARCHAR(16) NOT NULL,' +             // Identificador da Seção a que a Linhagem pertence.
+        '`founder` VARCHAR(16) NOT NULL,' +         // Fundador da Linhagem (Identificador daprimeira Primeira da linhagem).
+        '`tree` TEXT NOT NULL,' +                   // Árvore da Linhagem (Utilizado o formato 'FamilyScript').        
+        '`isDraft` BOOLEAN NOT NULL DEFAULT 0,' +   // A linhagem é um rascunho (falso por padrão).
+        'PRIMARY KEY (`ltid`,`sid`))';
 
-        console.log('Tabela \'_textImages\' criada....OK.');
+        console.log('Tabela \'lineageTree\' criada....OK.');
         return await uniforge.sql.exec(query);
     }
 
-    async createSubjectTypeTable() {
-        const query = 'CREATE TABLE IF NOT EXISTS subjectType (sid TEXT PRIMARY KEY NOT NULL,' +
-            'root TEXT NOT NULL,' +                 // Origem do tipo
-            'title TEXT NOT NULL,' +                // Título do tipo
-            'icon TEXT NOT NULL,' +                 // Classe do ícone do FontAwesome
-            'isLineage BOOLEAN NULL DEFAULT 0)';    // Indica se é um tipo de linhagem (falso por padrão)              
-
-        console.log('Tabela \'subjectType\' criada....OK.');
-        return await uniforge.sql.exec(query);
-    }
-
-    async createCategoryTable() {
-        const query = 'CREATE TABLE IF NOT EXISTS category (cid TEXT PRIMARY KEY NOT NULL,' +
-            'sid TEXT NOT NULL,' +                          // Identificador do tipo de assunto            
-            'title TEXT NOT NULL,' +                        // Título do tipo
-            'htmlString TEXT NOT NULL,' +                   // HTML associado à entrada
-            'img BLOB,' +                                   // BLOB associado à imagem da entrada
-            'ext NVARCHAR(50),' +                           // Extensão do arquivo de imagem
-            'isDraft BOOLEAN NOT NULL DEFAULT 0 )';         // Indica se é um rascunho (falso por padrão)
-
-        console.log('Tabela \'category\' criada....OK.');
-        return await uniforge.sql.exec(query);
-    }
-
+    /**
+     * Cria a tabela 'timeline' no banco de dados.
+     * 
+     * Essa tabela é usada para armazenar informações sobre as Linhas do Tempo.
+     * Cada linha do tempo é identificada por um identificador único (tid), 
+     * possui um título, uma descrição adicional (flavor), e um indicador 
+     * de rascunho.
+     * 
+     * @returns {Promise<void>} Uma promessa que informa se a tabela foi criada com sucesso.
+    */
     async createTimelineTable() {
-        const query = 'CREATE TABLE IF NOT EXISTS timeline (tid TEXT PRIMARY KEY NOT NULL,' +
-            'title TEXT NOT NULL,' +                        // Título da linha do tempo
-            'flavor TEXT NOT NULL,' +                       // Descrição adicional                          // Extensão do arquivo de imagem
-            'isDraft BOOLEAN NOT NULL DEFAULT 0 )';         // Indica se é um rascunho (falso por padrão)
+        const query = 'CREATE TABLE IF NOT EXISTS `timeline` (' +
+        '`tid` VARCHAR(16) NOT NULL,' +             // Identificador da Linha do Tempo.        
+        '`title` TEXT NOT NULL,' +                  // Título da Linha do Tempo.        
+        '`flavor` TEXT NOT NULL,' +                 // Descrição adicional da Linha do Tempo.          
+        '`isDraft` BOOLEAN NOT NULL DEFAULT 0,' +   // A Linha do Tempo é um rascunho (falso por padrão).
+        'PRIMARY KEY (`tid`))';
 
         console.log('Tabela \'timeline\' criada....OK.');
         return await uniforge.sql.exec(query);
     }
-
-    async createTimelineEventTable() {
-        const query = 'CREATE TABLE IF NOT EXISTS _timelineEvent (tid TEXT PRIMARY KEY NOT NULL,' + // Identificador da linha do tempo
-            'evid TEXT NOT NULL)';                        // Identificador do evento           
+    /**
+     * Cria a tabela '_timelineEvent' no banco de dados.
+     *
+     * Essa tabela é usada para armazenar a relação entre Linhas do Tempo e Eventos.
+     * Cada registro associa um identificador de Linha do Tempo (tid) a um identificador de Evento (evid).
+     *
+     * @returns {Promise<void>} Uma promessa que informa se a tabela foi criada com sucesso.
+     */
+    async createTimelineEventsTable() {
+        const query = 'CREATE TABLE IF NOT EXISTS `_timelineEvent` (' +
+        '`tid` VARCHAR(16) NOT NULL,' +             // Identificador da Linha do Tempo.
+        '`evid` VARCHAR(16) NOT NULL,' +            // Identificador do Evento.
+        'PRIMARY KEY (`tid`, `evid`))';
 
         console.log('Tabela \'_timelineEvent\' criada....OK.');
         return await uniforge.sql.exec(query);
     }
 
-    async createEntryTypesTable() {
-        let query = 'DROP TABLE IF EXISTS entryTypes';
+
+    /**
+     * Cria a tabela '_textImages' no banco de dados.
+     * 
+     * Essa tabela é usada para armazenar imagens dos textos de cada Entrada e Seção.
+     * Cada registro associa um identificador único (uuid) a uma imagem binária (BLOB) e a sua extensão.
+     * 
+     * @returns {Promise<void>} Uma promessa que informa se a tabela foi criada com sucesso.
+     */
+    async createTextImagesTable() {
+        const query = 'CREATE TABLE IF NOT EXISTS `_textImages` (' +
+        '`uuid` VARCHAR(16) NOT NULL,' +                // Identificador da Linhagem.        
+        '`img` BLOB NOT NULL,' +                        // Árvore da Linhagem (Utilizado o formato 'FamilyScript').        
+        '`ext` VARCHAR(5) NOT NULL DEFAULT `jpeg`,' +   // A linhagem é um rascunho (falso por padrão).
+        'PRIMARY KEY (`uuid`))';       
+
+        console.log('Tabela \'_textImages\' criada....OK.');
+        return await uniforge.sql.exec(query);
+    }    
+
+    /**
+     * Cria a tabela 'entryType' no banco de dados.
+     * 
+     * Essa tabela é usada para armazenar informações sobre os Tipos de Entrada.
+     * Primeiro, remove a tabela existente caso ela exista, e então cria uma nova tabela.
+     * 
+     * @returns {Promise<Object>} Uma promessa que informa as alterações realizadas no banco de dados.
+    */
+    async createEntryTypeTable() {
+        let query = 'DROP TABLE IF EXISTS entryType';
         let changes = 0;
         let result = await uniforge.sql.exec(query);
-        changes += result.changes;
+        changes += result.changes;       
 
-        query = 'CREATE TABLE IF NOT EXISTS entryTypes (etid INTEGER PRIMARY KEY NOT NULL,' +
-            'label TEXT NOT NULL,' +
-            'icon TEXT NOT NULL)';                // Número de DIAS por MÊS do calendário
+        query = 'CREATE TABLE IF NOT EXISTS `entryType` (' +
+        '`etid` INTEGER NOT NULL AUTOINCREMENT PRIMARY KEY,' +  // Identificador dos Tipos de Entrada.        
+        '`title` TEXT NOT NULL,' +                              // Título do Tipo de Entrada.
+        '`icon` VARCHAR(255) NULL,' +                           // Ícone do Tipo de Entrada.
+        '`isMaterial` BOOLEAN NOT NULL DEFAULT 1,' +            // A Seção é material (true por padrão).
+        'UNIQUE (`etid`))';
 
-        console.log('Tabela \'entryTypes\' criada....OK.');
+        console.log('Tabela \'entryType\' criada....OK.');
         result = await uniforge.sql.exec(query);
         changes += result.changes; 
         
         return result;
     }
-    async populateEntryTypesTable() {
-        console.log('Populando tabela \'entryTypes\'....');
+
+    /**
+     * Cria a tabela 'relevance' no banco de dados.
+     * 
+     * Essa tabela é usada para armazenar informações sobre a relevância de um evento de uma Timeline.
+     * Primeiro, remove a tabela existente caso ela exista, e então cria uma nova tabela.
+     * 
+     * @returns {Promise<Object>} Uma promessa que informa as alterações realizadas no banco de dados.
+    */
+    async createRelevanceTable() {
+        let query = 'DROP TABLE IF EXISTS relevance';
+        let changes = 0;
+        let result = await uniforge.sql.exec(query);
+        changes += result.changes;       
+
+        query = 'CREATE TABLE IF NOT EXISTS `relevance` (' +
+        '`rid` INTEGER NOT NULL AUTOINCREMENT PRIMARY KEY,' +   // Identificador da Relevância.        
+        '`title` VARCHAR(255) NULL,' +                          // Título da Relevância.        
+        'UNIQUE (`rid`))';
+
+        console.log('Tabela \'relevance\' criada....OK.');
+        result = await uniforge.sql.exec(query);
+        changes += result.changes; 
+        
+        return result;
+    }
+    /**
+     * Popula a tabela 'entryType' com registros de Tipos de Entradas.
+     * 
+     * @returns {Promise<Object>} Uma promessa que informa se a tabela foi populada com sucesso, com o número de alterações.
+     */
+    async populateEntryTypeTable() {
+        console.log('Populando tabela \'entryType\'....');
 
         const entryTypes = [
             {
-                label: 'Artigo Genérico',
-                icon: 'fas fa-newspaper'
+                title: 'Artigo Genérico',
+                icon: 'fas fa-newspaper',
+                isMaterial: 0
             },
             {
-                label: 'Boato',
-                icon: 'fas fa-comments'
+                title: 'Boato',
+                icon: 'fas fa-comments',
+                isMaterial: 0
             },
             {
-                label: 'Descoberta',
-                icon: 'fas fa-book-open-reader'
+                title: 'Descoberta',
+                icon: 'fas fa-book-open-reader',
+                isMaterial: 0
+            },            
+            {
+                title: 'Evento',
+                icon: 'fas fa-calendar-day',
+                isMaterial: 0
             },
             {
-                label: 'Documento',
-                icon: 'fas fa-file'
+                title: 'Relato',
+                icon: 'fas fa-message',
+                isMaterial: 0
             },
             {
-                label: 'Evento',
-                icon: 'fas fa-calendar-day'
+                title: 'Documento',
+                icon: 'fas fa-file',
+                isMaterial: 1
             },
             {
-                label: 'Pessoa',
-                icon: 'fas fa-user-large'
+                title: 'Objeto',
+                icon: 'fas fa-hammer',
+                isMaterial: 1
             },
             {
-                label: 'Relato',
-                icon: 'fas fa-message'
-            }
+                title: 'Pessoa',
+                icon: 'fas fa-user-large',
+                isMaterial: 1
+            }                        
         ];
 
-        let query = 'INSERT INTO entryTypes (label, icon) ';
-        query += 'VALUES (?,?);';
+        let query = 'INSERT INTO entryType (title, icon, isMaterial) ';
+        query += 'VALUES (?,?,?);';
 
         let result = {};
         let changes = 0;
@@ -919,74 +1419,67 @@ export default class DBManager {
         entryTypes.forEach(async entryType => {
             let params = [];
 
-            params.push(entryType.label);
+            params.push(entryType.title);
             params.push(entryType.icon);
+            params.push(entryType.isMaterial);
 
             result = await uniforge.sql.exec(query, params);
             changes += result.changes;
         });
-        console.log('Tabela \'entryTypes\' populada....OK.');
+        console.log('Tabela \'entryType\' populada....OK.');
 
         result.changes = changes;
         return result;
     }
-    async createImportanceTable() {
-        let query = 'DROP TABLE IF EXISTS importance';
-        let changes = 0;
-        let result = await uniforge.sql.exec(query);
+    /**
+     * Popula a tabela 'relevance' com registros de relevância de entradas.
+     * 
+     * @returns {Promise<Object>} Uma promessa que informa se a tabela foi populada com sucesso, com o número de alterações.
+     */
+    async populateRelevanceTable() {
+        console.log('Populando tabela \'relevance\'....');
 
-        changes += result.changes;
+        const relevances = [
+            {
+                title: 'Minor'
+            },
+            {
+                title: 'Normal'
+            },
+            {
+                title: 'Major'
+            }                       
+        ];
 
-        query = 'CREATE TABLE IF NOT EXISTS importance (iid INTEGER PRIMARY KEY NOT NULL,' +
-            'label TEXT NOT NULL,' +                        // Título da importância
-            'isEntry BOOLEAN NOT NULL DEFAULT 1)';          // Se é uma importância de entrada
-
-        result = await uniforge.sql.exec(query);
-        changes += result.changes;
-        console.log('Tabela \'importance\' criada....OK.');
-
-        return result;
-    }
-    async populateImportanceTable() {
-        console.log('Populando tabela \'importance\'....');
-
-        let query = 'INSERT INTO importance (label) ';
+        let query = 'INSERT INTO relevance (title) ';
         query += 'VALUES (?);';
-        let params = [];
+
+        let result = {};
         let changes = 0;
-        
-        params.push('Minor');
-        let result = await uniforge.sql.exec(query, params);
-        changes += result.changes;
 
-        params = [];
-        params.push('Major');
-        result = await uniforge.sql.exec(query, params);
-        changes += result.changes;        
+        relevances.forEach(async relevance => {
+            let params = [];
 
-        query = 'INSERT INTO importance (label, isEntry) ';
-        query += 'VALUES (?,?);';
+            params.push(relevance.title);
 
-        params = [];
-        params.push('Timeline');
-        params.push(Number(false));
-        result = await uniforge.sql.exec(query, params);
-        changes += result.changes;
+            result = await uniforge.sql.exec(query, params);
+            changes += result.changes;
+        });
+        console.log('Tabela \'relevance\' populada....OK.');
 
         result.changes = changes;
-
-        console.log('Tabela \'importance\' populada....OK.');
         return result;
     }
 
-    async createLineageTreeTable() {
-        let query = 'CREATE TABLE IF NOT EXISTS lineageTree (ftid TEXT PRIMARY KEY NOT NULL,' +
-            'tree TEXT NOT NULL)'; // Script da árvore genealógica
-
-        console.log('Tabela \'familyTree\' criada....OK.');
-        return await uniforge.sql.exec(query);
-    }
-
+    /**
+     * Cria a tabela 'settings' no banco de dados.
+     * 
+     * Essa tabela é usada para armazenar configurações do sistema.
+     * Cada configuração é identificada por um nome (tag) e pelo grupo ao qual pertence.
+     * O valor da configuração é armazenado na coluna 'value'.
+     * 
+     * @returns {Promise<Object>} Uma promessa que informa se a tabela foi criada com sucesso, com o número de alterações.
+     */
     async createSettingsTable() {
         let query = 'CREATE TABLE IF NOT EXISTS settings (tag VARCHAR(50) PRIMARY KEY NOT NULL,' +
             '\"group\" VARCHAR(50) NOT NULL,' +     // Grupo de configuração
@@ -994,8 +1487,16 @@ export default class DBManager {
 
         console.log('Tabela \'settings\' criada....OK.');
         return await uniforge.sql.exec(query);
-    }   
+    }  
 
+    /**
+     * Cria a tabela 'calendars' no banco de dados.
+     * 
+     * Essa tabela é usada para armazenar informações sobre os calendários.
+     * Cada calendário é identificado por um título (label) e um identificador (clid).
+     * 
+     * @returns {Promise<Object>} Uma promessa que informa se a tabela foi criada com sucesso, com o número de alterações.
+     */
     async createCalendarTable() {
         let query = 'CREATE TABLE IF NOT EXISTS calendars (clid INTEGER PRIMARY KEY,' +
             'label TEXT)';                 // Título do calendário
@@ -1004,6 +1505,14 @@ export default class DBManager {
         return await uniforge.sql.exec(query);
     }
 
+    /**
+     * Cria a tabela 'calendarsMonths' no banco de dados.
+     * 
+     * Essa tabela é usada para armazenar informações sobre os meses dos calendários.
+     * Cada mês é identificado por um título (label) e o identificador do calendário ao qual pertence (clid).
+     * 
+     * @returns {Promise<Object>} Uma promessa que informa se a tabela foi criada com sucesso, com o número de alterações.
+     */
     async createMonthsTable() {
         let query = 'CREATE TABLE IF NOT EXISTS calendarsMonths (clmid INTEGER PRIMARY KEY,' +
             'clid INTEGER,' +
@@ -1013,6 +1522,14 @@ export default class DBManager {
         return await uniforge.sql.exec(query);
     }
 
+    /**
+     * Cria a tabela 'calendarsDays' no banco de dados.
+     * 
+     * Essa tabela é usada para armazenar informações sobre os dias dos calendários.
+     * Cada dia é identificado por um título (label) e o identificador do calendário ao qual pertence (clid).
+     * 
+     * @returns {Promise<Object>} Uma promessa que informa se a tabela foi criada com sucesso, com o número de alterações.
+     */
     async createDaysTable() {
         let query = 'CREATE TABLE IF NOT EXISTS calendarsDays (cldid INTEGER PRIMARY KEY,' +
             'clid INTEGER,' +
@@ -1022,6 +1539,15 @@ export default class DBManager {
         return await uniforge.sql.exec(query);
     }
 
+    /**
+     * Cria a tabela 'calendarsDaysInMonths' no banco de dados.
+     * 
+     * Essa tabela é usada para armazenar informações sobre os dias por mês dos calendários.
+     * Cada registro é identificado por um identificador (cldmid) e o identificador do mês ao qual pertence (clmid).
+     * O número de dias por mês é armazenado na coluna 'days'.
+     * 
+     * @returns {Promise<Object>} Uma promessa que informa se a tabela foi criada com sucesso, com o número de alterações.
+     */
     async createDaysInMonthsTable() {
         let query = 'CREATE TABLE IF NOT EXISTS calendarsDaysInMonths (cldmid INTEGER PRIMARY KEY,' +
             'clmid INTEGER,' +

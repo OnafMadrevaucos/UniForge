@@ -8,55 +8,55 @@ export default class DBDocuments {
      * Construtor da classe DatabaseSets.
      *
      * @param {Object} data - Objeto contendo os dados do banco de dados organizados por tabelas.
-     * @param {Array<Object>} data.subjects - Dados da tabela subjectType.
-     * @param {Array<Object>} data.categories - Dados da tabela category.
+     * @param {Array<Object>} data.chapters - Dados da tabela chapter.
+     * @param {Array<Object>} data.sections - Dados da tabela section.
      * @param {Array<Object>} data.entries - Dados da tabela entry.
      * @param {Array<Object>} data.events - Dados da tabela event.
      * @param {Array<Object>} data.timelines - Dados da tabela timeline.
-     * @param {Array<Object>} data._timelineEvents - Dados da tabela _timelineEvent.
-     * @param {Array<Object>} data.familyTrees - Dados da tabela familyTrees.
+     * @param {Array<Object>} data.lineages - Dados da tabela lineageTrees.
      * @param {Array<Object>} data.calendars - Dados da tabela calendars.
      * @param {Array<Object>} data.calendarsMonths - Dados da tabela calendarsMonths.
      * @param {Array<Object>} data.calendarsDays - Dados da tabela calendarsDays.
      * @param {Array<Object>} data.calendarsDaysInMonths - Dados da tabela calendarsDaysInMonths.
-     * @param {Array<Object>} data.roots - Dados da tabela roots.
+     * @param {Array<Object>} data.tomes - Dados da tabela tomes.
      * @param {Array<Object>} data._textImages - Dados da tabela _textImages.
      * @param {Array<Object>} data.settings - Dados da tabela settings.
-     * @param {Array<Object>} data.importances - Dados da tabela importance.
+     * @param {Array<Object>} data.relevances - Dados da tabela relevance.
      * @param {Array<Object>} data.entryTypes - Dados da tabela entryTypes.
      */
-    constructor(data) {        
-        this.subjects = this.createSubjectTypeSet(data.subjects, data.categories, data.entries, data.events);
-        this.timelines = this.createTimelineSet(data.timelines, data.events, data._timelineEvents);
-        this.calendars = this.createCalendarsMergedSet(data.calendars, data.calendarsMonths, data.calendarsDays, data.calendarsDaysInMonths);
-        this.events = this.createEventSet(data.events);
+    constructor(data) {    
+        this.tomes = this.createSimpleSet(data.tomes);
+        this.chapters = this.createChapterSet(data.chapters, data.sections);
+        this.sections = this.createSectionSet(data.sections, data.entries, data.events, data.lineages); 
         this.entries = this.createEntrySet(data.entries, data.events);
-        this.categories = this.createCategorySet(data.categories, data.entries, data.events);
-        this.roots = this.createSimpleSet(data.roots);
-        this.textImages = this.createSimpleSet(data._textImages);
-        this.settings = this.createSimpleSet(data.settings);
-        this.importances = this.createSimpleSet(data.importances);
+        this.lineages = this.createSimpleSet(data.lineages);
+        this.events = this.createSimpleSet(data.events);
+        this.timelines = this.createTimelineSet(data.timelines, data.events, data._timelineEvents);
+        this.calendars = this.createCalendarsMergedSet(data.calendars, data.calendarsMonths, data.calendarsDays, data.calendarsDaysInMonths); 
+        this.textImages = this.createSimpleSet(data._textImages);        
         this.entryTypes = this.createSimpleSet(data.entryTypes);
-        this.familyTrees = this.createSimpleSet(data.familyTrees);
+        this.relevances = this.createSimpleSet(data.relevances);   
+        this.settings = this.createSimpleSet(data.settings);             
     }
 
     static async UniForgeData() {
         // Exemplo de uso com dados simulados
         const data = {};
 
-        data.subjects = await uniforge.db.getAllSubjectType();
-        data.categories = await uniforge.db.getAllCategory();
-        data.entries = await uniforge.db.getAllEntry();
-        data.events = await uniforge.db.getAllEvent();
-        data.timelines = await uniforge.db.getAllTimeline();
+        data.tomes = await uniforge.db.getAllTomes();
+        data.chapters = await uniforge.db.getAllChapters();
+        data.sections = await uniforge.db.getAllSections();
+        data.entries = await uniforge.db.getAllEntries();
+        data.events = await uniforge.db.getAllEvents();
+        data.timelines = await uniforge.db.getAllTimelines();
+        data._timelineEvents = await uniforge.db.getAllTimelineEvents();
         data.calendars = await uniforge.db.getAllCalendars();
         data.calendarsMonths = await uniforge.db.getAllCalendarsMonths();
         data.calendarsDays = await uniforge.db.getAllCalendarsDays();
-        data.calendarsDaysInMonths = await uniforge.db.getAllCalendarsDaysInMonths();
-        data.roots = await uniforge.db.getAllRoots();
-        data._textImages = await uniforge.db.getAllTextImages();
+        data.calendarsDaysInMonths = await uniforge.db.getAllCalendarsDaysInMonths();        
+        data.textImages = await uniforge.db.getAllTextImages();
         data.settings = await uniforge.db.getAllSettings();
-        data.importances = await uniforge.db.getAllImportance();
+        data.relevances = await uniforge.db.getAllRelevances();
         data.entryTypes = await uniforge.db.getAllEntryTypes();
 
         return data;
@@ -65,31 +65,29 @@ export default class DBDocuments {
     /**
      * Cria um conjunto de SubjectTypes, contendo categorias, entradas e eventos relacionados.
      *
-     * @param {Array<Object>} subjectTypes - Dados da tabela subjectType.
-     * @param {Array<Object>} categories - Dados da tabela category.
-     * @param {Array<Object>} entries - Dados da tabela entry.
-     * @param {Array<Object>} events - Dados da tabela event.
+     * @param {Array<Object>} chapters - Dados da tabela Chapter.
+     * @param {Array<Object>} sections - Dados da tabela Section.
      * @returns {Set} Conjunto de SubjectTypes.
      */
-    createSubjectTypeSet(subjectTypes, categories, entries, events) {
-        const subjectTypeSet = new Set();
+    createChapterSet(chapters, sections) {
+        const chapterSet = new Set();
 
-        subjectTypes.forEach((subjectType) => {
-            const categorySet = new Array();
+        chapters.forEach((chapter) => {
+            const sectionSet = new Array();
 
             // Filtra as categorias que possuem o mesmo sid do SubjectType atual
-            categories
-                .filter((category) => category.sid === subjectType.sid)
-                .forEach((category) => {
+            sections
+                .filter((section) => section.sid === chapter.sid)
+                .forEach((section) => {
                     // Adiciona a categoria ao conjunto, incluindo suas entradas
-                    categorySet.push({ _id: category.cid });
+                    sectionSet.push({ _id: section.cid });
                 });
 
             // Adiciona o SubjectType ao conjunto, incluindo suas categorias
-            subjectTypeSet.add({ ...subjectType, categories: categorySet });
+            chapterSet.add({ ...chapter, sections: sectionSet });
         });
 
-        return subjectTypeSet;
+        return chapterSet;
     }
 
     /**
@@ -166,22 +164,7 @@ export default class DBDocuments {
         });
 
         return calendarsSet;
-    }
-
-    /**
-     * Cria um conjunto de eventos.
-     *
-     * @param {Array<Object>} events - Dados da tabela event.
-     * @returns {Set} Conjunto de eventos.
-     */
-    createEventSet(events) {
-        // Cria um conjunto simples de eventos
-        const eventSet = new Set(
-            events.map((event) => ({ ...event }))
-        );
-
-        return eventSet;
-    }
+    }    
 
     /**
      * Cria um conjunto de entradas (Entries), contendo eventos relacionados.
@@ -190,20 +173,29 @@ export default class DBDocuments {
      * @param {Array<Object>} events - Dados da tabela event.
      * @returns {Set} Conjunto de entradas.
      */
-    createEntrySet(entries, events) {
+    createEntrySet(entries, events, lineages) {
         const entrySet = new Set();
 
         entries.forEach((entry) => {
             let event = null;
             // Filtra os eventos associados à entrada atual
             events
-                .filter((e) => e.eid === entry.eid)
+                .filter((e) => e.source === entry.eid)
                 .forEach((e) => {
                     event = e.evid;
                 });
+
+            let lineage = null;
+            // Filtra as linhagens associadas à entrada atual
+            lineages
+                .filter((l) => l.founder === entry.eid)
+                .forEach((l) => {
+                    lineage = l.ltid;
+                });
+
             // Adiciona a entrada ao conjunto, incluindo seus eventos
-            entrySet.add({ ...entry, event: event });
-        });
+            entrySet.add({ ...entry, event: event, lineage: lineage });
+        });        
 
         return entrySet;
     }
@@ -211,33 +203,53 @@ export default class DBDocuments {
     /**
      * Cria um conjunto de categorias, contendo entradas e eventos relacionados.
      *
-     * @param {Array<Object>} categories - Dados da tabela category.
+     * @param {Array<Object>} sections - Dados da tabela section.
      * @param {Array<Object>} entries - Dados da tabela entry.
      * @param {Array<Object>} events - Dados da tabela event.
+     * @param {Array<Object>} lineages - Dados da tabela lineageTree.
      * @returns {Set} Conjunto de categorias.
      */
-    createCategorySet(categories, entries, events) {
-        const categorySet = new Set();
+    createSectionSet(sections, entries, events, lineages) {
+        const sectionSet = new Set();
 
-        if (this.subjects) {
-            categories.forEach((category) => {
+        if (this.chapters) {
+            sections.forEach((section) => {
                 const entrySet = new Array();
-                const subject = this.subjects.get(category.sid);
+                const eventSet = new Array();
+                const lineageSet = new Array();
 
-                // Filtra as entradas que possuem o cid correspondente à categoria atual
+                const chapter = this.chapters.get(section.sid);
+
+                // Filtra as entradas que possuem o sid correspondente à seção atual
                 entries
-                    .filter((entry) => entry.cid === category.cid)
+                    .filter((entry) => entry.sid === section.sid)
                     .forEach((entry) => {
-                        // Adiciona a entrada ao conjunto, incluindo seus eventos
+                        // Adiciona a entrada ao conjunto
                         entrySet.push({ _id: entry.eid });
+                });
+
+                // Filtra os eventos que possuem o sid correspondente à seção atual
+                events
+                 .filter((event) => event.sid === section.sid)
+                 .forEach((event) => {
+                     // Adiciona o evento ao conjunto
+                     eventSet.push({ _id: event.eid });
+                    });
+
+                // Filtra os eventos que possuem o sid correspondente à seção atual
+                lineageSet
+                 .filter((lineage) => lineage.sid === section.sid)
+                 .forEach((lineage) => {
+                     // Adiciona o evento ao conjunto
+                     lineageSet.push({ _id: lineage.eid });
                     });
 
                 // Adiciona a categoria ao conjunto, incluindo suas entradas
-                categorySet.add({ ...category, type: subject.root, isLineage: (subject.isLineage == 1), entries: entrySet });
+                sectionSet.add({ ...section, type: chapter.root, isLineage: (chapter.isLineage == 1), entries: entrySet });
             });
-        } else throw new Error('Não foi possível criar o Set das categorias. O Set dos subjects deve ser criado antes do de categories.');
+        } else throw new Error('Não foi possível criar o Set das categorias. O Set dos chapters deve ser criado antes do de sections.');
 
-        return categorySet;
+        return sectionSet;
     }
 
     /**

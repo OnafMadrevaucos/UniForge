@@ -16,10 +16,10 @@ export default class SubjectDialog extends BaseDialog {
    * @async
    */
   async _prepare() {
-    this.data.roots = uniforge.doc.roots.toObject(); 
-    Object.keys(this.data.roots).forEach((key) => {
-      const item = this.data.roots[key];
-      item._label = item.root.capitalize();
+    this.data.tomes = uniforge.doc.tomes.toObject(); 
+    Object.keys(this.data.tomes).forEach((key) => {
+      const item = this.data.tomes[key];
+      item._label = item.title.capitalize();
     });   
     
     this.data.icons = await uniforge.utils.extractFontAwesomeIcons();
@@ -131,7 +131,7 @@ export default class SubjectDialog extends BaseDialog {
     }
     return new Promise((resolve, reject) => {
       const dialogData = {
-        title: 'Criar Assunto',
+        title: 'Criar Capítulo',
         buttons: {
           cancel: {
             label: "Cancelar",

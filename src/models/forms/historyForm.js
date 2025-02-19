@@ -46,7 +46,7 @@ export default class HistoryForm extends EntryForm {
         super.prepareData();
 
         this.data.entryTypes = uniforge.doc.entryTypes.toObject();
-        this.data.importances = uniforge.doc.importances.toObject();
+        this.data.relevances = uniforge.doc.relevances.toObject();
         this.data.calendars = uniforge.doc.calendars.toObject();
 
         return this.data;
@@ -112,7 +112,7 @@ export default class HistoryForm extends EntryForm {
         const entryTypeSelect = this.querySelector('#entryType');
         entryTypeSelect.value = 0;
 
-        const importanceSelect = this.querySelector('#importance');
+        const importanceSelect = this.querySelector('#relevance');
         importanceSelect.value = 0;
 
         const calendarTypeSelect = this.querySelector('#calendarType');
@@ -198,13 +198,13 @@ export default class HistoryForm extends EntryForm {
         const headerInfo = this.querySelector('.header-info');
 
         const entryType = this.querySelector('#entryType');
-        const importance = this.querySelector('#importance');
+        const relevance = this.querySelector('#relevance');
         const calendarType = this.querySelector('#calendarType');
 
         uniforge.utils.mergeObjects(data, {
             etid: entryType.value,
             cid: headerInfo.dataset.cid,
-            iid: importance.value,
+            iid: relevance.value,
             clid: calendarType.value,
             flavor: tinymce.get('flavorEditor').getContent() ?? '',
             htmlString: tinymce.get('mainEditor').getContent() ?? '',
@@ -264,10 +264,10 @@ export default class HistoryForm extends EntryForm {
                 headerInfo.dataset.evid = entryEvent.evid;
 
                 const entryType = this.querySelector('#entryType');
-                const importance = this.querySelector('#importance');
+                const relevance = this.querySelector('#relevance');
 
                 entryType.value = entry.etid;
-                importance.value = entryEvent.iid;
+                relevance.value = entryEvent.iid;
                 tinymce.get('mainEditor').setContent(entry.htmlString);
                 tinymce.get('flavorEditor').setContent(entry.flavor);
             } else {

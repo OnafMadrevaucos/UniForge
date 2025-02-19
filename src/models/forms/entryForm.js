@@ -92,9 +92,9 @@ export default class EntryForm extends SidebarForm {
 
   /** @inheritdoc */
   prepareFolders(data) {
-    const folders = uniforge.doc.categories.filter(c => {
-      const s = uniforge.doc.subjects.get(c.sid);
-      return c.type === this.type && (s && s.isLineage === 0);
+    const folders = uniforge.doc.sections.filter(s => {
+      const c = uniforge.doc.chapters.get(s.cid);
+      return c.tome === this.type;
     });
     data.folders = folders.sort();
   }

@@ -247,11 +247,11 @@
             const json = this.parseCssToJson(cssContent);
             Object.keys(json).forEach((key) => {
                 const item = json[key];
-                const selector = item.selector.replace('fa-','');
+                const selector = item.selector.replace('fa-', '');
                 item._icon = `<i class="fas ${item.selector}"></i>`;
                 item._label = selector.capitalize();
                 item._value = item.selector;
-            });  
+            });
 
             // Ordenar o objeto json alfabeticamente
             const orderedJson = Object.values(json).sort((a, b) => a._label.localeCompare(b._label));
@@ -717,7 +717,7 @@
         html = replacePlaceholders(html, data);
 
         return html;
-    }    
+    }
 
     /**
        * Gera um ID de string alfanumérica aleatória de um comprimento solicitado usando `crypto.getRandomValues()`.
@@ -792,29 +792,44 @@
     */
     function replaceComboTags(html, data) {
         console.log('UniForge | Substituindo tags de Combo...');
-        
-        const regex = /<combo\s+id="([^"]+)"\s+value="([^"]+)"\s*(blank="([^"]+)")?\s*\/?>/g;
 
-        html = html.replace(regex, (match, id, valueKey, blankAttr, blankValue) => {
+        const regex = /<combo\s+id="([^"]+)"\s+value="([^"]+)"\s*(blank="([^"]+)")?\s*(search="([^"]+)")?\s*\/?>/g;
+
+        html = html.replace(regex, (match, id, valueKey, blankAttr, blankValue, searchAttr, searchValue) => {
             console.log(`Correspondência encontrada: ${match}`);
-            console.log(`ID: ${id}, ValueKey: ${valueKey}${blankValue ? `, BlankValue: ${blankValue}` : ''}`);
+            console.log(`ID: ${id}, ValueKey: ${valueKey}${blankValue ? `, BlankValue: ${blankValue}` : ''}${searchAttr ? `, IsSearchable: ${searchValue}` : ''}`);
 
+            let result = `<select id="${id}" class="data" name="${id}"></select>`;
             if (!(valueKey in data)) {
                 console.log(`O identificador '${valueKey}' não foi encontrado no objeto data. Retornando um <select> vazio.`);
-                return `<select id="${id}" class="data" name="${id}"></select>`;
+                return result;
             }
 
-            const options = Array.isArray(data[valueKey])
-                ? data[valueKey].map(val => `<option value="${val._id}">${val._label}</option>`).join('\n')
-                : Object.keys(data[valueKey]).map(key => `<option value="${data[valueKey][key]._id}">${data[valueKey][key]._label}</option>`).join('\n');
+            const blankOption = blankAttr ? `<option value="${blankValue}" label="&#8212"/>` : '';
+            const isSearchable = searchValue === 'true';
 
-            const blankOption = blankAttr ? `<option value="${blankValue}">&#8212</option>` : '';
+            if (isSearchable) {
+                const options = Array.isArray(data[valueKey])
+                    ? data[valueKey].map(val => `<option value="${val._label}" label="${val._id}" class="search-option"/>`).join('\n')
+                    : Object.keys(data[valueKey]).map(key => `<option value="${data[valueKey][key]._label}" label="${data[valueKey][key]._id}" class="search-option"/>`).join('\n');
 
-            const result = `
-            <select id="${id}" class="data" name="${id}">
-                ${blankOption}
-                ${options}
-            </select>`;
+                result = `
+                <input type="text" id="${id}" class="data" name="${valueKey}" list="${id}-list">
+                <datalist id="${id}-list">
+                    ${blankOption}
+                    ${options}
+                </datalist >`;
+            } else {
+                const options = Array.isArray(data[valueKey])
+                    ? data[valueKey].map(val => `<option value="${val._id}" label="${val._label}"/>`).join('\n')
+                    : Object.keys(data[valueKey]).map(key => `<option value="${data[valueKey][key]._id}" label="${data[valueKey][key]._label}"/>`).join('\n');
+
+                result = `
+                <select id="${id}" class="data" name="${id}">
+                    ${blankOption}
+                    ${options}
+                </select>`;
+            }
 
             return result;
         });
@@ -1398,7 +1413,7 @@
        * Capitaliza uma string, transformando o primeiro caractere em maiúsculo.
        * @returns {string}
        */
-    function isEmpty() {        
+    function isEmpty() {
         return (!this || this === '');;
     }
 
@@ -1583,7 +1598,20 @@
             VIEW_WIDTH: 3840,
             VIEW_HEIGHT: 2160,
             TILE_SIZE: 240,
-            DEFAULT_IMPORTANCE: '1'
+        },
+
+        /**
+         * Valores padrões usados pelo sistema.
+         * 
+         * @type {Object}
+         * @property {string} entryType     - Tipo de Entrada Padrão (Artigo Genérico).
+         * @property {string} importance    - Importância padrão de um evento (Minor).
+         * @property {string} calendar      - Calendário padrão do sistema (Ayruídico).
+        */
+        defaults: {
+            entryType: '1',
+            importance: '1',
+            calendar: '1'
         },
 
         /**
