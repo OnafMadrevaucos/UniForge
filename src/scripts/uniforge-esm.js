@@ -873,10 +873,13 @@
 
     function replaceFoldertreeTags(html, data) {
         console.log('UniForge | Substituindo tags de Foldertree...');
-        const regex = /<foldertree id="([^"]+)" item="([^"]+)"( data-([^>]+))?><\/foldertree>/g;
+        const regex = /<foldertree id="([^"]+)" item="([^"]+)"(\s+data-([^>]+))?(\s+fixed)?><\/foldertree>/g;
         html = html.replace(regex, (match, id, itemKey, dataset) => {
+            const isFixedRegex = /\s+fixed/;
+            const isFixed = isFixedRegex.test(match);
+
             console.log(`Correspondência encontrada: ${match}`);
-            console.log(`ID: ${id}, Item: ${itemKey}, ${dataset ? `Dados: ${dataset}` : ''}`);
+            console.log(`ID: ${id}, Item: ${itemKey}, ${dataset ? `Dados: ${dataset}` : ''}, isFixed: ${isFixed ? 'true' : 'false'}`);
 
             const datasetObj = {};
             if (dataset) {
@@ -899,19 +902,19 @@
             folders.forEach(folder => {
                 if (!(itemKey in folder)) {
                     console.log(`O identificador '${itemKey}' não foi encontrado no objeto data ou a lista de itens está vazia. Retornando um <li> vazio.`);
-                    return `<li class="folder created" data-cid="${folder.cid}" data-sid="${folder.sid}" data-tid="${folder.tid ?? null}"></li>`;
+                    return `<li class="folder created" data-id="${folder._id}"></li>`;
                 }
 
                 const itemList = folder[itemKey];
                 const folderHTML =
-                    `<li class="folder created" data-cid="${folder.cid}" data-sid="${folder.sid}" data-tid="${folder.tid ?? null}">
+                    `<li class="folder created" data-id="${folder._id}">
                         <div class="folder-header flexrow">
                             <i class="fas fa-folder"></i>
                             <span>${folder._label}</span>
                         </div>
                         <div class="folder-content">
                             <ul class="entry-list">
-                                ${(itemList.length > 0 ? _generateFolderItemHTML(itemKey, itemList) : '')}
+                                ${(itemList.length > 0 ? _generateFolderItemHTML(itemKey, itemList, isFixed) : '')}
                             </ul>
                         </div>
                     </li>`;
@@ -1509,16 +1512,7 @@
      * @param {Array} itemList      - A lista de itens de uma pasta.
      * @private
      */
-    function _generateFolderItemHTML(itemKey, itemList) {
-        /* 
-        <li class="entry-item flexrow" data-id="-1">
-            <i class="fas fa-file"></i>
-            <span></span>
-            <a class="remove-button">
-                <i class="fas fa-trash"></i>
-            </a>
-        </li>
-        */
+    function _generateFolderItemHTML(itemKey, itemList, isFixed) {        
         let html = '';
 
         itemList.forEach(item => {
@@ -1526,10 +1520,7 @@
             html += `
                 <li class="entry-item flexrow" data-id="${data._id}">
                     <i class="fas fa-file"></i>
-                    <span>${data._label}</span>
-                    <a class="remove-button">
-                        <i class="fas fa-trash"></i>
-                    </a>
+                    <span>${data._label}</span>${isFixed ? '' : '\n<a class="remove-button"><i class="fas fa-trash"></i></a>'}                    
                 </li>\n
             `;
         });

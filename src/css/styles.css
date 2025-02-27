@@ -212,6 +212,14 @@ h2 {
     font-variant: small-caps;
 }
 
+h4 {
+    color: var(--dark-red);
+    font-variant: petite-caps;
+    margin-block: 2px;
+    text-align: center;
+    font-size: large;
+}
+
 input[type="text"],
 input[type="password"],
 input[type="checkbox"],
@@ -277,6 +285,20 @@ button {
     margin: 10px auto;
     height: fit-content;
     width: 10em;
+}
+
+a {    
+    align-self: center;
+}
+a:not(.close-button) {
+    flex: 0;
+}
+a:hover {
+    cursor: pointer;
+    color: var(--focus-red);
+}
+a:not(.close-button):hover {
+    text-shadow: var(--text-shadow);
 }
 
 .dialog button {
@@ -1053,17 +1075,12 @@ input:checked+.slider::before {
     margin: 1px;
     margin-top: 3px;
     margin-right: 5px;
+    align-items: center;
 }
-
-.overlay .form-container .form-header .close-button i {
-    margin-top: 0.05em;
-    margin-left: 0.1em;
-}
-
-.overlay .form-container.article .close-button:hover,
 .overlay .form-container .close-button:hover {
     color: var(--dark-red);
     background-color: var(--light-text-color);
+    text-shadow: none;
 }
 
 .overlay .form-container .form-content {
@@ -1095,6 +1112,7 @@ input:checked+.slider::before {
     border-radius: 50%;
     background-color: var(--dark-redT87);
     box-shadow: var(--small-shadow);
+    justify-content: center;
 }
 
 .data-group .search-box input[type="text"] {
@@ -1134,6 +1152,20 @@ input:checked+.slider::before {
 
 .data-group.check {
     flex: 0;
+}
+
+
+.data-complex.full-button button {
+    
+    background-color: var(--dark-blue);
+    border: var(--data-group-border);
+    box-shadow: none;    
+    color: var(--light-text-color);
+}
+.data-complex.full-button button:hover {
+    cursor: pointer;
+    background-color: var(--dark-redT87);
+    border: var(--focus-border);
 }
 
 .data-group .data-label {
@@ -1235,14 +1267,14 @@ input:checked+.slider::before {
     color: var(--text-color);
 }
 
-/* ------ Atlas Form ------ */
+/* ------ Form Backgrounds ------ */
 #atlas {
     background-image:
         linear-gradient(180deg, rgba(255, 255, 255, 0) 45%, rgba(30, 30, 47, 1) 75%),
         url('../images/maps.jpg');
 }
 
-/* ------ Encyclopedia Form ------ */
+
 #history {
     background-image:
         linear-gradient(180deg, rgba(255, 255, 255, 0) 35%, rgba(30, 30, 47, 1) 70%),
@@ -1265,6 +1297,13 @@ input:checked+.slider::before {
     background-image:
         linear-gradient(180deg, rgba(255, 255, 255, 0) 35%, rgba(30, 30, 47, 1) 70%),
         url('../images/timeline.jpg');
+}
+
+/* ------ Dialogs Backgrounds ------ */
+.source-dialog {
+    background-image:
+        linear-gradient(180deg, rgba(255, 255, 255, 0) 35%, rgba(30, 30, 47, 1) 70%),
+        url('../images/misc.jpg');
 }
 
 /* ------ Library Form ------ */
@@ -1935,13 +1974,14 @@ folder-list .folder.created.selected .folder-header .fa-trash {
 }
 
 .folder-list .folder-content {
+    width: -webkit-fill-available;
     cursor: pointer;
 }
 
 .folder-list .folder.selected .folder-content .entry-list {
     padding-left: 15px;
     transition: all 0.3s;
-
+    width: -webkit-fill-available;
 }
 
 .folder-list .folder:not(.selected) .folder-content .entry-list {
@@ -1971,17 +2011,21 @@ folder-list .folder.created.selected .folder-header .fa-trash {
 .folder-list .folder-content .entry-list .entry-item a {
     color: transparent;
     display: flex;
-    flex: 1;
+    flex: 0;
     align-self: center;
     justify-content: flex-end;
-    margin-left: 5em;
+    pointer-events: none;
+}
+
+.folder-list .folder-content .entry-list .entry-item.selected a {
+    pointer-events: all;
 }
 
 .folder-list .folder-content .entry-list .entry-item.selected a {
     color: var(--red);
 }
 
-.folder-list .folder-content .entry-list .entry-item a:hover {
+.folder-list .folder-content .entry-list .entry-item.selected a:hover {
     color: var(--light-text-color);
 }
 
@@ -2297,7 +2341,7 @@ folder-list .folder.created.selected .folder-header .fa-trash {
     padding-left: 10px;
 }
 
-.content .info-set .date-info {
+.content .info-set .date-info {     
     gap: 5px;
 }
 
@@ -2314,6 +2358,7 @@ folder-list .folder.created.selected .folder-header .fa-trash {
     text-shadow: var(--text-shadow);
 }
 
+.img-displayer,
 .img-container {
     width: 128px;
     height: 128px;
@@ -2359,6 +2404,7 @@ folder-list .folder.created.selected .folder-header .fa-trash {
     width: 140px;
 }
 
+.img-displayer img,
 .img-container img {
     max-width: 110%;
     max-height: 110%;
@@ -2370,6 +2416,7 @@ folder-list .folder.created.selected .folder-header .fa-trash {
     max-height: 100%;
 }
 
+.img-displayer img.empty,
 .img-container img.empty {
     height: 92px;
     width: 92px;
@@ -2461,6 +2508,21 @@ folder-list .folder.created.selected .folder-header .fa-trash {
     text-align: center;
     text-shadow: var(--text-shadow);
     color: var(--dark-red);    
+}
+
+.entries .info-set .data-group.entry {
+    flex: 1;
+    height: 36px;     
+    align-items: center;
+    justify-content: flex-end;
+}
+.entries .info-set .data-group.entry .entry-title {
+    background-color: var(--blue);
+    border-radius: var(--default-border-radius);
+    padding: 5px;
+    margin-right: 2px;
+    font-size: var(--small-size);
+    font-style: italic;
 }
 
 .entries.family-dialog .info-set .data-complex.flexcol {
@@ -2659,13 +2721,23 @@ folder-list .folder.created.selected .folder-header .fa-trash {
 
 /* ------ TinyMCE Editor ------*/
 #mainEditor {
-    width: 100%;
-    height: 300px;
+    flex: 1;
+    width: -webkit-fill-available;
+    /*height: 300px;*/
     border: var(--filled-border);
     border-radius: 5px;
     padding: 10px;
     background: var(--light-background-color);
     color: var(--light-text-color);
+}
+
+.non-editable {
+    pointer-events: none;
+    cursor: default;
+}
+
+.non-editable * {
+    caret-color: transparent;
 }
 
 .simple-tmce {
@@ -2707,12 +2779,11 @@ folder-list .folder.created.selected .folder-header .fa-trash {
     outline: none;
 }
 
-#captionEditor::before,
-#flavorEditor::before,
+.simple-tmce::before,
 #tinymce::before {
     font-size: var(--default-size);
     font-style: italic;
-    color: var(--light-text-color);
+    color: var(--light-text-color) !important;
     line-height: 1.35em;
     padding-left: 5px;
     cursor: text;
@@ -2826,7 +2897,7 @@ folder-list .folder.created.selected .folder-header .fa-trash {
 
 .message .close-message:hover {
     cursor: pointer;
-    text-shadow: var(--text-shadow);
+    text-shadow: none;
 }
 
 .message.show {
@@ -2872,7 +2943,7 @@ folder-list .folder.created.selected .folder-header .fa-trash {
     cursor: default;
 }
 
-.dialog .header {
+.dialog .topbar {
     gap: 5px;
     background: var(--dark-red);
     border-radius: var(--title-header-radius);
@@ -2881,11 +2952,11 @@ folder-list .folder.created.selected .folder-header .fa-trash {
     margin-bottom: 10px;
 }
 
-.dialog .header:hover {
+.dialog .topbar:hover {
     cursor: grab;
 }
 
-.dialog .header h2 {
+.dialog .topbar h2 {
     flex: 1;
     color: var(--light-text-color);
     margin: 0;
@@ -2895,7 +2966,7 @@ folder-list .folder.created.selected .folder-header .fa-trash {
     text-shadow: none;
 }
 
-.dialog .header a {
+.dialog .topbar a {
     flex: 0;
     color: var(--light-text-color);
     align-self: center;
@@ -2905,7 +2976,7 @@ folder-list .folder.created.selected .folder-header .fa-trash {
     border-radius: 50%;
 }
 
-.dialog .header a:hover {
+.dialog .topbar a:hover {
     cursor: pointer;
     color: var(--dark-red);
     background-color: var(--light-text-color);
@@ -2919,6 +2990,9 @@ folder-list .folder.created.selected .folder-header .fa-trash {
     color: var(--light-text-color);
     overflow-y: auto;
 }
+.dialog .body:has(.sidebar) {
+    padding-inline: 0;
+}
 
 .dialog .body:has(.family-dialog) {
     overflow-y: hidden;
@@ -2929,7 +3003,7 @@ folder-list .folder.created.selected .folder-header .fa-trash {
 }
 
 .dialog .body .image-dialog,
-.dialog .body .subject-dialog {
+.dialog .body .chapter-dialog {
     overflow: hidden;
 }
 
@@ -2939,11 +3013,11 @@ folder-list .folder.created.selected .folder-header .fa-trash {
 }
 
 .dialog .body input,
-.dialog .body button {
+.dialog .body .button {
     margin-block: 3px;
 }
 
-.dialog .body button {
+.dialog .body .button {
     width: fit-content;
     margin-left: 3px;
     border: none;
@@ -2951,7 +3025,7 @@ folder-list .folder.created.selected .folder-header .fa-trash {
     color: var(--background-color);
 }
 
-.dialog .body button:hover {
+.dialog .body .button:hover {
     background-color: var(--dark-red);
     color: var(--light-text-color);
 }
@@ -2994,7 +3068,7 @@ folder-list .folder.created.selected .folder-header .fa-trash {
 }
 
 .dialog .body .folder-list .folder.created.selected a {
-    flex: 1;
+    flex: 0;
     text-align: end;
 }
 
@@ -3018,16 +3092,24 @@ folder-list .folder.created.selected .folder-header .fa-trash {
     max-height: 600px;
 }
 
-.dialog .body .link-dialog .sidebar {
+.dialog .sidebar {
     flex: 0 0 30%;
     padding: 5px;
+    border-radius: var(--default-border-radius);
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
 }
 
-.dialog .body .link-dialog .sidebar .folder-list {
+.dialog .sidebar h4 {
+    text-align: center;
+}
+
+.dialog .sidebar .folder-list {
+    flex: 1;
     justify-items: flex-start;
 }
 
-.dialog .link-dialog .folder-list .folder-content .entry-list {
+.dialog .folder-list .folder-content .entry-list {
     padding-left: 5px;
 }
 

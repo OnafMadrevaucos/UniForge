@@ -331,28 +331,7 @@ export default class BaseForm {
   prepareContent() {
     const preparedContent = uniforge.parser.parseHTML(this.ui.content.innerHTML, this.data);
     this.ui.content.innerHTML = preparedContent;
-  }
-
-  /**
-   * Limpa o conteúdo do formulário
-   */
-  clearContent() {
-    this.clearImage();
-  }
-
-  /**
-  * Limpa a imagem exibida definindo sua fonte para uma URL de imagem em branco.
-  * Se a imagem ainda não tiver a classe 'empty', ela adiciona a classe 'empty'.
-  */
-  clearImage() {
-    const displayedImage = this.querySelector('#displayedImage');
-    if (displayedImage) {
-      if (!displayedImage.classList.contains('empty'))
-        displayedImage.classList.add('empty');
-
-      displayedImage.src = this.blankImgUrl;
-    }
-  }
+  }  
 
   /* ---------------------------------------------------------------------------------------------------------------- */
   // LISTENERS

@@ -47,7 +47,7 @@ export default class SidebarForm extends BaseForm {
      * @param {object} data - O objeto de dados do formulário.
      */
     prepareFolders(data) {
-        const folders = uniforge.doc.sections; 
+        const folders = uniforge.doc.sections;
         data.folders = folders.sort();
     }
 
@@ -60,7 +60,6 @@ export default class SidebarForm extends BaseForm {
      * Limpa o conteúdo do formulário
      */
     clearContent() {
-        super.clearContent();
         const folders = this.querySelectorAll('#folderList .folder');
 
         if (folders.length == 0) return;
@@ -71,6 +70,20 @@ export default class SidebarForm extends BaseForm {
             icon.classList.remove(...icon.classList);
             icon.classList.add('fas', 'fa-folder');
         });
+    }
+
+    /**
+     * Limpa a imagem exibida definindo sua fonte para uma URL de imagem em branco.
+     * Se a imagem ainda não tiver a classe 'empty', ela adiciona a classe 'empty'.
+     */
+    clearImage() {
+        const displayedImage = this.querySelector('#displayedImage');
+        if (displayedImage) {
+            if (!displayedImage.classList.contains('empty'))
+                displayedImage.classList.add('empty');
+
+            displayedImage.src = this.blankImgUrl;
+        }
     }
 
     /**
@@ -165,7 +178,7 @@ export default class SidebarForm extends BaseForm {
             sidebar.addEventListener('click', (event) => { this.onSidebarClick(event); });
 
             const minimizeButton = this.querySelector('#minimizeButton');
-            if(minimizeButton) minimizeButton.addEventListener('click', (event) => { this.onMinimizeClick(event); });
+            if (minimizeButton) minimizeButton.addEventListener('click', (event) => { this.onMinimizeClick(event); });
 
             const folders = this.querySelectorAll('.folder');
             const items = this.querySelectorAll('.entry-item');
@@ -223,7 +236,7 @@ export default class SidebarForm extends BaseForm {
     onSidebarClick(event) {
         event.stopPropagation();
         if (event.target.classList.contains('entry-item')) return;
-        
+
         this.clearContent();
         if (this.controlStates) this.controlStates(this.states.default);
     }

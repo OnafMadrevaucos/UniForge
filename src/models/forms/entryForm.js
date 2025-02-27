@@ -48,10 +48,10 @@ export default class EntryForm extends SidebarForm {
     };
 
     /**
-     * A edição atual é uma atualização de uma Entrada?
+     * A edição atual é uma atualização de uma Entrada? (false por padrão)
      * @type {boolean}
      */
-    this.isEntryUpdate = false;
+    this.isUpdate = false;
 
     /** 
      * @type {Object} - Tooltip de interface do usuário. 
@@ -135,13 +135,15 @@ export default class EntryForm extends SidebarForm {
    * @param {Number} state - O novo estado do formulário.
    * @protected
    */
-  controlStates(state) {
+  controlStates(state, options={}) {
     const titleInput = this.querySelector('#titleInput');
     const imageContainer = this.querySelector('#imageContainer');
     const infoSet = this.querySelector('.info-set:not(.not-disable)');
     const mainEditor = tinymce.get('mainEditor');
     const deleteSwitch = this.querySelector('#deleteSwitch');
     const deleteCheckbox = deleteSwitch.querySelector('#checkbox');
+
+    const ignoreEditor = options.ignoreEditor ?? false;
 
     if (this.canDelete) deleteCheckbox.click();
 
@@ -154,7 +156,8 @@ export default class EntryForm extends SidebarForm {
         titleInput.disabled = true;
         infoSet.disabled = true;
 
-        imageContainer.classList.remove('disabled');
+        if (imageContainer)
+          imageContainer.classList.remove('disabled');
 
         // Limpe qualquer conteúdo, caso uma entrada já estiver sendo manipulada.
         if (this.currentState > this.states.newEntry) this.clearContent(false);
@@ -171,17 +174,20 @@ export default class EntryForm extends SidebarForm {
 
         cancelButton.classList.add('hidden');
 
-        mainEditor?.mode.set('readonly');
+        if(!ignoreEditor) mainEditor?.mode.set('readonly');
       } break;
       // ESTADO DE EDIÇÃO DE ENTRADA.
       case this.states.adding: {
+        this.clearContent();
         // Está adicionando uma Entrada nova.
-        this.isEntryUpdate = false;
+        this.isUpdate = false;
 
         // Foca no campo de Título.
         const titleInput = this.querySelector('#titleInput');
         titleInput.focus();
-        imageContainer.classList.remove('disabled');
+
+        if (imageContainer)
+          imageContainer.classList.remove('disabled');
 
         deleteSwitch.classList.remove('hidden');
 
@@ -195,17 +201,19 @@ export default class EntryForm extends SidebarForm {
 
         cancelButton.classList.remove('hidden');
 
-        mainEditor?.mode.set('design');
+        if(!ignoreEditor) mainEditor?.mode.set('design');
       } break;
       // ESTADO DE EDIÇÃO DE ENTRADA.
       case this.states.editing: {
         // Está atualizando uma Entrada pré-existente.
-        this.isEntryUpdate = true;
+        this.isUpdate = true;
 
         // Foca no campo de Título.
         const titleInput = this.querySelector('#titleInput');
         titleInput.focus();
-        imageContainer.classList.remove('disabled');
+
+        if (imageContainer)
+          imageContainer.classList.remove('disabled');
 
         deleteSwitch.classList.remove('hidden');
 
@@ -219,11 +227,14 @@ export default class EntryForm extends SidebarForm {
 
         cancelButton.classList.remove('hidden');
 
-        mainEditor?.mode.set('design');
+        if(!ignoreEditor) mainEditor?.mode.set('design');
       } break;
       // ESTADO PADRÃO.
       default: {
         this.clearContent();
+
+        const entryTypeSelect = this.querySelector('#entryType');
+        entryTypeSelect.selectedIndex = 0;
 
         deleteSwitch.classList.add('hidden');
 
@@ -233,8 +244,9 @@ export default class EntryForm extends SidebarForm {
           delete headerInfo.dataset[key];
         });
 
-        // Desativa recipiente de imagens.
-        imageContainer.classList.add('disabled');
+        if (imageContainer)
+          // Desativa recipiente de imagens.
+          imageContainer.classList.add('disabled');
 
         // As entradas de dados nesse estado estão desativadas.
         titleInput.disabled = true;
@@ -258,7 +270,7 @@ export default class EntryForm extends SidebarForm {
         // -----------------------------------------------------------------------
         //    Configuração dos Estados dos editores Tiny MCE.
         // -----------------------------------------------------------------------           
-        mainEditor?.mode.set('readonly'); // Desativa o editor.
+        if(!ignoreEditor) mainEditor?.mode.set('readonly'); // Desativa o editor.
       } break;
     }
 
@@ -309,10 +321,12 @@ export default class EntryForm extends SidebarForm {
 
   /**
    * Limpa o conteúdo do formulário
-   * @param {Boolean} clearSidebar - Flag para habilitar/desabilitar a limpeza da seleção da sidebar.
+   * @param {Boolean} clearSidebar - Flag para habilitar/desabilitar a limpeza da seleção da sidebar (true por padrão).
    */
   clearContent(clearSidebar = true) {
     if (clearSidebar) super.clearContent();
+
+    this.clearImage();
 
     const titleInput = this.querySelector('#titleInput');
     titleInput.value = '';
@@ -326,15 +340,7 @@ export default class EntryForm extends SidebarForm {
     });
 
     this.closeDialog();
-  }
-
-  /**
-   * Configura o diálogo de categorias.
-   * @private
-   */
-  configureSidebarDialog() {
-    const dialog = this.ui.dialog;
-  }
+  }  
 
   /**
    * Configura o combo de Assuntos.
@@ -361,35 +367,6 @@ export default class EntryForm extends SidebarForm {
     const importance = this.querySelector('#importance');
     for (const data of Object.values(importances)) {
       importance.appendChild(this._newImportanceOption(data));
-    }
-  }
-
-  /**
-   * Configura o combo de Tipos de Entrada.
-   * @param {HTMLElement} form - O formulário HTML principal.
-   */
-  configureEntryTypeSelect(form) {
-    const entryTypes = this.data.entryTypes;
-
-    // Carrega as opções de Tipos de Entradas registrados
-    const entryType = this.querySelector('#entryType');
-    for (const data of Object.values(entryTypes)) {
-      entryType.appendChild(this._newEntryTypeOption(data));
-    }
-  }
-
-  /**
-   * Configura o combo de Tipos de Entrada.
-   * @param {HTMLElement} form - O formulário HTML principal.
-   * @async
-   */
-  async configureCalendarSelect(form) {
-    const calendars = await this.data.calendars;
-
-    // Carrega as opções de Calendários registrados
-    const calendarType = this.querySelector('#calendarType');
-    for (const data of Object.values(calendars)) {
-      calendarType.appendChild(this._newCalendarOption(data));
     }
   }
 
@@ -444,12 +421,15 @@ export default class EntryForm extends SidebarForm {
 
     deleteCheckbox.addEventListener('change', (event) => { this.onDeleteSwitchChange(event); });
 
-    // Adiciona um evento para lidar com a seleção de uma nova imagem.
-    fileInput.addEventListener('change', (event) => { this.onChangeImage(event, displayedImage); });
+    // Há um contêiner de imagem?
+    if (imageContainer) {
+      // Adiciona um evento para lidar com a seleção de uma nova imagem.
+      fileInput.addEventListener('change', (event) => { this.onChangeImage(event, displayedImage); });
 
-    // Adiciona um evento de clique no contêiner de imagem para abrir o seletor de arquivos.
-    imageContainer.addEventListener('click', (event) => { this.onImageClick(event, fileInput, displayedImage); });
-    imageContainer.addEventListener('contextmenu', (event) => { this.onImageRightClick(event, displayedImage); });
+      // Adiciona um evento de clique no contêiner de imagem para abrir o seletor de arquivos.
+      imageContainer.addEventListener('click', (event) => { this.onImageClick(event, fileInput, displayedImage); });
+      imageContainer.addEventListener('contextmenu', (event) => { this.onImageRightClick(event, displayedImage); });
+    }
 
     cancelButton.addEventListener('click', (event) => { this.onCancelClick(event); });
     newEntryButton.addEventListener('click', (event) => { this.onBaseNewClick(event); });
@@ -489,10 +469,12 @@ export default class EntryForm extends SidebarForm {
     this.canDelete = event.target.checked;
     const imageContainer = this.querySelector('#imageContainer');
 
-    if (this.canDelete) {
-      imageContainer.classList.add('delete');
-    } else {
-      imageContainer.classList.remove('delete');
+    if (imageContainer) {
+      if (this.canDelete) {
+        imageContainer.classList.add('delete');
+      } else {
+        imageContainer.classList.remove('delete');
+      }
     }
   }
 
@@ -603,13 +585,16 @@ export default class EntryForm extends SidebarForm {
     // Obtém a lista de Categorias
     const selectedFolder = this.selection.folder;
     if (!selectedFolder) {
-      this.msgBox.showWarning('Nenhuma categoria foi selecionada.');
+      this.msgBox.showWarning('Nenhuma pasta foi selecionada.');
       return;
     }
 
     const headerInfo = this.querySelector('.header-info');
-    if (this.isSettings) headerInfo.dataset.sid = selectedFolder.dataset.sid ?? null;
-    else headerInfo.dataset.cid = selectedFolder.dataset.cid ?? null;
+    const id = selectedFolder.dataset.id ?? null;
+
+    // Define o ID da pasta no dataset do header.
+    if (this.isSettings) headerInfo.dataset.cid = id;
+    else headerInfo.dataset.sid = id;
 
     const titleInput = this.querySelector('#titleInput');
     titleInput.focus();
@@ -635,7 +620,7 @@ export default class EntryForm extends SidebarForm {
     event.stopPropagation();
 
     const item = this.selection.entry;
-    this.isEntryUpdate = (item ? true : false);
+    this.isUpdate = (item ? true : false);
     const itemId = item?.dataset.id ?? -1;
 
     if (!this.onSaveClick) {
@@ -645,14 +630,14 @@ export default class EntryForm extends SidebarForm {
       try {
         const options = {
           id: itemId,
-          isEntryUpdate: this.isEntryUpdate
+          isUpdate: this.isUpdate
         }
 
-        const title = (this.isEntryUpdate ? 'Atualizar' : 'Registrar');
+        const title = (this.isUpdate ? 'Atualizar' : 'Registrar');
         let message = '';
 
-        if (this.isSettings) message = (this.isEntryUpdate ? 'Deseja atualizar a categoria?' : 'Deseja salvar a categoria?');
-        else message = (this.isEntryUpdate ? 'Deseja atualizar a entrada?' : 'Deseja salvar a entrada?');
+        if (this.isSettings) message = (this.isUpdate ? 'Deseja atualizar a categoria?' : 'Deseja salvar a categoria?');
+        else message = (this.isUpdate ? 'Deseja atualizar a entrada?' : 'Deseja salvar a entrada?');
 
         if (await Dialogs.confirm(title, message)) {
           const imgInput = this.querySelector('#hiddenFileInput');
@@ -668,14 +653,28 @@ export default class EntryForm extends SidebarForm {
           // Se uma imagem foi informada, prepare-a para o banco de dados.
           uniforge.utils.mergeObjects(data, this.selectedImg);
 
-          await this.onSaveClick(event, data, options);
+          // Inicia a transação de salvamento.
+          await uniforge.sql.exec('BEGIN TRANSACTION');
+
+          // Realiza o processo de salvamento (adição ou remoção) de uma Entrada.
+          const saved = await this.onSaveClick(event, data, options);
+
+          if (saved) {
+            // Comita a transação de salvamento.
+            await uniforge.sql.exec('COMMIT');
+            await this.refresh();
+          } else {
+            // Faz rollback em caso de erro no processo de salvamento.
+            await uniforge.sql.exec('ROLLBACK');
+          }
         }
       } catch (error) {
-        console.error(error);
-        this.msgBox.showError(error.message);
-      }
+        this.msgBox.showError(error);
 
-      await this.refresh();
+        console.warn('O Banco de Dados sofrerá rollback...');
+        // Faz rollback em caso de erro no processo de salvamento.
+        await uniforge.sql.exec('ROLLBACK');
+      }
     }
   }
 
@@ -698,14 +697,13 @@ export default class EntryForm extends SidebarForm {
    * @protected
    * @param {MouseEvent} event - O evento de clique duplo.
    */
-  async onEntryItemDoubleClick(event) {
+  async onEntryItemDoubleClick(event, options = {}) {
     await super.onEntryItemDoubleClick(event);
 
     const item = event.target.closest('.entry-item');
     const itemId = item.dataset.id;
-    let entry = null;
-    if (this.isSettings) entry = uniforge.doc.categories.get(itemId);
-    else entry = uniforge.doc.entries.get(itemId);
+    const itemType = options.type ?? 'entries';
+    const entry = uniforge.doc[itemType].get(itemId);
 
     if (entry) {
       const headerInfo = this.querySelector('.header-info');
@@ -862,32 +860,8 @@ export default class EntryForm extends SidebarForm {
     }
   }
 
-  /*
-  Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer nec mi a enim posuere dictum. Etiam vel augue id leo elementum aliquam id sit amet elit. 
-  Nam molestie risus sit amet eros sagittis, eget congue tortor tempus. Nullam nibh mauris, sagittis ut tempus sed, congue at turpis. Etiam posuere ligula eu lacus pharetra tincidunt. 
-  Integer iaculis est id nibh mollis, vel finibus turpis feugiat. Cras eget tempus nisl. Etiam a posuere tellus.
-
-  Pellentesque sagittis mollis nulla et bibendum. Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos. Phasellus malesuada erat non euismod consectetur. 
-  Mauris ut quam sit amet enim convallis egestas. Curabitur velit turpis, gravida id lacus sit amet, lobortis finibus tortor. Sed hendrerit at metus sed lobortis. Fusce nec ex ac libero varius 
-  dapibus convallis ut nisl. Vestibulum a tortor turpis. Fusce eleifend rhoncus augue, sit amet cursus lacus ullamcorper nec. Phasellus posuere dui rhoncus elementum mattis. Pellentesque mattis 
-  velit non venenatis mattis. Cras ut tellus pulvinar, tempus ligula ut, dignissim enim.
-
-  Vivamus purus nunc, posuere in commodo et, ornare id nisi. Morbi a lacus tempus, varius lorem a, mollis nunc. Nunc nibh justo, interdum ac ante a, pulvinar mattis ipsum. 
-  Praesent sed sapien augue. Aliquam rutrum, velit et vulputate ultrices, nibh nulla ornare elit, id eleifend purus purus a odio. Integer lacinia, magna et lobortis aliquam, metus purus congue nisi,
-  id porta ex nisi eu arcu. Mauris venenatis malesuada risus a vehicula. Fusce augue mauris, ullamcorper in semper sed, tempor sit amet sapien. Nunc mi dolor, lacinia quis sodales at, gravida a erat. 
-  Etiam laoreet leo at lectus gravida, et elementum dolor mattis. Sed id nulla accumsan, elementum quam id, consectetur sapien. Sed eu aliquam velit. Maecenas maximus nunc id mollis ullamcorper.
-
-  Praesent condimentum non diam blandit semper. Vivamus non pretium lacus. Donec id ultricies erat, sed eleifend mi. Curabitur iaculis lacus elit, ut suscipit ipsum hendrerit et. Nunc justo nisi, 
-  blandit at vestibulum in, sodales eget dui. Nam semper, magna vitae venenatis sagittis, libero odio mollis neque, ac tristique orci libero nec mauris. Integer accumsan arcu sit amet urna posuere, 
-  quis cursus diam egestas. Praesent in fermentum nibh. Aenean facilisis, leo bibendum convallis aliquam, erat lacus porta ex, eu tristique nunc lorem auctor nibh.
-
-  Proin semper fringilla mauris ac ullamcorper. Nam at dapibus nibh, non fermentum odio. In tempus convallis nulla at tempus. Phasellus lobortis odio et sodales pellentesque. Suspendisse accumsan 
-  gravida mi, in sagittis tortor ornare eu. Suspendisse ut metus vulputate, volutpat tortor nec, porttitor magna. Vestibulum egestas diam et ante aliquet, sit amet efficitur eros feugiat. Donec in 
-  aliquet ipsum.
-  */
-
   onAddLoremIpsum(editor) {
-    const  loremIpsum = uniforge.utils.loremIpsum(5);
+    const loremIpsum = uniforge.utils.loremIpsum(5);
     editor.execCommand('mceInsertContent', false, loremIpsum);
   }
 
@@ -974,6 +948,7 @@ export default class EntryForm extends SidebarForm {
       const imageURL = uniforge.utils.blobToImage(data.img, data.ext); // Converte o blob da imagem para URL
     });
   }
+
   /**
    * Habilita todas as entradas de uma pasta (categoria) para poderem ser atualizadas.
    */
@@ -1031,7 +1006,7 @@ export default class EntryForm extends SidebarForm {
     // Adiciona um botão para enviar ao corpo do editor.
     editor.ui.registry.addButton('sendImage', {
       tooltip: 'Enviar Imagem',
-      icon: 'image',      
+      icon: 'image',
       onAction: () => { this.onUploadImage(editor); }
     });
 

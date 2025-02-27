@@ -4,8 +4,7 @@
   </a>
   <div id="sideBar" class="sidebar">
     <h3>{{title}}</h3>
-    <foldertree id="categories" item="entries"></foldertree>
-    <ul id="folderList" class="folder-list"></ul>
+    <foldertree id="sections" item="events"></foldertree>    
     <div class="footer">
       <div id="confirmDialog" class="confirmation-tooltip hidden" data-item="" data-action="">
         <p id="confirmation-message"></p>
@@ -22,7 +21,7 @@
   </div>
   <div class="content flexcol">
     <div class="header flexrow">
-      <div id="imageContainer" class="img-container disabled">
+      <div id="imageDisplayer" class="img-displayer disabled hidden">
         <img id="displayedImage" class="img-displayed empty" src="./images/blank-image.svg" alt="Imagem Padrão">
         <input id="hiddenFileInput" type="file" class="hidden" accept="image/*" />
       </div>
@@ -33,14 +32,14 @@
             <span class="data-label">Tipo </span>
             <combo id="entryType" value="entryTypes" />
           </div>
-          <div id="importanceGroup" class="data-group combo">
-            <span class="data-label">Relevância </span>
-            <combo id="relevance" value="relevances" />
-          </div>
           <div id="dateTypeGroup" class="data-group combo">
             <span class="data-label">Calendário </span>
             <combo id="calendarType" value="calendars" />
-          </div>
+          </div>  
+          <div id="relevanceGroup" class="data-group combo">
+            <span class="data-label">Relevância </span>
+            <combo id="relevance" value="relevances" />
+          </div>          
           <div class="date-info flexrow">
             <div id="startDate" class="data-group date start" data-date="">
               <span class="data-label">Início </span>
@@ -52,8 +51,18 @@
                 <i class="fa-regular fa-circle-question" data-tooltip="Opcional"></i>
               </span>
               <calendar class="end"></calendar>
-            </div>
+            </div>              
           </div>
+          <div id="entryGroup" class="data-complex full-button flexrow">
+            <button id="entryButton"><i class="fas fa-paperclip"></i> Vincular Entrada</button>                        
+            <div id="entryInfo" class="data-group entry flexrow hidden"> 
+              <span class="data-label">Entrada Vinculada </span>          
+              <span id="entryTitle" class="entry-title"></span>
+              <a id="removeEntryButton" class="remove-button remove-entry" data-tooltip="Desvincular Entrada" data-tooltip-left="true" hidden>
+                <i class="fas fa-trash"></i>
+              </a> 
+            </div> 
+          </div>          
           <div class="data-complex flexrow">
             <div class="data-group check">
               <span class="data-label">Rascunho </span>
@@ -70,7 +79,7 @@
       <div class="text-content editable"></div>
     </div>
     <textarea id="mainEditor">
-        <div class="text-content editable"></div>
+        <div class="text-content non-editable"></div>
     </textarea>
     <div class="footer flexrow">
       <div class="extra buttons flexrow">

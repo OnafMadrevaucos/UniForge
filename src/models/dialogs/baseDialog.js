@@ -79,7 +79,7 @@ export default class BaseDialog {
          * Estado de arraste do diálogo.
          * @type {boolean}
          */
-        this.isDragging = false;        
+        this.isDragging = false;
     }
 
     // Propriedade do template Handlebars do dialog1.
@@ -116,8 +116,8 @@ export default class BaseDialog {
    * @async
    * @returns {HTMLElement}  - Elemento pai onde o diálogo será posicionado.
    */
-    get parentElement() {  
-        return document.querySelector('#formContent'); 
+    get parentElement() {
+        return document.querySelector('#formContent');
     }
 
     /**
@@ -126,7 +126,7 @@ export default class BaseDialog {
    * @returns {Object}  - Um objeto com as seguintes propriedades:
    *  - overlay: O elemento HTML que contém o formulário.
    *  - form: O elemento HTML que representa o formulário.
-   *  - header: O elemento HTML que contém o título do formulário.
+   *  - topbar: O elemento HTML que contém o título do formulário.
    *  - close_btn: O elemento HTML que fecha o formulário.
    *  - content: O elemento HTML que contém o conteúdo do formulário.
    */
@@ -134,7 +134,7 @@ export default class BaseDialog {
         return {
             overlay: document.getElementById('dialogOverlay'),
             dialog: document.getElementById('dialog'),
-            header: document.getElementById('dialogHeader'),
+            topbar: document.getElementById('dialogHeader'),
             body: document.getElementById('dialogBody'),
             buttons: document.getElementById('dialogButtons')
         };
@@ -162,7 +162,7 @@ export default class BaseDialog {
         // Cabeçalho
         const titleHeader = document.createElement('div');
         titleHeader.id = 'dialogHeader';
-        titleHeader.className = 'header flexrow';
+        titleHeader.className = 'topbar flexrow';
 
         // Título do diálogo
         const title = document.createElement("h2");
@@ -213,13 +213,14 @@ export default class BaseDialog {
 
         // Renderiza o diálogo especializado. Diálogos simples não possuem templates HTML.
         if (this.hasTemplate && !this.template) {
-
             this.msgBox.showError('O diálogo não tem um template válido a ser carregado.');
             return false;
         }
 
         await this.renderDialog();
         document.body.appendChild(this.overlay);
+        // Se o diálogo implementa 'configureElements', chama o método.
+        if(this.configureElements) await this.configureElements();
         this._renderWindow();
 
         if (centralize) {
@@ -290,7 +291,7 @@ export default class BaseDialog {
     * @protected
     */
     _activateListeners() {
-        const titleHeader = this.querySelector('.header');
+        const titleHeader = this.querySelector('.topbar');
         titleHeader.addEventListener('mousedown', (event) => { this.onMouseDown(event); });
 
         document.addEventListener('mousemove', (event) => { this.onMouseMove(event); });
@@ -335,8 +336,8 @@ export default class BaseDialog {
         this.state.xDiff = event.pageX - dialogRect.left;
         this.state.yDiff = event.pageY - dialogRect.top;
 
-        const header = this.dialog.querySelector('.header');
-        header.style.cursor = "grabbing";
+        const topbar = this.dialog.querySelector('.topbar');
+        topbar.style.cursor = "grabbing";
         document.body.style.userSelect = "none";
     }
 
@@ -372,8 +373,8 @@ export default class BaseDialog {
 
         this.state.isDragging = false;
 
-        const header = this.dialog.querySelector('.header');
-        header.style.cursor = "grab";
+        const topbar = this.dialog.querySelector('.topbar');
+        topbar.style.cursor = "grab";
         document.body.style.userSelect = "";
     }
 

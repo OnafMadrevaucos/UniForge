@@ -1,7 +1,7 @@
 import DatePicker from "../datePicker.js";
 import EntryForm from "./entryForm.js";
-import TimelineDialog from "../dialogs/timelineDialog.js";
-
+import Dialogs from "../dialogs/dialog.js"
+import EventSourceDialog from "../dialogs/eventSourceDialog.js";
 /**
   * Formulário para lidar com entradas do tipo histórico.
   * @class
@@ -32,6 +32,12 @@ export default class HistoryForm extends EntryForm {
             start: new DatePicker('startDate'),
             end: new DatePicker('endDate')
         }
+
+        /**
+        * O Evento possui uma Entrada vinculada a ele? (false por padrão)
+        * @type {boolean}
+        */
+        this.hasEntry = false;
     }
 
     /* ---------------------------------------------------------------------------------------------------------------- */
@@ -60,7 +66,7 @@ export default class HistoryForm extends EntryForm {
        * @protected
        */
     controlStates(state) {
-        super.controlStates(state);
+        super.controlStates(state, {ignoreEditor: true});
         const flavorEditor = tinymce.get('flavorEditor');
 
         switch (state) {
@@ -78,6 +84,9 @@ export default class HistoryForm extends EntryForm {
             } break;
             // ESTADO PADRÃO.
             default: {
+                const relevanceSelect = this.querySelector('#relevance');
+                relevanceSelect.selectedIndex = 0;
+
                 flavorEditor.mode.set('readonly');
             } break;
         }
@@ -110,15 +119,38 @@ export default class HistoryForm extends EntryForm {
         flavorEditor.setContent('');
 
         const entryTypeSelect = this.querySelector('#entryType');
-        entryTypeSelect.value = 0;
+        entryTypeSelect.value = 1;
 
-        const importanceSelect = this.querySelector('#relevance');
-        importanceSelect.value = 0;
+        const relevanceSelect = this.querySelector('#relevance');
+        relevanceSelect.value = 1;
 
         const calendarTypeSelect = this.querySelector('#calendarType');
         calendarTypeSelect.value = 1;
 
         this.configureDatePickers();
+        this._toggleEntryInfo();
+        this._clearEntryData();
+    }
+
+    /**
+     * Inicializa e configura o editor TinyMCE.
+     * Remove qualquer instância existente antes de reconfigurar.
+     * @private
+     */
+    async configureTinyMCE() {
+        if (tinymce.get('mainEditor')) {
+            tinymce.remove('#mainEditor');
+        }
+
+        const options = uniforge.utils.mergeObjects(uniforge.tinymceOptions.readonly, {
+            selector: 'textarea#mainEditor',
+            noneditable_class: 'non-editable',
+            init_instance_callback: (editor) => {
+                editor.setContent(""); // Garante que o editor seja iniciado vazio.
+            }
+        });
+
+        await tinymce.init(options);
     }
 
     /**
@@ -167,9 +199,9 @@ export default class HistoryForm extends EntryForm {
         calendarType.value = event.clid;
         calendarType.dispatchEvent(new Event('change'));
 
-        this.datePickers.start.selectFullDate(event.start_day, event.start_month, event.start_year);
-        if (event.end_day)
-            this.datePickers.end.selectFullDate(event.end_day, event.end_month, event.end_year);
+        this.datePickers.start.selectFullDate(event.s_day, event.s_month, event.s_year);
+        if (event.e_day)
+            this.datePickers.end.selectFullDate(event.e_day, event.e_month, event.e_year);
     }
 
     /* ---------------------------------------------------------------------------------------------------------------- */
@@ -181,8 +213,116 @@ export default class HistoryForm extends EntryForm {
     activateListeners() {
         super.activateListeners();
 
+        const entryButton = this.querySelector('#entryButton');
+        entryButton.addEventListener('click', (event) => { this.onEntryButtonClick(event); });
+
+        const removeEntryButton = this.querySelector('#removeEntryButton');
+        removeEntryButton.addEventListener('click', (event) => { this.onRemoveEntryClick(event); });
+
         const calendarType = this.querySelector('#calendarType');
-        calendarType.addEventListener('change', (event) => { this.onDateTypeChange(event); });        
+        calendarType.addEventListener('change', (event) => { this.onDateTypeChange(event); });
+    }
+
+    /**@inheritdoc */
+    onDeleteSwitchChange(event) {
+        super.onDeleteSwitchChange(event);
+
+        const removeEntryButton = this.querySelector('#removeEntryButton');
+        removeEntryButton.hidden = !event.target.checked;
+    }
+
+    /**
+       * Manipulador de evento para alternar a visibilidade do grupo de eventos e da informa o de data.
+       * @param {Event} event - Evento de clique no bot o de Eventos.
+       * @fires
+       */
+    async onEntryButtonClick(event) {
+        // Impede que o clique no item desencadeie o clique fora do sidebar.
+        event.stopPropagation();
+
+        const eid = await EventSourceDialog.configDialog();
+
+        // Alterna a visibilidade do grupo de eventos.
+        this._toggleEntryInfo(eid);
+    }
+
+    /**
+     * Manipulador de evento para retirar um evento de uma entrada.
+     * @param {Event} event - Evento de clique no bot o de Remover Evento.
+     * @fires
+     */
+    async onRemoveEntryClick(event) {
+        event.stopPropagation();
+
+        // Confirma a desvinculação da Entrada ao Evento.
+        if (await Dialogs.confirm('Desvincular Entrada', 'Deseja desvincular a entrada do evento?')) {
+
+            // Alternar a visibilidade do grupo de eventos.
+            this._toggleEntryInfo();
+
+            // Limpar os dados da Entrada desvinculada.
+            this._clearEntryData();
+
+            // A Entrada será retirada.
+            this.hasEntry = false;
+        }
+    }
+
+    /**
+     * Manipulador de evento para clique em uma pasta.
+     * Faz tratamento para mostrar apenas os tipos de entrada
+     * que são compatíveis com o tipo de pasta clicada.
+     * @param {MouseEvent} event - Evento de clique na pasta.
+     * @protected
+     */
+    onFolderClick(event) {
+        super.onFolderClick(event);
+
+        const clickedFolder = event.target.closest('.folder');
+        const sectionId = clickedFolder.dataset.id;
+        const section = uniforge.doc.sections.get(sectionId);
+        const type = section.chapterType;
+
+        const entryTypeSelect = this.querySelector('#entryType');
+        const entryTypeOptions = entryTypeSelect.options;
+
+        if (type == 1) {
+            for (let i = 0; i < entryTypeOptions.length; i++) {
+                const etid = Number(entryTypeOptions[i].value);
+                if (etid !== 1) {
+                    const entryType = uniforge.doc.entryTypes.get(etid);
+                    if (entryType.isMaterial == 0) {
+                        entryTypeOptions[i].hidden = true;
+                        continue;
+                    }
+                }
+
+                entryTypeOptions[i].hidden = false;
+            }
+        } else if (type == 2) {
+            for (let i = 0; i < entryTypeOptions.length; i++) {
+                const etid = Number(entryTypeOptions[i].value);
+                if (etid !== 1) {
+                    const entryType = uniforge.doc.entryTypes.get(etid);
+                    if (entryType.isMaterial == 1) {
+                        entryTypeOptions[i].hidden = true;
+                        continue;
+                    }
+                }
+
+                entryTypeOptions[i].hidden = false;
+            }
+        } else {
+            for (let i = 0; i < entryTypeOptions.length; i++) {
+                const etid = Number(entryTypeOptions[i].value);
+                if (etid !== 1) {
+                    entryTypeOptions[i].hidden = true;
+                    continue;
+                }
+
+                entryTypeOptions[i].hidden = false;
+            }
+        }
     }
     /**
     * Trata o evento de registro de uma nova entrada.
@@ -193,9 +333,10 @@ export default class HistoryForm extends EntryForm {
     */
     async onSaveClick(event, data, options = {}) {
         event.stopPropagation();
-        const isEntryUpdate = options.isEntryUpdate ?? false;        
+        const isUpdate = options.isUpdate ?? false;
 
         const headerInfo = this.querySelector('.header-info');
+        const entryInfo = this.querySelector('#entryInfo');
 
         const entryType = this.querySelector('#entryType');
         const relevance = this.querySelector('#relevance');
@@ -203,9 +344,10 @@ export default class HistoryForm extends EntryForm {
 
         uniforge.utils.mergeObjects(data, {
             etid: entryType.value,
-            cid: headerInfo.dataset.cid,
-            iid: relevance.value,
+            sid: headerInfo.dataset.sid,
+            relevance: relevance.value,
             clid: calendarType.value,
+            source: entryInfo.dataset.eid ?? null,
             flavor: tinymce.get('flavorEditor').getContent() ?? '',
             htmlString: tinymce.get('mainEditor').getContent() ?? '',
             date: {
@@ -215,27 +357,24 @@ export default class HistoryForm extends EntryForm {
             text: ''
         });
 
-        const validate = uniforge.db.validateEventEntry(data);
+        const validate = uniforge.db.validateHistory(data);
         if (validate !== '') {
             this.msgBox.showWarning(validate);
-            return;
+            return false;
         }
 
-        if (isEntryUpdate) {
-            data.eid = options.id;
-            data.evid = headerInfo.dataset.evid;
+        if (isUpdate) {
+            data.evid = options.id;
 
-            await uniforge.db.updateEntry(data);
             await uniforge.db.updateEvent(data);
-            this.msgBox.showInfo('Entrada atualizada com sucesso.');
+            this.msgBox.showInfo('Evento atualizado com sucesso.');
         }
         else {
-            const result = await uniforge.db.addEntry(data);
-            data.eid = result.addedId;
-            await uniforge.db.addEvent(data);
-            this.msgBox.showInfo('Entrada criada com sucesso.');
+            const result = await uniforge.db.addEvent(data);
+            this.msgBox.showInfo('Evento criado com sucesso.');
         }
 
+        return true;
     }
     /**
     * Trata o evento de criação de uma nova entrada.
@@ -246,35 +385,103 @@ export default class HistoryForm extends EntryForm {
         this.clearContent(false);
     }
     /**
-    * Gerencia cliques duplos em itens de entrada.
+    * Gerencia cliques duplos em itens de evento.
     * @inheritdoc
     * @param {MouseEvent} event - O evento de clique duplo.
     */
-    async onEntryItemDoubleClick(event) {
-        await super.onEntryItemDoubleClick(event);
-        const entry = this.data.entry;
+    async onEntryItemDoubleClick(mouseEvent) {
+        await super.onEntryItemDoubleClick(mouseEvent, {
+            type: 'events'
+        });
+        const event = this.data.entry;
 
-        if (entry) {
-            const entryEvent = uniforge.doc.events.get(entry.event);
+        if (event) {
+            this.reconfigureDatePickers(event);
+            const headerInfo = this.querySelector('.header-info');
+            headerInfo.dataset.evid = event.evid;
 
-            if (entryEvent) {
-                this.reconfigureDatePickers(entryEvent);
+            const entryType = this.querySelector('#entryType');
+            const calendarType = this.querySelector('#calendarType');
+            const relevance = this.querySelector('#relevance');
 
-                const headerInfo = this.querySelector('.header-info');
-                headerInfo.dataset.evid = entryEvent.evid;
+            entryType.value = Number(event.etid);
+            calendarType.value = Number(event.clid);
+            relevance.value = Number(event.relevance);
+            tinymce.get('flavorEditor').setContent(event.flavor);
 
-                const entryType = this.querySelector('#entryType');
-                const relevance = this.querySelector('#relevance');
+            // Se o evento tem uma entrada vinculada, carregue os dados da Entrada.
+            await this._toggleEntryInfo(event.source);
 
-                entryType.value = entry.etid;
-                relevance.value = entryEvent.iid;
-                tinymce.get('mainEditor').setContent(entry.htmlString);
-                tinymce.get('flavorEditor').setContent(entry.flavor);
-            } else {
-                this.msgBox.showWarning('Erro ao carregar eventos da entrada.');
-            }
         } else {
-            this.msgBox.showWarning('Erro ao carregar a entrada.');
+            this.msgBox.showWarning('Erro ao carregar o evento.');
         }
-    }    
+    }
+
+    /**
+   * Alterna a visibilidade das informações da Entrada vinculada.
+   * @protected
+   */
+    async _toggleEntryInfo(eid) {
+        // Selecionar o grupo de Eventos.
+        const entryInfo = this.querySelector('#entryInfo');
+        // Selecionar o botão de Gerar Evento.
+        const entryButton = this.querySelector('#entryButton');
+
+        const entry = uniforge.doc.entries.get(eid);
+
+        // Se a Entrada (Source) existe, carregue os dados da entrada.
+        if (entry) {
+            entryInfo.dataset.eid = entry.eid;
+
+            await this._loadEntryData(entry);
+
+            this.hasEntry = true;
+
+            // Alterar a visibilidade do botão de Gerar Evento.
+            entryButton.classList.add('hidden');
+
+            // Alternar a visibilidade das informações do Evento.
+            entryInfo.classList.remove('hidden');
+        } else {
+            this.hasEntry = false;
+
+            // Alterar a visibilidade do botão de Gerar Evento.
+            entryButton.classList.remove('hidden');
+
+            // Alternar a visibilidade das informações do Evento.
+            entryInfo.classList.add('hidden');
+        }
+    }
+
+    async _loadEntryData(entry) {
+        const imageDisplayer = this.querySelector('#imageDisplayer');
+        imageDisplayer.classList.remove('hidden');
+
+        const displayedImage = this.querySelector('#displayedImage');
+
+        const imageUrl = await uniforge.utils.blobToImage(entry.img, entry.ext);
+
+        displayedImage.dataset.ext = entry.ext;
+        displayedImage.src = imageUrl;
+        displayedImage.classList.remove('empty');        
+
+        const mainEditor = tinymce.get('mainEditor');
+        mainEditor.setContent(entry.htmlString);
+
+        const entryTitle = this.querySelector('#entryTitle');
+        entryTitle.textContent = entry.title;
+    }
+
+    async _clearEntryData() {
+        // Selecionar o grupo de Eventos.
+        const entryInfo = this.querySelector('#entryInfo');
+        delete entryInfo.dataset.eid;
+
+        const imageDisplayer = this.querySelector('#imageDisplayer');
+        imageDisplayer.classList.add('hidden');
+
+        this.clearImage();
+
+        tinymce.get('mainEditor').setContent('');
+    }
 }

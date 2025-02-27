@@ -1,6 +1,6 @@
 import EntryForm from "./entryForm.js";
 import Dialogs from '../dialogs/dialog.js';
-import SubjectDialog from "../dialogs/subjectDialog.js";
+import ChapterDialog from "../dialogs/chapterDialog.js";
 import DBManager from "../../db/dbManager.js";
 
 /**
@@ -113,8 +113,8 @@ export default class SettingsForm extends EntryForm {
         // O panel padrão é sempre o panel de Banco de Dados
         this.configureDatabasePanel();
 
-        const newSubjectButton = this.querySelector('#newSubjectButton');
-        newSubjectButton.addEventListener('click', (event) => { this.onNewSubjectClick(event) });
+        const newChapterButton = this.querySelector('#newChapterButton');
+        newChapterButton.addEventListener('click', (event) => { this.onNewChapterClick(event) });
     }
 
     /**
@@ -196,51 +196,51 @@ export default class SettingsForm extends EntryForm {
         super.onFolderClick(event);
 
         const clickedFolder = event.target.closest('.folder');
-        const subjectId = clickedFolder.dataset.sid;
-        const subject = uniforge.doc.subjects.get(subjectId);
+        const chapterId = clickedFolder.dataset.id;
+        const chapter = uniforge.doc.chapters.get(chapterId);
         const isSelected = clickedFolder.classList.contains('selected');
 
-        this._handleLineageIcon(subject);
+        this._handleLineageIcon(chapter);
 
         // Se formulário for o da Enciclopédia, e o estado do formulário seja o 'newEntry' ou 
         // o 'default', carregue ícone do Assunto.
         if (this.currentState <= this.states.newEntry) {
             // Carregue ícone apenas se a pasta estiver sendo selecionada.
-            if (isSelected) this._loadRootIcon(clickedFolder);
+            if (isSelected) this._loadTomeIcon(clickedFolder);
         }
     }
 
     /**
-    * Trata o evento de registro de uma nova categoria.
+    * Trata o evento de registro de uma nova seção.
     * @param {Event} event      - Evento de clique no botão de Salvar.
     * @param {Object} data      - Dados padrão de qualquer entrada.
     * @param {Object} options   - Opções de salvamento.
     */
     async onSaveClick(event, data, options = {}) {
         event.stopPropagation();
-        const isEntryUpdate = options.isEntryUpdate ?? false;
+        const isUpdate = options.isUpdate ?? false;
 
         const headerInfo = this.querySelector('.header-info');
 
         uniforge.utils.mergeObjects(data, {
-            sid: headerInfo.dataset.sid,
+            cid: headerInfo.dataset.cid,
             htmlString: tinymce.activeEditor?.getContent() ?? ''
         });
 
-        const validate = uniforge.db.validateCategory(data);
+        const validate = uniforge.db.validateSection(data);
         if (validate !== '') {
             this.msgBox.showWarning(validate);
             return;
         }
 
-        if (isEntryUpdate) {
-            data.cid = options.id;
-            await uniforge.db.updateCategory(data);
-            this.msgBox.showInfo('Categoria atualizada com sucesso.');
+        if (isUpdate) {
+            data.sid = options.id;
+            await uniforge.db.updateSection(data);
+            this.msgBox.showInfo('Seção atualizada com sucesso.');
         }
         else {
-            await uniforge.db.addCategory(data);
-            this.msgBox.showInfo('Categoria criada com sucesso.');
+            await uniforge.db.addSection(data);
+            this.msgBox.showInfo('Seção criada com sucesso.');
         }
     }
     /**
@@ -280,16 +280,19 @@ export default class SettingsForm extends EntryForm {
    * @protected
    * @param {MouseEvent} event - O evento de clique duplo.
    */
-    async onEntryItemDoubleClick(event) {
-        await super.onEntryItemDoubleClick(event);
-        const category = this.data.entry;
+    async onEntryItemDoubleClick(event) { 
+
+        await super.onEntryItemDoubleClick(event, {
+            type: 'sections'
+        });
+        const section = this.data.entry;
 
         const clickedFolder = event.target.closest('.folder');
         const isSelected = clickedFolder.classList.contains('selected');
-        if (category) {
-            tinymce.get('mainEditor').setContent(category.htmlString);
+        if (section) {
+            tinymce.get('mainEditor').setContent(section.htmlString);
             if (isSelected) {
-                this._loadRootIcon(clickedFolder);
+                this._loadTomeIcon(clickedFolder);
             }
         }
     }
@@ -298,12 +301,12 @@ export default class SettingsForm extends EntryForm {
     * Gera um novo assunto.
     * @param {Event} event - Evento de clique no botão.
     */
-    async onNewSubjectClick(event) {
+    async onNewChapterClick(event) {
         event.stopPropagation();
 
-        const subject = await SubjectDialog.configDialog();
-        if (subject) {
-            await uniforge.db.addSubject(subject);
+        const chapter = await ChapterDialog.configDialog();
+        if (chapter) {
+            await uniforge.db.addChapter(chapter);
             this.refresh();
         }
     }
@@ -414,20 +417,20 @@ export default class SettingsForm extends EntryForm {
    * @async
    * @param {HTMLElement} folder - Objeto com os dados da pasta do Assunto.
    */
-    async _loadRootIcon(folder) {
-        const sid = folder.dataset.sid;
-        let subject = await uniforge.db.getSubjectRoot(sid);
+    async _loadTomeIcon(folder) {
+        const cid = folder.dataset.id;
+        let chapter = await uniforge.db.getChapterTome(cid);
 
-        if (subject) {
+        if (chapter) {
             const typeLabel = this.querySelector('#typeLabel');
             const dataIcon = this.querySelector('#dataIcon');
-            const subjectIcon = this.querySelector('#subjectIcon');
+            const chapterIcon = this.querySelector('#chapterIcon');
 
-            typeLabel.textContent = subject.title;
+            typeLabel.textContent = chapter.title;
 
-            dataIcon.dataset.tooltip = subject.root.capitalize();
-            subjectIcon.classList.remove(...subjectIcon.classList);
-            subjectIcon.className = subject.icon;
+            dataIcon.dataset.tooltip = chapter.tome.capitalize();
+            chapterIcon.classList.remove(...chapterIcon.classList);
+            chapterIcon.className = chapter.icon;
         }
     }
     /**
@@ -438,12 +441,12 @@ export default class SettingsForm extends EntryForm {
     async _clearRootIcon() {
         const typeLabel = this.querySelector('#typeLabel');
         const dataIcon = this.querySelector('#dataIcon');
-        const subjectIcon = this.querySelector('#subjectIcon');
+        const chapterIcon = this.querySelector('#chapterIcon');
 
         typeLabel.innerHTML = '&#8212';
 
         dataIcon.dataset.tooltip = 'Escolha um assunto...';
-        subjectIcon.classList.remove(...subjectIcon.classList);
-        subjectIcon.className = 'fa-regular fa-file';
+        chapterIcon.classList.remove(...chapterIcon.classList);
+        chapterIcon.className = 'fa-regular fa-file';
     }
 }

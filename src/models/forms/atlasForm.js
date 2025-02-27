@@ -59,7 +59,7 @@ export default class AtlasForm extends EntryForm {
     */
     async onSaveClick(event, data, options = {}) {
         event.stopPropagation();
-        const isEntryUpdate = options.isEntryUpdate ?? false;
+        const isUpdate = options.isUpdate ?? false;
 
         const headerInfo = this.querySelector('.header-info');
         
@@ -71,13 +71,13 @@ export default class AtlasForm extends EntryForm {
         });
 
         // Validar os dados de entrada de Atlas.
-        const validate = uniforge.db.validateAtlasEntry(data);
+        const validate = uniforge.db.validateAtlas(data);
         if (validate !== '') {
             this.msgBox.showWarning(validate);
-            return;
+            return false;
         }
 
-        if (isEntryUpdate) {
+        if (isUpdate) {
             data.eid = options.id;
             await uniforge.db.updateEntry(data);
             this.msgBox.showInfo('Entrada atualizada com sucesso.');
@@ -86,7 +86,7 @@ export default class AtlasForm extends EntryForm {
             await uniforge.db.addEntry(data);
             this.msgBox.showInfo('Entrada criada com sucesso.');
         }
-
+        return true;
     }
     /**
     * Trata o evento de criação de uma nova entrada.

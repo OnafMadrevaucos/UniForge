@@ -1,13 +1,13 @@
 import BaseDialog from "./baseDialog.js";
 
-export default class SubjectDialog extends BaseDialog {
+export default class ChapterDialog extends BaseDialog {
   constructor(dialogData = {}, options = {}) {
     super(dialogData, uniforge.utils.mergeObjects(options, {
       height: '375px',
       width: '350px'
     }));
 
-    this.template = 'subjectDialog'; // Define o template do diálog.
+    this.template = 'chapterDialog'; // Define o template do diálog.
   }
 
   /**
@@ -17,6 +17,8 @@ export default class SubjectDialog extends BaseDialog {
    */
   async _prepare() {
     this.data.tomes = uniforge.doc.tomes.toObject(); 
+    this.data.chapterTypes = uniforge.doc.chapterTypes.toObject();
+
     Object.keys(this.data.tomes).forEach((key) => {
       const item = this.data.tomes[key];
       item._label = item.title.capitalize();
@@ -36,13 +38,13 @@ export default class SubjectDialog extends BaseDialog {
 
     const titleInput = this.querySelector('#titleInput');
     const searchInput = this.querySelector('#iconSearch');
-    const rootSelect = this.querySelector('#rootSelect');
-    const lineageSwitch = this.querySelector('#lineageSwitch');
+    const tomeSelect = this.querySelector('#tomeSelect');
+    const typeSelect = this.querySelector('#typeSelect');
     const iconItems = this.querySelectorAll('.icon-item');    
 
     titleInput.addEventListener('input', (event) => { this._onChangeTitle(event); });
-    rootSelect.addEventListener('change', (event) => { this._onChangeRoot(event); });
-    lineageSwitch.addEventListener('change', (event) => { this._onChangeLineage(event); });
+    tomeSelect.addEventListener('change', (event) => { this._onChangeTome(event); });
+    typeSelect.addEventListener('change', (event) => { this._onChangeType(event); });
     searchInput.addEventListener('input', (event) => { this._onIconSearch(event); });
 
     iconItems.forEach(item => {
@@ -59,23 +61,21 @@ export default class SubjectDialog extends BaseDialog {
     createButton.dataset.title = title;
   }
 
-  _onChangeRoot(event) {
+  _onChangeTome(event) {
     event.stopPropagation();
 
     const createButton = this.querySelector('#create');
-    const root = event.target.value;
+    const tome = event.target.value;
 
-    createButton.dataset.root = root;
+    createButton.dataset.tome = tome;
   }
 
-  _onChangeLineage(event) {
+  _onChangeType(event) {
     event.stopPropagation();
-    const lineageSwitch = event.target.closest('#lineageSwitch');
-    const checkbox = lineageSwitch.querySelector('input[type="checkbox"]');
-    const checked = checkbox.checked ? '1' : '0';
+    const type = event.target.value;
 
     const createButton = this.querySelector('#create');
-    createButton.dataset.lineage = checked;
+    createButton.dataset.type = type;
   }
 
   onIconItemClick(event) {
@@ -110,23 +110,23 @@ export default class SubjectDialog extends BaseDialog {
 
   static async configDialog() {
     function createSubject(event) {
-      const button = event.target;
+      const button = event.target;      
+      const tome = event.target.dataset.tome;      
       const title = event.target.dataset.title;
-      const root = event.target.dataset.root;
-      const isLineage = (event.target.dataset.lineage === '1');
-      const icon = event.target.dataset.icon;      
+      const icon = event.target.dataset.icon;
+      const type = event.target.dataset.type;      
 
-      if (!title || !root || !icon) {
+      if (!title || !tome || !icon) {
         uniforge.msgBox.showWarning('Por favor, preencha todos os campos.');
         return null;
       }
 
       button.dataset.canClose = 'true';
       return {
-        title,
-        root,
-        isLineage,
-        icon
+        tome,
+        title,  
+        icon,      
+        type        
       };
     }
     return new Promise((resolve, reject) => {

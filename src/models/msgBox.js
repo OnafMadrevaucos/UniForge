@@ -6,15 +6,18 @@ export default class MsgBox {
     }
 
     // Função para mostrar a mensagem de erro com animação
-    showError(message) {
+    showError(message, error) {    
+        console.error(error ?? message);    
         this._showMsg(message, 'error');
     }
     // Função para mostrar a mensagem de aviso com animação
-    showWarning(message) {
+    showWarning(message, warning) {
+        console.warn(warning ?? message);
         this._showMsg(message, 'warning');
     }
     // Função para mostrar a mensagem de aviso com animação
-    showInfo(message) {
+    showInfo(message, info) {
+        console.info(info ?? message);
         this._showMsg(message, 'info');
     }
 
@@ -39,26 +42,20 @@ export default class MsgBox {
         var icon = '<i class="fa-regular fa-circle-xmark"></i>';
         switch (style) {
             case 'error': {
-                icon = '<i class="fa-solid fa-triangle-exclamation"></i>';
-                // Registra o erro no log da página
-                console.error(message);
+                icon = '<i class="fa-solid fa-triangle-exclamation"></i>';                
             } break;
             case 'warning': {
-                icon = '<i class="fa-solid fa-circle-exclamation"></i>';
-                // Registra o aviso no log da página
-                console.warn(message);
+                icon = '<i class="fa-solid fa-circle-exclamation"></i>';                
             } break;
             case 'info': {
-                icon = '<i class="fa-solid fa-circle-info"></i>';
-                // Registra o erro no log da página 
-                console.info(message);
+                icon = '<i class="fa-solid fa-circle-info"></i>';                
             } break;
             default: break;
         }
 
         const closeBtn = document.createElement('a');
         closeBtn.classList.add('close-message');
-        closeBtn.innerHTML = '<i class="fa-regular fa-circle-xmark"></i>';
+        closeBtn.innerHTML = '<i class="fas fa-circle-xmark"></i>';
 
         // Adiciona um listener de clique ao botão de fechar
         closeBtn.addEventListener('click', () => {

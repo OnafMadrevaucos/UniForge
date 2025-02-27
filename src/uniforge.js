@@ -68,6 +68,26 @@ uniforge.utils.mergeObjects(uniforge, {
             skin: 'oxide-dark',
             content_css: './css/styles.css'
         },
+        readonly: {
+            editable_class: 'editable',
+            noneditable_class: 'non-editable',
+            body_class: 'non-editable',
+            license_key: 'gpl',
+            plugins: ['anchor', 'autolink', 'codesample', 'link', 'lists', 'searchreplace', 'table', 'visualblocks', 'image'],
+            toolbar: false,            
+            block_formats: 'Heading 1=h1; Heading 2=h2; Heading 3=h3; Paragraph=p;',
+            images_file_types: 'jpg,jpeg,png,svg,webp',
+            image_caption: true,
+            block_unsupported_drop: false,
+            height: '100%',            
+            menubar: false,
+            resize: false,
+            statusbar: false,
+            skin: 'oxide-dark',
+            content_css: './css/styles.css',
+            readonly: true,
+            disable_focus: true            
+        },
         simple: {
             license_key: 'gpl',
             plugins: 'quickbars',
@@ -122,7 +142,7 @@ uniforge.utils.mergeObjects(uniforge, {
     navQueue: new NavQueue(), // Fila de controle de navegação   
 
     /**
-     * Função de criação de HTMLElement.1
+     * Função de criação de HTMLElement.
      * 
      * @type {Function}
      */

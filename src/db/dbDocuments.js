@@ -20,20 +20,22 @@ export default class DBDocuments {
      * @param {Array<Object>} data.calendarsDaysInMonths - Dados da tabela calendarsDaysInMonths.
      * @param {Array<Object>} data.tomes - Dados da tabela tomes.
      * @param {Array<Object>} data._textImages - Dados da tabela _textImages.
-     * @param {Array<Object>} data.settings - Dados da tabela settings.
-     * @param {Array<Object>} data.relevances - Dados da tabela relevance.
+     * @param {Array<Object>} data.chapterTypes - Dados da tabela chapterTypes.
      * @param {Array<Object>} data.entryTypes - Dados da tabela entryTypes.
+     * @param {Array<Object>} data.relevances - Dados da tabela relevance.
+     * @param {Array<Object>} data.settings - Dados da tabela settings.
      */
     constructor(data) {    
         this.tomes = this.createSimpleSet(data.tomes);
         this.chapters = this.createChapterSet(data.chapters, data.sections);
         this.sections = this.createSectionSet(data.sections, data.entries, data.events, data.lineages); 
-        this.entries = this.createEntrySet(data.entries, data.events);
+        this.entries = this.createEntrySet(data.entries, data.events, data.lineages);
         this.lineages = this.createSimpleSet(data.lineages);
-        this.events = this.createSimpleSet(data.events);
+        this.events = this.createEventSet(data.events);
         this.timelines = this.createTimelineSet(data.timelines, data.events, data._timelineEvents);
         this.calendars = this.createCalendarsMergedSet(data.calendars, data.calendarsMonths, data.calendarsDays, data.calendarsDaysInMonths); 
         this.textImages = this.createSimpleSet(data._textImages);        
+        this.chapterTypes = this.createSimpleSet(data.chapterTypes);
         this.entryTypes = this.createSimpleSet(data.entryTypes);
         this.relevances = this.createSimpleSet(data.relevances);   
         this.settings = this.createSimpleSet(data.settings);             
@@ -48,6 +50,7 @@ export default class DBDocuments {
         data.sections = await uniforge.db.getAllSections();
         data.entries = await uniforge.db.getAllEntries();
         data.events = await uniforge.db.getAllEvents();
+        data.lineages = await uniforge.db.getAllLineageTrees();
         data.timelines = await uniforge.db.getAllTimelines();
         data._timelineEvents = await uniforge.db.getAllTimelineEvents();
         data.calendars = await uniforge.db.getAllCalendars();
@@ -57,6 +60,7 @@ export default class DBDocuments {
         data.textImages = await uniforge.db.getAllTextImages();
         data.settings = await uniforge.db.getAllSettings();
         data.relevances = await uniforge.db.getAllRelevances();
+        data.chapterTypes = await uniforge.db.getAllChapterTypes();
         data.entryTypes = await uniforge.db.getAllEntryTypes();
 
         return data;
@@ -75,12 +79,12 @@ export default class DBDocuments {
         chapters.forEach((chapter) => {
             const sectionSet = new Array();
 
-            // Filtra as categorias que possuem o mesmo sid do SubjectType atual
+            // Filtra as categorias que possuem o mesmo ID do Capítulo atual.
             sections
-                .filter((section) => section.sid === chapter.sid)
+                .filter((section) => section.cid === chapter.cid)
                 .forEach((section) => {
                     // Adiciona a categoria ao conjunto, incluindo suas entradas
-                    sectionSet.push({ _id: section.cid });
+                    sectionSet.push({ _id: section.sid });
                 });
 
             // Adiciona o SubjectType ao conjunto, incluindo suas categorias
@@ -201,6 +205,23 @@ export default class DBDocuments {
     }
 
     /**
+     * Cria um conjunto de eventos (Events).
+     *
+     * @param {Array<Object>} events - Dados da tabela event.
+     * @returns {Set} Conjunto de eventos.
+     */
+    createEventSet(events) {
+        const eventSet = new Set();
+
+        events.forEach((event) => { 
+            // Adiciona o evento ao conjunto.
+            eventSet.add({ ...event, _id: event.evid, _label: event.title });
+        });        
+
+        return eventSet;
+    }
+
+    /**
      * Cria um conjunto de categorias, contendo entradas e eventos relacionados.
      *
      * @param {Array<Object>} sections - Dados da tabela section.
@@ -218,9 +239,9 @@ export default class DBDocuments {
                 const eventSet = new Array();
                 const lineageSet = new Array();
 
-                const chapter = this.chapters.get(section.sid);
+                const chapter = this.chapters.get(section.cid);
 
-                // Filtra as entradas que possuem o sid correspondente à seção atual
+                // Filtra as entradas que possuem o ID correspondente à seção atual
                 entries
                     .filter((entry) => entry.sid === section.sid)
                     .forEach((entry) => {
@@ -228,24 +249,24 @@ export default class DBDocuments {
                         entrySet.push({ _id: entry.eid });
                 });
 
-                // Filtra os eventos que possuem o sid correspondente à seção atual
+                // Filtra os eventos que possuem o ID correspondente à seção atual
                 events
                  .filter((event) => event.sid === section.sid)
                  .forEach((event) => {
                      // Adiciona o evento ao conjunto
-                     eventSet.push({ _id: event.eid });
+                     eventSet.push({ _id: event.evid });
                     });
 
-                // Filtra os eventos que possuem o sid correspondente à seção atual
+                // Filtra os eventos que possuem o ID correspondente à seção atual
                 lineageSet
                  .filter((lineage) => lineage.sid === section.sid)
                  .forEach((lineage) => {
                      // Adiciona o evento ao conjunto
-                     lineageSet.push({ _id: lineage.eid });
+                     lineageSet.push({ _id: lineage.ltid });
                     });
 
                 // Adiciona a categoria ao conjunto, incluindo suas entradas
-                sectionSet.add({ ...section, type: chapter.root, isLineage: (chapter.isLineage == 1), entries: entrySet });
+                sectionSet.add({ ...section, type: chapter.tome, chapterType: chapter.type, entries: entrySet, events: eventSet, lineages: lineageSet });
             });
         } else throw new Error('Não foi possível criar o Set das categorias. O Set dos chapters deve ser criado antes do de sections.');
 

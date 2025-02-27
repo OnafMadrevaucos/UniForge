@@ -120,7 +120,7 @@ export default class DBManager {
      * @returns {Promise<Object>} - Resultado da execução do comando, incluindo o ID do capítulo adicionado.
     */
     async addChapter(data) {
-        let query = 'INSERT INTO chapter (sid, tome, title, icon, type) VALUES (?,?,?,?,?);';
+        let query = 'INSERT INTO chapter (cid, tome, title, icon, type) VALUES (?,?,?,?,?);';
         let params = [];
 
         params.push(this.generateID());
@@ -208,19 +208,19 @@ export default class DBManager {
      * @param {number} data.relevance - Nível de relevância do evento.
      * @param {string} data.source - Fonte do evento (um texto que indica de onde o evento foi retirado).
      * @param {Object} data.date - Um objeto contendo informa es sobre a data do evento.
-     * @param {number} data.date.start.year - Ano do in cio do evento.
-     * @param {number} data.date.start.month - Mês do in cio do evento.
-     * @param {number} data.date.start.day - Dia do in cio do evento.
+     * @param {number} data.date.start.year - Ano do início do evento.
+     * @param {number} data.date.start.month - Mês do início do evento.
+     * @param {number} data.date.start.day - Dia do início do evento.
      * @param {number} data.date.end.year - Ano do final do evento.
      * @param {number} data.date.end.month - Mês do final do evento.
      * @param {number} data.date.end.day - Dia do final do evento.
      * @param {boolean} data.isDraft - Seção evento é um rascunho.
      * 
-     * @returns {Promise<Object>} - Resultado da execu o do comando.
+     * @returns {Promise<Object>} - Resultado da execução do comando.
     */
     async addEvent(data) {
-        let query = 'INSERT INTO event (evid, sid, etid, title, flavor, relevance, source, s_year, s_month, s_day, e_year, e_month, e_day, isDraft) ';
-        query += 'VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?);';
+        let query = 'INSERT INTO event (evid, sid, etid, title, flavor, relevance, source, clid, s_year, s_month, s_day, e_year, e_month, e_day, isDraft) ';
+        query += 'VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);';
         const params = [];
 
         params.push(this.generateID());
@@ -228,8 +228,9 @@ export default class DBManager {
         params.push(Number(data.etid));
         params.push(data.title);
         params.push(data.flavor);
-        params.push(Number(data.relevance));
+        params.push(Number(data.rid));
         params.push(data.source);
+        params.push(Number(data.clid));
         params.push(data.date.start.year);
         params.push(data.date.start.month);
         params.push(data.date.start.day);
@@ -314,7 +315,7 @@ export default class DBManager {
             ['isDraft', Number(data.isDraft)]
         ]);
 
-        let query = `UPDATE category SET ${updateSet} WHERE sid = ?`;
+        let query = `UPDATE section SET ${updateSet} WHERE sid = ?`;
         let params = [data.sid];
         const result = await uniforge.sql.exec(query, params);
 
@@ -377,10 +378,11 @@ export default class DBManager {
     async updateEvent(data) {
         const updateSet = this.buildUpdateSet([
             ['sid', data.sid],
-            ['etid', data.etid],
+            ['etid', Number(data.etid)],
             ['title', data.title],
-            ['relevance', data.relevance],
+            ['relevance', Number(data.relevance)],
             ['source', data.source],
+            ['clid', Number(data.clid)],
             ['s_year', data.date.start.year],
             ['s_month', data.date.start.month],
             ['s_day', data.date.start.day],
@@ -388,7 +390,7 @@ export default class DBManager {
             ['e_month', data.date.end.month],
             ['e_day', data.date.end.day],
             ['isDraft', data.isDraft]
-        ]);
+        ], { withNulls: true });
 
         let query = `UPDATE event SET ${updateSet} WHERE evid = ?`;
         let params = [data.evid];
@@ -548,7 +550,7 @@ export default class DBManager {
      */
     async getChapterTome(cid) {
         let query = 'SELECT C.title, C.tome, T.icon FROM chapter AS C ';
-        query += 'INNER JOIN tome AS T ON T.title = T.tome ';
+        query += 'INNER JOIN tome AS T ON T.title = C.tome ';
         query += 'WHERE C.cid = ?;';
         const params = [cid];
         const rows = await uniforge.sql.query(query, params);
@@ -760,18 +762,7 @@ export default class DBManager {
         return result;
     }
 
-    /**
-     * Retorna todos os Tipos de Entradas do banco de dados.
-     * 
-     * @returns {Promise<Object[]>} Uma promessa que resolve em um array de objetos com
-     *  os dados de cada Tipo de Entrada encontrado no banco de dados.
-     */
-    async getEntryTypes() {
-        let query = 'SELECT * FROM entryType';
-        const rows = await uniforge.sql.query(query);
-
-        return rows;
-    }
+    
 
     async getAllFolders(root = '*') {
         let query = '';
@@ -1088,8 +1079,24 @@ export default class DBManager {
         const query = 'SELECT * FROM relevance';
         const result = await uniforge.sql.query(query);
         return result.map(row => ({
-            _id: row.iid,
-            _label: row.label,
+            _id: row.rid,
+            _label: row.title,
+            ...row
+        }));
+    }
+
+    /**
+     * Retorna todos os Tipos de Capítulos do banco de dados.
+     * 
+     * @returns {Promise<Object[]>} Uma promessa que resolve em um array de objetos com
+     *  os dados de cada Tipo de Capítulos encontrado no banco de dados.
+     */
+    async getAllChapterTypes() {
+        let query = 'SELECT * FROM chapterType';
+        const result = await uniforge.sql.query(query);
+        return result.map(row => ({
+            _id: row.ctid,
+            _label: row.title,
             ...row
         }));
     }
@@ -1100,7 +1107,7 @@ export default class DBManager {
         const result = await uniforge.sql.query(query);
         return result.map(row => ({
             _id: row.etid,
-            _label: row.label,
+            _label: row.title,
             ...row
         }));
     }    
@@ -1184,7 +1191,7 @@ export default class DBManager {
         const query = 'CREATE TABLE IF NOT EXISTS `entry` (' +
         '`eid` VARCHAR(16) NOT NULL,' +             // Identificador da Entrada.
         '`sid` VARCHAR(16) NOT NULL,' +             // Identificador da Seção a que a Entrada pertence.
-        '`etid` INTEGER NOT NULL,' +                // Tipo de Entrada.
+        '`etid` INTEGER NOT NULL DEFAULT 1,' +      // Tipo de Entrada.
         '`title` TEXT NOT NULL,' +                  // Título da Entrada.
         '`flavor` TEXT NULL,' +                     // Texto de floreio da Entrada.
         '`htmlString` TEXT NULL,' +                 // Corpo do texto de descrição da Entrada.
@@ -1206,21 +1213,21 @@ export default class DBManager {
      */
     async createEventTable() {
         const query = 'CREATE TABLE IF NOT EXISTS `event` (' +
-        '`evid` VARCHAR(16) NOT NULL,' +            // Identificador do Evento.
-        '`sid` VARCHAR(16) NOT NULL,' +             // Identificador da Seção a que o Evento pertence.
-        '`etid` INTEGER NOT NULL,' +                // Tipo de Evento.
-        '`tid` VARCHAR(16) NOT NULL,' +             // Timeline do Evento.
-        '`title` TEXT NOT NULL,' +                  // Título da Evento.
-        '`flavor` TEXT NULL,' +                     // Texto de floreio do Evento. 
-        '`relevance` INTEGER NOT NULL,' +           // Relevância da Evento.       
-        '`source` VARCHAR(16) NULL,' +              // Entrada fonte do Evento.
-        '`s_day` INTEGER NOT NULL DEFAULT 1,' +     // Dia de Início do Evento.
-        '`s_month` INTEGER NOT NULL DEFAULT 1,' +   // Mês de Início do Evento.
-        '`s_year` INTEGER NOT NULL DEFAULT 1,' +    // Ano de Início do Evento.
-        '`e_day` INTEGER NULL,' +                   // Dia de Final do Evento.
-        '`e_month` INTEGER NULL,' +                 // Mês de Final do Evento.
-        '`e_year` INTEGER NULL,' +                  // Ano de Final do Evento.
-        '`isDraft` BOOLEAN NOT NULL DEFAULT 0,' +   // O Evento é um rascunho (falso por padrão).
+        '`evid` VARCHAR(16) NOT NULL,' +                // Identificador do Evento.
+        '`sid` VARCHAR(16) NOT NULL,' +                 // Identificador da Seção a que o Evento pertence.
+        '`etid` INTEGER NOT NULL DEFAULT 1,' +          // Tipo de Evento.        
+        '`title` TEXT NOT NULL,' +                      // Título da Evento.
+        '`flavor` TEXT NULL,' +                         // Texto de floreio do Evento. 
+        '`relevance` INTEGER NOT NULL DEFAULT 1,' +     // Relevância da Evento.       
+        '`source` VARCHAR(16) NULL,' +                  // Entrada fonte do Evento.
+        '`clid` INTEGER NOT NULL DEFAULT 1,' +          // Tipo do Calendário.
+        '`s_day` INTEGER NOT NULL DEFAULT 1,' +         // Dia de Início do Evento.
+        '`s_month` INTEGER NOT NULL DEFAULT 1,' +       // Mês de Início do Evento.
+        '`s_year` INTEGER NOT NULL DEFAULT 1,' +        // Ano de Início do Evento.
+        '`e_day` INTEGER NULL,' +                       // Dia de Final do Evento.
+        '`e_month` INTEGER NULL,' +                     // Mês de Final do Evento.
+        '`e_year` INTEGER NULL,' +                      // Ano de Final do Evento.
+        '`isDraft` BOOLEAN NOT NULL DEFAULT 0,' +       // O Evento é um rascunho (falso por padrão).
         'PRIMARY KEY (`evid`,`sid`))';        
 
         console.log('Tabela \'event\' criada....OK.');
@@ -1569,14 +1576,14 @@ export default class DBManager {
     }
 
     /**
-     * Valida se os dados de uma Categoria são válidos.
-     * @param {Object} data - Dados da Categoria a ser validada.
-     * @returns {string} - Erro(s) encontrado(s) ou uma string vazia se a Categoria for válida.
+     * Valida se os dados de uma Seção são válidos.
+     * @param {Object} data - Dados da Seção a ser validada.
+     * @returns {string} - Erro(s) encontrado(s) ou uma string vazia se a Seção for válida.
      */
-    validateCategory(data) {
+    validateSection(data) {
 
-        if (data.sid.isEmpty())
-            return 'O identificador de Assunto da Categoria é inválido.';
+        if (data.cid.isEmpty())
+            return 'O identificador de Capítulo da Seção é inválido.';
         if (data.title.isEmpty())
             return 'É necessário informar um título válido para a Categoria.';
 
@@ -1588,7 +1595,7 @@ export default class DBManager {
      * @param {Object} data - Dados da Entrada a ser validada.
      * @returns {string} - Erro(s) encontrado(s) ou uma string vazia se a Entrada for válida.
      */
-    validateAtlasEntry(data) {
+    validateAtlas(data) {
 
         if (data.cid.isEmpty())
             return 'O identificador de Categoria da Entrada é inválido.';
@@ -1603,28 +1610,47 @@ export default class DBManager {
     }
 
     /**
-     * Valida se os dados de uma Entrada de Evento Histórico são válidos.
+     * Valida se os dados de um Evento de História são válidos.
+     * @param {Object} data - Dados do Evento a ser validado.
+     * @returns {string} - Erro(s) encontrado(s) ou uma string vazia se o Evento for válido.
+     */
+    validateHistory(data) {
+
+        if (data.sid.isEmpty())
+            return 'O identificador de Seção do Evento é inválido.';
+        if (!data.etid)
+            return 'É necessário selecionar um Tipo de Entrada para o Evento.';
+        if (data.title.isEmpty())
+            return 'É necessário informar um título válido para o Evento.';
+        if (!data.relevance)
+            return 'É necessário informar a Relevância do Evento.';
+        if (!data.clid)
+            return 'É necessário informar um Calendário válido para o Evento.';
+        if (!data.date.start)
+            return 'Um Evento deve informar uma data inicial.';
+        if (data.date.start.year == 0)
+            return 'Um Evento deve informar uma data inicial. O ano informado é inválido.';
+        if (data.date.start.month < 0)
+            return 'Um Evento deve informar uma data inicial. O mês informado é inválido.';
+        if (!data.date.start.day || data.date.start.day < 1)
+            return 'Um Evento deve informar uma data inicial. O dia informado é inválido.';              
+
+        return '';
+    }
+
+    /**
+     * Valida se os dados de uma Entrada de Política são válidos.
      * @param {Object} data - Dados da Entrada a ser validada.
      * @returns {string} - Erro(s) encontrado(s) ou uma string vazia se a Entrada for válida.
      */
-    validateEventEntry(data) {
+    validatePolitics(data) {
 
-        if (data.cid.isEmpty())
-            return 'O identificador de Categoria da Entrada é inválido.';
-        if (!data.iid)
-            return 'O identificador de Importância da Entrada é inválido.';
-        if (!data.clid)
-            return 'O identificador de Categoria da Entrada é inválido.';
-        if (!data.date.start)
-            return 'Um evento histórico deve sempre informar uma data inicial.';
-        if (data.date.start.year == 0)
-            return 'Um evento histórico deve sempre informar uma data inicial. O ano informado é inválido.';
-        if (data.date.start.month < 0)
-            return 'Um evento histórico deve sempre informar uma data inicial. O mês informado é inválido.';
-        if (!data.date.start.day || data.date.start.day < 1)
-            return 'Um evento histórico deve sempre informar uma data inicial. O dia informado é inválido.';
+        if (data.sid.isEmpty())
+            return 'O identificador de Seção da Entrada é inválido.'; 
         if (data.title.isEmpty())
             return 'É necessário informar um título válido para a Entrada.';
+        if (!data.etid)
+            return 'É necessário selecionar um Tipo de Entrada para a Entrada.';
 
         return '';
     }

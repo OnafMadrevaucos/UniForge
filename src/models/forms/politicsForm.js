@@ -109,11 +109,6 @@ export default class PoliticsForm extends EntryForm {
 
         const entryTypeSelect = this.querySelector('#entryType');
         entryTypeSelect.value = 0;
-
-        const calendarTypeSelect = this.querySelector('#calendarType');
-        calendarTypeSelect.value = 1;
-
-        this.configureDatePickers();
     }
 
     /**
@@ -134,37 +129,7 @@ export default class PoliticsForm extends EntryForm {
         });
 
         await tinymce.init(options);
-    }
-
-    /**
-    * Carrega os DatePickers associados à instância.
-    * Para cada DatePicker, chama o método `_loadDatePicker`, passando o primeiro calendário disponível.
-    */
-    configureDatePickers() {
-        const calendars = this.data.calendars;
-        // Itera sobre todos os valores do objeto `datePickers`.
-        Object.values(this.datePickers).forEach(pickers => {
-            /**
-             * Carrega o DatePicker com o primeiro calendário disponível.
-             * @method _loadDatePicker
-             * @param {Object} calendar - O primeiro calendário no objeto `calendars`.
-             */
-            pickers._loadDatePicker(Object.values(calendars)[0]);
-        });
-    }
-    /**
-    * Recarrega os DatePickers associados à instância.
-    * Para cada DatePicker, chama o método `_loadDatePicker`, passando o calendário escolhido.
-    */
-    reconfigureDatePickers(event) {
-        const calendarType = this.querySelector('#calendarType');
-        calendarType.value = event.clid;
-        calendarType.dispatchEvent(new Event('change'));
-
-        this.datePickers.start.selectFullDate(event.start_day, event.start_month, event.start_year);
-        if (event.end_day)
-            this.datePickers.end.selectFullDate(event.end_day, event.end_month, event.end_year);
-    }
+    }    
     /* ---------------------------------------------------------------------------------------------------------------- */
     // LISTENERS
     /**
@@ -174,12 +139,10 @@ export default class PoliticsForm extends EntryForm {
     activateListeners() {
         super.activateListeners();
 
-        const calendarType = this.querySelector('#calendarType');
-        calendarType.addEventListener('change', (event) => { this.onDateTypeChange(event); });
-
         const addFamilyButton = this.querySelector('.add-button.family');
         addFamilyButton.addEventListener('click', (event) => { this.onAddFamilyClick(event); });
-    }
+    } 
+    
     /**
     * Trata o evento de registro de uma nova entrada.
     * @interface
@@ -189,47 +152,36 @@ export default class PoliticsForm extends EntryForm {
     */
     async onSaveClick(event, data, options = {}) {
         event.stopPropagation();
-        const isEntryUpdate = options.isEntryUpdate ?? false;        
+        const isUpdate = options.isUpdate ?? false;        
 
         const headerInfo = this.querySelector('.header-info');
 
         const entryType = this.querySelector('#entryType');
-        const calendarType = this.querySelector('#calendarType');
 
         uniforge.utils.mergeObjects(data, {
             etid: entryType.value,
-            cid: headerInfo.dataset.cid,
-            clid: calendarType.value,
-            iid: uniforge.defaults.importance,
-            htmlString: tinymce.get('mainEditor').getContent() ?? '',
-            date: {
-                start: this.datePickers.start.selectedDate,
-                end: this.datePickers.end.selectedDate
-            },
+            sid: headerInfo.dataset.sid,
+            htmlString: tinymce.get('mainEditor').getContent() ?? '',            
             text: ''
         });
 
-        const validate = uniforge.db.validateEventEntry(data);
+        const validate = uniforge.db.validatePolitics(data);
         if (validate !== '') {
             this.msgBox.showWarning(validate);
-            return;
+            return false;
         }
 
-        if (isEntryUpdate) {
+        if (isUpdate) {
             data.eid = options.id;
-            data.evid = headerInfo.dataset.evid;
 
             await uniforge.db.updateEntry(data);
-            await uniforge.db.updateEvent(data);
             this.msgBox.showInfo('Entrada atualizada com sucesso.');
         }
         else {
             const result = await uniforge.db.addEntry(data);
-            data.eid = result.addedId;
-            await uniforge.db.addEvent(data);
             this.msgBox.showInfo('Entrada criada com sucesso.');
         }
-
+        return true;
     }
     /**
     * Trata o evento de criação de uma nova entrada.
@@ -249,21 +201,11 @@ export default class PoliticsForm extends EntryForm {
         const entry = this.data.entry;
 
         if (entry) {
-            const entryEvent = uniforge.doc.events.get(entry.event);
+            const entryType = this.querySelector('#entryType');
+            entryType.value = entry.etid;
 
-            if (entryEvent) {
-                this.reconfigureDatePickers(entryEvent);
-
-                const headerInfo = this.querySelector('.header-info');
-                headerInfo.dataset.evid = entryEvent.evid;
-
-                const entryType = this.querySelector('#entryType');
-
-                entryType.value = entry.etid;
-                tinymce.get('mainEditor').setContent(entry.htmlString);
-            } else {
-                this.msgBox.showWarning('Erro ao carregar eventos da entrada.');
-            }
+            tinymce.get('flavorEditor').setContent(entry.flavor ?? '');
+            tinymce.get('mainEditor').setContent(entry.htmlString);
         } else {
             this.msgBox.showWarning('Erro ao carregar a entrada.');
         }

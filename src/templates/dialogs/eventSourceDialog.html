@@ -1,0 +1,38 @@
+<div class="source-dialog entries flexrow">
+  <div id="sideBar" class="sidebar">
+    <h4>Entradas</h4>
+    <foldertree id="entryTypes" item="entries" fixed></foldertree>
+    <div class="footer">
+      <div id="searchEntry" class="input-container search-bar flexrow">
+        <input type="text" id="searchInput" class="search-data" placeholder="Pesquisar entrada...">
+        <button id="searchBtn" class="search-button"><i class="fas fa-magnifying-glass"></i></button>
+      </div>
+    </div>
+  </div>
+  <div class="content flexcol">
+    <div class="header flexrow">
+      <div id="imageDisplayer" class="img-displayer">
+        <img id="displayedImage" class="img-displayed empty" src="./images/blank-image.svg" alt="Imagem Padrão">
+        <input type="file" class="hidden" id="hiddenFileInput" accept="image/*" />
+      </div>
+      <div class="header-info flexcol">
+        <input id="titleInput" type="text" class="title" name="title" placeholder="Título da Entrada" disabled />
+        <fieldset class="info-set" disabled>
+          <div id="entryTypeGroup" class="data-group combo">
+            <span class="data-label">Tipo </span>
+            <combo id="entryType" value="entryTypes" />
+          </div>
+          <div class="data-group check">
+            <span class="data-label">Rascunho </span>
+            <switch id="isDraftSwitch" />
+          </div>
+        </fieldset>
+      </div>
+    </div>
+    <div id="sourceFlavorEditor" class="simple-tmce">
+      <div class="text-content"></div>
+    </div>
+    <textarea id="sourceMainEditor">
+      <div class="text-content editable"></div>
+    </textarea>
+  </div>
