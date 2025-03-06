@@ -234,7 +234,7 @@ export default class EntryForm extends SidebarForm {
         this.clearContent();
 
         const entryTypeSelect = this.querySelector('#entryType');
-        entryTypeSelect.selectedIndex = 0;
+        if(entryTypeSelect) entryTypeSelect.selectedIndex = 0;
 
         deleteSwitch.classList.add('hidden');
 

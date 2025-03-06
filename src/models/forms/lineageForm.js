@@ -1,6 +1,8 @@
 import EntryForm from "./entryForm.js";
 import FamilyManager from "../../scripts/managers/familyManger.js";
 import DatePicker from "../datePicker.js";
+import EntrySearchDialog from "../dialogs/entrySearchDialog.js";
+import Dialogs from "../dialogs/dialog.js";
 
 export default class LineageForm extends EntryForm {
   /**
@@ -18,7 +20,7 @@ export default class LineageForm extends EntryForm {
 
     this.type = 'lineage'; // Define o tipo do formulário. 
 
-    this.manager = new FamilyManager(); // Define o gerenciador de árvores genealógicas.
+    this.manager = new FamilyManager(this.treeContainer); // Define o gerenciador de árvores genealógicas.
 
     /**
     * @property {object} datePickers - Um objeto que gerencia os seletores de data para registro de entradas.
@@ -28,6 +30,10 @@ export default class LineageForm extends EntryForm {
       start: new DatePicker('startDate'),
       end: new DatePicker('endDate')
     }
+  }
+
+  get treeContainer() {
+    return this.querySelector('#treeContainer');
   }
 
   /* ---------------------------------------------------------------------------------------------------------------- */
@@ -45,6 +51,9 @@ export default class LineageForm extends EntryForm {
     this.data.relevances = uniforge.doc.relevances.toObject();
     this.data.calendars = uniforge.doc.calendars.toObject();
 
+    this.manager.fromFamilyScript(this.manager.testScript);
+    this.manager.renderTree();
+
     this.preparePeople(this.data);
 
     return this.data;
@@ -52,9 +61,9 @@ export default class LineageForm extends EntryForm {
 
   /** @inheritdoc */
   prepareFolders(data) {
-    const folders = uniforge.doc.sections.filter(s=> {
+    const folders = uniforge.doc.sections.filter(s => {
       const c = uniforge.doc.chapters.get(s.cid);
-      return (c && c.isLineage === 3);
+      return (c && c.type === 3);
     });
     data.folders = folders.sort();
   }
@@ -120,17 +129,6 @@ export default class LineageForm extends EntryForm {
 
     const flavorEditor = tinymce.get('flavorEditor');
     flavorEditor.setContent('');
-
-    const entryTypeSelect = this.querySelector('#entryType');
-    entryTypeSelect.value = 0;
-
-    const importanceSelect = this.querySelector('#relevance');
-    importanceSelect.value = 0;
-
-    const calendarTypeSelect = this.querySelector('#calendarType');
-    calendarTypeSelect.value = 1;
-
-    this.configureDatePickers();
   }
 
   /**
@@ -153,37 +151,6 @@ export default class LineageForm extends EntryForm {
     await tinymce.init(options);
   }
 
-  /**
-    * Carrega os DatePickers associados à instância.
-    * Para cada DatePicker, chama o método `_loadDatePicker`, passando o primeiro calendário disponível.
-    */
-  configureDatePickers() {
-    const calendars = this.data.calendars;
-    // Itera sobre todos os valores do objeto `datePickers`.
-    Object.values(this.datePickers).forEach(pickers => {
-      /**
-       * Carrega o DatePicker com o primeiro calendário disponível.
-       * @method _loadDatePicker
-       * @param {Object} calendar - O primeiro calendário no objeto `calendars`.
-       */
-      pickers._loadDatePicker(Object.values(calendars)[0]);
-    });
-  }
-
-  /**
-  * Recarrega os DatePickers associados à instância.
-  * Para cada DatePicker, chama o método `_loadDatePicker`, passando o calendário escolhido.
-  */
-  reconfigureDatePickers(event) {
-    const calendarType = this.querySelector('#calendarType');
-    calendarType.value = event.clid;
-    calendarType.dispatchEvent(new Event('change'));
-
-    this.datePickers.start.selectFullDate(event.start_day, event.start_month, event.start_year);
-    if (event.end_day)
-      this.datePickers.end.selectFullDate(event.end_day, event.end_month, event.end_year);
-  }
-
   /* ---------------------------------------------------------------------------------------------------------------- */
   // LISTENERS
   /**
@@ -193,24 +160,49 @@ export default class LineageForm extends EntryForm {
   activateListeners() {
     super.activateListeners();
 
-    const calendarType = this.querySelector('#calendarType');
-    calendarType.addEventListener('change', (event) => { this.onDateTypeChange(event); });
+    const entryButton = this.querySelector('#entryButton');
+    entryButton.addEventListener('click', (event) => { this.onEntryButtonClick(event); });
 
-    const founder = this.querySelector('#founder');
-    //founder.addEventListener('change', (event) => { this.onFounderChange(event); });
-    founder.addEventListener('input', (event) => { this.onFounderChange(event); });
+    const removeEntryButton = this.querySelector('#removeEntryButton');
+    removeEntryButton.addEventListener('click', (event) => { this.onRemoveEntryClick(event); });
   }
 
-  onFounderChange(event) {
+  /**@inheritdoc */
+  onDeleteSwitchChange(event) {
+    super.onDeleteSwitchChange(event);
+
+    const removeEntryButton = this.querySelector('#removeEntryButton');
+    removeEntryButton.hidden = !event.target.checked;
+  }
+
+  async onEntryButtonClick(event) {
     event.stopPropagation();
-    const input = event.target;    
-    const options = this.querySelectorAll(`datalist#founder-list option`);
-    for (const option of options) {
-      if (option.value === input.value.trim()) {
-        input.dataset.valueId = option.label;
-        break;
-      }
-      input.dataset.valueId = '';
+
+    const eid = await EntrySearchDialog.configDialog();
+
+    // Alterna a visibilidade do grupo de eventos.
+    this._toggleEntryInfo(eid);
+  }
+
+  /**
+       * Manipulador de evento para retirar um evento de uma entrada.
+       * @param {Event} event - Evento de clique no bot o de Remover Evento.
+       * @fires
+       */
+  async onRemoveEntryClick(event) {
+    event.stopPropagation();
+
+    // Confirma a desvinculação da Entrada ao Evento.
+    if (await Dialogs.confirm('Desvincular Entrada', 'Deseja desvincular a entrada do evento?')) {
+
+      // Alternar a visibilidade do grupo de eventos.
+      this._toggleEntryInfo();
+
+      // Limpar os dados da Entrada desvinculada.
+      this._clearEntryData();
+
+      // A Entrada será retirada.
+      this.hasEntry = false;
     }
   }
 
@@ -307,5 +299,52 @@ export default class LineageForm extends EntryForm {
     } else {
       this.msgBox.showWarning('Erro ao carregar a entrada.');
     }
+  }
+
+  /**
+   * Alterna a visibilidade das informações da Entrada vinculada.
+   * @protected
+   */
+  async _toggleEntryInfo(eid) {
+    // Selecionar o grupo de Eventos.
+    const entryInfo = this.querySelector('#entryInfo');
+    // Selecionar o botão de Gerar Evento.
+    const entryButton = this.querySelector('#entryButton');
+
+    const entry = uniforge.doc.entries.get(eid);
+
+    // Se a Entrada (Source) existe, carregue os dados da entrada.
+    if (entry) {
+      entryInfo.dataset.eid = entry.eid;
+
+      await this._loadEntryData(entry);
+
+      this.hasEntry = true;
+
+      // Alterar a visibilidade do botão de Gerar Evento.
+      entryButton.classList.add('hidden');
+
+      // Alternar a visibilidade das informações do Evento.
+      entryInfo.classList.remove('hidden');
+    } else {
+      this.hasEntry = false;
+
+      // Alterar a visibilidade do botão de Gerar Evento.
+      entryButton.classList.remove('hidden');
+
+      // Alternar a visibilidade das informações do Evento.
+      entryInfo.classList.add('hidden');
+    }
+  }
+
+  async _loadEntryData(entry) {
+    const entryTitle = this.querySelector('#entryTitle');
+    entryTitle.textContent = entry.title;
+  }
+
+  async _clearEntryData() {
+    // Selecionar o grupo de Eventos.
+    const entryInfo = this.querySelector('#entryInfo');
+    delete entryInfo.dataset.eid;
   }
 }

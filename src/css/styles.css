@@ -1155,14 +1155,14 @@ input:checked+.slider::before {
 }
 
 
-.data-complex.full-button button {
+.full-button button {
     
     background-color: var(--dark-blue);
     border: var(--data-group-border);
     box-shadow: none;    
     color: var(--light-text-color);
 }
-.data-complex.full-button button:hover {
+.full-button button:hover {
     cursor: pointer;
     background-color: var(--dark-redT87);
     border: var(--focus-border);
@@ -3329,6 +3329,51 @@ folder-list .folder.created.selected .folder-header .fa-trash {
 [data-tooltip][data-tooltip-left]::after {
     left: -350%;
     top: calc(100% + 5px);
+}
+
+/* ------ Family Tree ------ */
+/* Estilo dos nós da árvore */
+.tree-node {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 10px;
+    position: relative;
+}
+
+.node {
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: #f9f9f9;
+    text-align: center;
+    font-family: Arial, sans-serif;
+    z-index: 1;
+}
+
+.children {
+    display: flex;
+    gap: 20px;
+    margin-top: 20px;
+    position: relative;
+}
+
+/* Linhas conectando os nós */
+.connection {
+    position: absolute;
+    background-color: #ccc;
+    z-index: 0;
+}
+
+.connection.spouse {
+    background-color: blue;
+    height: 4px;
+}
+
+.connection.parent {
+    background-color: green;
+    width: 2px;
+    height: 20px;
 }
 
 /* ------ Tools ------ */

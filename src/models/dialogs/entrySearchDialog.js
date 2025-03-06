@@ -1,12 +1,12 @@
 import BaseDialog from './baseDialog.js';
-export default class EventSourceDialog extends BaseDialog {
+export default class EntrySearchDialog extends BaseDialog {
   constructor(dialogData = {}, options = {}) {
     super(dialogData, uniforge.utils.mergeObjects(options, {
       height: '800px',
       width: '950px'
     }));
 
-    this.template = 'eventSourceDialog'; // Define o template do diálogo.
+    this.template = 'entrySearchDialog'; // Define o template do diálogo.
 
     /**
          * Representa as seleções atuais no formulário.

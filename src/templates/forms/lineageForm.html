@@ -4,7 +4,7 @@
     </a>
     <div id="sideBar" class="sidebar">
       <h3>{{title}}</h3>
-      <foldertree id="categories" item="entries"></foldertree>
+      <foldertree id="sections" item="lineages"></foldertree>
       <ul id="folderList" class="folder-list"></ul>
       <div class="footer">
         <div id="confirmDialog" class="confirmation-tooltip hidden" data-item="" data-action="">
@@ -15,7 +15,7 @@
           </div>
         </div>
         <div id="searchEntry" class="input-container search-bar flexrow">
-          <input type="text" id="searchInput" class="search-data" placeholder="Pesquisar entrada...">
+          <input type="text" id="searchInput" class="search-data" placeholder="Pesquisar linhagem...">
           <button id="searchBtn" class="search-button"><i class="fas fa-magnifying-glass"></i></button>
         </div>
       </div>
@@ -27,37 +27,18 @@
           <input id="hiddenFileInput" type="file" class="hidden" accept="image/*" />
         </div>
         <div class="header-info flexcol">
-          <input id="titleInput" type="text" class="title" name="title" placeholder="Título da Entrada" disabled />
-          <fieldset class="info-set" disabled>
-            <div id="entryTypeGroup" class="data-group combo">
-              <span class="data-label">Tipo </span>
-              <combo id="entryType" value="entryTypes" />
-            </div>
-            <div id="importanceGroup" class="data-group combo">
-              <span class="data-label">Importância </span>
-              <combo id="relevance" value="relevances" blank="0" />
-            </div>
-            <div id="dateTypeGroup" class="data-group combo">
-              <span class="data-label">Calendário </span>
-              <combo id="calendarType" value="calendars" />
-            </div>
-            <div class="date-info flexrow">
-              <div id="startDate" class="data-group date start" data-date="">
-                <span class="data-label">Início </span>
-                <calendar class="start"></calendar>
-              </div>
-              <div id="endDate" class="data-group date end" data-date="">
-                <span class="data-label">
-                  Término
-                  <i class="fa-regular fa-circle-question" data-tooltip="Opcional"></i>
-                </span>
-                <calendar class="end"></calendar>
-              </div>
-            </div>
-            <div id="founderGroup" class="data-group combo">
-              <span class="data-label">Fundador </span>
-              <combo id="founder" value="people" search="true" />
-            </div>
+          <input id="titleInput" type="text" class="title" name="title" placeholder="Título da Linhagem" disabled />
+          <fieldset class="info-set" disabled>            
+            <div id="entryGroup" class="data-complex full-button flexrow">
+              <button id="entryButton"><i class="fas fa-paperclip"></i> Vincular Fundador</button>                        
+              <div id="entryInfo" class="data-group entry flexrow hidden"> 
+                <span class="data-label">Fundador </span>          
+                <span id="entryTitle" class="entry-title"></span>
+                <a id="removeEntryButton" class="remove-button remove-entry" data-tooltip="Desvincular Fundador" data-tooltip-left="true" hidden>
+                  <i class="fas fa-trash"></i>
+                </a> 
+              </div> 
+            </div> 
             <div class="data-complex flexrow">
               <div class="data-group check">
                 <span class="data-label">Rascunho </span>
@@ -73,9 +54,7 @@
       <div id="flavorEditor" class="simple-tmce">
         <div class="text-content editable"></div>
       </div>
-      <textarea id="mainEditor">
-          <div class="text-content editable"></div>
-      </textarea>
+      <div id="treeContainer" class="lineage-tree viewer"></div>
       <div class="footer flexrow">
         <div class="extra buttons flexrow">
           <button id="cancelButton" class="cancel-entry hidden"><i class="fa-solid fa-square-xmark"></i> Cancelar</button>

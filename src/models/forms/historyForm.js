@@ -1,7 +1,7 @@
 import DatePicker from "../datePicker.js";
 import EntryForm from "./entryForm.js";
 import Dialogs from "../dialogs/dialog.js"
-import EventSourceDialog from "../dialogs/eventSourceDialog.js";
+import EntrySearchDialog from "../dialogs/entrySearchDialog.js";
 /**
   * Formulário para lidar com entradas do tipo histórico.
   * @class
@@ -240,7 +240,7 @@ export default class HistoryForm extends EntryForm {
         // Impede que o clique no item desencadeie o clique fora do sidebar.
         event.stopPropagation();
 
-        const eid = await EventSourceDialog.configDialog();
+        const eid = await EntrySearchDialog.configDialog();
 
         // Alterna a visibilidade do grupo de eventos.
         this._toggleEntryInfo(eid);
