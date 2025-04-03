@@ -20,15 +20,42 @@
         <fieldset class="info-set" disabled>
           <div id="entryTypeGroup" class="data-group combo">
             <span class="data-label">Tipo </span>
-            <combo id="entryType" value="entryTypes" />
+            <combo id="entryType" value="entryTypes" disabled />
           </div>
-          <div class="data-group check">
-            <span class="data-label">Rascunho </span>
-            <switch id="isDraftSwitch" />
+          <div id="eventGroup" class="date-info flexrow hidden">
+            <div id="startEventGroup" class="data-group combo">
+              <span class="data-label">Início </span>
+              <combo id="startEvent" value="entryEvents" />
+            </div>
+            <div id="endEventGroup" class="data-group combo">
+              <span class="data-label">Término </span>
+              <combo id="endEvent" value="entryEvents" />
+            </div>
+          </div>
+          <div id="lineageTypeGroup" class="data-group combo">
+            <span class="data-label">Tipo </span>
+            <combo id="lineageTypes" value="lineageTypes" />
+            <a id="manageTypeButton" data-tooltip="Gerenciar Tipos" data-tooltip-left=""><i
+                class="fas fa-screwdriver-wrench"></i></a>
+          </div>
+          <div id="titleGroup" class="data-group text">
+            <span class="data-label">Título </span>
+            <input id="founderTitle" type="text" class="data" />
+          </div>
+          <div class="data-complex flexrow">
+            <div id="lineageGroups" class="data-group combo">
+              <span class="data-label">Grupo </span>
+              <combo id="lineageGroup" value="groups" />
+            </div>
+            <div class="data-group number">
+              <span class="data-label">Ordem </span>
+              <input id="lineageGroupOrder" type="number" class="data dial" min="0" max="99"/>
+            </div>
           </div>
         </fieldset>
       </div>
     </div>
+    <div class="separator"></div>
     <div id="sourceFlavorEditor" class="simple-tmce">
       <div class="text-content"></div>
     </div>

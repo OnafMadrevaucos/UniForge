@@ -1,36 +1,39 @@
-<div class="data-group date">
-    <span class="data-label">Data: </span>
-    <div class="date-input data" id="dateInput">
-      <div class="date-display" id="dateDisplay">Selecione uma data</div>
-      <div class="calendar" id="calendar">
-        <div class="calendar-header">
-          <button id="prevGroup"><i class="fa-solid fa-caret-left"></i></button>
-          <span id="monthYearDisplay"></span>
-          <button id="nextGroup"><i class="fa-solid fa-caret-right"></i></button>
-        </div>              
-        <div class="calendar-view" id="calendarView">
-          <div class="calendar-content" id="calendarContent"></div>
-        </div>              
-      </div>
-    </div>
+<div class="date-info flexrow">
+  <div id="{{id}}" class="data-group date start" data-date="">
+    <span class="data-label">{{label}} </span>
+    <calendar class="{{dataSource}}"></calendar>
+  </div>
+  <div id="{{id}}" class="data-group date end" data-date="">
+    <span class="data-label">
+      {{label}}
+      <i class="fa-regular fa-circle-question" data-tooltip="Opcional"></i>
+    </span>
+    <calendar class="dataSource"></calendar>
+  </div>
 </div>
 
+<div class="data-complex flexrow">
   <div class="data-group check">
-    <span class="data-label">Checkbox: </span>
-    <label class="switch">
-      <input type="checkbox" id="checkbox">
-      <div class="slider"></div>
-    </label>
+    <span class="data-label">{{label}} </span>
+    <switch id="{{id}}" />
   </div>
+</div>
 
-  <div class="data-group text">
-    <span class="data-label">Text Edit: </span>
-    <input type="text" class="data"/>
-  </div>
+<div class="data-group text">
+  <span class="data-label">{{label}} </span>
+  <input type="text" class="data" />
+</div>
 
-  <div class="data-group combo">
-    <span class="data-label"> Calendário: </span>
-    <select id="calendarType" class="data" name="calendarType">
-      <option value="0">&#8212</option>      
-    </select>
-  </div>
+<div class="data-group number">
+  <span class="data-label">{{label}} </span>
+  <input type="number" class="data dial" min="{{min}}" max="{{max}}"/>
+</div>
+
+<div id="{{id}}" class="data-group combo">
+  <span class="data-label">{{label}} </span>
+  <combo id="entryType" value="{{dataSource}}" />
+</div>
+
+<div class="data-group list">
+  <list id="{{id}}" value="{{dataSource}}" class="" item-class="{{itemClassName}}" />
+</div>

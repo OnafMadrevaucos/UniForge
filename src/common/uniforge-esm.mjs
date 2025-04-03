@@ -1,0 +1,227 @@
+/**@module uniforge */
+import * as primitives from './primitives/module.mjs';
+
+import * as utilsEsm from './utils/module.mjs';
+import * as parserEsm from './parsers/module.mjs';
+import * as gojs from './gojs/module.mjs';
+import * as leafletEsm from './leaflet/module.mjs';
+
+import AtlasForm from "../models/forms/atlasForm.js";
+import EntityForm from "../models/forms/entityForm.js";
+import HistoryForm from '../models/forms/historyForm.js';
+import EconomyForm from '../models/forms/economyForm.js';
+import PoliticsForm from "../models/forms/politicsForm.js";
+import SettingsForm from "../models/forms/settingsForm.js";
+import LibraryForm from "../models/forms/libraryForm.js";
+import TimelineForm from "../models/forms/timelineForm.js";
+import { APP_STATES } from './utils/state.mjs';
+import { core } from './leaflet/module.mjs';
+
+'use strict';
+
+globalThis.store = new WeakMap(); // WeakMap para armazenar os dados de imagens associados aos elementos.
+
+const utils = {
+    associateData: utilsEsm.images.associateData,
+    getAsociatedData: utilsEsm.images.getAsociatedData,
+    blobToImage: utilsEsm.images.blobToImage,
+    imageToBlob: utilsEsm.images.imageToBlob,
+    deepClone: utilsEsm.collection.deepClone,
+    duplicate: utilsEsm.collection.duplicate,
+    diffObject: utilsEsm.collection.diffObject,
+    objectsEqual: utilsEsm.collection.objectsEqual,
+    mergeObjects: utilsEsm.collection.mergeObjects,
+    setProperty: utilsEsm.collection.setProperty,
+    getProperty: utilsEsm.collection.getProperty,
+    hasProperty: utilsEsm.collection.hasProperty,
+    getType: utilsEsm.collection.getType,
+    randomID: utilsEsm.random.randomID,
+    randomString: utilsEsm.random.generateRandomString,
+    randomNumber: utilsEsm.random.generateRandomNumber,
+    loremIpsum: utilsEsm.helpers.loremIpsum,
+    loadTemplate: utilsEsm.helpers.loadTemplate,
+    isEmpty: utilsEsm.helpers.isEmpty,
+    timeSince: utilsEsm.helpers.timeSince,
+    getFontAwesomeIcons: utilsEsm.helpers.getFontAwesomeIcons,
+    formatFileSize: utilsEsm.helpers.formatFileSize
+};
+
+const parser = {
+    parseHTML: parserEsm.html.parseHTML,
+    generateItemList: parserEsm.html.generateListItemHTML,
+    parseCssToJson: parserEsm.css.parseCssToJson
+}
+
+const diagrams = {
+    build: gojs.diagram.buildDiagram
+}
+
+const leaflet = {
+    core: leafletEsm.core,
+    draw: leafletEsm.draw,
+    grid: leafletEsm.grid 
+}
+
+const state = {
+    APP_STATES: utilsEsm.state.APP_STATES,
+    FORM_STATES: utilsEsm.state.FORM_STATES,
+
+    init: utilsEsm.state.initState,
+    save: utilsEsm.state.saveState,
+    current: utilsEsm.state.currentState,
+    update: utilsEsm.state.updateState,
+    clear: utilsEsm.state.clearState
+}
+
+// Constante Global
+/**
+* Objeto global `uniforge` que armazena configurações e instâncias relacionadas à aplicação,
+* incluindo configurações do mapa, controles, propriedades de navegação e utilitários.
+* 
+* @namespace uniforge
+*/
+
+console.log('UniForge | Gerando variável global \'uniforge\'...');
+globalThis.uniforge = { 
+    /**
+    * Urls de Imagens padrões usadas pelo sistema.
+    * 
+    * @type {Object}
+    * @property {string} background - Imagem utilizada como fundo das entradas da Biblioteca e das Timelines.
+    * @property {string} blankImg   - Imagem padrão usada para campos de imagem vazios.
+    */
+    urls: {
+        background: './images/lib-background.png',
+        blankImg: './images/blank-image.svg'
+    },
+
+    /**
+    * Referência ao corpo do documento HTML.
+    * 
+    * @type {HTMLElement}
+    */
+    html: document.body,
+
+    /**
+    * Ferramentas da Aplicação.
+    * @type {Object}
+    */
+    app: window.app,
+
+    /**
+    * Instância de SQL usada pela aplicação.
+    * @type {Object}
+    */
+    sql: window.sql,
+
+    /**
+     * Instância de Templates de Handlebars usada pela aplicação.
+     * @type {Object}
+     
+    templates: window.templates,
+    */
+
+    /**
+     * Instância de Crypto usada pela aplicação.
+     * @type {Object}
+     */
+    crypto: window.crypto,
+
+    /**
+    * Cria uma WeakMap para armazenar arquivos maiores.
+    * @type {WeakMap}
+    * */
+    store: store,
+
+    /**
+    * Instância do conversor de CSS usada pela aplicação.
+    * @type {Object}
+    */
+    cssConverter: window.cssConverter,
+
+    /**
+    * Instância de funções auxiliares gerais.
+    * 
+    * @type {Utils}
+    */
+    utils: utils,
+
+    /**
+    * Rotinas de gerenciamento do Estado da Aplicação.
+    * @type {Utils.State}
+    */
+    state: state,
+
+    /**
+    * Instância de funções auxiliares de manipulação de código HTML e CSS.
+    * 
+    * @type {Parser}
+    */
+    parser: parser,
+
+    /**
+    * Instância de funções auxiliares de manipulação de diagramas da ferramenta GoJS.
+    * 
+    * @type {GoJS Utils}
+    */
+    diagrams: diagrams,
+
+    /**
+    * Instância de funções auxiliares de manipulação de mapas da ferramenta Leaflet.
+    * 
+    * @type {Leaflet}
+    */
+    leaflet: leaflet,
+
+    /**
+    * Classes de Forms usadas pela aplicação discriminadas por identificador.
+    * 
+    * @type {Forms}
+    */
+    forms: {
+        atlas: AtlasForm,
+        entity: EntityForm,
+        history: HistoryForm,
+        economy: EconomyForm,
+        politics: PoliticsForm,
+        settings: SettingsForm,
+        library: LibraryForm,
+        timeline: TimelineForm
+    },
+
+    /**
+    * Referência ao formulário, utilizado em várias partes da aplicação.
+    * 
+    * @type {Object|null}
+    */
+    form: null,
+
+    /**
+    * LatLng onde o último clique no mapa ocorreu.
+    * 
+    * @type {L.LatLng|null}
+    */
+    clickLatLang: null,
+
+    /**
+     * Camada de sobreposição do mapa.
+     * 
+     * @type {Object|null}
+     */
+    mapOverlay: null,
+
+    /**
+    * Informações relacionadas ao tempo (como o valor do ano e a era).
+    * 
+    * @type {Object}
+    * @property {Object} y - Objeto com valor e label do ano.
+    * @property {string} era - A era representada (por exemplo, 'd.T.').
+    */
+    time: {
+        y: {
+            value: 1,
+            label: '1'
+        },
+        era: 'd.T.'
+    }
+};

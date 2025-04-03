@@ -4,7 +4,7 @@
   </a>
   <div id="sideBar" class="sidebar">
     <h3>{{title}}</h3>
-    <foldertree id="sections" item="events"></foldertree>    
+    <foldertree id="sections" item="entries"></foldertree>
     <div class="footer">
       <div id="confirmDialog" class="confirmation-tooltip hidden" data-item="" data-action="">
         <p id="confirmation-message"></p>
@@ -21,9 +21,9 @@
   </div>
   <div class="content flexcol">
     <div class="header flexrow">
-      <div id="imageDisplayer" class="img-displayer disabled hidden">
+      <div id="imageContainer" class="img-container disabled">
         <img id="displayedImage" class="img-displayed empty" src="./images/blank-image.svg" alt="Imagem Padrão">
-        <input id="hiddenFileInput" type="file" class="hidden" accept="image/*" />
+        <input type="file" class="hidden" id="hiddenFileInput" accept="image/*" />
       </div>
       <div class="header-info flexcol">
         <input id="titleInput" type="text" class="title" name="title" placeholder="Título da Entrada" disabled />
@@ -32,42 +32,11 @@
             <span class="data-label">Tipo </span>
             <combo id="entryType" value="entryTypes" />
           </div>
-          <div id="dateTypeGroup" class="data-group combo">
-            <span class="data-label">Calendário </span>
-            <combo id="calendarType" value="calendars" />
-          </div>  
-          <div id="relevanceGroup" class="data-group combo">
-            <span class="data-label">Relevância </span>
-            <combo id="relevance" value="relevances" />
-          </div>          
-          <div class="date-info flexrow">
-            <div id="startDate" class="data-group date start" data-date="">
-              <span class="data-label">Início </span>
-              <calendar class="start"></calendar>
-            </div>
-            <div id="endDate" class="data-group date end" data-date="">
-              <span class="data-label">
-                Término
-                <i class="fa-regular fa-circle-question" data-tooltip="Opcional"></i>
-              </span>
-              <calendar class="end"></calendar>
-            </div>              
-          </div>
-          <div id="entryGroup" class="data-complex full-button flexrow">
-            <button id="entryButton"><i class="fas fa-paperclip"></i> Vincular Entrada</button>                        
-            <div id="entryInfo" class="data-group entry flexrow hidden"> 
-              <span class="data-label">Entrada Vinculada </span>          
-              <span id="entryTitle" class="entry-title"></span>
-              <a id="removeEntryButton" class="remove-button remove-entry" data-tooltip="Desvincular Entrada" data-tooltip-left="true" hidden>
-                <i class="fas fa-trash"></i>
-              </a> 
-            </div> 
-          </div>          
           <div class="data-complex flexrow">
             <div class="data-group check">
               <span class="data-label">Rascunho </span>
-              <switch id="isDraftSwitch"/>
-            </div>            
+              <switch id="isDraftSwitch" />
+            </div>
           </div>
         </fieldset>
       </div>
@@ -75,12 +44,65 @@
 
     <div class="separator"></div>
 
-    <div id="flavorEditor" class="simple-tmce">
-      <div class="text-content editable"></div>
+    <div id="sections" class="tabs-control flexcol">
+      <div class="tabs-options flex-0 flexrow">
+        <button id="descriptionTabButton" class="flexcol selected" data-tab="descriptionTab" disabled><i
+            class="fas fa-align-left"></i> Descrição</button>
+        <button id="eventTabButton" class="flexcol" data-tab="eventTab" disabled><i class="fas fa-calendar"></i>
+          Eventos</button>
+      </div>
+      <div id="descriptionTab" class="tab-content flex-1 flexcol active">
+        <div id="flavorEditor" class="simple-tmce">
+          <div class="text-content editable"></div>
+        </div>
+        <textarea id="mainEditor">
+          <div class="text-content editable"></div>
+        </textarea>
+      </div>
+      <div id="eventTab" class="tab-content flex-1 flexrow">
+        <div class="data-group list flexcol">
+          <h4 class="flex-0">Eventos Vinculados</h4>          
+          <ul id="entryEvents" class="list flex-1"></ul>
+        </div>
+        <div class="event-info flex-2">
+          <fieldset class="info-set flexcol">
+            <div class="data-group text">
+              <span class="data-label">Nome Evento </span>
+              <input id="eventTitle" type="text" class="data" placeholder="Nome do Evento"/>
+            </div> 
+            <div id="eventEntryTypeGroup" class="data-group combo">
+              <span class="data-label">Tipo </span>
+              <combo id="eventEntryType" value="entryTypes" />
+            </div>           
+            <div id="dateTypeGroup" class="data-group combo">
+              <span class="data-label">Calendário </span>
+              <combo id="calendarType" value="calendars" />
+            </div>
+            <div id="relevanceGroup" class="data-group combo">
+              <span class="data-label">Relevância </span>
+              <combo id="relevance" value="relevances" />
+            </div>
+            <div class="date-info flexrow">
+              <div id="startDate" class="data-group date start" data-date="">
+                <span class="data-label">Início </span>
+                <calendar class="start"></calendar>
+              </div>
+              <div id="endDate" class="data-group date end" data-date="">
+                <span class="data-label">
+                  Término
+                  <i class="fa-regular fa-circle-question" data-tooltip="Opcional"></i>
+                </span>
+                <calendar class="end"></calendar>
+              </div>
+            </div>
+            <div id="eventFlavorEditor" class="simple-tmce">
+              <div class="text-content editable"></div>
+            </div>
+            <button id="addEventButton"><i class="fas fa-square-plus"></i> Adicionar Evento</button>
+          </fieldset>          
+        </div>
+      </div>
     </div>
-    <textarea id="mainEditor">
-        <div class="text-content non-editable"></div>
-    </textarea>
     <div class="footer flexrow">
       <div class="extra buttons flexrow">
         <button id="cancelButton" class="cancel-entry hidden"><i class="fa-solid fa-square-xmark"></i> Cancelar</button>

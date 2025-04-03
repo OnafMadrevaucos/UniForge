@@ -70,6 +70,15 @@ app.whenReady().then(() => {
    */
   ipcMain.handle('db-exec', (event, query, params = []) => dbExec(query, params));
 
+   /**
+   * Manipulador para recarregar a Janela Principal.
+   * @param {Electron.IpcMainEvent} event - O evento IPC recebido.
+   * @param {string} query - O comando SQL.
+   * @param {Array} [params=[]] - Parâmetros opcionais para o comando.
+   * @returns {Object} - Resultado da execução.
+   */
+   ipcMain.handle('window-refresh', (event) => refreshWindow());  
+
   /**
    * Manipulador para buscar templates de arquivos.
    * @param {string} fileName - Nome do arquivo do template.
@@ -79,7 +88,7 @@ app.whenReady().then(() => {
   console.log('UniForge | Criando requisição de Renders.');
 });
 
-app.on('will-quit', () => {
+app.on('will-quit', () => {  
   globalShortcut.unregisterAll(); // Limpa os atalhos ao fechar o app
 });
 
@@ -97,7 +106,7 @@ function CreateWindow() {
     webPreferences: {
       preload: path.join(__dirname, './src/scripts/preload.js'),
       contextIsolation: true,
-      nodeIntegration: false,
+      nodeIntegration: false
     },
     icon: './src/images/icons/icone.png',
     show: false,
@@ -121,7 +130,7 @@ function CreateWindow() {
     })
   })
 
-  mainWindow.on('closed', () => {
+  mainWindow.on('closed', () => {    
     mainWindow = null;
   });
 }
@@ -142,7 +151,7 @@ function dbQuery(query, params = []) {
     const result = statement.all(...params); // Executa a consulta e retorna todos os resultados
     return result;
   } catch (err) {
-    console.error('Erro no banco de dados:', err.message);
+    console.error('UniForge | Erro no banco de dados:', err.message);
     throw err;
   }
 }
@@ -161,9 +170,16 @@ function dbExec(query, params = []) {
     const result = statement.run(...params); // Executa um comando (INSERT, UPDATE, DELETE)
     return result;
   } catch (err) {
-    console.error('Erro no banco de dados:', err.message);
+    console.error('UniForge | Erro no banco de dados:', err.message);
     throw err;
   }
+}
+
+function refreshWindow() {  
+  if (mainWindow) {    
+    console.log('UniForge | Recarregando a Janela Principal.');    
+    mainWindow.reload();
+  } 
 }
 
 /**
@@ -191,7 +207,7 @@ async function getTemplate(fileName, id) {
     console.log(compiled);
     return compiled;    
   } catch (err) {
-    console.error('Erro ao carregar template:', err.message);
+    console.error('UniForge | Erro ao carregar template: ', err.message);
     throw err;
   }
 }

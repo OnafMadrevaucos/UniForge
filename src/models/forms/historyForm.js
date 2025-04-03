@@ -13,12 +13,10 @@ export default class HistoryForm extends EntryForm {
       * Constrói uma instância da classe derivada, inicializando as propriedades e configurando o conteúdo.
       * @class
       * @extends EntryForm
-      * 
-      * @param {HTMLElement} title   - O título do formulário.
       */
-    constructor(title) {
+    constructor() {
         // Chama o construtor da classe pai com o parâmetro overlay.
-        super(title);
+        super('História');
 
         this.template = 'historyForm'; // Define o template do formulário. 
 
@@ -33,12 +31,23 @@ export default class HistoryForm extends EntryForm {
             end: new DatePicker('endDate')
         }
 
-        /**
-        * O Evento possui uma Entrada vinculada a ele? (false por padrão)
-        * @type {boolean}
-        */
-        this.hasEntry = false;
+        this.selection.event = null; // ID do Evento selecionado na EventTab.
     }
+
+    /** 
+    * @property {Object} events - Objeto que armazena os eventos vinculados à entrada.    
+    * @private
+    * @default {}
+    */
+    #events = {};
+
+    /**
+    * O Evento possui eventos vinculados à Entrada? (false por padrão)
+    * @type {boolean}
+    */
+    get hasEvents() {
+        return Object.keys(this.#events).length > 0;
+    };
 
     /* ---------------------------------------------------------------------------------------------------------------- */
     // GETTERS E SETTERS
@@ -66,21 +75,24 @@ export default class HistoryForm extends EntryForm {
        * @protected
        */
     controlStates(state) {
-        super.controlStates(state, {ignoreEditor: true});
+        super.controlStates(state, { ignoreEditor: true });
         const flavorEditor = tinymce.get('flavorEditor');
 
         switch (state) {
             // ESTADO DE HABILITAÇÃO DE NOVA ENTRADA.
             case this.states.newEntry: {
                 flavorEditor.mode.set('readonly');
+                this._toggleSectionButtons(true);
             } break;
             // ESTADO DE EDIÇÃO DE ENTRADA.
             case this.states.adding: {
                 flavorEditor.mode.set('design');
+                this._toggleSectionButtons(false, false);
             } break;
             // ESTADO DE DELEÇÃO DE DADOS.
             case this.states.editing: {
                 flavorEditor.mode.set('design');
+                this._toggleSectionButtons(false, false);
             } break;
             // ESTADO PADRÃO.
             default: {
@@ -88,6 +100,7 @@ export default class HistoryForm extends EntryForm {
                 relevanceSelect.selectedIndex = 0;
 
                 flavorEditor.mode.set('readonly');
+                this._toggleSectionButtons(true);
             } break;
         }
     }
@@ -105,6 +118,9 @@ export default class HistoryForm extends EntryForm {
 
         // Configura o editor TinyMCE de floreio associado ao formulário.
         await this.configureFlavorTinyMCE();
+
+        // Configura o editor TinyMCE de floreio dos eventos associados à entrada do formulário.
+        await this.configureEventFlavorTinyMCE();
     }
 
     /**
@@ -115,11 +131,31 @@ export default class HistoryForm extends EntryForm {
     clearContent(clearSidebar = true) {
         super.clearContent(clearSidebar);
 
-        const flavorEditor = tinymce.get('flavorEditor');
-        flavorEditor.setContent('');
+        this.eid = null;
+        this.#events = [];
 
         const entryTypeSelect = this.querySelector('#entryType');
         entryTypeSelect.value = 1;
+
+        const entryEvents = this.querySelector('#entryEvents');
+        entryEvents.innerHTML = '';
+
+        this.clearEventTab();
+    }
+
+    /**
+     * Limpa a aba de eventos do formulário.
+     * 
+     * Remove todos os eventos listados na aba, limpa o título e o tipo do evento,
+     * reconfigura os seletores de data e limpa o editor de floreio do evento.
+     */
+    clearEventTab() {
+        const eventTitle = this.querySelector('#eventTitle');
+        eventTitle.value = '';
+        eventTitle.focus();
+
+        const eventEntryTypeSelect = this.querySelector('#eventEntryType');
+        eventEntryTypeSelect.value = 1;
 
         const relevanceSelect = this.querySelector('#relevance');
         relevanceSelect.value = 1;
@@ -127,30 +163,13 @@ export default class HistoryForm extends EntryForm {
         const calendarTypeSelect = this.querySelector('#calendarType');
         calendarTypeSelect.value = 1;
 
-        this.configureDatePickers();
-        this._toggleEntryInfo();
-        this._clearEntryData();
-    }
+        const eventFlavorEditor = tinymce.get('eventFlavorEditor');
+        eventFlavorEditor.setContent('');
 
-    /**
-     * Inicializa e configura o editor TinyMCE.
-     * Remove qualquer instância existente antes de reconfigurar.
-     * @private
-     */
-    async configureTinyMCE() {
-        if (tinymce.get('mainEditor')) {
-            tinymce.remove('#mainEditor');
-        }
+        this.reconfigureDatePickers();
 
-        const options = uniforge.utils.mergeObjects(uniforge.tinymceOptions.readonly, {
-            selector: 'textarea#mainEditor',
-            noneditable_class: 'non-editable',
-            init_instance_callback: (editor) => {
-                editor.setContent(""); // Garante que o editor seja iniciado vazio.
-            }
-        });
-
-        await tinymce.init(options);
+        const addEventButton = this.querySelector('#addEventButton');
+        addEventButton.innerHTML = '<i class="fas fa-square-plus"></i> Adicionar Evento';
     }
 
     /**
@@ -164,6 +183,26 @@ export default class HistoryForm extends EntryForm {
         const options = uniforge.utils.mergeObjects(uniforge.tinymceOptions.simple, {
             selector: 'div#flavorEditor',
             placeholder: "Texto de floreio...",
+            init_instance_callback: (editor) => {
+                editor.setContent(""); // Garante que o editor seja iniciado vazio.
+            },
+            setup: (editor) => { this._setupInlineTinyMCE(editor); }
+        });
+
+        await tinymce.init(options);
+    }
+
+    /**
+    * Configura o editor TinyMCE para o texto de floreio dos eventos da Entrada.
+    */
+    async configureEventFlavorTinyMCE() {
+        if (tinymce.get('eventFlavorEditor')) {
+            tinymce.remove('#eventFlavorEditor');
+        }
+
+        const options = uniforge.utils.mergeObjects(uniforge.tinymceOptions.simple, {
+            selector: 'div#eventFlavorEditor',
+            placeholder: "Descrição do evento...",
             init_instance_callback: (editor) => {
                 editor.setContent(""); // Garante que o editor seja iniciado vazio.
             },
@@ -195,13 +234,30 @@ export default class HistoryForm extends EntryForm {
     * Para cada DatePicker, chama o método `_loadDatePicker`, passando o calendário escolhido.
     */
     reconfigureDatePickers(event) {
+        const calendars = this.data.calendars;
+
         const calendarType = this.querySelector('#calendarType');
-        calendarType.value = event.clid;
+        calendarType.value = event?.clid ?? 1;
         calendarType.dispatchEvent(new Event('change'));
 
-        this.datePickers.start.selectFullDate(event.s_day, event.s_month, event.s_year);
-        if (event.e_day)
-            this.datePickers.end.selectFullDate(event.e_day, event.e_month, event.e_year);
+        // Se houver um evento, carregue o DatePicker com a data do evento.
+        if (event) {
+            this.datePickers.start.selectFullDate(event.s_day, event.s_month, event.s_year);
+            // Se houver uma data de fim, carregue o DatePicker com a data do evento.
+            if (event.e_day)
+                this.datePickers.end.selectFullDate(event.e_day, event.e_month, event.e_year);
+        } else { // Senão, limpe os DatePickers.
+
+            // Itera sobre todos os valores do objeto `datePickers`.
+            Object.values(this.datePickers).forEach(pickers => {
+                /**
+                 * Carrega o DatePicker com o primeiro calendário disponível.
+                 * @method _loadDatePicker
+                 * @param {Object} calendar - O primeiro calendário no objeto `calendars`.
+                 */
+                pickers._reloadDatePicker(Object.values(calendars)[0]);
+            });
+        }
     }
 
     /* ---------------------------------------------------------------------------------------------------------------- */
@@ -213,59 +269,21 @@ export default class HistoryForm extends EntryForm {
     activateListeners() {
         super.activateListeners();
 
-        const entryButton = this.querySelector('#entryButton');
-        entryButton.addEventListener('click', (event) => { this.onEntryButtonClick(event); });
-
-        const removeEntryButton = this.querySelector('#removeEntryButton');
-        removeEntryButton.addEventListener('click', (event) => { this.onRemoveEntryClick(event); });
-
         const calendarType = this.querySelector('#calendarType');
         calendarType.addEventListener('change', (event) => { this.onDateTypeChange(event); });
+
+        const sectionButtons = this.querySelectorAll('#sections .tabs-options button');
+        sectionButtons.forEach(button => {
+            button.addEventListener('click', (event) => { this.onSectionButtonClick(event); });
+        });
+
+        const newEventButton = this.querySelector('#addEventButton');
+        newEventButton.addEventListener('click', (event) => { this.onAddEventClick(event); });
     }
 
     /**@inheritdoc */
     onDeleteSwitchChange(event) {
         super.onDeleteSwitchChange(event);
-
-        const removeEntryButton = this.querySelector('#removeEntryButton');
-        removeEntryButton.hidden = !event.target.checked;
-    }
-
-    /**
-       * Manipulador de evento para alternar a visibilidade do grupo de eventos e da informa o de data.
-       * @param {Event} event - Evento de clique no bot o de Eventos.
-       * @fires
-       */
-    async onEntryButtonClick(event) {
-        // Impede que o clique no item desencadeie o clique fora do sidebar.
-        event.stopPropagation();
-
-        const eid = await EntrySearchDialog.configDialog();
-
-        // Alterna a visibilidade do grupo de eventos.
-        this._toggleEntryInfo(eid);
-    }
-
-    /**
-     * Manipulador de evento para retirar um evento de uma entrada.
-     * @param {Event} event - Evento de clique no bot o de Remover Evento.
-     * @fires
-     */
-    async onRemoveEntryClick(event) {
-        event.stopPropagation();
-
-        // Confirma a desvinculação da Entrada ao Evento.
-        if (await Dialogs.confirm('Desvincular Entrada', 'Deseja desvincular a entrada do evento?')) {
-
-            // Alternar a visibilidade do grupo de eventos.
-            this._toggleEntryInfo();
-
-            // Limpar os dados da Entrada desvinculada.
-            this._clearEntryData();
-
-            // A Entrada será retirada.
-            this.hasEntry = false;
-        }
     }
 
     /**
@@ -324,6 +342,107 @@ export default class HistoryForm extends EntryForm {
             }
         }
     }
+
+    /**
+     * Trata o evento de clique em uma se o de uma aba do formul rio.
+     * @param {Event} event - O evento de clique no bot o de se o.
+     */
+    onSectionButtonClick(event) {
+        event.stopPropagation();
+        this._toggleSectionButtons(false, true);
+
+        const button = event.target.closest('button');
+        button.classList.add('selected');
+
+        this._activateTab(button.dataset.tab);
+    }
+
+    onEventItemClick(clkEvent) {
+        clkEvent.stopPropagation();
+        const clickedEvent = clkEvent.target.closest('.item');
+        const evid = clickedEvent.dataset.value;
+        const event = this.#events[evid];
+
+        const eventTitle = this.querySelector('#eventTitle');
+        const eventEntryType = this.querySelector('#eventEntryType');
+        const relevance = this.querySelector('#relevance');
+        const calendarType = this.querySelector('#calendarType');
+
+        eventTitle.value = event.title;
+        eventTitle.focus();
+
+        eventEntryType.value = event.etid;
+        relevance.value = event.relevance;
+        calendarType.value = event.clid;
+
+        this.reconfigureDatePickers(event);
+
+        tinymce.get('eventFlavorEditor').setContent(event.flavor);
+
+        const addEventButton = this.querySelector('#addEventButton');
+        addEventButton.innerHTML = '<i class="fas fa-pen-to-square"></i> Editar Evento';
+
+        this.selection.event = clickedEvent;
+    }
+
+    /**
+     * Trata o evento de clique no botão de adicionar um novo Evento.
+     * @param {Event} event - O evento de clique no botão de adicionar um novo Evento.
+     */
+    onAddEventClick(event) {
+        event.stopPropagation();
+
+        const eventTitle = this.querySelector('#eventTitle');
+        const eventEntryType = this.querySelector('#eventEntryType');
+        const relevance = this.querySelector('#relevance');
+        const calendarType = this.querySelector('#calendarType');
+
+        const newEvid = this.selection.event ? this.selection.event.dataset.value : uniforge.db.generateID();
+
+        const newEvent = {
+            _value: newEvid,
+            _label: eventTitle.value,
+            _icon: '<i class="fa-solid fa-calendar-days"></i>',
+            evid: newEvid,
+            title: eventTitle.value,
+            etid: eventEntryType.value,
+            relevance: relevance.value,
+            clid: calendarType.value,
+            flavor: tinymce.get('eventFlavorEditor').getContent() ?? '',
+            s_day: this.datePickers.start.selectedDate.day,
+            s_month: this.datePickers.start.selectedDate.month,
+            s_year: this.datePickers.start.selectedDate.year,
+            e_day: this.datePickers.end.selectedDate.day,
+            e_month: this.datePickers.end.selectedDate.month,
+            e_year: this.datePickers.end.selectedDate.year,
+            dbAction: uniforge.doc.events.get(newEvid) ? 'u' : 'a'
+        };
+
+        const result = uniforge.db.validateEvent(newEvent);
+        if (result !== '') {
+            this.msgBox.showWarning(result);
+            return;
+        }
+
+        this.#events[newEvid] = newEvent;
+        this._generateEventListItems();
+    }
+
+    /**
+     * Trata o evento de clique no botão de apagar um evento.
+     * @param {Event} event - Evento de clique no botão de apagar.
+     */
+    async onDeleteEventClick(event) {
+        event.stopPropagation();
+        if (await Dialogs.confirm('Apagar entrada', 'Deseja realmente apagar essa entrada?')) {
+            const deletedItem = event.target.closest('.item');
+            const itemId = deletedItem.dataset.value;
+
+            this.#events[itemId].dbAction = 'd';
+            this._generateEventListItems();
+        }
+    }
+
     /**
     * Trata o evento de registro de uma nova entrada.
     * @interface
@@ -336,42 +455,93 @@ export default class HistoryForm extends EntryForm {
         const isUpdate = options.isUpdate ?? false;
 
         const headerInfo = this.querySelector('.header-info');
-        const entryInfo = this.querySelector('#entryInfo');
-
         const entryType = this.querySelector('#entryType');
-        const relevance = this.querySelector('#relevance');
-        const calendarType = this.querySelector('#calendarType');
 
         uniforge.utils.mergeObjects(data, {
             etid: entryType.value,
             sid: headerInfo.dataset.sid,
-            relevance: relevance.value,
-            clid: calendarType.value,
-            source: entryInfo.dataset.eid ?? null,
             flavor: tinymce.get('flavorEditor').getContent() ?? '',
-            htmlString: tinymce.get('mainEditor').getContent() ?? '',
-            date: {
-                start: this.datePickers.start.selectedDate,
-                end: this.datePickers.end.selectedDate
-            },
-            text: ''
+            htmlString: tinymce.get('mainEditor').getContent() ?? ''
         });
 
-        const validate = uniforge.db.validateHistory(data);
-        if (validate !== '') {
+        let result = uniforge.db.validateEntry(data);
+        if (result !== '') {
             this.msgBox.showWarning(validate);
             return false;
         }
 
         if (isUpdate) {
-            data.evid = options.id;
+            data.eid = options.id;
 
-            await uniforge.db.updateEvent(data);
-            this.msgBox.showInfo('Evento atualizado com sucesso.');
+            await uniforge.db.updateEntry(data);
+
+            const events = Object.values(this.#events);
+            if (events.length > 0) {
+                for (const event of events) {
+                    event.sid = data.sid;
+                    event.source = data.eid;
+
+                    switch (event.dbAction) {
+                        case 'd': {
+                            await uniforge.db.deleteEvent(event.evid);
+                        } break;
+                        case 'a': {
+                            result = uniforge.db.validateEvent(event);
+                            if (result !== '') {
+                                this.msgBox.showWarning(result);
+                                return false;
+                            }
+                            await uniforge.db.addEvent(event);
+                        } break;
+                        case 'u': {
+                            result = uniforge.db.validateEvent(event);
+                            if (result !== '') {
+                                this.msgBox.showWarning(result);
+                                return false;
+                            }
+                            await uniforge.db.updateEvent(event);
+                        } break;
+                        default: break;
+                    }
+                }
+            }
+            this.msgBox.showInfo('Entrada atualizada com sucesso.');
         }
         else {
-            const result = await uniforge.db.addEvent(data);
-            this.msgBox.showInfo('Evento criado com sucesso.');
+            let result = await uniforge.db.addEntry(data);
+            data.eid = result.addedId;
+
+            const events = Object.values(this.#events);
+            if (events.length > 0) {
+                for (const event of events) {
+                    event.sid = data.sid;
+                    event.source = data.eid;
+
+                    switch (event.dbAction) {
+                        case 'd': {
+                            await uniforge.db.deleteEvent(event.evid);
+                        } break;
+                        case 'a': {
+                            result = uniforge.db.validateEvent(event);
+                            if (result !== '') {
+                                this.msgBox.showWarning(result);
+                                return false;
+                            }
+                            await uniforge.db.addEvent(event);
+                        } break;
+                        case 'u': {
+                            result = uniforge.db.validateEvent(event);
+                            if (result !== '') {
+                                this.msgBox.showWarning(result);
+                                return false;
+                            }
+                            await uniforge.db.updateEvent(event);
+                        } break;
+                        default: break;
+                    }
+                }
+            }
+            this.msgBox.showInfo('Entrada criada com sucesso.');
         }
 
         return true;
@@ -383,6 +553,7 @@ export default class HistoryForm extends EntryForm {
     */
     async onNewClick(event) {
         this.clearContent(false);
+        this.eid = uniforge.db.generateID();
     }
     /**
     * Gerencia cliques duplos em itens de evento.
@@ -390,98 +561,109 @@ export default class HistoryForm extends EntryForm {
     * @param {MouseEvent} event - O evento de clique duplo.
     */
     async onEntryItemDoubleClick(mouseEvent) {
-        await super.onEntryItemDoubleClick(mouseEvent, {
-            type: 'events'
-        });
-        const event = this.data.entry;
+        await super.onEntryItemDoubleClick(mouseEvent);
+        const entry = this.data.entry;
 
-        if (event) {
-            this.reconfigureDatePickers(event);
+        if (entry) {
+            this.reconfigureDatePickers(entry);
             const headerInfo = this.querySelector('.header-info');
-            headerInfo.dataset.evid = event.evid;
+            headerInfo.dataset.eid = entry.eid;
 
             const entryType = this.querySelector('#entryType');
-            const calendarType = this.querySelector('#calendarType');
-            const relevance = this.querySelector('#relevance');
+            const entryEvents = this.querySelector('#entryEvents');
 
-            entryType.value = Number(event.etid);
-            calendarType.value = Number(event.clid);
-            relevance.value = Number(event.relevance);
-            tinymce.get('flavorEditor').setContent(event.flavor);
+            entryType.value = Number(entry.etid);
 
-            // Se o evento tem uma entrada vinculada, carregue os dados da Entrada.
-            await this._toggleEntryInfo(event.source);
+            tinymce.get('flavorEditor').setContent(entry.flavor);
+            tinymce.get('mainEditor').setContent(entry.htmlString);
 
+            this.#events = {};
+            const events = uniforge.doc.events.filter(e => {
+                return e.source === entry.eid;
+            });
+
+            events.forEach(event => {
+                event._value = event.evid;
+                event._icon = '<i class="fa-solid fa-calendar-days"></i>';
+                event.dbAction = '-';
+
+                this.#events[event.evid] = event;
+            });
+            this._generateEventListItems();
         } else {
             this.msgBox.showWarning('Erro ao carregar o evento.');
         }
     }
 
     /**
-   * Alterna a visibilidade das informações da Entrada vinculada.
-   * @protected
-   */
-    async _toggleEntryInfo(eid) {
-        // Selecionar o grupo de Eventos.
-        const entryInfo = this.querySelector('#entryInfo');
-        // Selecionar o botão de Gerar Evento.
-        const entryButton = this.querySelector('#entryButton');
+     * Habilita/desabilita e limpa a seleção dos botões de seção do formulário.
+     * @protected
+     * 
+     * @param {boolean} [disabled=false] - Se true, desabilita todos os botões de seção.
+     * @param {boolean} [clearSelection=true] - Se true, limpa a seleção dos botões de seção.
+     */
+    _toggleSectionButtons(disabled = false, clearSelection = true) {
+        const sectionButtons = this.querySelectorAll('#sections .tabs-options button');
+        sectionButtons.forEach(button => {
+            button.classList.remove('selected');
+            button.disabled = disabled;
+        });
 
-        const entry = uniforge.doc.entries.get(eid);
-
-        // Se a Entrada (Source) existe, carregue os dados da entrada.
-        if (entry) {
-            entryInfo.dataset.eid = entry.eid;
-
-            await this._loadEntryData(entry);
-
-            this.hasEntry = true;
-
-            // Alterar a visibilidade do botão de Gerar Evento.
-            entryButton.classList.add('hidden');
-
-            // Alternar a visibilidade das informações do Evento.
-            entryInfo.classList.remove('hidden');
-        } else {
-            this.hasEntry = false;
-
-            // Alterar a visibilidade do botão de Gerar Evento.
-            entryButton.classList.remove('hidden');
-
-            // Alternar a visibilidade das informações do Evento.
-            entryInfo.classList.add('hidden');
+        const defaultButton = sectionButtons[0];
+        if (defaultButton) {
+            this._activateTab(defaultButton.dataset.tab);
+            if (!clearSelection) {
+                defaultButton.classList.add('selected');
+            }
         }
     }
 
-    async _loadEntryData(entry) {
-        const imageDisplayer = this.querySelector('#imageDisplayer');
-        imageDisplayer.classList.remove('hidden');
+    /**
+     * Ativa a aba especificada pelo ID do tab.
+     * 
+     * Remove a classe 'active' de todas as abas e adiciona a classe 'active' à aba correspondente ao tabId fornecido.
+     * 
+     * @param {string} tabId - O ID da aba a ser ativada.
+     */
+    _activateTab(tabId) {
+        const tabs = this.querySelectorAll('#sections .tab-content');
+        tabs.forEach(tab => {
+            tab.classList.remove('active');
+        });
 
-        const displayedImage = this.querySelector('#displayedImage');
-
-        const imageUrl = await uniforge.utils.blobToImage(entry.img, entry.ext);
-
-        displayedImage.dataset.ext = entry.ext;
-        displayedImage.src = imageUrl;
-        displayedImage.classList.remove('empty');        
-
-        const mainEditor = tinymce.get('mainEditor');
-        mainEditor.setContent(entry.htmlString);
-
-        const entryTitle = this.querySelector('#entryTitle');
-        entryTitle.textContent = entry.title;
+        const tab = this.querySelector(`#${tabId}`);
+        if(tab) tab.classList.add('active');
     }
 
-    async _clearEntryData() {
-        // Selecionar o grupo de Eventos.
-        const entryInfo = this.querySelector('#entryInfo');
-        delete entryInfo.dataset.eid;
+    /**
+     * Gera os itens da lista de eventos associados a uma Entrada.
+     * @protected
+     */
+    _generateEventListItems() {
+        const entryEvents = this.querySelector('#entryEvents');
+        // Limpa a lista de Eventos.
+        entryEvents.innerHTML = '';
 
-        const imageDisplayer = this.querySelector('#imageDisplayer');
-        imageDisplayer.classList.add('hidden');
+        // Obtem os dados dos Eventos.
+        const eventsData = Object.values(this.#events).filter(e => e.dbAction !== 'd');
 
-        this.clearImage();
+        // Gera os itens da lista de Eventos.
+        eventsData.forEach(event => {
+            // Gera o item de Evento.
+            const item = uniforge.parser.generateItemList(event, { withDelete: true });
 
-        tinymce.get('mainEditor').setContent('');
+            // Adiciona o evento de clique no item de Evento.
+            item.addEventListener('click', (event) => { this.onEventItemClick(event); });
+
+            // Adiciona o evento de clique no botão de exclusão.
+            const deleteButton = item.querySelector('.delete-button');
+            deleteButton.addEventListener('click', (event) => { this.onDeleteEventClick(event); });
+
+            // Adiciona o item na lista de Eventos.
+            entryEvents.appendChild(item);
+        });
+
+        // Limpa a aba de Eventos, após qualquer alteração da Lista de Eventos.
+        this.clearEventTab();
     }
 }

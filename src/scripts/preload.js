@@ -14,6 +14,11 @@ contextBridge.exposeInMainWorld('sql', {
 });
 console.log('UniForge | Configurando pré-carregamentos de SQL.');
 
+contextBridge.exposeInMainWorld('app', {
+  refresh: () => ipcRenderer.invoke('window-refresh'),
+});
+console.log('UniForge | Configurando pré-carregamentos de Aplicação.');
+
 /*
 contextBridge.exposeInMainWorld('templates', {
   get: async (fileName, id) => ipcRenderer.invoke('get-template', fileName, id)

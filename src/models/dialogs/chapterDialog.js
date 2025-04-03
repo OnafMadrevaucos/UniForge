@@ -3,7 +3,7 @@ import BaseDialog from "./baseDialog.js";
 export default class ChapterDialog extends BaseDialog {
   constructor(dialogData = {}, options = {}) {
     super(dialogData, uniforge.utils.mergeObjects(options, {
-      height: '375px',
+      height: '500px',
       width: '350px'
     }));
 
@@ -15,18 +15,16 @@ export default class ChapterDialog extends BaseDialog {
    * @inheritdoc
    * @async
    */
-  async _prepare() {
-    this.data.tomes = uniforge.doc.tomes.toObject(); 
+  async prepareData() {
+    this.data.tomes = uniforge.doc.tomes.toObject();
     this.data.chapterTypes = uniforge.doc.chapterTypes.toObject();
 
     Object.keys(this.data.tomes).forEach((key) => {
       const item = this.data.tomes[key];
-      item._label = item.title.capitalize();
-    });   
-    
-    this.data.icons = await uniforge.utils.extractFontAwesomeIcons();
+      item._label = item.label;
+    });
 
-    await super._prepare(); // Gera a estrutura base do diálogo.
+    this.data.icons = await uniforge.utils.getFontAwesomeIcons();
   }
 
   /**
@@ -40,7 +38,7 @@ export default class ChapterDialog extends BaseDialog {
     const searchInput = this.querySelector('#iconSearch');
     const tomeSelect = this.querySelector('#tomeSelect');
     const typeSelect = this.querySelector('#typeSelect');
-    const iconItems = this.querySelectorAll('.icon-item');    
+    const iconItems = this.querySelectorAll('.icon-item');
 
     titleInput.addEventListener('input', (event) => { this._onChangeTitle(event); });
     tomeSelect.addEventListener('change', (event) => { this._onChangeTome(event); });
@@ -109,26 +107,6 @@ export default class ChapterDialog extends BaseDialog {
   }
 
   static async configDialog() {
-    function createSubject(event) {
-      const button = event.target;      
-      const tome = event.target.dataset.tome;      
-      const title = event.target.dataset.title;
-      const icon = event.target.dataset.icon;
-      const type = event.target.dataset.type;      
-
-      if (!title || !tome || !icon) {
-        uniforge.msgBox.showWarning('Por favor, preencha todos os campos.');
-        return null;
-      }
-
-      button.dataset.canClose = 'true';
-      return {
-        tome,
-        title,  
-        icon,      
-        type        
-      };
-    }
     return new Promise((resolve, reject) => {
       const dialogData = {
         title: 'Criar Capítulo',
@@ -136,13 +114,48 @@ export default class ChapterDialog extends BaseDialog {
           cancel: {
             label: "Cancelar",
             icon: "fas fa-xmark",
-            callback: () => resolve(null)
+            callback: () => resolve(false)
           },
           create: {
             label: "Criar",
             icon: "fas fa-link",
-            callback: (event) => { resolve(createSubject(event)); },
-            canClose: 'false'
+            callback: (dialog, event) => {
+              
+              const titleInput = dialog.querySelector('#titleInput');
+              const tomeSelect = dialog.querySelector('#tomeSelect');              
+              const typeSelect = dialog.querySelector('#typeSelect');
+              const iconItem = dialog.querySelector('.icon-item.selected'); 
+              
+              if(titleInput.value.isEmpty()) {
+                uniforge.msgBox.showWarning('Por favor, informe um Título válido.');
+                return false;
+              }
+
+              if(tomeSelect.value === '0') {
+                uniforge.msgBox.showWarning('Por favor, informe um Tomo válido.');
+                return false;
+              }
+
+              if(typeSelect.value === '0') {
+                uniforge.msgBox.showWarning('Por favor, informe um Tipo válido.');
+                return false;
+              }
+
+              if (!iconItem) {
+                uniforge.msgBox.showWarning('Por favor, informe um Ícone válido.');
+                return false;
+              }
+
+              const chapter = {
+                tome: tomeSelect.value,
+                title: titleInput.value,
+                icon: iconItem.dataset.value,
+                type: typeSelect.value
+              };
+
+              resolve(chapter);
+              return true
+            }
           }
         },
         abort: () => resolve(null)

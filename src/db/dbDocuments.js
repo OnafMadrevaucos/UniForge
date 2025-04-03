@@ -13,7 +13,8 @@ export default class DBDocuments {
      * @param {Array<Object>} data.entries - Dados da tabela entry.
      * @param {Array<Object>} data.events - Dados da tabela event.
      * @param {Array<Object>} data.timelines - Dados da tabela timeline.
-     * @param {Array<Object>} data.lineages - Dados da tabela lineageTrees.
+     * @param {Array<Object>} data.lineages - Dados da tabela lineageTree.
+     * @param {Array<Object>} data.lineageTypes - Dados da tabela lineageType.
      * @param {Array<Object>} data.calendars - Dados da tabela calendars.
      * @param {Array<Object>} data.calendarsMonths - Dados da tabela calendarsMonths.
      * @param {Array<Object>} data.calendarsDays - Dados da tabela calendarsDays.
@@ -25,12 +26,12 @@ export default class DBDocuments {
      * @param {Array<Object>} data.relevances - Dados da tabela relevance.
      * @param {Array<Object>} data.settings - Dados da tabela settings.
      */
-    constructor(data) {    
+    constructor(data) {
         this.tomes = this.createSimpleSet(data.tomes);
         this.chapters = this.createChapterSet(data.chapters, data.sections);
         this.sections = this.createSectionSet(data.sections, data.entries, data.events, data.lineages); 
         this.entries = this.createEntrySet(data.entries, data.events, data.lineages);
-        this.lineages = this.createSimpleSet(data.lineages);
+        this.lineages = this.createLineageSet(data.lineages, data.lineageTypes);        
         this.events = this.createEventSet(data.events);
         this.timelines = this.createTimelineSet(data.timelines, data.events, data._timelineEvents);
         this.calendars = this.createCalendarsMergedSet(data.calendars, data.calendarsMonths, data.calendarsDays, data.calendarsDaysInMonths); 
@@ -51,6 +52,7 @@ export default class DBDocuments {
         data.entries = await uniforge.db.getAllEntries();
         data.events = await uniforge.db.getAllEvents();
         data.lineages = await uniforge.db.getAllLineageTrees();
+        data.lineageTypes = await uniforge.db.getAllLineageTypes();
         data.timelines = await uniforge.db.getAllTimelines();
         data._timelineEvents = await uniforge.db.getAllTimelineEvents();
         data.calendars = await uniforge.db.getAllCalendars();
@@ -65,7 +67,7 @@ export default class DBDocuments {
 
         return data;
     }
-
+    
     /**
      * Cria um conjunto de SubjectTypes, contendo categorias, entradas e eventos relacionados.
      *
@@ -118,6 +120,32 @@ export default class DBDocuments {
         });
 
         return timelineSet;
+    }
+
+    /**
+     * Cria um conjunto de Linhagens, contendo tipos de Linhagem relacionados.
+     *
+     * @param {Array<Object>} lineages - Dados da tabela lineageTree.
+     * @param {Array<Object>} types - Dados da tabela lineageType.
+     * @returns {Set} Conjunto de Linhagens.
+     */
+    createLineageSet(lineages, types) {
+        const lineageSet = new Set();
+
+        lineages.forEach((lineage) => {
+            const lineageTypes = types.filter(t => t.ltid === lineage.ltid);
+            // Filtra os tipos associados à linhagem atual e adiciona os campos _value e _label.
+            const typesSet = new Set(lineageTypes.map((type) => ({
+                ...type,
+                _value: type.tag,
+                _label: type.label
+            })));
+
+             // Adiciona a linhagem ao conjunto, incluindo seus tipos.
+            lineageSet.add({ ...lineage, types: typesSet});
+        });
+
+        return lineageSet;
     }
 
     /**
@@ -258,11 +286,11 @@ export default class DBDocuments {
                     });
 
                 // Filtra os eventos que possuem o ID correspondente à seção atual
-                lineageSet
+                lineages
                  .filter((lineage) => lineage.sid === section.sid)
                  .forEach((lineage) => {
                      // Adiciona o evento ao conjunto
-                     lineageSet.push({ _id: lineage.ltid });
+                     lineageSet.push({ _id: lineage.ltid, _label: lineage.title });
                     });
 
                 // Adiciona a categoria ao conjunto, incluindo suas entradas

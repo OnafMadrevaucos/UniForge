@@ -262,6 +262,9 @@ export default class BaseForm {
     try {
       if (this.configured) {
         this.ui.overlay.classList.remove('hidden');
+        
+        uniforge.form = this;
+        uniforge.state.save();
       }
     } catch (error) {
       this.msgBox.showError(error.message);
@@ -274,6 +277,9 @@ export default class BaseForm {
   hideForm() {
     this.clear();
     this.ui.overlay.classList.add('hidden');
+    
+    uniforge.form = null;
+    uniforge.state.save();
   }    
   /* ---------------------------------------------------------------------------------------------------------------- */
   // CONFIGURAÇÃO

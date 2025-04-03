@@ -12,13 +12,14 @@
 
     <link rel="stylesheet" href="../node_modules/leaflet/dist/leaflet.css" />
     <link rel="stylesheet" href="../node_modules/leaflet-draw/dist/leaflet.draw.css" />
-    <script src="../node_modules/leaflet/dist/leaflet.js"></script>
+    <script src="../node_modules/leaflet/dist/leaflet.js"></script>    
+
+    <script src="../node_modules/gojs/go.js"></script>  
 
     <link rel="stylesheet" href="css/styles.css" />
     <link href="../node_modules/@fortawesome/fontawesome-free/css/all.min.css" rel="stylesheet">
     <script src="../node_modules/tinymce/tinymce.min.js"></script>
-
-    <script defer src="scripts/uniforge-esm.js"></script>
+    
 </head>
 
 <body>
@@ -36,7 +37,7 @@
                 <button id="yearBack" class="arrow" data-tooltip="Voltar 1 Ano"><i
                         class="fas fa-chevron-left"></i></button>
                 <div class="year-container" data-tooltip="Ano Atual">
-                    <input id="currentYear" type="text" class="data" value="" />
+                    <input id="currentYear" type="text" class="data" value="1" />
                     <span id="timeEra"></span>
                 </div>
                 <button id="yearForward" class="arrow" data-tooltip="Avançar 1 Ano"><i
@@ -48,52 +49,9 @@
         <div id="toggleTab" class="toggle-tab flexrow visible">
             <i class="fas fa-caret-down"></i>
         </div>
-    </div>
-    <div id="menuSidebar">
-        <div class="menu-title">
-            <span class="tab-title">UniForge</span>
-            <div class="tab-icon">
-                <div class="icon-border">
-                    <div class="icon-background">
-                        <img src="images/icons/icone.svg" />
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="tab" data-target="atlas">
-            <span class="tab-text"><i class="fas fa-compass-drafting"></i> Atlas</span>
-            <span class="tab-icon"><i class="fas fa-compass-drafting"></i></span>
-        </div>
-        <div class="tab" data-target="lineage">
-            <span class="tab-text"><i class="fas fa-people-group"></i> Linhagem</span>
-            <span class="tab-icon"><i class="fas fa-people-group"></i></span>
-        </div>
-        <div class="tab" data-target="history">
-            <span class="tab-text"><i class="fas fa-book"></i> História</span>
-            <span class="tab-icon"><i class="fas fa-book"></i></span>
-        </div>
-        <div class="tab" data-target="nature">
-            <span class="tab-text"><i class="fas fa-tree"></i> Natureza</span>
-            <span class="tab-icon"><i class="fas fa-tree"></i></span>
-        </div>
-        <div class="tab" data-target="politics">
-            <span class="tab-text"><i class="fas fa-crown"></i> Política</span>
-            <span class="tab-icon"><i class="fas fa-crown"></i></span>
-        </div>
-        <div class="tab" data-target="religion">
-            <span class="tab-text"><i class="fas fa-landmark"></i> Religião</span>
-            <span class="tab-icon"><i class="fas fa-landmark"></i></span>
-        </div>
-
-        <div class="tab base-item settings-item" data-target="settings">
-            <span class="tab-text"><i class="fas fa-sliders"></i> Configurações</span>
-            <span class="tab-icon"><i class="fas fa-sliders"></i></span>
-        </div>
-        <div class="tab base-item logout-item" data-target="close-menu">
-            <span class="tab-text"><i class="fas fa-right-to-bracket"></i> Sair</span>
-            <span class="tab-icon"><i class="fas fa-right-to-bracket"></i></span>
-        </div>
-    </div>
+    </div>    
+    <sidetabs id="menuSidebar" source="tomes"></sidetabs>
+    
 
     <!-- Mensagem de comunicação com o Usuário -->
     <div id="msgContainer" class="msg-container"></div>

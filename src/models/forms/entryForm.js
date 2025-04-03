@@ -340,35 +340,7 @@ export default class EntryForm extends SidebarForm {
     });
 
     this.closeDialog();
-  }  
-
-  /**
-   * Configura o combo de Assuntos.
-   * @param {HTMLElement} form - O formulário HTML principal.
-   * @async
-   */
-  async configureSubjectSelect(form) {
-    // Carrega as opções de Tipos de Entradas registrados
-    const subjectType = this.querySelector('#subjectType');
-    for (const data of Object.values(this.subjectTypes)) {
-      subjectType.appendChild(this._newSubjectOption(data));
-    }
-  }
-
-  /**
- * Configura o combo de Importância de Evento.
- * @param {HTMLElement} form - O formulário HTML principal.
- * @async
- */
-  async configureImportanceSelect(form) {
-    const importances = this.data.importances;
-
-    // Carrega as opções de Importâncias registradas
-    const importance = this.querySelector('#importance');
-    for (const data of Object.values(importances)) {
-      importance.appendChild(this._newImportanceOption(data));
-    }
-  }
+  } 
 
   /**
    * Inicializa e configura o editor TinyMCE.
@@ -387,7 +359,7 @@ export default class EntryForm extends SidebarForm {
       },
       text_patterns: [
         { start: '@[', end: ']', format: 'bold' },
-        { start: '{', end: '}', format: 'italic' }
+        { start: '@{', end: '}', format: 'italic' }
         //{ start: '##', format: 'blockquote', trigger: 'space' }
       ],
       setup: (editor) => { this._setupTinyMCE(editor); }
@@ -636,7 +608,7 @@ export default class EntryForm extends SidebarForm {
         const title = (this.isUpdate ? 'Atualizar' : 'Registrar');
         let message = '';
 
-        if (this.isSettings) message = (this.isUpdate ? 'Deseja atualizar a categoria?' : 'Deseja salvar a categoria?');
+        if (this.isSettings) message = (this.isUpdate ? 'Deseja atualizar a seção?' : 'Deseja salvar a seção?');
         else message = (this.isUpdate ? 'Deseja atualizar a entrada?' : 'Deseja salvar a entrada?');
 
         if (await Dialogs.confirm(title, message)) {
@@ -702,7 +674,7 @@ export default class EntryForm extends SidebarForm {
 
     const item = event.target.closest('.entry-item');
     const itemId = item.dataset.id;
-    const itemType = options.type ?? 'entries';
+    const itemType = options.dataSource ?? 'entries';
     const entry = uniforge.doc[itemType].get(itemId);
 
     if (entry) {
@@ -714,7 +686,7 @@ export default class EntryForm extends SidebarForm {
       const titleInput = this.querySelector('#titleInput');
 
       const draftSwitch = this.querySelector('#isDraftSwitch');
-      const draftCheckbox = draftSwitch.querySelector('#checkbox');
+      const draftCheckbox = draftSwitch.querySelector('#checkbox');     
 
       titleInput.value = entry.title;
       draftCheckbox.checked = entry.isDraft;

@@ -14,12 +14,10 @@ export default class SettingsForm extends EntryForm {
       * Constrói uma instância da classe derivada, inicializando as propriedades e configurando o conteúdo.
       * @class
       * @extends BaseForm
-      * 
-      * @param {HTMLElement} title   - O título do formulário.
       */
-    constructor(title) {
+    constructor() {
         // Chama o construtor da classe pai com o parâmetro overlay.
-        super(title);
+        super('Configurações');
 
         this.template = 'settingsForm'; // Define o template do formulário. 
 
@@ -121,7 +119,7 @@ export default class SettingsForm extends EntryForm {
    * Configura o menu de opções do formulário.
    */
     configureOptions() {
-        const options = this.querySelector('.settings-options');
+        const options = this.querySelector('.tabs-options');
         const buttons = options.querySelectorAll('button');
 
         buttons.forEach(button => {
@@ -230,7 +228,7 @@ export default class SettingsForm extends EntryForm {
         const validate = uniforge.db.validateSection(data);
         if (validate !== '') {
             this.msgBox.showWarning(validate);
-            return;
+            return false;
         }
 
         if (isUpdate) {
@@ -240,8 +238,10 @@ export default class SettingsForm extends EntryForm {
         }
         else {
             await uniforge.db.addSection(data);
-            this.msgBox.showInfo('Seção criada com sucesso.');
+            this.msgBox.showInfo('Seção criada com sucesso.');            
         }
+        
+        return true;
     }
     /**
     * Trata o evento de criação de uma nova entrada.
@@ -317,7 +317,7 @@ export default class SettingsForm extends EntryForm {
    */
     onOptionButtonClick(event) {
         event.stopPropagation();
-        const options = this.querySelector('.settings-options');
+        const options = this.querySelector('.tabs-options');
         const buttons = options.querySelectorAll('button');
         buttons.forEach(button => {
             let panel = this.querySelector(`#${button.dataset.panel}`);
@@ -399,8 +399,10 @@ export default class SettingsForm extends EntryForm {
         if (confirmed) {
             const commited = await this.db.resetDatabase();
             if (commited) {
-                this.msgBox.showInfo(`Toda estrutura do banco de dados foi recriada com sucesso.`);
-                await this.refresh();
+                console.log(`Toda estrutura do banco de dados foi recriada com sucesso.`);
+
+                uniforge.state.update(['keep', true]);
+                uniforge.app.refresh(); // Recarrega a aplicação.
             }
         }
     }

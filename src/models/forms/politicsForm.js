@@ -1,6 +1,4 @@
-import FamilyManager from "../../scripts/managers/familyManger.js";
 import DatePicker  from "../datePicker.js";
-import FamilyDialog from "../dialogs/familyDialog.js";
 import EntryForm from "./entryForm.js";
 
 /**
@@ -14,18 +12,14 @@ export default class PoliticsForm extends EntryForm {
       * Constrói uma instância da classe derivada, inicializando as propriedades e configurando o conteúdo.
       * @class
       * @extends EntryForm
-      * 
-      * @param {HTMLElement} title   - O título do formulário.
       */
-    constructor(title) {
+    constructor() {
         // Chama o construtor da classe pai com o parâmetro overlay.
-        super(title);
+        super('Política');
 
         this.template = 'politicsForm'; // Define o template do formulário. 
 
-        this.type = 'politics'; // Define o tipo do formulário.   
-        
-        this.manager = new FamilyManager(this); // Define o gerenciador de árvores genealógicas.
+        this.type = 'politics'; // Define o tipo do formulário. 
 
         /**
          * @property {Object} datePickers - Um objeto que gerencia os seletores de data para registro de entradas.
@@ -209,10 +203,5 @@ export default class PoliticsForm extends EntryForm {
         } else {
             this.msgBox.showWarning('Erro ao carregar a entrada.');
         }
-    }    
-
-    onAddFamilyClick(event) {
-        event.stopPropagation();
-        FamilyDialog.configDialog();
-    }
+    } 
 }

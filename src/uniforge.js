@@ -1,11 +1,3 @@
-import AtlasForm from "./models/forms/atlasForm.js";
-import LineageForm from "./models/forms/lineageForm.js";
-import HistoryForm from "./models/forms/historyForm.js";
-import PoliticsForm from "./models/forms/politicsForm.js";
-import SettingsForm from "./models/forms/settingsForm.js";
-import LibraryForm from "./models/forms/libraryForm.js";
-import TimelineForm from "./models/forms/timelineForm.js";
-
 import MsgBox from "./models/msgBox.js";
 
 import { LinkTooltip } from "./scripts/linkTooltip.js";
@@ -15,30 +7,22 @@ import { registerHook, triggerHook } from "./scripts/hooks.js";
 import DBManager from "./db/dbManager.js";
 import DBDocuments from "./db/dbDocuments.js";
 
-import FamilyManager from "./scripts/managers/familyManger.js";
+import * as esm from "./common/uniforge-esm.mjs";
+
 // Adiciona as propriedades restantes ao objeto uniforge.
 uniforge.utils.mergeObjects(uniforge, {
+    /**
+     * Constantes usadas pela aplicação.
+    */
+    constants: {
+        leaflet: uniforge.leaflet.core.constants
+    },
 
     /**
      * Instância do gerenciador de banco de dados.
      * @type {DBManager}
      */
     db: new DBManager(),
-
-    /**
-     * Instância do mapa usando o Leaflet com configurações específicas.
-     * 
-     * @type {L.Map}
-     */
-    map: L.map('map', {
-        crs: L.CRS.Simple, // Usando o sistema de coordenadas simples do Leaflet para imagens personalizadas
-        center: [0.0, 0.0],
-        maxZoom: 3,
-        minZoom: -2,
-        zoomSnap: 0.1,
-        zoomControl: false, // Desativa o controle de zoom padrão para personalizá-lo
-        maxBoundsViscosity: 1.0
-    }),
 
     /**
      * Opções para editores Tiny MCE. 
@@ -74,19 +58,19 @@ uniforge.utils.mergeObjects(uniforge, {
             body_class: 'non-editable',
             license_key: 'gpl',
             plugins: ['anchor', 'autolink', 'codesample', 'link', 'lists', 'searchreplace', 'table', 'visualblocks', 'image'],
-            toolbar: false,            
+            toolbar: false,
             block_formats: 'Heading 1=h1; Heading 2=h2; Heading 3=h3; Paragraph=p;',
             images_file_types: 'jpg,jpeg,png,svg,webp',
             image_caption: true,
             block_unsupported_drop: false,
-            height: '100%',            
+            height: '100%',
             menubar: false,
             resize: false,
             statusbar: false,
             skin: 'oxide-dark',
             content_css: './css/styles.css',
             readonly: true,
-            disable_focus: true            
+            disable_focus: true
         },
         simple: {
             license_key: 'gpl',
@@ -110,11 +94,19 @@ uniforge.utils.mergeObjects(uniforge, {
     },
 
     /**
-     * Grupo de elementos desenhados no mapa.
-     * 
-     * @type {L.FeatureGroup}
-     */
-    drawnItems: new L.FeatureGroup(),
+    * Instância do mapa usando o Leaflet com configurações específicas.
+    * 
+    * @type {L.Map}
+    */
+    map: uniforge.leaflet.core.map,    
+
+    /**
+    * Grupo de elementos desenhados no mapa.
+    * 
+    * @type {L.FeatureGroup}
+    * 
+    */
+    mapElements: uniforge.leaflet.draw.mapElements,
 
     /**
      * Controles relacionados à interface do usuário.
@@ -127,9 +119,11 @@ uniforge.utils.mergeObjects(uniforge, {
      * @property {LinkTooltip} tooltip - Instância do gerenciador de tooltips.
      */
     ctrls: {
-        main: null,
-        draw: null,
-        grid: null,
+        leaflet: {
+            main: null,
+            draw: null,
+            grid: null
+        },
         msgBox: new MsgBox(6),
         tooltip: new LinkTooltip()
     },
@@ -141,15 +135,51 @@ uniforge.utils.mergeObjects(uniforge, {
      */
     navQueue: new NavQueue(), // Fila de controle de navegação   
 
-    /**
-     * Função de criação de HTMLElement.
-     * 
-     * @type {Function}
-     */
-    createElement: createElement
+    lineageEditor: {
+        props: {
+            nameProperty: 'name',
+            genderProperty: 'gender',
+            statusProperty: 'status',
+            countProperty: 'count'
+        },
+        theme: {
+            colors: {
+                femaleBadgeBackground: '#FFCBEA',
+                maleBadgeBackground: '#A2DAFF',
+                femaleBadgeText: '#7A005E',
+                maleBadgeText: '#001C76',
+                kingQueenBorder: '#FEBA00',
+                princePrincessBorder: '#679DDA',
+                civilianBorder: '#58ADA7',
+                personText: '#383838',
+                personNodeBackground: '#FFFFFF',
+                selectionStroke: '#485670',
+                counterBackground: '#485670',
+                counterBorder: '#FFFFFF',
+                counterText: '#FFFFFF',
+                link: '#686E76'
+            },
+            fonts: {
+                badgeFont: 'bold 12px Poppins',
+                birthDeathFont: '14px Poppins',
+                nameFont: '500 18px Poppins',
+                counterFont: '14px Poppins'
+            }
+        },
+        constants: {
+            STROKE_WIDTH: 3,
+            CORNER_ROUNDNESS: 12,
+            IMAGE_TOP_MARGIN: 20,
+            IMAGE_DIAMETER: 40
+        }
+    }
 });
 
+// Realiza as configurações iniciais da aplicação ao carregar o conteúdo do DOM.
 document.addEventListener('DOMContentLoaded', async () => {
+    // Configura o estado inicial da aplicação, se ele ainda não foi criado.
+    uniforge.state.init();
+
     // Atalho para o Controle de Mensagens para o Usuário
     uniforge.msgBox = uniforge.ctrls.msgBox;
     // Atalho para o Controle de Tooltips de Entradas
@@ -157,69 +187,35 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     uniforge.html.classList.add('uniforge');
 
-    await configureData();
-
+    await configureData();  
+    
     configureLeaflet();
 
     configureTopBar();
 
     configureForms();
 
-    configureHooks();    
+    configureHooks();
+
+    checkState();
 });
 
-function testFamilyScript() {
-    const family = new FamilyManager(); 
-    
-    
-    const lucas = {
-        givenName: 'Lucas',
-        title: 'Sr',
-        surnameNow: 'Carvalho Macedo',
-        surnameAtBirth: 'Rodrigues Macedo',
-        gender: 'm',
-        birthDate: '19921222'
-    };
-    const idLucas = family.newIndividual(lucas);
+// Limpa o armazenamento local ao fechar a janela.
+window.addEventListener("beforeunload", () => {
+    const json = localStorage.getItem('uniforge');
+    const state = JSON.parse(json);
+    if (!state.keep) uniforge.state.clear();
+});
 
-    const jessica = {
-        givenName: 'Jéssica Cristina',
-        title: 'Sra',
-        surnameAtBirth: 'Carvalho Silva',
-        gender: 'f',
-        birthDate: '19910725'
-    };
-    const idJessica = family.newIndividual(jessica);
 
-    const emilly = {
-        givenName: 'Emilly Suzane',
-        surnameNow: 'Silva Lima',
-        gender: 'f',
-        birthDate: '20100428',
-        mother: idJessica,
-        birthOrder: '1'
-    };
-    const idEmilly = family.newIndividual(emilly);
-
-    const branch = {
-        id1: idLucas,
-        id2: idJessica,
-        partners: '2',
-        type: 'm',
-        startDate: '20250510'
-    }
-    family.newBranch(branch);
-
-    const script = 'iR3QK8\tpLucas\tTSr\tlCarvalho Macedo\tqRodrigues Macedo\tgm\tb19921222\n'+
-                   'iDKP41\tpJéssica Cristina\tTSra\tlCarvalho Silva\tgf\tb19910725\n'+
-                   'iPWAN7\tpEmilly Suzane\tlSilva Lima\tgf\tb20100428\tmDKP41\tO1\n'+
-                   'pR3QK8 DKP41\te2\tgm\tb20250510\n';
-
-    console.log(script);
-    console.log(family.Tree);
-    console.log(family.ToFamilyScript());
+/** 
+ * ------------------------------------------------------------------
+ * FUNÇÕES DE CHECAGEM
+ * ------------------------------------------------------------------
+ * */
+function checkState() {
+    const currentState = uniforge.state.current();
 }
-
 /** 
  * ------------------------------------------------------------------
  * FUNÇÕES DE CONFIGURAÇÕES 
@@ -239,12 +235,12 @@ function configureLeaflet() {
     const map = uniforge.map;
 
     // Cria a camada de armazenagem das Layers do Mapa
-    const drawnItems = uniforge.drawnItems;
+    const mapElements = uniforge.mapElements;
 
     // Calcula os limites de imagem com base na largura/altura
-    const bounds = [[0, 0], [uniforge.constants.VIEW_HEIGHT, uniforge.constants.VIEW_WIDTH]];
+    const bounds = [[0, 0], [uniforge.constants.leaflet.VIEW_HEIGHT, uniforge.constants.leaflet.VIEW_WIDTH]];
 
-    map.setMaxBounds(uniforge.constants.IMG_HEIGHT, uniforge.constants.IMG_WIDTH);
+    map.setMaxBounds(uniforge.constants.leaflet.IMG_HEIGHT, uniforge.constants.leaflet.IMG_WIDTH);
     // Ajusta a visualização inicial para se ajustar aos limites da imagem
     map.fitBounds(bounds);
 
@@ -265,7 +261,7 @@ function configureLeaflet() {
     // Adicione um evento para atualizar os limites ao redimensionar ou fazer zoom no mapa
     map.on('moveend', _checkMapVisibility);
     // Grupo para armazenar as camadas desenhadas  
-    map.addLayer(drawnItems);
+    map.addLayer(mapElements);
 
     // Cria os Menus de Controle do Mapa.
     _createControls();
@@ -277,7 +273,7 @@ function configureLeaflet() {
 
         layer.bindPopup(type);
 
-        drawnItems.addLayer(layer);
+        mapElements.addLayer(layer);
     });
 }
 // Configura os elementos da Topbar de Ferramentas
@@ -298,10 +294,17 @@ function calculateZoomForTileScaleSimple(desiredTileScale) {
 
 // Função que configura os diversos forms da aplicação.
 function configureForms() {
+    configureBody();
+
     activateMainListeners();
 
     configureMainForm();
     configureEntryForm();
+}
+function configureBody() {
+    const body = uniforge.html;
+    const preparedBody = uniforge.parser.parseHTML(body.innerHTML, {});
+    body.innerHTML = preparedBody;
 }
 function configureMainForm() {
     const mainForm = document.getElementById('formContainer');
@@ -404,158 +407,25 @@ function _createControls() {
     const map = uniforge.map;
 
     // Cria a camada de armazenagem das Layers do Mapa
-    const drawnItems = uniforge.drawnItems;
+    const mapElements = uniforge.mapElements;
 
     // Cria o Menu de Controle para manipulação do mapa.
-    const MainControl = L.Control.extend({
-        options: {
-            position: 'topright' // Posição no canto superior esquerdo
-        },
-
-        onAdd: function (map) {
-            const container = L.DomUtil.create('div', 'leaflet-bar flexcol');
-
-            const zoomInButton = L.DomUtil.create('button', 'leaflet-control-zoomIn');
-            zoomInButton.innerHTML = '<i class="fa-solid fa-plus"></i>';
-            L.DomEvent.on(zoomInButton, 'click', function () {
-                map.zoomIn();
-            });
-
-            const zoomOutButton = L.DomUtil.create('button', 'leaflet-control-zoomOut');
-            zoomOutButton.innerHTML = '<i class="fa-solid fa-minus"></i>';
-            L.DomEvent.on(zoomOutButton, 'click', function () {
-                map.zoomOut();
-            });
-
-            // Cria o botão para o controle
-            const layerOptionsButton = L.DomUtil.create('button', 'leaflet-control-color');
-            layerOptionsButton.innerHTML = '<i class="fa-solid fa-palette"></i>';
-            // Adiciona o evento de clique para alterar a cor do mapa
-            L.DomEvent.on(layerOptionsButton, 'click', function () {
-                renderForm('layerOptions')
-            });
-
-            container.appendChild(zoomInButton);
-            container.appendChild(zoomOutButton);
-            container.appendChild(layerOptionsButton);
-
-            return container;
-        }
-    });
+    const MainControl = L.Control.extend(uniforge.leaflet.core.MainControlConfig);
 
     uniforge.ctrls.main = new MainControl();
 
     // Cria o Menu de Desenho para manipulação dos Layers no mapa.
-    const CustomDrawControl = L.Control.Draw.extend({
-        options: {
-            position: 'topright'
-        },
-        edit: {
-            featureGroup: drawnItems
-        },
-
-        onAdd: function (map) {
-            const container = L.DomUtil.create('div', 'leaflet-bar flexcol');
-
-            // Cria um botão de Polígono
-            const polygonButton = L.DomUtil.create('button', 'leaflet-draw-button', container);
-            polygonButton.innerHTML = '<i class="fa-solid fa-border-top-left"></i>'; // Emoji de atualização ou seu ícone customizado
-
-            // Adiciona um evento de clique ao botão
-            L.DomEvent.on(polygonButton, 'click', function () {
-                // Ativar o desenho de polígono
-                const polygonDrawer = new L.Draw.Polygon(map);
-
-                // Evento para desativar após o clique inicial (impedindo início imediato)
-                map.on('click', function startDrawing() {
-                    polygonDrawer.enable();
-                    map.off('click', startDrawing); // Remover o evento para evitar múltiplos cliques
-                });
-            });
-
-            // Cria um botão de Polígono
-            const retangleButton = L.DomUtil.create('button', 'leaflet-draw-button', container);
-            retangleButton.innerHTML = '<i class="fa-solid fa-square"></i>'; // Emoji de atualização ou seu ícone customizado
-
-            // Adiciona um evento de clique ao botão
-            L.DomEvent.on(retangleButton, 'click', function () {
-                // Ativar o desenho de retângulo
-                const retangleDrawer = new L.Draw.Rectangle(map);
-                retangleDrawer.enable();
-
-                // Evento para desativar após o clique inicial (impedindo início imediato)
-                map.on('click', function startDrawing() {
-                    retangleDrawer.enable();
-                    map.off('click', startDrawing); // Remover o evento para evitar múltiplos cliques
-                });
-            });
-
-            // Cria um botão de Polígono
-            const circleButton = L.DomUtil.create('button', 'leaflet-draw-button', container);
-            circleButton.innerHTML = '<i class="fa-solid fa-circle"></i>'; // Emoji de atualização ou seu ícone customizado
-
-            // Adiciona um evento de clique ao botão
-            L.DomEvent.on(circleButton, 'click', function () {
-                // Ativar o desenho de círculo
-                const circleDrawer = new L.Draw.Circle(map);
-                // Evento para desativar após o clique inicial (impedindo início imediato)
-                map.on('click', function startDrawing() {
-                    circleDrawer.enable();
-                    map.off('click', startDrawing); // Remover o evento para evitar múltiplos cliques
-                });
-            });
-
-            // Cria um botão de Marcador
-            const markerButton = L.DomUtil.create('button', 'leaflet-draw-button', container);
-            markerButton.innerHTML = '<i class="fa-solid fa-location-pin"></i>'; // Emoji de atualização ou seu ícone customizado
-
-            // Adiciona um evento de clique ao botão
-            L.DomEvent.on(markerButton, 'click', function () {
-                // Ativar o desenho de marcador
-                const markerDrawer = new L.Draw.Marker(map);
-                map.on('click', function startDrawing() {
-                    markerDrawer.enable();
-                    map.off('click', startDrawing); // Remover o evento para evitar múltiplos cliques
-                });
-            });
-
-            return container;
-        }
-    });
+    const CustomDrawControl = L.Control.Draw.extend(uniforge.leaflet.draw.CustomDrawControlConfig);
+    CustomDrawControl.edit = {
+        featureGroup: uniforge.mapElements
+    };
 
     uniforge.ctrls.draw = new CustomDrawControl();
 
-    const TransparentGridLayer = L.GridLayer.extend({
-        createTile: function (coords) {
-            // Create a tile with transparency
-            const tile = document.createElement('canvas');
-            tile.width = uniforge.constants.TILE_SIZE; // Match your map's tile size
-            tile.height = uniforge.constants.TILE_SIZE;
-            const ctx = tile.getContext('2d');
-
-            // Draw grid lines
-            ctx.strokeStyle = 'rgba(212, 198, 148, 0.5)'; // Grid line color
-            ctx.lineWidth = 1;
-
-            // Draw horizontal and vertical grid lines
-            for (let i = 0; i <= uniforge.constants.TILE_SIZE; i += 36) { // Adjust the grid cell size (36px here)
-                ctx.beginPath();
-                ctx.moveTo(i, 0);
-                ctx.lineTo(i, uniforge.constants.TILE_SIZE);
-                ctx.stroke();
-
-                ctx.beginPath();
-                ctx.moveTo(0, i);
-                ctx.lineTo(uniforge.constants.TILE_SIZE, i);
-                ctx.stroke();
-            }
-
-            return tile;
-        },
-    });
+    const TransparentGridLayer = L.GridLayer.extend(uniforge.leaflet.grid.GridLayerConfig);
 
     uniforge.ctrls.grid = new TransparentGridLayer({
-        tileSize: uniforge.constants.TILE_SIZE,
+        tileSize: uniforge.constants.leaflet.TILE_SIZE,
         opacity: 0.8, // Adjust transparency
         zIndex: 1000, // Ensure the grid is above other layers
     });
@@ -578,25 +448,34 @@ function _createControls() {
  */
 
 async function renderForm(targetId, showAfter = true) {
-    const formOverlay = document.getElementById('formOverlay');
-    if (!formOverlay) {
-        console.error('O elemento de overlay não foi encontrado.');
-        return;
-    }    
-
     try {
-        triggerHook('beforeRender');
+        await triggerHook('beforeRender');
 
         const form = _loadTemplate(targetId);
-        if (!form) {
-            uniforge.msgBox.showError(`O template para o formulário '${targetId}' não foi encontrado.`);
-            return;
-        }
+        if (!form)
+            throw new Error(`O template para o formulário '${targetId}' não foi encontrado.`);
 
-        formOverlay.classList.remove('hidden');
+        if (showAfter) await form.showForm(true);
+    } catch (error) {
+        uniforge.msgBox.showError(error.message);
+    }
+}
+/**
+ * Renderiza um formulário baseado em um ID de template
+ * e o exibe na tela.
+ *
+ * @param {string} targetId             - O ID do formulário a ser renderizado.
+ * @param {boolean} [showAfter=true]    - Indica se o formulário deve ser exibido imediatamente.
+ * @returns {Promise<void>}             - Uma promessa que resolve quando o formulário for renderizado e exibido.
+ * @throws {Error}                      - Se ocorrer um erro ao renderizar o formulário.
+ */
 
-        uniforge.form = form;
-        if (showAfter) await uniforge.form.showForm(true);
+async function recoverForm(form) {
+    try {
+        await triggerHook('beforeRender');
+        if (!form) throw new Error(`O formulário '${form}' não foi encontrado.`);
+
+        await form.showForm(true);
     } catch (error) {
         uniforge.msgBox.showError(error.message);
     }
@@ -605,37 +484,11 @@ async function renderForm(targetId, showAfter = true) {
 // JavaScript to load partials
 function _loadTemplate(id) {
     try {
-        let form = null;
-
-        switch (id) {
-            case 'atlas': {
-                form = new AtlasForm('Atlas');
-            } break;
-            case 'lineage': {
-                form = new LineageForm('Linhagem');
-            } break;
-            case 'history': {
-                form = new HistoryForm('História');
-            } break;
-            case 'politics': {
-                form = new PoliticsForm('Política');
-            } break;
-            case 'library': {
-                form = new LibraryForm('Biblioteca');
-            } break;
-            case 'timeline': {
-                form = new TimelineForm('Linha do Tempo');
-            } break;
-            case 'settings': {
-                form = new SettingsForm('Configurações');
-            } break;
-            default: break;
-        }
-
+        // Verifica o ID do template e carrega o formulário correspondente.
+        const form = new uniforge.forms[id]();
         return form;
     } catch (error) {
-        console.error('Ocorreu um erro:', error);
-        return null;
+        throw new Error(`O formulário do identificador '${id}' não foi carregado corretamente. Detalhes: ${error}`);
     }
 }
 
@@ -738,7 +591,7 @@ function _calculatePrecision(bounds) {
 
     // Calculando a quantidade mínima de pontos para cobrir a uniforge.mapOverlay
     const totalArea = latDiff * lngDiff;  // Área da uniforge.mapOverlay
-    const desiredPoints = Math.max(uniforge.constants.MIN_POINTS, Math.sqrt(totalArea) * 100); // Ajuste para gerar pelo menos 1000 pontos
+    const desiredPoints = Math.max(uniforge.constants.leaflet.MIN_POINTS, Math.sqrt(totalArea) * 100); // Ajuste para gerar pelo menos 1000 pontos
 
     // Determinando o número de pontos para latitude e longitude
     const latPoints = Math.ceil(Math.sqrt(desiredPoints * (latDiff / totalArea)));

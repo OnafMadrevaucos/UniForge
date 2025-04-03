@@ -1,0 +1,20 @@
+<div class="lineage-type-dialog entries flexcol">
+    <fieldset class="info-set flex-1">
+        <div class="data-group text">
+            <span class="data-label">Tag </span>
+            <input id="tagInput" type="text" class="data" maxlength="5"/>
+        </div>
+        <div class="data-group text">
+            <span class="data-label">Label </span>
+            <input id="labelInput" type="text" class="data" maxlength="255"/>
+        </div>
+        <div class="data-group buttons flexrow">
+            <button id="clearButton" hidden>Limpar</button>
+            <button id="addTypeButton">Adicionar Tipo</button>
+        </div>        
+    </fieldset>
+    <div class="tiny separator"></div>
+    <div class="data-group list">
+        <list id="typeList" value="types" class="type-list"></list>
+    </div>
+</div>

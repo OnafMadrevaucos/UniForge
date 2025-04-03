@@ -1,6 +1,6 @@
 {
   "name": "uniforge",
-  "version": "0.7.8 (Alfa v1.6.2)",
+  "version": "0.7.8 (Alfa v1.6.3)",
   "main": "app.js",
   "type": "module",
   "scripts": {
@@ -24,6 +24,7 @@
     "handlebars": "^4.7.8",
     "leaflet": "^1.9.4",
     "leaflet-draw": "^1.0.4",
+    "mermaid": "^11.4.1",
     "path": "^0.12.7",
     "tinymce": "^7.5.1",
     "url": "^0.11.4"

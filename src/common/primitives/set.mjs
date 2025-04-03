@@ -1,0 +1,307 @@
+/**
+* Adiciona um método get ao Set.prototype para buscar um membro do conjunto com base no valor da propriedade _id.
+*
+* @method get
+* @memberof Set.prototype
+* @param {_id} _id - O valor da propriedade _id a ser buscado.
+* @returns {Object|undefined} O membro do conjunto que tem a propriedade _id igual ao valor fornecido, ou undefined se não encontrar.
+*/
+export function get(_id) {
+
+    // Itera sobre os membros do conjunto.        
+    for (const member of this) {
+        // Verifica se o membro tem uma propriedade _id e se ela é igual ao _id fornecido.
+        if (member._id === _id) return member;
+    }
+    return undefined;
+}
+
+/**
+   * Retorna a diferença entre dois conjuntos.
+   * @memberof Set.prototype
+   * 
+   * @param {Set} other       - Outro conjunto para comparar
+   * @returns {Set}           - A diferença, definida como os objetos deste conjunto que não estão presentes no outro
+   */
+export function difference(other) {
+    if (!(other instanceof Set)) throw new Error("Deve ser fornecida outra instância de Set.");
+    const difference = new Set();
+    for (const element of this) {
+        if (!other.has(element)) difference.add(element);
+    }
+    return difference;
+}
+
+/**
+ * Retorna a diferença simétrica entre dois conjuntos.
+ * @memberof Set.prototype
+ * 
+ * @param {Set} other  - Outro conjunto.
+ * @returns {Set}      - O conjunto de elementos que existem em este ou no outro, mas não em ambos.
+ */
+export function symmetricDifference(other) {
+    if (!(other instanceof Set)) throw new Error("Deve ser fornecida outra instância de Set.");
+    const difference = new Set(this);
+    for (const element of other) {
+        if (difference.has(element)) difference.delete(element);
+        else difference.add(element);
+    }
+    return difference
+}
+
+/**
+ * Testa se este conjunto é igual a outro conjunto.
+ * Os conjuntos são iguais se compartilharem os mesmos membros, independentemente da ordem.
+ * @memberof Set.prototype
+ * 
+ * @param {Set} other       - Outro conjunto para comparar
+ * @returns {boolean}       - Os conjuntos são iguais?
+ */
+export function equals(other) {
+    if (!(other instanceof Set)) return false;
+    if (other.size !== this.size) return false;
+    for (let element of this) {
+        if (!other.has(element)) return false;
+    }
+    return true;
+}
+
+/**
+ * Retorna o primeiro valor do conjunto.
+ * @memberof Set.prototype
+ * 
+ * @returns {*}             - O primeiro elemento do conjunto, ou undefined
+ */
+export function first() {
+    return this.values().next().value;
+}
+
+/**
+ * Retorna a interseção entre dois conjuntos.
+ * @memberof Set.prototype
+ * 
+ * @param {Set} other       - Outro conjunto para comparar
+ * @returns {Set}           - A interseção entre ambos os conjuntos
+ */
+export function intersection(other) {
+    const n = new Set();
+    for (let element of this) {
+        if (other.has(element)) n.add(element);
+    }
+    return n;
+}
+
+/**
+ * Testa se este conjunto tem uma interseção com outro conjunto.
+ * @memberof Set.prototype
+ * 
+ * @param {Set} other       - Outro conjunto para comparar
+ * @returns {boolean}       - Os conjuntos se intersectam?
+ */
+export function intersects(other) {
+    for (let element of this) {
+        if (other.has(element)) return true;
+    }
+    return false;
+}
+
+/**
+ * Retorna a união de dois conjuntos.
+ * @memberof Set.prototype
+ * 
+ * @param {Set} other  - O outro conjunto.
+ * @returns {Set}
+ */
+export function union(other) {
+    if (!(other instanceof Set)) throw new Error("Deve ser fornecida outra instância de Set.");
+    const union = new Set(this);
+    for (const element of other) union.add(element);
+    return union;
+}
+
+/**
+ * Testa se este conjunto é um subconjunto de outro conjunto.
+ * Um conjunto é um subconjunto se todos os seus membros também estiverem presentes no outro conjunto.
+ * @memberof Set.prototype
+ * 
+ * @param {Set} other       - Outro conjunto que pode ser um subconjunto deste
+ * @returns {boolean}       - O outro conjunto é um subconjunto deste?
+ */
+export function isSubset(other) {
+    if (!(other instanceof Set)) return false;
+    if (other.size < this.size) return false;
+    for (let element of this) {
+        if (!other.has(element)) return false;
+    }
+    return true;
+}
+
+/**
+ * Converte um conjunto em um objeto JSON mapeando seu conteúdo para um array.
+ * @memberof Set.prototype
+ * 
+ * @returns {Array}           - Os elementos do conjunto como um array.
+ */
+export function toObject() {
+    return Array.from(this);
+}
+
+/**
+ * Testa se cada elemento deste conjunto satisfaz um determinado critério de teste.
+ * @memberof Set.prototype
+ * 
+ * @see Array#every
+ * @param {function(*,number,Set): boolean} test        - O critério de teste a ser aplicado. Os argumentos posicionais são o valor,
+ *                                                      o índice de iteração e o conjunto sendo testado.
+ * @returns {boolean}                                   - Cada elemento do conjunto satisfaz o critério de teste?
+ */
+export function every(test) {
+    let i = 0;
+    for (const v of this) {
+        if (!test(v, i, this)) return false;
+        i++;
+    }
+    return true;
+}
+
+/**
+ * Filtra este conjunto para criar um subconjunto de elementos que satisfaçam um determinado critério de teste.
+ * @memberof Set.prototype
+ * 
+ * @see Array#filter
+ * @param {function(*,number,Set): boolean} test        - O critério de teste a ser aplicado. Os argumentos posicionais são o valor,
+ *                                                      o índice de iteração e o conjunto sendo filtrado.
+ * @returns {Set}                                       - Um novo conjunto contendo apenas elementos que satisfaçam o critério de teste.
+ */
+export function filter(test) {
+    const filtered = new Set();
+    let i = 0;
+    for (const v of this) {
+        if (test(v, i, this)) filtered.add(v);
+        i++;
+    }
+    return filtered;
+}
+
+/**
+* Ordena um Set usando a mesma lógica da função sort() de um array.
+* 
+* @see Array#sort
+* @returns {Set} - Um novo Set com os elementos ordenados.
+*/
+export function sort() {
+    // Converte o Set em um array.
+    const sorted = Array.from(this);
+    // Ordena o array.
+    sorted.sort((a, b) => {
+        // Verifica se os elementos têm o campo _label
+        if (a._label && b._label) {
+            // Ordena os elementos com base no campo _label
+            return a._label.localeCompare(b._label);
+        } else {
+            // Ordena os elementos com base no valor padrão
+            return a.localeCompare(b);
+        }
+    });
+    // Cria um novo Set com os elementos ordenados.
+    return new Set(sorted);
+}
+
+/**
+ * Encontra o primeiro elemento deste conjunto que satisfaça um determinado critério de teste.
+ * @memberof Set.prototype
+ * 
+ * @see Array#find
+ * @param {function(*,number,Set): boolean} test        - O critério de teste a ser aplicado. Os argumentos posicionais são o valor,
+ *                                                      o índice de iteração e o conjunto sendo pesquisado.
+ * @returns {*|undefined}                               - O primeiro elemento do conjunto que satisfaça o critério de teste, ou undefined.
+ */
+export function find(test) {
+    let i = 0;
+    for (const v of this) {
+        if (test(v, i, this)) return v;
+        i++;
+    }
+    return undefined;
+}
+
+/**
+ * Cria um novo conjunto onde cada elemento é modificado por uma função de transformação fornecida.
+ * @memberof Set.prototype
+ * 
+ * @see Array#map
+ * @param {function(*,number,Set): boolean} transform   - A função de transformação a ser aplicada. Os argumentos posicionais são
+ *                                                      o valor, o índice de iteração e o conjunto sendo transformado.
+ * @returns {Set}                                       - Um novo conjunto de tamanho igual contendo elementos transformados.
+ */
+export function map(transform) {
+    const mapped = new Set();
+    let i = 0;
+    for (const v of this) {
+        mapped.add(transform(v, i, this));
+        i++;
+    }
+    if (mapped.size !== this.size) {
+        throw new Error("A operação Set#map modificou ilegalmente o tamanho do conjunto");
+    }
+    return mapped;
+}
+
+/**
+ * Cria um novo conjunto com elementos que são filtrados e transformados por uma função de redução fornecida.
+ * @memberof Set.prototype
+ * 
+ * @see Array#reduce
+ * @param {function(*,*,number,Set): *} reducer     - Uma função de redução aplicada a cada valor. Os argumentos posicionais são
+ *                                                  o acumulador, o valor, o índice de iteração e o conjunto sendo reduzido.
+ * @param {*} accumulator                           - O valor inicial do acumulador retornado.
+ * @returns {*}                                     - O valor final do acumulador.
+ */
+export function reduce(reducer, accumulator) {
+    let i = 0;
+    for (const v of this) {
+        accumulator = reducer(accumulator, v, i, this);
+        i++;
+    }
+    return accumulator;
+}
+
+/**
+ * Testa se algum elemento deste conjunto satisfaz um determinado critério de teste.
+ * @memberof Set.prototype
+ * 
+ * @see Array#some
+ * @param {function(*,number,Set): boolean} test    - O critério de teste a ser aplicado. Os argumentos posicionais são o valor,
+ *                                                  o índice de iteração e o conjunto sendo testado.
+ * @returns {boolean}                               - Algum elemento do conjunto satisfaz o critério de teste?
+ */
+export function some(test) {
+    let i = 0;
+    for (const v of this) {
+        if (test(v, i, this)) return true;
+        i++;
+    }
+    return false;
+}
+
+console.log('UniForge | Atribuindo primitivos ao protótipo dos Sets...');
+// Atribui primitivos ao protótipo de Set
+Object.defineProperties(Set.prototype, {
+    get: { value: get, configurable: true },
+    difference: { value: difference, configurable: true },
+    symmetricDifference: { value: symmetricDifference, configurable: true },
+    equals: { value: equals, configurable: true },
+    every: { value: every, configurable: true },
+    filter: { value: filter, configurable: true },
+    find: { value: find, configurable: true },
+    first: { value: first, configurable: true },
+    intersection: { value: intersection, configurable: true },
+    intersects: { value: intersects, configurable: true },
+    union: { value: union, configurable: true },
+    isSubset: { value: isSubset, configurable: true },
+    map: { value: map, configurable: true },
+    reduce: { value: reduce, configurable: true },
+    some: { value: some, configurable: true },
+    sort: { value: sort, configurable: true },
+    toObject: { value: toObject, configurable: true }
+});

@@ -28,7 +28,7 @@ export default class Dialogs extends BaseDialog {
    * @param {Function} options.hasTemplate      - Flag que indica se o diálogo deve possuir um template.
    */
   //constructor({ title = "Dialog", buttons = {}, abort = null}, options = { hasTemplate = false }) {
-  constructor(data, options = {}) {
+  constructor(data, options = {alwaysOnTop: true}) {
     super(data, options);
 
     this.type = options?.type ?? Dialogs.Type.CONFIRM;
@@ -71,7 +71,7 @@ export default class Dialogs extends BaseDialog {
     const body = document.createElement('div');
     body.className = 'secure-dialog flexcol';
 
-    const randomString = uniforge.utils.generateRandomString(5, true);
+    const randomString = uniforge.utils.randomString(5, true);
     const hintMessage = `<p>Se é isso que deseja, por favor, copie o seguinte trecho no campo abaixo: <span class='secure-text'>'${randomString}'</span></p>`;
 
     const textGroup = document.createElement('div');
@@ -137,8 +137,8 @@ export default class Dialogs extends BaseDialog {
    * @returns {Promise} Retorna uma promessa que é resolvida se o usuário clicar em "Sim" ou rejeitada se clicar em "Não".
    */
   static async confirm(title, message) {
-    return new Promise((resolve, reject) => {
-      const dialogData = {
+    return new Promise((resolve, reject) => {      
+      const dialog = new this({
         title: title,
         buttons: {
           no: {
@@ -152,9 +152,8 @@ export default class Dialogs extends BaseDialog {
             callback: () => resolve(true)
           }
         },
-        abort: () => resolve(false)
-      };
-      const dialog = new this(dialogData, { prompt: message });
+        abort: () => reject(false)
+      }, { prompt: message, alwaysClose: true});
       dialog.render();
     });
   }
@@ -168,19 +167,8 @@ export default class Dialogs extends BaseDialog {
    * @returns {Promise} Retorna uma promessa que é resolvida se o usuário clicar em "Sim" ou rejeitada se clicar em "Não".
    */
   static async secureConfirm(title) {
-    function onSecureConfirm(event, resolve) {
-      const confirmButton = event.target.closest('button');
-      const input = document.querySelector('#secureInput');
-      const secureText = input.dataset.text;
-
-      if (input.value === secureText) {
-        resolve(true);
-        confirmButton.dataset.canClose = 'true';
-      } else uniforge.msgBox.showWarning('O texto informado não corresponde ao texto de segurança.');
-
-    }
     return new Promise((resolve, reject) => {
-      const dialogData = {
+      const dialog = new this({
         title: title,
         buttons: {
           cancel: {
@@ -191,13 +179,21 @@ export default class Dialogs extends BaseDialog {
           confirm: {
             label: "Confirmar",
             icon: "fas fa-check",
-            callback: (event) => onSecureConfirm(event, resolve),
-            canClose: 'false'
+            callback: () => {
+              const input = document.querySelector('#secureInput');
+              const secureText = input.dataset.text;
+              if(input.value === secureText) {
+                resolve(true);
+                return true;
+              } else {
+                uniforge.msgBox.showWarning('O texto informado não corresponde ao texto de segurança.');
+                return false;
+              }
+            }
           }
         },
-        abort: () => resolve(false)
-      };
-      const dialog = new this(dialogData, { hasTemplate: false, type: Dialogs.Type.SECURE });
+        abort: () => resolve(null)
+      }, { hasTemplate: false, type: Dialogs.Type.SECURE });
       dialog.render();
     });
   }

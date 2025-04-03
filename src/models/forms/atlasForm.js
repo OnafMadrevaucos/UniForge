@@ -1,8 +1,15 @@
 import EntryForm from "./entryForm.js";
 
 export default class AtlasForm extends EntryForm {
-    constructor(title) {
-        super(title);
+    /**
+     * Construtor da classe.
+     * Chama o construtor da classe pai com o título 'Atlas' e configura o tipo do formulário como 'atlas'.
+     * 
+     * @constructor
+     * @extends EntryForm
+     */
+    constructor() {
+        super('Atlas');
 
         this.template = 'atlasForm'; // Define o template do formulário.
 

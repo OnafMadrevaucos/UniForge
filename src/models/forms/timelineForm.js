@@ -2,8 +2,8 @@ import { TimelineManager } from "../../scripts/managers/timelineManager.js";
 import SidebarForm from "./sidebarForm.js";
 
 export default class TimelineForm extends SidebarForm {
-    constructor(title) {
-        const form = super(title);
+    constructor() {
+        const form = super('Linha do Tempo');
         this.form = form;
 
         this.template = 'timelineForm'; // Define o template do formulário. 
