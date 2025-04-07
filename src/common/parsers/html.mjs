@@ -43,7 +43,7 @@ function _parsePlaceholders(html, data) {
 
     html = html.replace(regex, (match, key) => {
         key = key.trim();
-        return key in data ? data[key] : '';
+        return key in data ? data[key] : (key in data.labels ? data.labels[key] : '');
     })
 
     return html;
@@ -233,7 +233,7 @@ function _parseSidetabsTags(html) {
         const isSimple = isSimpleRegex.test(match);
 
         console.log(`Correspondência encontrada: ${match}`);
-        console.log(`ID: ${id}, Source: ${source}${classExtra ? `, Extra Classes: ${classExtra}` : ''}${isSimple ? `, Tipo: Simples` : 'Tipo: Completo'}`);
+        console.log(`ID: ${id}, Source: ${source}${classExtra ? `, Extra Classes: ${classExtra}` : ''}${isSimple ? `, Tipo: Simples` : ', Tipo: Completo'}`);
 
         // Verifica se o source é um dbDocument válido.
         if (!data[source]) {
@@ -256,7 +256,7 @@ function _parseSidetabsTags(html) {
 
         let body = '';
         data[source].forEach(tab => {
-            body += `<div class="tab" data-target="${tab.title}">
+            body += `<div class="tab${tab.title === 'entity' || tab.title === 'atlas' ? ' disabled' : ''}" data-target="${tab.title}">
                         <span class="tab-text"><i class="${tab.icon}"></i> ${tab.label}</span>
                         <span class="tab-icon"><i class="${tab.icon}"></i></span>
                     </div>`

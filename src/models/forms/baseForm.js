@@ -168,7 +168,7 @@ export default class BaseForm {
     * @type {boolean}
   */
   get isSettings() {
-    return this.type == 'settings';
+    return this.type === 'settings';
   };
 
   prepareBaseData() {
@@ -217,7 +217,7 @@ export default class BaseForm {
       this.prepareContent();
 
       // Configura os conteúdos específicos do formulário.
-      await this._configure();
+      await this.initialize();
 
       this.rendered = true;
       return this.rendered;
@@ -251,6 +251,9 @@ export default class BaseForm {
 
     // Limpa o conteúdo do formulário.
     this.ui.content.innerHTML = '';
+
+    // Limpa o conteúdo do formulário dos metadados da aplicação.
+    uniforge.state.update(['currentForm', {name: null, state: null, activeTab: 0}]);
   }
   /**
    * Exibe o formulário e o overlay associados.
@@ -286,7 +289,7 @@ export default class BaseForm {
   /**
    * Inicia a construção do formulário.
    */
-  async _configure() {
+  async initialize() {
     try {
       // Configura os conteúdos básicos do formulário.
       this.configureBaseContent(this.form);
@@ -366,7 +369,8 @@ export default class BaseForm {
 
   onCloseClick(event) {
     event.stopPropagation();
-    this.#handleNavQueueOnClose(event);
+    this.#handleNavQueueOnClose(event);    
+
     this.hideForm();   
   }
 

@@ -114,7 +114,10 @@ export default class ChapterDialog extends BaseDialog {
           cancel: {
             label: "Cancelar",
             icon: "fas fa-xmark",
-            callback: () => resolve(false)
+            callback: () => {
+              resolve(false); 
+              return true;
+            }
           },
           create: {
             label: "Criar",
@@ -125,36 +128,23 @@ export default class ChapterDialog extends BaseDialog {
               const tomeSelect = dialog.querySelector('#tomeSelect');              
               const typeSelect = dialog.querySelector('#typeSelect');
               const iconItem = dialog.querySelector('.icon-item.selected'); 
-              
-              if(titleInput.value.isEmpty()) {
-                uniforge.msgBox.showWarning('Por favor, informe um Título válido.');
-                return false;
-              }
 
-              if(tomeSelect.value === '0') {
-                uniforge.msgBox.showWarning('Por favor, informe um Tomo válido.');
-                return false;
-              }
-
-              if(typeSelect.value === '0') {
-                uniforge.msgBox.showWarning('Por favor, informe um Tipo válido.');
-                return false;
-              }
-
-              if (!iconItem) {
-                uniforge.msgBox.showWarning('Por favor, informe um Ícone válido.');
-                return false;
-              }
-
-              const chapter = {
+              const data = {
                 tome: tomeSelect.value,
                 title: titleInput.value,
-                icon: iconItem.dataset.value,
+                icon: iconItem ? iconItem.dataset.value : null,
                 type: typeSelect.value
               };
 
-              resolve(chapter);
-              return true
+              // Validação dos campos do Capítulo.
+              const result = uniforge.db.validateChapter(data);
+              if(result !== '') {
+                uniforge.msgBox.showWarning(result);
+                return false;
+              }              
+
+              resolve(data); // Retorna os dados do Capítulo criado.
+              return true;
             }
           }
         },

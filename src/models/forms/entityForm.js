@@ -61,9 +61,9 @@ export default class EntityForm extends EntryForm {
   async prepareData() {
     super.prepareData();
 
-    this.data.entryTypes = uniforge.doc.entryTypes.toObject();
-    this.data.relevances = uniforge.doc.relevances.toObject();
-    this.data.calendars = uniforge.doc.calendars.toObject();
+    this.data.labels = {
+      noLineageLink: 'A Entrada não está vinculada a nenhuma Linhagem.',
+    };
 
     //this.manager.fromFamilyScript(this.manager.testScript);  
     //this.manager.fromFamilyScript(this.manager.noLinksTestScript); 
@@ -81,40 +81,6 @@ export default class EntityForm extends EntryForm {
   }
 
   /* ---------------------------------------------------------------------------------------------------------------- */
-  // INTERFACE DE USUÁRIO
-  /**
-     * Habilita/desabilita os controles do formulário.
-     * @param {Number} state - O novo estado do formulário.
-     * @protected
-     */
-  controlStates(state) {
-    super.controlStates(state);
-    const flavorEditor = tinymce.get('flavorEditor');
-
-    switch (state) {
-      // ESTADO DE HABILITAÇÃO DE NOVA ENTRADA.
-      case this.states.newEntry: {
-        this._toggleFounderInfo(null);
-
-        flavorEditor.mode.set('readonly');
-      } break;
-      // ESTADO DE EDIÇÃO DE ENTRADA.
-      case this.states.adding: {
-        flavorEditor.mode.set('design');
-      } break;
-      // ESTADO DE DELEÇÃO DE DADOS.
-      case this.states.editing: {
-        flavorEditor.mode.set('design');
-      } break;
-      // ESTADO PADRÃO.
-      default: {
-        this._toggleFounderInfo(null);
-
-        flavorEditor.mode.set('readonly');
-      } break;
-    }
-  }
-  /* ---------------------------------------------------------------------------------------------------------------- */
   // CONFIGURAÇÕES
   /**
     * Configura o conteúdo do formulário associado à instância.
@@ -126,43 +92,11 @@ export default class EntityForm extends EntryForm {
     // Chama o método de configuração da classe pai para configurar o formulário base.
     await super.configureContent();
 
-    // Configura o editor TinyMCE de floreio associado ao formulário.
-    await this.configureFlavorTinyMCE();
+    // Configura o editor TinyMCE de descrição da Árvore de Linhagem associada à Entrada.
+    await this.configureLineageFlavorTinyMCE();
 
     // Configura o visualizador de árvore associado ao formulário.
     this.configureDiagram();
-  }
-
-  /**
-    * Limpa o conteúdo do formulário
-    * 
-    * @param {Boolean} clearSidebar - Flag para habilitar/desabilitar a limpeza da seleção da sidebar.
-    */
-  clearContent(clearSidebar = true) {
-    super.clearContent(clearSidebar);
-
-    const flavorEditor = tinymce.get('flavorEditor');
-    flavorEditor.setContent('');
-  }
-
-  /**
-    * Configura o editor TinyMCE para o texto de floreio da Entrada.
-    */
-  async configureFlavorTinyMCE() {
-    if (tinymce.get('flavorEditor')) {
-      tinymce.remove('#flavorEditor');
-    }
-
-    const options = uniforge.utils.mergeObjects(uniforge.tinymceOptions.simple, {
-      selector: 'div#flavorEditor',
-      placeholder: "Texto de floreio...",
-      init_instance_callback: (editor) => {
-        editor.setContent(""); // Garante que o editor seja iniciado vazio.
-      },
-      setup: (editor) => { this._setupInlineTinyMCE(editor); }
-    });
-
-    await tinymce.init(options);
   }
 
   /**
@@ -189,6 +123,20 @@ export default class EntityForm extends EntryForm {
     this.manager.buildTree();
   }
 
+  /**
+  * Limpa o conteúdo do formulário
+  * 
+  * @param {Boolean} clearSidebar - Flag para habilitar/desabilitar a limpeza da seleção da sidebar.
+  */
+  clearContent(clearSidebar = true) {
+    super.clearContent(clearSidebar);
+
+    const lineageFlavorEditor = tinymce.get('lineageFlavorEditor');
+    lineageFlavorEditor.setContent('');
+  }
+
+
+
   /* ---------------------------------------------------------------------------------------------------------------- */
   // LISTENERS
   /**
@@ -196,13 +144,13 @@ export default class EntityForm extends EntryForm {
   * @inheritdoc
   */
   activateListeners() {
-    super.activateListeners();
+    super.activateListeners();    
 
-    const entryButton = this.querySelector('#entryButton');
-    entryButton.addEventListener('click', (event) => { this.onFounderButtonClick(event); });
+    const newLineageButton = this.querySelector('#newLineageButton');
+    newLineageButton.addEventListener('click', (event) => { this.onNewLineageClick(event); });
 
-    const removeEntryButton = this.querySelector('#removeEntryButton');
-    removeEntryButton.addEventListener('click', (event) => { this.onRemoveFounderClick(event); });
+    const linkLineageButton = this.querySelector('#linkLineageButton');
+    linkLineageButton.addEventListener('click', (event) => { this.onLinkLineageClick(event); });
   }
 
   /**@inheritdoc */
@@ -213,6 +161,7 @@ export default class EntityForm extends EntryForm {
     removeEntryButton.hidden = !event.target.checked;
   }
 
+  /*
   async onFounderButtonClick(event) {
     event.stopPropagation();
 
@@ -225,17 +174,18 @@ export default class EntityForm extends EntryForm {
       this.founder = entry;
 
       // Alterna a visibilidade do grupo de eventos.
-      this._toggleFounderInfo(entry);
+      this._toggleLineageTree(entry);
 
       this._buildDiagram(entry.tree);
     }
-  }
+  }*/
 
+  
   /**
-       * Manipulador de evento para retirar um evento de uma entrada.
-       * @param {Event} event - Evento de clique no bot o de Remover Evento.
-       * @fires
-       */
+  * Manipulador de evento para retirar um evento de uma entrada.
+  * @param {Event} event - Evento de clique no bot o de Remover Evento.
+  * @fires
+  
   async onRemoveFounderClick(event) {
     event.stopPropagation();
 
@@ -243,7 +193,7 @@ export default class EntityForm extends EntryForm {
     if (await Dialogs.confirm('Desvincular Entrada', 'Deseja desvincular o fundador da Árvore? Isso irá apagar todos os dados associados a ela.')) {
 
       // Alternar a visibilidade do grupo de eventos.
-      this._toggleFounderInfo();
+      this._toggleLineageTree();
 
       // Limpar os dados da Entrada desvinculada.
       this._clearEntryData();
@@ -252,166 +202,23 @@ export default class EntityForm extends EntryForm {
       this.hasEntry = false;
     }
   }
-
-  /**
-       * Trata o evento de clique em uma se o de uma aba do formul rio.
-       * @param {Event} event - O evento de clique no bot o de se o.
-       */
-  onSectionButtonClick(event) {
-    event.stopPropagation();
-    this._toggleSectionButtons(false, true);
-
-    const button = event.target.closest('button');
-    button.classList.add('selected');
-
-    this._activateTab(button.dataset.tab);
-  }
-
-  onEventItemClick(clkEvent) {
-    clkEvent.stopPropagation();
-    const clickedEvent = clkEvent.target.closest('.item');
-    const evid = clickedEvent.dataset.value;
-    const event = this.#events[evid];
-
-    const eventTitle = this.querySelector('#eventTitle');
-    const eventEntryType = this.querySelector('#eventEntryType');
-    const relevance = this.querySelector('#relevance');
-    const calendarType = this.querySelector('#calendarType');
-
-    eventTitle.value = event.title;
-    eventTitle.focus();
-
-    eventEntryType.value = event.etid;
-    relevance.value = event.relevance;
-    calendarType.value = event.clid;
-
-    this.reconfigureDatePickers(event);
-
-    tinymce.get('eventFlavorEditor').setContent(event.flavor);
-
-    const addEventButton = this.querySelector('#addEventButton');
-    addEventButton.innerHTML = '<i class="fas fa-pen-to-square"></i> Editar Evento';
-
-    this.selection.event = clickedEvent;
-  }
-
-  /**
-   * Trata o evento de clique no botão de adicionar um novo Evento.
-   * @param {Event} event - O evento de clique no botão de adicionar um novo Evento.
-   */
-  onAddEventClick(event) {
-    event.stopPropagation();
-
-    const eventTitle = this.querySelector('#eventTitle');
-    const eventEntryType = this.querySelector('#eventEntryType');
-    const relevance = this.querySelector('#relevance');
-    const calendarType = this.querySelector('#calendarType');
-
-    const newEvid = this.selection.event ? this.selection.event.dataset.value : uniforge.db.generateID();
-
-    const newEvent = {
-      _value: newEvid,
-      _label: eventTitle.value,
-      _icon: '<i class="fa-solid fa-calendar-days"></i>',
-      evid: newEvid,
-      title: eventTitle.value,
-      etid: eventEntryType.value,
-      relevance: relevance.value,
-      clid: calendarType.value,
-      flavor: tinymce.get('eventFlavorEditor').getContent() ?? '',
-      s_day: this.datePickers.start.selectedDate.day,
-      s_month: this.datePickers.start.selectedDate.month,
-      s_year: this.datePickers.start.selectedDate.year,
-      e_day: this.datePickers.end.selectedDate.day,
-      e_month: this.datePickers.end.selectedDate.month,
-      e_year: this.datePickers.end.selectedDate.year,
-      dbAction: uniforge.doc.events.get(newEvid) ? 'u' : 'a'
-    };
-
-    const result = uniforge.db.validateEvent(newEvent);
-    if (result !== '') {
-      this.msgBox.showWarning(result);
-      return;
-    }
-
-    this.#events[newEvid] = newEvent;
-    this._generateEventListItems();
-  }
-
-  /**
-   * Trata o evento de clique no botão de apagar um evento.
-   * @param {Event} event - Evento de clique no botão de apagar.
-   */
-  async onDeleteEventClick(event) {
-    event.stopPropagation();
-    if (await Dialogs.confirm('Apagar entrada', 'Deseja realmente apagar essa entrada?')) {
-      const deletedItem = event.target.closest('.item');
-      const itemId = deletedItem.dataset.value;
-
-      this.#events[itemId].dbAction = 'd';
-      this._generateEventListItems();
-    }
-  }
-
-  /**
-  * Trata o evento de registro de uma nova entrada.
-  * @interface
-  * @param {Event} event      - Evento de clique no botão de Salvar.
-  * @param {Object} data      - Dados padrão de qualquer entrada.
-  * @param {Object} options   - Opções de salvamento da entrada.
   */
-  async onSaveClick(event, data, options = {}) {
+  
+
+  onNewLineageClick(event) {
     event.stopPropagation();
-    const isEntryUpdate = options.isEntryUpdate ?? false;
 
-    const headerInfo = this.querySelector('.header-info');
-    const isDraftSwitch = this.querySelector('#isDraftSwitch');
-
-    uniforge.utils.mergeObjects(data, {
-      ltid: headerInfo.dataset.ltid,
-      sid: this.selection.folder.dataset.id,
-      founder: this.founder.eid,
-      tree: this.manager.toFamilyScript(),
-      isDraft: isDraftSwitch.checked
-    });
-
-    const validate = uniforge.db.validateLineage(data);
-    if (validate !== '') {
-      this.msgBox.showWarning(validate);
-      return false;
-    }
-
-    if (this.founder.lineageTypes && this.founder.lineageTypes.length > 0) {
-      const lineageTypes = this.founder.lineageTypes;
-      lineageTypes.forEach(type => {
-        switch (type.dbAction) {
-          case 'a': {
-            uniforge.db.addLineageType(type);
-          } break;
-          case 'u': {
-            uniforge.db.updateLineageType(type);
-          } break;
-          case 'd': {
-            unforge.db.deleteLineageType(type);
-          } break;
-          default: break;
-        }
-      });
-    }
-
-    if (isEntryUpdate) {
-      data.eid = options.id;
-      data.evid = headerInfo.dataset.evid;
-
-      await uniforge.db.updateLineageTree(data);
-      this.msgBox.showInfo('Linhagem atualizada com sucesso.');
-    }
-    else {
-      await uniforge.db.addLineageTree(data);
-      this.msgBox.showInfo('Linhagem criada com sucesso.');
-    }
-    return true;
+    // Exibe o controle da Árvore de Linhagem.
+    this._toggleLineageTree(true);
   }
+
+  onLinkLineageClick(event) {
+    event.stopPropagation();
+
+    // Exibe o controle da Árvore de Linhagem.
+    this._toggleLineageTree(true);
+  }   
+
   /**
   * Trata o evento de criação de uma nova entrada.
   * @interface
@@ -433,120 +240,35 @@ export default class EntityForm extends EntryForm {
     const entry = this.data.entry;
 
     if (entry) {
-      this._toggleFounderInfo(entry);
+      this._toggleLineageTree(entry);
       this._buildDiagram(entry.tree);
     } else {
       this.msgBox.showWarning('Erro ao carregar a entrada.');
     }
-  }
+  }  
 
   /**
-     * Habilita/desabilita e limpa a seleção dos botões de seção do formulário.
-     * @protected
-     * 
-     * @param {boolean} [disabled=false] - Se true, desabilita todos os botões de seção.
-     * @param {boolean} [clearSelection=true] - Se true, limpa a seleção dos botões de seção.
-     */
-  _toggleSectionButtons(disabled = false, clearSelection = true) {
-    const sectionButtons = this.querySelectorAll('#sections .tabs-options button');
-    sectionButtons.forEach(button => {
-      button.classList.remove('selected');
-      button.disabled = disabled;
-    });
-
-    const defaultButton = sectionButtons[0];
-    if (defaultButton) {
-      this._activateTab(defaultButton.dataset.tab);
-      if (!clearSelection) {
-        defaultButton.classList.add('selected');
-      }
-    }
-  }
-
-  /**
-   * Ativa a aba especificada pelo ID do tab.
-   * 
-   * Remove a classe 'active' de todas as abas e adiciona a classe 'active' à aba correspondente ao tabId fornecido.
-   * 
-   * @param {string} tabId - O ID da aba a ser ativada.
-   */
-  _activateTab(tabId) {
-    const tabs = this.querySelectorAll('#sections .tab-content');
-    tabs.forEach(tab => {
-      tab.classList.remove('active');
-    });
-
-    const tab = this.querySelector(`#${tabId}`);
-    if (tab) tab.classList.add('active');
-  }
-
-  /**
-   * Gera os itens da lista de eventos associados a uma Entrada.
+   * Alterna a visibilidade das informações da Árvore de Linhagem.
    * @protected
    */
-  _generateEventListItems() {
-    const entryEvents = this.querySelector('#entryEvents');
-    // Limpa a lista de Eventos.
-    entryEvents.innerHTML = '';
+  async _toggleLineageTree(hasLineage) {
+    // Selecionar o container da Árvore da Linhagem.
+    const lineageContainer = this.querySelector('#lineageContainer');
 
-    // Obtem os dados dos Eventos.
-    const eventsData = Object.values(this.#events).filter(e => e.dbAction !== 'd');
-
-    // Gera os itens da lista de Eventos.
-    eventsData.forEach(event => {
-      // Gera o item de Evento.
-      const item = uniforge.parser.generateItemList(event, { withDelete: true });
-
-      // Adiciona o evento de clique no item de Evento.
-      item.addEventListener('click', (event) => { this.onEventItemClick(event); });
-
-      // Adiciona o evento de clique no botão de exclusão.
-      const deleteButton = item.querySelector('.delete-button');
-      deleteButton.addEventListener('click', (event) => { this.onDeleteEventClick(event); });
-
-      // Adiciona o item na lista de Eventos.
-      entryEvents.appendChild(item);
-    });
-
-    // Limpa a aba de Eventos, após qualquer alteração da Lista de Eventos.
-    this.clearEventTab();
-  }
-
-  /**
-   * Alterna a visibilidade das informações da Entrada vinculada.
-   * @protected
-   */
-  async _toggleFounderInfo(entry) {
-    // Selecionar o grupo de Eventos.
-    const entryInfo = this.querySelector('#entryInfo');
-    // Selecionar o botão de Gerar Evento.
-    const entryButton = this.querySelector('#entryButton');
+    // Selecionar o grupo de botões de configuração inicial da Árvore de Linhagem.
+    const lineageGroup = this.querySelector('#lineageGroup');
 
     // Se a Entrada (Source) existe, carregue os dados da entrada.
-    if (entry) {
-      entryInfo.dataset.eid = entry.eid;
-
-      await this._loadFounderData(entry);
-
-      this.hasEntry = true;
-
-      // Alterar a visibilidade do botão de Gerar Evento.
-      entryButton.classList.add('hidden');
-
-      // Alternar a visibilidade das informações do Evento.
-      entryInfo.classList.remove('hidden');
+    if (hasLineage) {
+      // Exibir o container da Árvore de Linhagem.
+      lineageContainer.classList.remove('hidden');
+      // Ocultar o grupo de botões de configuração inicial da Árvore de Linhagem.
+      lineageGroup.classList.add('hidden');
     } else {
-      // Limpar os dados da Entrada desvinculada.
-      this.hasEntry = false;
-
-      // Limpar os dados da Árvore.
-      this.manager.clearTree(true);
-
-      // Alterar a visibilidade do botão de Gerar Evento.
-      entryButton.classList.remove('hidden');
-
-      // Alternar a visibilidade das informações do Evento.
-      entryInfo.classList.add('hidden');
+      // Ocultar o container da Árvore de Linhagem.
+      lineageContainer.classList.add('hidden');
+      // Exibir o grupo de botões de configuração inicial da Árvore de Linhagem.
+      lineageGroup.classList.remove('hidden');
     }
   }
 
@@ -563,8 +285,66 @@ export default class EntityForm extends EntryForm {
     delete entryInfo.dataset.eid;
   }
 
+  /**
+   * Constroi a árvore de linhagem com base nos dados da entrada.
+   * 
+   * @param {string} tree - Dados da árvore em formato de FamilyScript.
+   * @protected
+  */
   _buildDiagram(tree) {
     this.manager.fromFamilyScript(tree);
     this.manager.buildTree(); // Atualiza a árvore com os dados da entrada.
+  }
+
+  /**
+     * Adiciona uma nova entrada no banco de dados e atualiza a lista de eventos associados.
+     * 
+     * @async
+     * @param {Object} data - Dados da entrada a ser adicionada.
+     * @param {string} [data.sid] - ID da seção associada à entrada.
+     * @param {string} [data.etid] - ID do tipo de entrada.
+     * @param {string} [data.title] - Título da entrada.
+     * @param {string} [data.flavor] - Texto de descrição ou sabor.
+     * @param {string} [data.htmlString] - String HTML a ser associada à entrada.
+     * @param {string|Buffer} [data.rawData] - Dados binários da imagem associada, opcional.
+     * @param {string} [data.ext='jpeg'] - Extensão da imagem, padrão é 'jpeg'.
+     * @param {boolean} [data.isDraft] - Indica se a entrada é um rascunho.
+     * 
+     * @returns {Promise<void>} - Não retorna valor, mas exibe uma mensagem de sucesso ao concluir.
+    */
+  async _addEntry(data) {
+    // Inserir tratamento da adição da Árvore de Linhagem aqui...
+
+    super._addEntry(data);
+  }
+
+  /**
+   * Atualiza uma entrada no banco de dados com base nos dados fornecidos.
+   * 
+   * @param {Object} data                     - Dados da entrada a serem atualizados.
+   * @param {string} data.eid                 - ID da entrada a ser atualizada.
+   * @param {string} data.sid                 - ID da seção associada à entrada.
+   * @param {string} data.etid                - ID do tipo de entrada.
+   * @param {string} data.title               - Título da entrada.
+   * @param {string} data.flavor              - Texto de descrição ou sabor.
+   * @param {string} data.htmlString          - String HTML a ser associada à entrada.
+   * @param {string|Buffer} [data.rawData]    - Dados binários da imagem associada (opcional).
+   * @param {string} [data.ext='jpeg']        - Extensão da imagem, padrão é 'jpeg'.
+   * @param {boolean} data.isDraft            - Indica se a entrada é um rascunho.
+   * 
+   * @returns {Promise<Object>} - Resultado da execução do comando de atualização.
+ */
+  async _updateEntry(data) {  
+    //Inserir tratamento da atualização da Árvore de Linhagem aqui...
+
+    super._updateEntry(data);
+  }  
+
+  async _handleLineageSave(data, lineages) {
+    // Percorre a lista de linhagens associadas à entrada.
+    for (const lineage of lineages) {
+      // Adiciona o identificador de Seção da Entrada à linhagem.
+      lineage.sid = data.sid;
+    }
   }
 }

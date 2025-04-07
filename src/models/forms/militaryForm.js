@@ -1,12 +1,12 @@
 import EntryForm from "./entryForm.js";
 
 /**
-  * Formulário para lidar com entradas do tipo político.
+  * Formulário para lidar com entradas do tipo militar.
   * @class
   * @extends EntryForm
   * 
   */
-export default class PoliticsForm extends EntryForm {
+export default class MilitaryForm extends EntryForm {
     /**
       * Constrói uma instância da classe derivada, inicializando as propriedades e configurando o conteúdo.
       * @class
@@ -14,9 +14,9 @@ export default class PoliticsForm extends EntryForm {
       */
     constructor() {
         // Chama o construtor da classe pai com o parâmetro overlay.
-        super('Política');
+        super('Exércitos');
 
-        this.type = 'politics'; // Define o tipo do formulário.
+        this.type = 'military'; // Define o tipo do formulário. 
     }
     
     /**

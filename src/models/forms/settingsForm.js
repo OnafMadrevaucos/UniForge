@@ -8,7 +8,7 @@ import DBManager from "../../db/dbManager.js";
   * @class
   * @extends BaseForm
   * 
-  */
+*/
 export default class SettingsForm extends EntryForm {
     /**
       * Constrói uma instância da classe derivada, inicializando as propriedades e configurando o conteúdo.
@@ -30,6 +30,14 @@ export default class SettingsForm extends EntryForm {
         this.db = uniforge.db;
     }
 
+    /** @override */
+    prepareFolders(data) {
+        data.folders = uniforge.doc.chapters.sort();
+    }
+
+    /* ---------------------------------------------------------------------------------------------------------------- */
+    // INTERFACE DE USUÁRIO
+
     /**
      * Habilita/desabilita os controles do formulário.
      * @param {Number} state - O novo estado do formulário.
@@ -38,7 +46,6 @@ export default class SettingsForm extends EntryForm {
     controlStates(state) {
         super.controlStates(state);
 
-        const category = this.data.entry;
         const lineageIcon = this.querySelector('#lineageIcon');
 
         switch (state) {
@@ -56,22 +63,8 @@ export default class SettingsForm extends EntryForm {
         }
     }
 
-    /**
-     * Obtém os dados unificados necessários para o funcionamento do formulário.
-     * @implements Implemente um método filho para as especificidades de cada formulário.
-     * @async
-     * @returns {object}  - Objeto de dados unificado.
-     */
-    prepareData() {
-        super.prepareData();
-        return this.data;
-    }
-
-    /** @inheritdoc */
-    prepareFolders(data) {
-        data.folders = uniforge.doc.chapters.sort();
-    }
-    
+    /* ---------------------------------------------------------------------------------------------------------------- */
+    // CONFIGURAÇÃO
 
     /**
      * Configura o conteúdo do formulário.
@@ -203,8 +196,12 @@ export default class SettingsForm extends EntryForm {
         // Se formulário for o da Enciclopédia, e o estado do formulário seja o 'newEntry' ou 
         // o 'default', carregue ícone do Assunto.
         if (this.currentState <= this.states.newEntry) {
-            // Carregue ícone apenas se a pasta estiver sendo selecionada.
-            if (isSelected) this._loadTomeIcon(clickedFolder);
+            // Carregue ícone apenas se a pasta estiver sendo selecionada.            
+            if (isSelected) {
+                this._loadTomeIcon(clickedFolder);
+                this.controlStates(this.states.newEntry);
+            } else
+                this.controlStates(this.states.default);
         }
     }
 
@@ -216,52 +213,113 @@ export default class SettingsForm extends EntryForm {
     */
     async onSaveClick(event, data, options = {}) {
         event.stopPropagation();
-        const isUpdate = options.isUpdate ?? false;
+        try {
+            const title = (this.isUpdate ? 'Atualizar' : 'Registrar');
+            let dialogMessage = this.isUpdate ? 'Deseja atualizar a seção?' : 'Deseja salvar a seção?';
 
-        const headerInfo = this.querySelector('.header-info');
+            if (await Dialogs.confirm(title, dialogMessage)) {
+                // Inicia a transação de salvamento.
+                await uniforge.sql.exec('BEGIN TRANSACTION');
 
-        uniforge.utils.mergeObjects(data, {
-            cid: headerInfo.dataset.cid,
-            htmlString: tinymce.activeEditor?.getContent() ?? ''
-        });
+                // Realiza o processo de salvamento (adição ou remoção) de uma Seção.
+                let saved = true;
 
-        const validate = uniforge.db.validateSection(data);
-        if (validate !== '') {
-            this.msgBox.showWarning(validate);
-            return false;
+                const titleInput = this.querySelector('#titleInput');
+                const draftSwitch = this.querySelector('#isDraftSwitch');
+                const draftCheckbox = draftSwitch.querySelector('#checkbox');
+                const headerInfo = this.querySelector('.header-info');
+
+                const data = {
+                    sid: this.sid ?? null,
+                    title: titleInput.value,
+                    cid: headerInfo.dataset.cid,
+                    htmlString: tinymce.activeEditor?.getContent() ?? '',
+                    isDraft: Number(draftCheckbox.checked),
+                };
+
+                const validate = uniforge.db.validateSection(data);
+                if (validate !== '') {
+                    this.msgBox.showWarning(validate);
+                    saved = false;
+                }
+
+                if (this.isUpdate) {
+                    await uniforge.db.updateSection(data);
+                    this.msgBox.showInfo('Seção atualizada com sucesso.');
+                }
+                else {
+                    await uniforge.db.addSection(data);
+                    this.msgBox.showInfo('Seção criada com sucesso.');
+                }
+
+                // Verifica se o salvamento foi bem-sucedido. Se sim, comita a transação.
+                if (saved) {
+                    // Comita a transação de salvamento.
+                    await uniforge.sql.exec('COMMIT');
+                    uniforge.state.update(['currentForm', { name: this.title, state: this.type, activeTab: this.activeTabIdx }]);
+                    await this.refresh();
+                } else {
+                    console.warn('O Banco de Dados sofrerá rollback...');
+                    // Faz rollback em caso de erro no processo de salvamento.
+                    await uniforge.sql.exec('ROLLBACK');
+                }
+            }
         }
+        catch (error) {
+            this.msgBox.showError(error);
 
-        if (isUpdate) {
-            data.sid = options.id;
-            await uniforge.db.updateSection(data);
-            this.msgBox.showInfo('Seção atualizada com sucesso.');
+            console.warn('O Banco de Dados sofrerá rollback...');
+            // Faz rollback em caso de erro no processo de salvamento.
+            await uniforge.sql.exec('ROLLBACK');
         }
-        else {
-            await uniforge.db.addSection(data);
-            this.msgBox.showInfo('Seção criada com sucesso.');            
-        }
-        
-        return true;
     }
+
     /**
     * Trata o evento de criação de uma nova entrada.
     * @param {Event} event - Evento de clique no botão de Nova Categoria.
     */
     async onNewClick(event) {
         this.clearContent(false);
+
+        // Obtém a lista de Categorias
+        const selectedFolder = this.selection.folder;
+        if (!selectedFolder) {
+            this.msgBox.showWarning('Nenhuma pasta foi selecionada.');
+            return;
+        }
+
+        const headerInfo = this.querySelector('.header-info');
+        const id = selectedFolder.dataset.id ?? null;
+        headerInfo.dataset.cid = id;
+
+        const titleInput = this.querySelector('#titleInput');
+        titleInput.focus();
+
+        // Configuração do label no botão de Salvar.
+        const saveButton = this.querySelector('#saveButton');
+        saveButton.innerHTML = '<i class="fa-regular fa-floppy-disk"></i> Salvar';
+
+        // Gera um novo ID para a Seção.
+        this.sid = uniforge.db.generateID();
+
+        // Carrega o ícone do Tomo.
+        this._loadTomeIcon(selectedFolder);
+
+        // Atualiza o estado do formulário.
+        this.controlStates(this.states.adding);
     }
 
     /**
-   * Remove uma entrada de uma categoria da lista.
-   * @param {Event} event - Evento de clique no botão para excluir a entrada.
+   * Remove uma Seção de um Capítulo da lista.
+   * @param {Event} event - Evento de clique no botão para excluir a Seção.
    */
-    async onDeleteEntryAction(event) {
-        super.onDeleteEntryAction(event);
+    async onDeleteClick(event) {
+        event.stopPropagation();
+        const id = this.ui.dialog.dataset.id;
 
-        const cancelButton = this.querySelector('#cancelButton');
-        cancelButton.dispatchEvent(new Event('click'));
-
-        this.msgBox.showInfo('Categoria removida com sucesso.');
+        await uniforge.db.deleteSection(id); 
+        this.msgBox.showInfo('Seção removida com sucesso.');
+        await this.refresh();
     }
 
     /**
@@ -280,20 +338,36 @@ export default class SettingsForm extends EntryForm {
    * @protected
    * @param {MouseEvent} event - O evento de clique duplo.
    */
-    async onEntryItemDoubleClick(event) { 
-
-        await super.onEntryItemDoubleClick(event, {
-            type: 'sections'
-        });
-        const section = this.data.entry;
+    async onEntryItemDoubleClick(event) {
+        await super.onEntryItemDoubleClick(event);
+        const item = event.target.closest('.entry-item');
+        const itemId = item.dataset.id;
+        const section = uniforge.doc.sections.get(itemId);
 
         const clickedFolder = event.target.closest('.folder');
         const isSelected = clickedFolder.classList.contains('selected');
         if (section) {
+            const headerInfo = this.querySelector('.header-info');
+            headerInfo.dataset.cid = section.cid ?? null;
+            headerInfo.dataset.sid = section.sid ?? null;
+
+            const titleInput = this.querySelector('#titleInput');
+            const draftSwitch = this.querySelector('#isDraftSwitch');
+            const draftCheckbox = draftSwitch.querySelector('#checkbox');
+
+            titleInput.value = section.title;
+            draftCheckbox.checked = section.isDraft;
+
             tinymce.get('mainEditor').setContent(section.htmlString);
             if (isSelected) {
                 this._loadTomeIcon(clickedFolder);
             }
+
+            // Obtém o identificador do item selecionado.
+            this.sid = section.sid;
+
+            // Atualiza o estado dos elements do formulário.
+            this.controlStates(this.states.editing);
         }
     }
 
@@ -312,9 +386,9 @@ export default class SettingsForm extends EntryForm {
     }
 
     /**
-   * Configura o event de click para os botões de opções do formulário.
-   * @param {Event} event - O evento de click do botão.
-   */
+    * Configura o event de click para os botões de opções do formulário.
+    * @param {Event} event - O evento de click do botão.
+    */
     onOptionButtonClick(event) {
         event.stopPropagation();
         const options = this.querySelector('.tabs-options');
@@ -409,7 +483,7 @@ export default class SettingsForm extends EntryForm {
 
     _handleLineageIcon(subject) {
         const lineageIcon = this.querySelector('#lineageIcon');
-        if(subject.isLineage) lineageIcon.classList.remove('hidden');
+        if (subject.isLineage) lineageIcon.classList.remove('hidden');
         else lineageIcon.classList.add('hidden');
     }
 

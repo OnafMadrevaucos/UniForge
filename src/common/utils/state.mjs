@@ -46,7 +46,7 @@ export function updateState(params=[]) {
  * @example
  * uniforge.state.save();
  */
-export function saveState(keep = false, currentForm = {name: null, state: null}) {
+export function saveState(keep = false, currentForm = {name: null, constructor: null, activeTab: 0}) {
     const data = { 
         keep: keep,       
         currentForm: currentForm,

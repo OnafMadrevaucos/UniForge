@@ -1,11 +1,11 @@
 <div id="settings" class="tabs-control flexcol">
     <div class="tabs-options flex-1 flexrow">
         <button id="main" class="flexcol selected" data-panel="mainPanel"><i class="fas fa-sliders"></i> Geral</button>
-        <button id="encyclopedia" class="flexcol" data-panel="encycloPanel"><i class="fa-solid fa-bookmark"></i> Capítulos</button>
+        <button id="encyclopedia" class="flexcol" data-panel="chapterPanel"><i class="fa-solid fa-bookmark"></i> Capítulos</button>
         <button id="database" class="flexcol" data-panel="databasePanel"><i class="fas fa-database"></i> Banco de Dados</button>        
         <button id="leaflet" class="flexcol" data-panel="leafletPanel"><i class="fas fa-map"></i> Leaflet ®</button>
     </div>
-    <div class="settings-container">
+    <div class="settings-container flexrow">
         <div id="mainPanel" class="panel flexrow">
             <div id="sideBar" class="sidebar">                            
                 <foldertree id="subjects" item="settings"></foldertree>
@@ -68,7 +68,7 @@
                 </div>
             </div>
         </div>
-        <div id="encycloPanel" class="panel flexrow hidden">
+        <div id="chapterPanel" class="panel flexrow hidden">
             <div id="sideBar" class="sidebar">
                 <h3>Capítulos</h3>
                 <a id="newChapterButton" class="flyer-button"><i class="fa-solid fa-folder-plus"></i> Novo Capítulo</a>

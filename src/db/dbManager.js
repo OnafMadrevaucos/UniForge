@@ -155,7 +155,7 @@ export default class DBManager {
         let query = 'INSERT INTO section (sid, cid, title, htmlString, isDraft) VALUES (?,?,?,?,?);';
         const params = [];
 
-        params.push(this.generateID());
+        params.push(data.sid ?? this.generateID());
         params.push(data.cid);
         params.push(data.title);
         params.push(data.htmlString);
@@ -185,9 +185,7 @@ export default class DBManager {
         let query = 'INSERT INTO entry (eid, sid, etid, title, flavor, htmlString, img, ext, isDraft) VALUES (?,?,?,?,?,?,?,?,?);';
         let params = [];
 
-        const eid = this.generateID();
-
-        params.push(eid);
+        params.push(data.eid ?? this.generateID());
         params.push(data.sid);
         params.push(Number(data.etid));        
         params.push(data.title);
@@ -264,7 +262,7 @@ export default class DBManager {
         query += 'VALUES (?,?,?,?,?,?);';
         const params = [];
 
-        params.push(data.ltid);
+        params.push(data.ltid ?? this.generateID());
         params.push(data.sid);
         params.push(data.title);
         params.push(data.founder);
@@ -1531,20 +1529,25 @@ export default class DBManager {
                 icon: 'fas fa-book'
             },
             {
+                title: 'politics',
+                label: 'Política',
+                icon: 'fas fa-crown'
+            },
+            {
                 title: 'economy',
                 label: 'Economia',
                 icon: 'fas fa-comments-dollar'
+            },
+            {
+                title: 'military',
+                label: 'Militar',
+                icon: 'fas fa-shield'
             },            
             {
                 title: 'entity',
                 label: 'Entidades',
                 icon: 'fas fa-people-group'
-            },
-            {
-                title: 'politics',
-                label: 'Política',
-                icon: 'fas fa-crown'
-            },
+            },            
             {
                 title: 'ideologies',
                 label: 'Ideologias',
@@ -1794,67 +1797,52 @@ export default class DBManager {
     }
 
     /**
+     * Valida se os dados de um Capítulo são válidos.
+     * @param {Object} data - Dados do Capítulo a ser validado.
+     * @returns {string} - Erro(s) encontrado(s) ou uma string vazia se a Seção for válida.
+     */
+    validateChapter(data) {
+
+        if (data.tome?.isEmpty())
+            return 'É necessário informar um Tomo para o Capítulo.';        
+        if (data.title?.isEmpty())
+            return 'É necessário informar um Título válido para o Capítulo.';
+        if (data.icon?.isEmpty())
+            return 'É necessário informar um Ícone válido para o Capítulo.';
+        if (data.type === '0')
+            return 'É necessário informar um Tipo válido o Capítulo.';
+
+        return '';
+    } 
+
+    /**
      * Valida se os dados de uma Seção são válidos.
-     * @param {Object} data - Dados da Seção a ser validada.
+     * @param {Object} data - Dados da Seção a ser validado.
      * @returns {string} - Erro(s) encontrado(s) ou uma string vazia se a Seção for válida.
      */
     validateSection(data) {
 
+        if (data.sid?.isEmpty())
+            return 'O identificador da Seção não pode ser vazio.';
         if (data.cid.isEmpty())
-            return 'O identificador de Capítulo da Seção é inválido.';
+            return 'O identificador de Capítulo da Seção não pode ser vazio.';
         if (data.title.isEmpty())
             return 'É necessário informar um título válido para a Categoria.';
 
         return '';
-    }
-
-    /**
-     * Valida se os dados de uma Entrada de Atlas são válidos.
-     * @param {Object} data - Dados da Entrada a ser validada.
-     * @returns {string} - Erro(s) encontrado(s) ou uma string vazia se a Entrada for válida.
-     */
-    validateAtlas(data) {
-
-        if (data.cid.isEmpty())
-            return 'O identificador de Categoria da Entrada é inválido.';
-        if (data.cid.isEmpty())
-            return 'O identificador de Categoria da Entrada é inválido.';
-        if (data.title.isEmpty())
-            return 'É necessário informar um título válido para a Entrada.';
-        if (data.rawData.isEmpty())
-            return 'É necessário informar uma imagem válida para a Entrada de Atlas.';
-
-        return '';
-    }
-
-    /**
-     * Valida se os dados de um Evento de Linhagem são válidos.
-     * @param {Object} data - Dados do Evento a ser validado.
-     * @returns {string} - Erro(s) encontrado(s) ou uma string vazia se o Evento for válido.
-     */
-    validateLineage(data) {
-
-        if (data.sid.isEmpty())
-            return 'O identificador de Seção da Linhagem é inválido.';        
-        if (data.title.isEmpty())
-            return 'É necessário informar um título válido para a Linhagem.';
-        if (!data.founder)
-            return 'É necessário informar o Fundador da Linhagem.';        
-        if (!data.tree)
-            return 'É necessário informar o familyScript da Árvore da Linhagem.';                      
-
-        return '';
-    }
+    } 
 
     /**
      * Valida se os dados de um Entrada são válidos.
-     * @param {Object} entry - Dados da Entrada a ser validada.
+     * @param {Object} entry - Dados da Entrada a ser validado.
      * @returns {string} - Erro(s) encontrado(s) ou uma string vazia se a Entrada for válido.
      */
     validateEntry(entry) {
 
+        if (entry.eid?.isEmpty())
+            return 'O identificador da Entrada não pode ser vazio.';
         if (entry.sid?.isEmpty())
-            return 'O identificador de Seção da Seção é inválido.';
+            return 'O identificador de Seção não pode ser vazio.';
         if (!entry.etid)
             return 'É necessário selecionar um Tipo de Entrada.';
         if (entry.title?.isEmpty())
@@ -1886,6 +1874,25 @@ export default class DBManager {
             return 'Um Evento deve informar uma data inicial. O mês informado é inválido.';
         if (!event.s_day || event.s_day < 1)
             return 'Um Evento deve informar uma data inicial. O dia informado é inválido.';         
+        return '';
+    }
+
+    /**
+     * Valida se os dados de um Evento de Linhagem são válidos.
+     * @param {Object} data - Dados do Evento a ser validado.
+     * @returns {string} - Erro(s) encontrado(s) ou uma string vazia se o Evento for válido.
+     */
+    validateLineage(data) {
+
+        if (data.sid.isEmpty())
+            return 'O identificador de Seção da Linhagem é inválido.';        
+        if (data.title.isEmpty())
+            return 'É necessário informar um título válido para a Linhagem.';
+        if (!data.founder)
+            return 'É necessário informar o Fundador da Linhagem.';        
+        if (!data.tree)
+            return 'É necessário informar o familyScript da Árvore da Linhagem.';                      
+
         return '';
     }
 

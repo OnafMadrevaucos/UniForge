@@ -31,39 +31,7 @@
           <div id="entryTypeGroup" class="data-group combo">
             <span class="data-label">Tipo </span>
             <combo id="entryType" value="entryTypes" />
-          </div>
-          <div id="dateTypeGroup" class="data-group combo">
-            <span class="data-label">Calendário </span>
-            <combo id="calendarType" value="calendars" />
-          </div>
-          <div id="relevanceGroup" class="data-group combo">
-            <span class="data-label">Relevância </span>
-            <combo id="relevance" value="relevances" />
-          </div>
-          <div class="date-info flexrow">
-            <div id="startDate" class="data-group date start" data-date="">
-              <span class="data-label">Início </span>
-              <calendar class="start"></calendar>
-            </div>
-            <div id="endDate" class="data-group date end" data-date="">
-              <span class="data-label">
-                Término
-                <i class="fa-regular fa-circle-question" data-tooltip="Opcional"></i>
-              </span>
-              <calendar class="end"></calendar>
-            </div>
-          </div>
-          <div id="entryGroup" class="data-complex full-button flexrow">
-            <button id="entryButton"><i class="fas fa-paperclip"></i> Vincular Entrada</button>
-            <div id="entryInfo" class="data-group entry flexrow hidden">
-              <span class="data-label">Entrada Vinculada </span>
-              <span id="entryTitle" class="entry-title"></span>
-              <a id="removeEntryButton" class="remove-button remove-entry" data-tooltip="Desvincular Entrada"
-                data-tooltip-left="true" hidden>
-                <i class="fas fa-trash"></i>
-              </a>
-            </div>
-          </div>
+          </div>                    
           <div class="data-complex flexrow">
             <div class="data-group check">
               <span class="data-label">Rascunho </span>
@@ -78,9 +46,9 @@
 
     <div id="sections" class="tabs-control flexcol">
       <div class="tabs-options flex-0 flexrow">
-        <button id="descriptionTabButton" class="flexcol" data-panel="descriptionTab" disabled><i class="fas fa-align-left"></i> Descrição</button>
-        <button id="eventTabButton" class="flexcol" data-panel="eventTab" disabled><i class="fas fa-calendar"></i> Eventos</button>
-        <button id="lineageTabButton" class="flexcol" data-panel="lineageTab" disabled><i class="fas fa-people-group"></i> Linhagem</button>  
+        <button id="descriptionTabButton" class="flexcol" data-tab="descriptionTab" disabled><i class="fas fa-align-left"></i> Descrição</button>
+        <button id="eventTabButton" class="flexcol" data-tab="eventTab" disabled><i class="fas fa-calendar"></i> Eventos</button>
+        <button id="lineageTabButton" class="flexcol" data-tab="lineageTab" disabled><i class="fas fa-people-group"></i> Linhagem</button>  
       </div>
       <div id="descriptionTab" class="tab-content flex-1 flexcol active">
         <div id="flavorEditor" class="simple-tmce">
@@ -134,10 +102,19 @@
         </div>
       </div>
       <div id="lineageTab" class="tab-content flex-1 flexcol">
-        <div id="lineageFlavorEditor" class="simple-tmce">
-          <div class="text-content editable"></div>
+        <div id="lineageGroup" class="flexcol">
+          <span>{{noLineageLink}}</span>
+          <div class="lineage-buttons flexrow">
+            <button id="newLineageButton"><i class="fas fa-person-circle-plus"></i> Nova Linhagem</button>
+            <button id="linkLineageButton"><i class="fas fa-link"></i> Vincular a uma Linhagem</button>
+          </div>
         </div>
-        <div id="treeContainer" class="lineage-tree viewer"></div>       
+        <div id="lineageContainer" class="flexcol flex-1 hidden">
+          <div id="lineageFlavorEditor" class="simple-tmce">
+            <div class="text-content editable"></div>
+          </div>          
+          <div id="treeContainer" class="lineage-tree viewer"></div>       
+        </div>
       </div>
     </div>
     <div class="footer flexrow">

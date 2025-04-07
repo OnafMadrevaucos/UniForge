@@ -9,14 +9,16 @@ import * as leafletEsm from './leaflet/module.mjs';
 import AtlasForm from "../models/forms/atlasForm.js";
 import EntityForm from "../models/forms/entityForm.js";
 import HistoryForm from '../models/forms/historyForm.js';
-import EconomyForm from '../models/forms/economyForm.js';
 import PoliticsForm from "../models/forms/politicsForm.js";
+import EconomyForm from '../models/forms/economyForm.js';
+import MilitaryForm from '../models/forms/militaryForm.js';
+import IdeologyForm from '../models/forms/ideologyForm.js';
+
 import SettingsForm from "../models/forms/settingsForm.js";
 import LibraryForm from "../models/forms/libraryForm.js";
 import TimelineForm from "../models/forms/timelineForm.js";
 import { APP_STATES } from './utils/state.mjs';
 import { core } from './leaflet/module.mjs';
-
 'use strict';
 
 globalThis.store = new WeakMap(); // WeakMap para armazenar os dados de imagens associados aos elementos.
@@ -182,8 +184,10 @@ globalThis.uniforge = {
         atlas: AtlasForm,
         entity: EntityForm,
         history: HistoryForm,
-        economy: EconomyForm,
         politics: PoliticsForm,
+        economy: EconomyForm,
+        military: MilitaryForm, 
+        ideologies: IdeologyForm,
         settings: SettingsForm,
         library: LibraryForm,
         timeline: TimelineForm
