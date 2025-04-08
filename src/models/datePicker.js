@@ -1,18 +1,17 @@
-export default class DatePicker
-{  
-  constructor(pickerId, date={}) {
-    this.pickerId = pickerId;    
+export default class DatePicker {
+  constructor(pickerId, date = {}) {
+    this.pickerId = pickerId;
 
     this.ready = false;
 
-    this.selectedDate = { 
+    this.selectedDate = {
       day: date?.day ?? null,
       month: date?.month ?? 0,
-      year: date?.year ?? 1 
+      year: date?.year ?? 1
     };  // Sem uso do Date, valores customizados.
 
     this.currentMonth = this.selectedDate.month;
-    this.currentYear = this.selectedDate.year;  
+    this.currentYear = this.selectedDate.year;
 
     // Modos de visualização.
     this.currentView = 'days'; // 'days', 'months', 'years'.
@@ -58,60 +57,75 @@ export default class DatePicker
   get nextGroupButton() {
     return this.dataGroup?.querySelector('#nextGroup') ?? null;
   }
-  
-  _setupDatePicker() {  
-    // Abre ou fecha o calendário ao clicar
-    this.dateInput.addEventListener('click', () => {
-      this.calendar.classList.toggle('open');
-    });
-    
-    this.nextGroupButton.addEventListener('click', (event) => {
-      event.stopPropagation(); // Impede que o clique "vaze" para o container e feche o calendário.
 
-      this.prevButtonClickCount = 0;
-      const currentTime = Date.now();
+  setupDatePicker() {
+    this.activateListeners();
 
-      if(this.currentView === "days") {
-        this.currentMonth++;
-        if (this.currentMonth >= this.months.length) {
-          this.currentMonth = 0;  // Volta para o primeiro mês
-          this.currentYear++;  // Incrementa o ano
-        }
-      } else if(this.currentView === "months") {
-        this.currentYear++;
-      } else if(this.currentView === "years") {
-        if (this.nextButtonClickCount < 10) {
-          this.currentYear += 10;
-        } else if (this.nextButtonClickCount < 20) {
-          this.currentYear += 100;
-        } else {
-          this.currentYear += 1000;
-        }
+    this.ready = true;
+  }
 
-        // A alteração no incremento de 10 para 100 e para 1000 anos deve ser feito apenas se o último clique
-        // ocorreu a menos de 500 ms.
-        if (currentTime - this.lastNextButtonClickTime < 500) this.nextButtonClickCount++;
-        this.lastNextButtonClickTime = currentTime;
+  activateListeners() {
+    // Abre ou fecha o calendário ao clicar.
+    this.dateInput.addEventListener('click', () => { this.onDatePickerClick(); });
+    // Navegação entre datas futuras.
+    this.nextGroupButton.addEventListener('click', (event) => { this.onNextGroupClick(event); });
+    // Navegação entre datas anteriores.
+    this.prevGroupButton.addEventListener('click', (event) => { this.onPrevGroupClick(event); });
+    // Alterna a visualização de acordo com o clique no monthYearDisplay
+    this.monthYearDisplay.addEventListener('click', (event) => { this.onMonthYearClick(event); });
+
+    // Fecha o calendário se clicar fora dele.
+    document.addEventListener('click', (event) => { this.closeOnOutsideClick(event); });
+  }
+
+  onDatePickerClick() {
+    this.calendar.classList.toggle('open');
+  }
+  onNextGroupClick(event) {
+    event.stopPropagation(); // Impede que o clique "vaze" para o container e feche o calendário.
+
+    this.prevButtonClickCount = 0;
+    const currentTime = Date.now();
+
+    if (this.currentView === "days") {
+      this.currentMonth++;
+      if (this.currentMonth >= this.months.length) {
+        this.currentMonth = 0;  // Volta para o primeiro mês
+        this.currentYear++;  // Incrementa o ano
       }
-      this.updateCalendar();
-    });
+    } else if (this.currentView === "months") {
+      this.currentYear++;
+    } else if (this.currentView === "years") {
+      if (this.nextButtonClickCount < 10) {
+        this.currentYear += 10;
+      } else if (this.nextButtonClickCount < 20) {
+        this.currentYear += 100;
+      } else {
+        this.currentYear += 1000;
+      }
 
-    // Navegação entre meses
-    this.prevGroupButton.addEventListener('click', (event) => {
-      event.stopPropagation(); // Impede que o clique "vaze" para o container e feche o calendário.
+      // A alteração no incremento de 10 para 100 e para 1000 anos deve ser feito apenas se o último clique
+      // ocorreu a menos de 500 ms.
+      if (currentTime - this.lastNextButtonClickTime < 500) this.nextButtonClickCount++;
+      this.lastNextButtonClickTime = currentTime;
+    }
+    this.updateCalendar();
+  }
+  onPrevGroupClick(event) {
+    event.stopPropagation(); // Impede que o clique "vaze" para o container e feche o calendário.
 
       this.nextButtonClickCount = 0;
       const currentTime = Date.now();
 
-      if(this.currentView === "days") {
+      if (this.currentView === "days") {
         this.currentMonth--;
         if (this.currentMonth < 0) {
           this.currentMonth = this.months.length - 1;  // Volta para o último mês.
           this.currentYear--;  // Decrementa o ano.
         }
-      } else if(this.currentView === "months") {
+      } else if (this.currentView === "months") {
         this.currentYear--;
-      } else if(this.currentView === "years") {
+      } else if (this.currentView === "years") {
         if (this.prevButtonClickCount < 10) {
           this.currentYear -= 10;
         } else if (this.prevButtonClickCount < 20) {
@@ -127,21 +141,9 @@ export default class DatePicker
         this.lastPrevButtonClickTime = currentTime;
       }
       this.updateCalendar();
-    });
-    
-    // Fecha o calendário se clicar fora
-    document.addEventListener('click', (e) => {
-      if (this.calendar?.classList.contains('open') && !this.dateInput?.contains(e.target)) {
-        this.currentView = 'days';
-        this.updateCalendar();
-  
-        this.calendar.classList.remove('open');
-      }
-    });  
-  
-    // Alterna a visualização de acordo com o clique no monthYearDisplay
-    this.monthYearDisplay.addEventListener('click', (event) => {
-      event.stopPropagation(); // Impede que o clique "vaze" para o container e feche o calendário.
+  }
+  onMonthYearClick(event) {
+    event.stopPropagation(); // Impede que o clique "vaze" para o container e feche o calendário.
 
       this.nextButtonClickCount = 0;
       this.prevButtonClickCount = 0;
@@ -154,16 +156,21 @@ export default class DatePicker
         this.currentView = 'days';  // Terceira troca: volta para dias.
       }
       this.updateCalendar();
-    });    
+  }
+  closeOnOutsideClick(event) {
+    if (this.calendar?.classList.contains('open') && !this.dateInput?.contains(event.target)) {
+      this.currentView = 'days';
+      this.updateCalendar();
 
-    this.ready = true;
+      this.calendar.classList.remove('open');
+    }
   }
 
-  _reloadDatePicker(dateType, clearText=true) {
+  _reloadDatePicker(dateType, clearText = true) {
     // Se o DatePicker ainda não foi inicializado, inicialize-o
-    if(!this.ready) this._setupDatePicker();
+    if (!this.ready) this.setupDatePicker();
 
-    if(clearText) this.dateDisplay.textContent = 'Selecione uma data';
+    if (clearText) this.dateDisplay.textContent = 'Selecione uma data';
 
     // Defina meses, dias e anos customizados
     this.months = dateType.months;
@@ -171,9 +178,9 @@ export default class DatePicker
     this.daysInMonth = dateType.daysInMonth;
   }
 
-  _loadDatePicker(dateType, clearText=true) {
+  _loadDatePicker(dateType, clearText = true) {
     this._reloadDatePicker(dateType, clearText);
-    
+
     this.updateCalendar(); // Inicializa o calendário
   }
 
@@ -212,7 +219,7 @@ export default class DatePicker
     // Aguarda a conclusão da animação antes de mudar a visualização
     setTimeout(() => {
       this.calendarView.classList.remove('zoom-out');
-  
+
       // Lógica para mudar a visualização (ajustar para sua lógica específica)
       switch (newView) {
         case 'days':
@@ -240,8 +247,8 @@ export default class DatePicker
     this.currentYear = year;
     this.currentView = 'months';  // Volta para a exibição de meses após escolher o ano
     this.updateCalendar();
-  }  
-  
+  }
+
   // Seleciona a data
   selectDate(day) {
     this.currentDay = day;
@@ -265,7 +272,7 @@ export default class DatePicker
   }
 
   // Exibe os dias do mês
-  showDays() {    
+  showDays() {
     // Exibe os dias da semana
     this.days.forEach(day => {
       const dayHeader = document.createElement('div');
@@ -273,7 +280,7 @@ export default class DatePicker
       dayHeader.style.fontWeight = 'bold';
       this.calendarContent.appendChild(dayHeader);
     });
-    
+
     const daysInCurrentMonth = this.daysInMonth[this.currentMonth];
     for (let i = 1; i <= daysInCurrentMonth; i++) {
       const day = document.createElement('div');
@@ -285,7 +292,7 @@ export default class DatePicker
   }
 
   // Exibe os meses do ano
-  showMonths() {   
+  showMonths() {
     // Exibe os meses do ano
     this.months.forEach((monthName, index) => {
       const month = document.createElement('div');

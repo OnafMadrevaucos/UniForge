@@ -1,27 +1,16 @@
 import { triggerHook } from "../../scripts/hooks.js";
+import Application from "../application.js";
 /**
  * Classe BaseForm
  * Gerencia a exibição, ocultação, e interações de um formulário sobre um overlay.
  */
-export default class BaseForm {
+export default class BaseForm extends Application {
   /**
    * Construtor da classe BaseForm.
    * @param {HTMLElement} title   - O título do formulário.
    */
-  constructor(title) {
-    /**
-    * O elemento de overlay que contém o formulário.
-    * @type {HTMLElement}
-    * 
-    */
-    this.overlay = document.getElementById('formOverlay');
-
-    /**
-    * O título do formulário.
-    * @type {string}
-    * 
-    */
-    this.title = title;
+  constructor(title, options = {}) {
+    super(title, { style: Application.Styles.FORM, ...options });
 
     /**
      * Gerenciador de conexão de Banco de Dados.
@@ -47,36 +36,12 @@ export default class BaseForm {
         * 
         */
     this.selectedIcon = 'fas fa-eye';
-    
-    /**
-     * Indica se o formulário está oculto inicialmente.
-     * @type {boolean}
-     */
-    this.isHidden = this.ui.form.classList.contains('hidden');
-
-    /**
-    * Indica se o formulário está renderizado corretamente.
-    * @type {boolean}
-    */
-    this.rendered = false;
-
-    /**
-    * Indica se o formulário está configurado corretamente. Se 'sim', o formulário está pronto para ser exibido.
-    * @type {boolean}
-    */
-    this.configured = false;
 
     /**
      * Indica se o formulário está oculto inicialmente.
      * @type {boolean}
      */
     this.canDelete = false;
-
-    /**
-     * Referência ao container do formulário.
-     * @type {HTMLElement}
-     */
-    this.form = this.ui.form;
 
     /**
      * Objeto de controle global para mensagens ao usuário.
@@ -108,42 +73,15 @@ export default class BaseForm {
 
   /* ---------------------------------------------------------------------------------------------------------------- */
   // GETTERS E SETTERS
-  /**
-   * Obtém o template usado pelo Formulário.
-   * 
-   * @returns {String}  - O caminho do template do formulário.
-   */
-  get template() {
-    return this.#template;
-  }
-  /**
-   * Determina o template usado pelo Formulário.
-   * 
-   * @param {String}  - O caminho do template do formulário.
-   */
-  set template(value) {
-    this.#template = `./templates/forms/${value}.html`;
-  }
 
   /**
-   * Propriedade que retorna um objeto com referências para elementos do formulário.
+   * Obtém o container principal do formulário.
    * 
-   * @returns {Object}  - Um objeto com as seguintes propriedades:
-   *  - overlay: O elemento HTML que contém o formulário.
-   *  - form: O elemento HTML que representa o formulário.
-   *  - header: O elemento HTML que contém o título do formulário.
-   *  - close_btn: O elemento HTML que fecha o formulário.
-   *  - content: O elemento HTML que contém o conteúdo do formulário.
+   * @returns {HTMLElement}  - O container principal do formulário.
    */
-  get ui() {
-    return {
-      overlay: this.overlay,
-      form: document.getElementById('formContainer'),
-      header: document.getElementById('formHeader'),
-      close_btn: document.getElementById('closeForm'),
-      content: document.getElementById('formContent')
-    };
-  }  
+  get form() {
+    return this.ui.application;
+  }
 
   /**
    * Obtém o tipo do Formulário.
@@ -172,26 +110,46 @@ export default class BaseForm {
   };
 
   prepareBaseData() {
-    const data = {
-      title: this.title,
-      type: this.type,
-      core: {
-        template: this.template,
-        imageUrl: this.imageUrl,
-        blankImgUrl: this.blankImgUrl
-      }
-    };
+    const data = super.prepareBaseData();
+
+    data.core.imageUrl = this.imageUrl;
+    data.core.blankImgUrl = this.blankImgUrl;
 
     return data;
   }
 
-  /**
-   * Obtém o código HTML do Formulário.
-   * 
-   * @returns {String}  - O código HTML do Formulário.
-   */
-  toHTML() {
-    return this.form.outerHTML;
+  async prepareTemplate() {
+    const overlay = document.createElement('div');
+    overlay.id = `${this.style}Overlay-${this.uuid}`;
+    overlay.classList.add('overlay', 'flexrow', 'hidden');
+
+    const container = document.createElement('div');
+    container.id = `${this.style}Container-${this.uuid}`;
+    container.classList.add(this.style, 'container', 'flexrow');
+
+    const header = document.createElement('div');
+    header.id = `${this.style}Header-${this.uuid}`;
+    header.classList.add('header-bar', 'flexrow');
+
+    header.innerHTML = `
+        <span class="${this.style} title">{{title}}</span>
+        <switch id="deleteSwitch" class="hidden"></switch>
+        <a id="${this.style}Close-${this.uuid}" class="close-button flexcol"><i class="fas fa-xmark"></i></a>
+    `;
+
+    const body = document.createElement('div');
+    body.id = `${this.style}Body-${this.uuid}`;
+    body.classList.add('body', 'flexcol');
+
+    const html = await uniforge.utils.loadTemplate(this.template);
+    body.innerHTML = html;
+
+    container.appendChild(header);
+    container.appendChild(body);
+    overlay.appendChild(container);
+
+    // Adiciona o overlay ao DOM.
+    document.body.appendChild(overlay);
   }
 
   /* ---------------------------------------------------------------------------------------------------------------- */
@@ -206,15 +164,7 @@ export default class BaseForm {
     try {
       await triggerHook('beforeRenderForm');
 
-      const html = await uniforge.utils.loadTemplate(this.template);
-      this.ui.content.innerHTML = html;
-
-      // Obtém objeto com todos os dados unificados necessários para o funcionamento do formulário.
-      this.data = this.prepareBaseData();
-      
-      if(this.prepareData) this.prepareData();
-
-      this.prepareContent();
+      await super.render();
 
       // Configura os conteúdos específicos do formulário.
       await this.initialize();
@@ -225,65 +175,30 @@ export default class BaseForm {
       console.error(error);
     }
   }
-  /**
-   * Limpa o formulário e re-exibe o conteúdo com os dados atuais.
-   * 
-   * @async
-   * @returns {Promise<void>} - Uma promessa que resolve quando o formulário for re-exibido.
-   */
-  async refresh() {
-    try {
-      this.clear();
-      this.rendered = false;
-      await this.render();
 
-    } catch (error) {
-      console.error(error);
-    }
-  }
   /**
    * Remove todos os elementos filhos de um elemento especificado ou do formulário principal.
    * @param {HTMLElement} [element={}] - O elemento cujos filhos devem ser removidos. Por padrão, é o formulário principal.
    */
   clear() {
+    super.clear();
+
     // Limpa todos os editores Tiny MCE inicializados no formulário.
     tinymce.remove();
-
-    // Limpa o conteúdo do formulário.
-    this.ui.content.innerHTML = '';
-
-    // Limpa o conteúdo do formulário dos metadados da aplicação.
-    uniforge.state.update(['currentForm', {name: null, state: null, activeTab: 0}]);
   }
   /**
    * Exibe o formulário e o overlay associados.
    */
   async showForm(forceLoad = false) {
-    if (forceLoad && !this.rendered) await this.render();
-    else throw new Error('Não foi possível exibir o formulário. O formulário não foi renderizado.');
-
-    try {
-      if (this.configured) {
-        this.ui.overlay.classList.remove('hidden');
-        
-        uniforge.form = this;
-        uniforge.state.save();
-      }
-    } catch (error) {
-      this.msgBox.showError(error.message);
-    }
+    this.show(forceLoad);
   }
 
   /**
    * Oculta o formulário e o overlay, limpando seu conteúdo.
    */
   hideForm() {
-    this.clear();
-    this.ui.overlay.classList.add('hidden');
-    
-    uniforge.form = null;
-    uniforge.state.save();
-  }    
+    this.close();
+  }
   /* ---------------------------------------------------------------------------------------------------------------- */
   // CONFIGURAÇÃO
   /**
@@ -291,18 +206,12 @@ export default class BaseForm {
    */
   async initialize() {
     try {
-      // Configura os conteúdos básicos do formulário.
-      this.configureBaseContent(this.form);
-
-      // Ativa os ouvintes de eventos básicos.
-      this.activateBaseListeners();
-
       // Configura os conteúdos específicos do formulário.
       if (this.configureContent) {
 
-        await this.configureContent();        
+        await this.configureContent();
 
-        if (this.activateListeners) {          
+        if (this.activateListeners) {
 
           // Ativa os demais ouvintes.
           this.activateListeners();
@@ -323,56 +232,11 @@ export default class BaseForm {
       return false;
     }
   }
-  /**
-   * Configura o conteúdo do formulário
-   * @param {HTMLElement} form - O elemento que representa o formulário.
-   * @async
-   */
-  async configureBaseContent(form) {
-    // Configura o título do formulário.
-    const formTitle = this.querySelector('.form-title');
-    formTitle.textContent = this.title;
-  }
-
-  /**
-   * Prepara o conteúdo do formulário substituindo seus placeholders e tags customizadas.
-  */
-  prepareContent() {
-    const preparedContent = uniforge.parser.parseHTML(this.ui.content.innerHTML, this.data);
-    this.ui.content.innerHTML = preparedContent;
-  }  
 
   /* ---------------------------------------------------------------------------------------------------------------- */
   // LISTENERS
-  /**
-   * Configura ouvintes de eventos básicos para o formulário.
-   * @private
-   */
-  activateBaseListeners() {
-    const overlay = document.getElementById('formOverlay');
-    overlay.addEventListener('click', this.onOverlayClick.bind(this), {once: true});
 
-    const closeBtn = document.getElementById('closeForm');
-    closeBtn.addEventListener('click', this.onCloseClick.bind(this), {once: true});
 
-    const inputs = document.querySelectorAll('input[list]');
-    inputs.forEach(input => input.addEventListener('input', this.onSearchInputList.bind(this)), {once: true});
-  }
-
-  onOverlayClick(event) {
-    event.stopPropagation();
-    if (!event.target.closest('.form-container') && !event.target.closest('.content')) {
-      this.#handleNavQueueOnClose(event);
-      this.hideForm();
-    }
-  }
-
-  onCloseClick(event) {
-    event.stopPropagation();
-    this.#handleNavQueueOnClose(event);    
-
-    this.hideForm();   
-  }
 
   onSearchInputList(event) {
     event.stopPropagation();
@@ -381,54 +245,20 @@ export default class BaseForm {
     const options = document.querySelectorAll(`datalist#${input.name} option`);
     let isValid = false;
     options.forEach(option => {
-        if (option.value === input.value) {
-            isValid = true;
-        }
+      if (option.value === input.value) {
+        isValid = true;
+      }
     });
 
     // Aplica a cor de fundo personalizada se o valor for válido
     if (isValid) {
-        input.style.backgroundColor = '#e0f7fa'; // Cor personalizada
+      input.style.backgroundColor = '#e0f7fa'; // Cor personalizada
     } else {
-        input.style.backgroundColor = ''; // Volta ao padrão
+      input.style.backgroundColor = ''; // Volta ao padrão
     }
   }
 
   /* ---------------------------------------------------------------------------------------------------------------- */
   // UTILITÁRIOS  
-  /**
-   * Consulta um seletor CSS dentro do overlay principal.
-   * @param {string} selector - O seletor CSS a ser buscado.
-   * @returns {HTMLElement} O primeiro elemento correspondente.
-   */
-  querySelector(selector) {
-    return this.overlay.querySelector(selector);
-  }
 
-  /**
-   * Consulta todos os elementos correspondentes a um seletor CSS dentro do overlay principal.
-   * @param {string} selector - O seletor CSS a ser buscado.
-   * @returns {NodeList} Uma NodeList com os elementos correspondentes.
-   */
-  querySelectorAll(selector) {
-    return this.overlay.querySelectorAll(selector);
-  }
-
-  /**
-   * Lida com a fila de navegação ao fechar o formulário.
-   * @param {MouseEvent} event - O evento de clique para fechar.
-   * @private
-   */
-  #handleNavQueueOnClose(event) {
-    const overlay = event.target.closest('.overlay');
-    if (overlay.id === 'formOverlay' || uniforge.navQueue.isFromTimeline()) {
-      uniforge.navQueue.clearQueue();
-    } else if (overlay.id === 'entryFormOverlay') {
-      if (uniforge.navQueue.isFromLibrary()) {
-        const first = uniforge.navQueue.shift();
-        uniforge.navQueue.clearQueue();
-        uniforge.navQueue.push(first);
-      }
-    }
-  }
 }

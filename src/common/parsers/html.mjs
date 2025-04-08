@@ -256,7 +256,7 @@ function _parseSidetabsTags(html) {
 
         let body = '';
         data[source].forEach(tab => {
-            body += `<div class="tab${tab.title === 'entity' || tab.title === 'atlas' ? ' disabled' : ''}" data-target="${tab.title}">
+            body += `<div class="tab${tab.title === 'entity' ? ' disabled' : ''}" data-target="${tab.title}">
                         <span class="tab-text"><i class="${tab.icon}"></i> ${tab.label}</span>
                         <span class="tab-icon"><i class="${tab.icon}"></i></span>
                     </div>`

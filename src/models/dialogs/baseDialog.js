@@ -1,4 +1,6 @@
-export default class BaseDialog {
+import Application from "../application.js";
+
+export default class BaseDialog extends Application {
     /**
      * Cria uma instância do diálogo.
      * 
@@ -13,11 +15,13 @@ export default class BaseDialog {
      * @param {Function} options.hasTemplate      - Flag que indica se o diálogo deve possuir um template.
      */
     //constructor({ title = "Dialog", buttons = {}, abort = null}, options = { hasTemplate = false }) {
-    constructor(data, options) {
+    constructor(data, options = {}) {
+        const title = data.title || "Caixa de Diálogo";
+
+        super(title, { style: Application.Styles.DIALOG, ...options }); // Chama o construtor da classe pai (Application) para gerar um UUID único.
+
         // Atribui os dados do diálogo.
         this.data = data;
-
-        this.uuid = uniforge.utils.randomID();
 
         /** 
          * Conjunto de botões do diálogo.
@@ -35,116 +39,37 @@ export default class BaseDialog {
 
         this.alwaysClose = options?.alwaysClose ?? false;
 
-        /**
-         * Gerenciador de conexão de Banco de Dados.
-         * @type {DBManager}
-         */
-        this.db = uniforge.db;
-
         /** 
          * Função executada se o dialog fechar inesperadamente.
          * @type {Function}
-         */
-        this.abort = data.abort;
-        /**
-        * Opções adicionais fornecidas ao diálogo.
-        * @type {Object}
         */
-        this.options = options;
-
-        /** 
-         * Estado interno para rastrear a posição e deslocamento do diálogo.
-         * @type {Object}
-         * @property {boolean} isDragging - Indica se o diálogo está sendo arrastado.
-         * @property {number} xDiff - Diferença de posição horizontal do mouse.
-         * @property {number} yDiff - Diferença de posição vertical do mouse.
-         * @property {number} x - Posição horizontal do diálogo.
-         * @property {number} y - Posição vertical do diálogo.
-         */
-        this.state = {
-            isDragging: false,
-            xDiff: 5,
-            yDiff: 5,
-            x: 0,
-            y: 0
-        };
+        this.abort = data.abort;
 
         /** 
        * Elemento DOM do diálogo.
        * @type {HTMLElement|null}
        */
         this.dialog = this.ui.dialog;
-
-        /**
-        * Objeto de controle global para mensagens ao usuário.
-        * @type {object}
-        */
-        this.msgBox = uniforge.msgBox;
-
-        /** 
-         * Estado de arraste do diálogo.
-         * @type {boolean}
-         */
-        this.isDragging = false;
     }
-
-    // Propriedade do template Handlebars do dialog.
-    #template;
 
     /* ---------------------------------------------------------------------------------------------------------------- */
     // GETTERS E SETTERS
-    get title() {
-        return this.data.title || "Caixa de Diálogo";
-    }
     /**
-     * Obtém o template usado pelo Formulário.
-     * 
-     * @returns {String}  - O caminho do template do formulário.
+    * Obtém o container principal do diálogo.
+    * 
+    * @returns {HTMLElement}  - O container principal do diálogo.
     */
-    get template() {
-        return this.#template;
-    }
-    /**
-     * Determina o template usado pelo Formulário.
-     * 
-     * @param {String}  - O caminho do template do formulário.
-     */
-    set template(value) {
-        this.#template = `./templates/dialogs/${value}.html`;
-    }
-
-    get hasTemplate() {
-        return this.template ? true : false;
+    get dialog() {
+        return this.ui.application;
     }
 
     /**
-   * Obtém o elemento pai onde o diálogo será posicionado.
-   * @async
-   * @returns {HTMLElement}  - Elemento pai onde o diálogo será posicionado.
-   */
+    * Obtém o elemento pai onde o diálogo será posicionado.
+    * @async
+    * @returns {HTMLElement}  - Elemento pai onde o diálogo será posicionado.
+    */
     get parentElement() {
         return document.querySelector('body.uniforge');
-    }
-
-    /**
-   * Propriedade que retorna um objeto com referências para elementos do formulário.
-   * 
-   * @returns {Object}  - Um objeto com as seguintes propriedades:
-   *  - overlay: O elemento HTML que contém o formulário.
-   *  - form: O elemento HTML que representa o formulário.
-   *  - topbar: O elemento HTML que contém o título do formulário.
-   *  - close_btn: O elemento HTML que fecha o formulário.
-   *  - content: O elemento HTML que contém o conteúdo do formulário.
-   */
-    get ui() {
-        return {
-            overlay: document.getElementById('dialogOverlay-' + this.uuid),
-            dialog: document.getElementById('dialog-' + this.uuid),
-            content: document.getElementById('dialogContent-' + this.uuid),
-            topbar: document.getElementById('dialogHeader-' + this.uuid),
-            body: document.getElementById('dialogBody-' + this.uuid),
-            buttons: document.getElementById('dialogButtons-' + this.uuid)
-        };
     }
 
     _prepareTopBar() {
@@ -171,7 +96,7 @@ export default class BaseDialog {
         // Corpo do diálogo
         const dialogBody = document.createElement("div");
         dialogBody.id = 'dialogBody-' + this.uuid;
-        dialogBody.className = 'body flexcol';        
+        dialogBody.className = 'body flexcol';
 
         return dialogBody;
     }
@@ -199,11 +124,11 @@ export default class BaseDialog {
         const content = document.createElement("form");
         content.id = 'dialogContent-' + this.uuid;
         content.className = 'content';
-        content.method = 'dialog';       
+        content.method = 'dialog';
 
         const topBar = this._prepareTopBar();
-        const body = this._prepareBody();     
-        const buttons = this._prepareButtons();   
+        const body = this._prepareBody();
+        const buttons = this._prepareButtons();
 
         content.appendChild(topBar);
         content.appendChild(body);
@@ -216,12 +141,12 @@ export default class BaseDialog {
      * Cria a estrutura do diálogo, incluindo overlay, cabeçalho, corpo e botões.
      * @private
      */
-    _prepareDialog() {
+    prepareTemplate() {
         if (!this.overlay) {
             const overlay = document.createElement("div");
             overlay.id = 'dialogOverlay-' + this.uuid;
             overlay.className = "overlay dialog-overlay";
-            if(this.alwaysOnTop) overlay.style.zIndex = '1200';
+            if (this.alwaysOnTop) overlay.style.zIndex = '1200';
 
             this.overlay = overlay; // Armazena o overlay para exibição posterior.
         }
@@ -299,19 +224,19 @@ export default class BaseDialog {
         this.dialog.show();
     }
 
-    submit(button, event) { 
+    submit(button, event) {
         const target = this.dialog;
         try {
-            if(button?.callback) {
-                const closing = button.callback.call(this, target, event); 
-                if (closing || this.alwaysClose) this.close();                
-            } else {                
+            if (button?.callback) {
+                const closing = button.callback.call(this, target, event);
+                if (closing || this.alwaysClose) this.close();
+            } else {
                 this.msgBox.showWarning('Botão não possui callback definido.');
-                this.close();            
+                this.close();
             }
         } catch (error) {
             this.msgBox.showError(error);
-        }      
+        }
     }
 
     /**
@@ -355,7 +280,7 @@ export default class BaseDialog {
         } catch (error) {
             this.msgBox.showError(error);
         }
-    }   
+    }
 
     /**
    * Seleciona o primeiro elemento correspondente ao seletor dentro do diálogo.
@@ -399,7 +324,7 @@ export default class BaseDialog {
         });
 
         const buttons = this.querySelectorAll('.dialog-button');
-        Object.values(buttons).forEach(button => { 
+        Object.values(buttons).forEach(button => {
             button.addEventListener("click", (event) => { this._onClickButton(event); });
         });
 
@@ -408,7 +333,7 @@ export default class BaseDialog {
             event.stopPropagation();
             this.close();
         });
-    }   
+    }
 
     _onClickButton(event) {
         const id = event.target.id;

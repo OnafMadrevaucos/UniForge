@@ -14,6 +14,8 @@ export default class AtlasForm extends EntryForm {
         this.template = 'atlasForm'; // Define o template do formulário.
 
         this.type = 'atlas'; // Define o tipo do formulário.
+
+        this.isEventForm = false; // Indica que o formulário não possui eventos.
     }
 
     /* ---------------------------------------------------------------------------------------------------------------- */

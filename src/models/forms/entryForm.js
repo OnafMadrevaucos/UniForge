@@ -59,6 +59,12 @@ export default class EntryForm extends SidebarForm {
      */
     this.isUpdate = false;
 
+    /**
+     * O formulário possui funcionalidade de vinculação de Eventos? (true por padrão)
+     * @type {boolean}
+     */
+    this.isEventForm = true;
+
     /** 
      * @type {Object} - Tooltip de interface do usuário. 
      * */
@@ -176,7 +182,7 @@ export default class EntryForm extends SidebarForm {
     // Informa ao formulário atual o seu tipo.
     this.data.type = this.type;
 
-    if (!this.isSettings) {
+    if (this.isEventForm) {
       this.data.entryTypes = uniforge.doc.entryTypes.toObject();
       this.data.relevances = uniforge.doc.relevances.toObject();
       this.data.calendars = uniforge.doc.calendars.toObject();
@@ -366,7 +372,7 @@ export default class EntryForm extends SidebarForm {
         // -----------------------------------------------------------------------           
         if (!ignoreEditor) mainEditor?.mode.set('readonly'); // Desativa o editor.
 
-        if (!this.isSettings) {
+        if (this.isEventForm) {
           const relevanceSelect = this.querySelector('#relevance');
           relevanceSelect.selectedIndex = 0;
 
@@ -448,7 +454,7 @@ export default class EntryForm extends SidebarForm {
       editor.setContent('');
     });
 
-    if (!this.isSettings) {
+    if (this.isEventForm && this.hasEvent) {
       this.eid = null;
       this.#events = [];
 
@@ -654,7 +660,7 @@ export default class EntryForm extends SidebarForm {
     yesBtn.addEventListener('click', (event) => { this.onDeleteClick(event); });
     noBtn.addEventListener('click', (event) => { this.onCancelSidebarDialogClick(event); });
 
-    if (!this.isSettings) {
+    if (this.isEventForm) {
       const calendarType = this.querySelector('#calendarType');
       calendarType.addEventListener('change', (event) => { this.onDateTypeChange(event); });
 
