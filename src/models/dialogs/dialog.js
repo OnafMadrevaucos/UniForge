@@ -109,9 +109,9 @@ export default class Dialogs extends BaseDialog {
      * @async
      * @throws {Error} - Se ocorrer um erro ao carregar o template.
      */
-  async renderDialog() {
+  async _prepareBody() {
     try {
-      this.ui.body.innerHTML = this.getBody();
+      return this.getBody();
     } catch (error) {
       this.msgBox.showError(error);
     }

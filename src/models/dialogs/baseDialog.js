@@ -37,19 +37,7 @@ export default class BaseDialog extends Application {
 
         this.alwaysOnTop = options?.alwaysOnTop ?? false;
 
-        this.alwaysClose = options?.alwaysClose ?? false;
-
-        /** 
-         * Função executada se o dialog fechar inesperadamente.
-         * @type {Function}
-        */
-        this.abort = data.abort;
-
-        /** 
-       * Elemento DOM do diálogo.
-       * @type {HTMLElement|null}
-       */
-        this.dialog = this.ui.dialog;
+        this.alwaysClose = options?.alwaysClose ?? false;      
     }
 
     /* ---------------------------------------------------------------------------------------------------------------- */
@@ -70,35 +58,24 @@ export default class BaseDialog extends Application {
     */
     get parentElement() {
         return document.querySelector('body.uniforge');
-    }
+    }    
 
-    _prepareTopBar() {
-        // Cabeçalho
-        const topBar = document.createElement('div');
-        topBar.id = 'dialogHeader-' + this.uuid;
-        topBar.className = 'topbar flexrow';
+    /**
+     * Renderiza o diálogo com o template Handlebars.
+     * Se o diálogo possuir um template, ele é carregado e renderizado
+     * no corpo do diálogo.
+     * @async
+     * @throws {Error} - Se ocorrer um erro ao carregar o template.
+     */
+    async _prepareBody() {
+        try {
+            const rawHtml = await uniforge.utils.loadTemplate(this.template);
 
-        // Título do diálogo
-        const title = document.createElement("h2");
-        title.textContent = this.title;
-
-        const closeButton = document.createElement("a");
-        closeButton.className = 'close-button';
-        closeButton.innerHTML = '<i class="fas fa-xmark"></i>';
-
-        topBar.appendChild(title);
-        topBar.appendChild(closeButton);
-
-        return topBar
-    }
-
-    _prepareBody() {
-        // Corpo do diálogo
-        const dialogBody = document.createElement("div");
-        dialogBody.id = 'dialogBody-' + this.uuid;
-        dialogBody.className = 'body flexcol';
-
-        return dialogBody;
+            const html = uniforge.parser.parseHTML(rawHtml, this.data);
+            return html;
+        } catch (error) {
+            this.msgBox.showError(error);
+        }
     }
 
     _prepareButtons() {
@@ -118,90 +95,49 @@ export default class BaseDialog extends Application {
         });
 
         return buttons;
-    }
-
-    _prepareContent() {
-        const content = document.createElement("form");
-        content.id = 'dialogContent-' + this.uuid;
-        content.className = 'content';
-        content.method = 'dialog';
-
-        const topBar = this._prepareTopBar();
-        const body = this._prepareBody();
-        const buttons = this._prepareButtons();
-
-        content.appendChild(topBar);
-        content.appendChild(body);
-        content.appendChild(buttons);
-
-        return content;
-    }
+    }    
 
     /**
      * Cria a estrutura do diálogo, incluindo overlay, cabeçalho, corpo e botões.
-     * @private
+     * @implements
      */
-    prepareTemplate() {
-        if (!this.overlay) {
-            const overlay = document.createElement("div");
-            overlay.id = 'dialogOverlay-' + this.uuid;
-            overlay.className = "overlay dialog-overlay";
-            if (this.alwaysOnTop) overlay.style.zIndex = '1200';
+    async prepareDerivedTemplate(dialog, header, main) {
+        dialog.method = 'dialog';
 
-            this.overlay = overlay; // Armazena o overlay para exibição posterior.
-        }
+        header.innerHTML = `
+            <h2>${this.title}</h2>
+            <a id="${this.style}Close-${this.uuid}" class="close-button"><i class="fas fa-xmark"></i></a>
+        `;
 
-        // Container do diálogo
-        this.dialog = document.createElement("dialog");
-        this.dialog.id = 'dialog-' + this.uuid;
-        this.dialog.className = 'dialog';
+        const html = await this._prepareBody();
+        main.innerHTML = html;
 
-        this.dialog.style = `height: ${this.options.height ?? 'auto'}; width: ${this.options.width ?? 'fit-content'}`;
+        const buttons = this._prepareButtons();
 
-        const content = this._prepareContent();
-
-        this.dialog.appendChild(content);
-
-        this._renderWindow();
-
-        this.overlay.appendChild(this.dialog);
-
-        // Se o overlay do Dialog ainda não foi atrelado ao document, atrele-o.
-        if (!document.body.contains(this.overlay))
-            document.body.appendChild(this.overlay);
+        dialog.appendChild(header);
+        dialog.appendChild(main);
+        dialog.appendChild(buttons);
     }
 
     /**
     * Exibe o diálogo na página.
     */
-    async render(force = false, centralize = true) {
-        // Se o diálogo implementa 'prepareData', chama o método.
-        if (this.prepareData) this.prepareData();
-
-        // Prepara o dialog para em seguida renderizá-lo já com os dados preparados.
-        this._prepareDialog();
-
-        // Renderiza o diálogo especializado. Diálogos simples não possuem templates HTML.
-        if (this.hasTemplate && !this.template) {
-            this.msgBox.showError('O diálogo não tem um template válido a ser carregado.');
-            return false;
-        }
-
-        await this.renderDialog();
-
-        // Se o diálogo implementa 'configureElements', chama o método.
-        if (this.configureElements) await this.configureElements();
-
-        if (centralize) {
-            // Centralizar o diálogo no parentElement
-            this._centerDialog();
-        }
-
-        this._activateListeners();
+    async render(force = false) {
+        super.render();
 
         if (force) this.show();
 
         return true;
+    }
+    
+    async initialize() {
+        // Se o diálogo implementa 'configureElements', chama o método.
+        if (this.configureElements) await this.configureElements();
+        
+        // Centralizar o diálogo no parentElement
+        this._centerDialog();        
+
+        this.activateListeners();
     }
 
     async refresh() {
@@ -210,9 +146,7 @@ export default class BaseDialog extends Application {
         if (this.prepareData) this.prepareData();
 
         const content = this._prepareContent();
-        this.dialog.appendChild(content);
-
-        await this.renderDialog();
+        this.dialog.appendChild(content);        
 
         // Se o diálogo implementa 'configureElements', chama o método.
         if (this.configureElements) await this.configureElements();
@@ -252,35 +186,16 @@ export default class BaseDialog extends Application {
     /**
     * Fecha o diálogo e remove o overlay da página.
     */
-    close() {
-        if (this.abort) this.abort();
-
+    close() { 
         if (this.dialog) {
-            this.dialog.close();
-        }
+            super.close();
+        }   
 
-        const overlay = document.querySelector("#dialogOverlay-" + this.uuid);
-        if (!overlay) return;
-        overlay.remove();
+        if (!this.ui.overlay) return;
+        this.ui.overlay.remove();
     }
 
-    /**
-     * Renderiza o diálogo com o template Handlebars.
-     * Se o diálogo possuir um template, ele é carregado e renderizado
-     * no corpo do diálogo.
-     * @async
-     * @throws {Error} - Se ocorrer um erro ao carregar o template.
-     */
-    async renderDialog() {
-        try {
-            const rawHtml = await uniforge.utils.loadTemplate(this.template);
-
-            const html = uniforge.parser.parseHTML(rawHtml, this.data);
-            this.ui.body.innerHTML = html;
-        } catch (error) {
-            this.msgBox.showError(error);
-        }
-    }
+    
 
     /**
    * Seleciona o primeiro elemento correspondente ao seletor dentro do diálogo.
@@ -306,32 +221,25 @@ export default class BaseDialog extends Application {
     * Configura ouvintes de eventos básicos para o dialog.
     * @protected
     */
-    _activateListeners() {
-        const topBar = this.ui.topbar;
-        topBar.addEventListener('mousedown', (event) => { this._onMouseDown.bind(this)(event); });
+    activateListeners() {
+        //const topBar = this.ui.topbar;
+        //topBar.addEventListener('mousedown', (event) => { this._onMouseDown.bind(this)(event); });
 
-        const content = this.ui.content;
-        content.addEventListener('submit', (event) => { event.preventDefault(); });
+        const main = this.ui.main;
+        main.addEventListener('submit', (event) => { event.preventDefault(); });
 
         document.addEventListener('mousemove', (event) => { this._onMouseMove(event); });
         document.addEventListener('mouseup', () => { this._onMouseUp(); });
 
         // Permite fechar o diálogo clicando no overlay
-        this.overlay.addEventListener("click", (event) => {
-            if (!event.target.classList.contains('overlay')) return;
-            this.abort();
+        this.ui.overlay.addEventListener("click", (event) => {
+            if (!event.target.classList.contains('overlay')) return;            
             this.close();
         });
 
         const buttons = this.querySelectorAll('.dialog-button');
         Object.values(buttons).forEach(button => {
             button.addEventListener("click", (event) => { this._onClickButton(event); });
-        });
-
-        const closeButton = this.querySelector('.close-button');
-        closeButton.addEventListener('click', (event) => {
-            event.stopPropagation();
-            this.close();
         });
     }
 

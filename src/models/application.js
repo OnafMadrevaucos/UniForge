@@ -1,3 +1,5 @@
+import { triggerHook } from "../scripts/hooks.js";
+
 export default class Application {
 
     static Styles = { FORM: 'form', DIALOG: 'dialog' };
@@ -70,7 +72,7 @@ export default class Application {
             overlay: this._buildSelector('Overlay'),
             application: this._buildSelector('Container'),
             header: this._buildSelector('Header'),
-            body: this._buildSelector('Body'),
+            main: this._buildSelector('Main'),
             close_btn: this._buildSelector('Close')
         };
     }
@@ -87,11 +89,11 @@ export default class Application {
    */
     get ui() {
         return {
-            overlay: document.getElementById(this.query.overlay),
-            application: document.getElementById(this.query.application),
-            header: document.getElementById(this.query.header),
-            body: document.getElementById(this.query.body),
-            close_btn: document.getElementById(this.query.close_btn),
+            overlay: document.querySelector(this.query.overlay),
+            application: document.querySelector(this.query.application),
+            header: document.querySelector(this.query.header),
+            main: document.querySelector(this.query.main),
+            close_btn: document.querySelector(this.query.close_btn),
         };
     }
 
@@ -201,6 +203,37 @@ export default class Application {
     }
 
     /**
+     * Cria a estrutura do formulário, incluindo overlay, header, e body.
+     * 
+     * @async
+     * @returns {Promise<void>}  - Uma promessa que resolve quando o formulário for renderizado.
+     * @throws {Error}           - Se ocorrer um erro ao renderizar o formulário.
+    */
+    async prepareTemplate() {
+        const overlay = document.createElement('div');
+        overlay.id = `${this.style}Overlay-${this.uuid}`;
+        overlay.classList.add('overlay', 'flexrow');
+
+        const container = document.createElement('div');
+        container.id = `${this.style}Container-${this.uuid}`;
+        container.classList.add(this.style, 'container', 'flexrow');
+
+        const header = document.createElement('div');
+        header.id = `${this.style}Header-${this.uuid}`;
+        header.classList.add('header-bar', 'flexrow');
+
+        const main = document.createElement('div');
+        main.id = `${this.style}Main-${this.uuid}`;
+        main.classList.add('main', 'flexcol');
+
+        await this.prepareDerivedTemplate(container, header, main);        
+        overlay.appendChild(container);
+
+        // Adiciona o overlay ao DOM.
+        document.body.appendChild(overlay);
+    }
+
+    /**
     * Renderiza a aplicação.
     * 
     * @async
@@ -208,13 +241,15 @@ export default class Application {
     */
     async render() {
         try {
+            await triggerHook('beforeRender');
+
             // Função para obter os dados comuns à toda aplicação.
             this.data = this.prepareBaseData();
 
             // Função para obter os dados específicos da aplicação.
             if (this.prepareData) this.prepareData();
 
-            if (!this.prepareTemplate) throw new Error('A função prepareTemplate precisa ser implementada.');
+            //if (!this.prepareTemplate) throw new Error('A função prepareTemplate precisa ser implementada.');
             await this.prepareTemplate();
 
             // Prepara o HTML da aplicação para renderização (Substitui pseudo-elements).
@@ -222,6 +257,14 @@ export default class Application {
 
             // Ativa os ouvintes de eventos básicos.
             this.activateBaseListeners();
+
+            // Configura os conteúdos específicos da aplicação.
+            await this.initialize();
+
+            this.rendered = true;
+            await triggerHook('afterRender');
+
+            return this.rendered;
         } catch (error) {
             console.error(error);
         }
@@ -276,7 +319,7 @@ export default class Application {
     */
     clear() {
         // Limpa o conteúdo do formulário.
-        this.ui.content.innerHTML = '';
+        this.ui.main.innerHTML = '';
     }
 
     /**
@@ -284,7 +327,7 @@ export default class Application {
     */
     prepareContent() {
         const preparedContent = uniforge.parser.parseHTML(this.ui.application.innerHTML, this.data);
-        this.form.innerHTML = preparedContent;
+        this.ui.application.innerHTML = preparedContent;
     }
 
     /* ---------------------------------------------------------------------------------------------------------------- */
@@ -294,25 +337,15 @@ export default class Application {
      * @private
      */
     activateBaseListeners() {
-        // Fecha aplicação ao clicar fora da mesma.        
-        this.ui.overlay.addEventListener('click', this.onOverlayClick.bind(this), { once: true });
         // Fecha aplicação ao clicar no botão de fechar.
         this.ui.close_btn.addEventListener('click', this.onCloseClick.bind(this), { once: true });
-    }
-
-    onOverlayClick(event) {
-        event.stopPropagation();
-        if (!event.target.closest('.form-container') && !event.target.closest('.content')) {
-            this.#handleNavQueueOnClose(event);
-            this.hideForm();
-        }
     }
 
     onCloseClick(event) {
         event.stopPropagation();
         this.#handleNavQueueOnClose(event);
 
-        this.hideForm();
+        this.close();
     }
 
     /* ---------------------------------------------------------------------------------------------------------------- */

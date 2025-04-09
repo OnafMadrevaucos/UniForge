@@ -1,4 +1,4 @@
-import { triggerHook } from "../../scripts/hooks.js";
+
 import Application from "../application.js";
 /**
  * Classe BaseForm
@@ -118,63 +118,23 @@ export default class BaseForm extends Application {
     return data;
   }
 
-  async prepareTemplate() {
-    const overlay = document.createElement('div');
-    overlay.id = `${this.style}Overlay-${this.uuid}`;
-    overlay.classList.add('overlay', 'flexrow', 'hidden');
 
-    const container = document.createElement('div');
-    container.id = `${this.style}Container-${this.uuid}`;
-    container.classList.add(this.style, 'container', 'flexrow');
-
-    const header = document.createElement('div');
-    header.id = `${this.style}Header-${this.uuid}`;
-    header.classList.add('header-bar', 'flexrow');
-
+  async prepareDerivedTemplate(form, header, main) { 
     header.innerHTML = `
-        <span class="${this.style} title">{{title}}</span>
-        <switch id="deleteSwitch" class="hidden"></switch>
-        <a id="${this.style}Close-${this.uuid}" class="close-button flexcol"><i class="fas fa-xmark"></i></a>
-    `;
-
-    const body = document.createElement('div');
-    body.id = `${this.style}Body-${this.uuid}`;
-    body.classList.add('body', 'flexcol');
+            <span class="${this.style} title">{{title}}</span>
+            <switch id="deleteSwitch" class="hidden"></switch>
+            <a id="${this.style}Close-${this.uuid}" class="close-button flexcol"><i class="fas fa-xmark"></i></a>
+        `;
 
     const html = await uniforge.utils.loadTemplate(this.template);
-    body.innerHTML = html;
+    main.innerHTML = html;
 
-    container.appendChild(header);
-    container.appendChild(body);
-    overlay.appendChild(container);
-
-    // Adiciona o overlay ao DOM.
-    document.body.appendChild(overlay);
+    form.appendChild(header);
+    form.appendChild(main);
   }
 
   /* ---------------------------------------------------------------------------------------------------------------- */
-  // INTERFACE DE USUÁRIO
-  /**
-   * Renderiza o formulário.
-   * 
-   * @async
-   * @returns {Boolean} - Uma flag indicando se o form foi renderizado (true) ou não (false).
-   */
-  async render() {
-    try {
-      await triggerHook('beforeRenderForm');
-
-      await super.render();
-
-      // Configura os conteúdos específicos do formulário.
-      await this.initialize();
-
-      this.rendered = true;
-      return this.rendered;
-    } catch (error) {
-      console.error(error);
-    }
-  }
+  // INTERFACE DE USUÁRIO  
 
   /**
    * Remove todos os elementos filhos de um elemento especificado ou do formulário principal.
@@ -236,8 +196,6 @@ export default class BaseForm extends Application {
   /* ---------------------------------------------------------------------------------------------------------------- */
   // LISTENERS
 
-
-
   onSearchInputList(event) {
     event.stopPropagation();
     const input = event.target;
@@ -257,8 +215,4 @@ export default class BaseForm extends Application {
       input.style.backgroundColor = ''; // Volta ao padrão
     }
   }
-
-  /* ---------------------------------------------------------------------------------------------------------------- */
-  // UTILITÁRIOS  
-
 }

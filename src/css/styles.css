@@ -348,7 +348,6 @@ button[type="submit"] {
     display: block;
 }
 
-.overlay .container .close-button:hover,
 button:hover {
     cursor: pointer;
     background-color: var(--dark-red);
@@ -1068,11 +1067,11 @@ input:checked+.slider::before {
     text-shadow: none;
 }
 
-.overlay .form.container .body {
+.overlay .form.container .main {
     flex: 1;
 }
 
-.overlay .form.container .body > div {
+.overlay .form.container .main > div {
     height: var(--fill-height);
 } 
 
@@ -1261,7 +1260,7 @@ input:checked+.slider::before {
     text-shadow: 0 0 2px var(--dark-redT87);
 }
 
-#entryFormOverlay .form.container .body {
+#entryFormOverlay .form.container .main {
     width: var(--fill-width);
     height: var(--fill-height);
 }
@@ -1270,12 +1269,12 @@ input:checked+.slider::before {
     margin: 0 !important;
 }
 
-#entryFormOverlay .form.container .body h1,
-#entryFormOverlay .form.container .body h2 {
+#entryFormOverlay .form.container .main h1,
+#entryFormOverlay .form.container .main h2 {
     text-shadow: none;
 }
 
-#entryFormOverlay .form.container .body .text-content *:not(h1):not(h2) {
+#entryFormOverlay .form.container .main .text-content *:not(h1):not(h2) {
     color: var(--text-color);
 }
 
@@ -2254,7 +2253,7 @@ folder-list .folder.created.selected .folder-header .fa-trash {
     transition: all 0.4s ease;
 }
 
-.dialog .body .input-container,
+.dialog .main .input-container,
 .sidebar .footer .input-container {
     align-items: center;
     max-width: 100%;
@@ -2524,7 +2523,7 @@ folder-list .folder.created.selected .folder-header .fa-trash {
     display: none;
 }
 
-.dialog:has(.body .family-dialog) {
+.dialog:has(.main .family-dialog) {
     background-image:
         linear-gradient(180deg, rgba(255, 255, 255, 0) 35%, rgba(30, 30, 47, 1) 70%),
         url('../images/lineage.jpeg');
@@ -3034,7 +3033,7 @@ folder-list .folder.created.selected .folder-header .fa-trash {
     height: var(--fill-height);
 }
 
-.dialog .topbar {
+.dialog .header-bar {
     gap: var(--default-gap-size);
     ;
     background: var(--dark-red);
@@ -3044,11 +3043,11 @@ folder-list .folder.created.selected .folder-header .fa-trash {
     margin-block: 10px 5px;
 }
 
-.dialog .topbar:hover {
+.dialog .header-bar:hover {
     cursor: grab;
 }
 
-.dialog .topbar h2 {
+.dialog .header-bar h2 {
     flex: 1;
     color: var(--light-text-color);
     margin: 0;
@@ -3058,7 +3057,7 @@ folder-list .folder.created.selected .folder-header .fa-trash {
     text-shadow: none;
 }
 
-.dialog .topbar a {
+.dialog .header-bar a {
     flex: 0;
     color: var(--light-text-color);
     align-self: center;
@@ -3068,13 +3067,13 @@ folder-list .folder.created.selected .folder-header .fa-trash {
     border-radius: 50%;
 }
 
-.dialog .topbar a:hover {
+.dialog .header-bar a:hover {
     cursor: pointer;
     color: var(--dark-red);
     background-color: var(--light-text-color);
 }
 
-.dialog .body {
+.dialog .main {
     height: var(--fill-height);
     margin-bottom: 10px;
     padding-inline: 10px;
@@ -3084,35 +3083,35 @@ folder-list .folder.created.selected .folder-header .fa-trash {
     overflow-x: hidden;
 }
 
-.dialog .body:has(.sidebar) {
+.dialog .main:has(.sidebar) {
     padding-inline: 0;
 }
 
-.dialog .body:has(.family-dialog) {
+.dialog .main:has(.family-dialog) {
     overflow-y: hidden;
 }
 
-.dialog .body .link-dialog {
+.dialog .main .link-dialog {
     gap: var(--default-gap-size);
     ;
 }
 
-.dialog .body .image-dialog,
-.dialog .body .chapter-dialog {
+.dialog .main .image-dialog,
+.dialog .main .chapter-dialog {
     overflow: hidden;
 }
 
-.dialog .body input,
-.dialog .body select {
+.dialog .main input,
+.dialog .main select {
     flex: 2;
 }
 
-.dialog .body input,
-.dialog .body .button {
+.dialog .main input,
+.dialog .main .button {
     margin-block: 3px;
 }
 
-.dialog .body .button {
+.dialog .main .button {
     width: fit-content;
     margin-left: 3px;
     border: none;
@@ -3120,18 +3119,18 @@ folder-list .folder.created.selected .folder-header .fa-trash {
     color: var(--background-color);
 }
 
-.dialog .body .button:hover {
+.dialog .main .button:hover {
     background-color: var(--dark-red);
     color: var(--light-text-color);
 }
 
-.dialog .body .folder-list {
+.dialog .main .folder-list {
     margin-top: 5px;
     gap: var(--default-gap-size);
     ;
 }
 
-.dialog .body .folder-list li:not(.entry-item) {
+.dialog .main .folder-list li:not(.entry-item) {
     margin-top: 3px;
     flex-direction: column;
     display: flex;
@@ -3139,11 +3138,11 @@ folder-list .folder.created.selected .folder-header .fa-trash {
     align-items: flex-start;
 }
 
-.dialog .body .folder-list li:not(.entry-item) .folder-header {
+.dialog .main .folder-list li:not(.entry-item) .folder-header {
     width: var(--fill-width);
 }
 
-.dialog .body .folder {
+.dialog .main .folder {
     text-decoration: none;
     color: var(--light-text-color);
     display: flex;
@@ -3153,36 +3152,36 @@ folder-list .folder.created.selected .folder-header .fa-trash {
     transition: background 0.3s;
 }
 
-.dialog .body .folder-list .folder .folder-header:hover,
-.dialog .body .folder-list .folder.selected .folder-header {
+.dialog .main .folder-list .folder .folder-header:hover,
+.dialog .main .folder-list .folder.selected .folder-header {
     background: var(--blue);
     color: var(--red);
 }
 
-.dialog .body .folder-list .folder.created:not(.selected) a {
+.dialog .main .folder-list .folder.created:not(.selected) a {
     display: none;
 }
 
-.dialog .body .folder-list .folder.created.selected a {
+.dialog .main .folder-list .folder.created.selected a {
     flex: 0;
     text-align: end;
 }
 
-.dialog .body .folder-list .folder.created.selected .fa-trash {
+.dialog .main .folder-list .folder.created.selected .fa-trash {
     z-index: 1150;
 }
 
-.dialog .body .folder-list .folder.created.selected .fa-trash:hover {
+.dialog .main .folder-list .folder.created.selected .fa-trash:hover {
     background-color: var(--dark-blue);
     color: var(--light-text-color);
 }
 
-.dialog .body .folder-list .fas {
+.dialog .main .folder-list .fas {
     margin-right: 10px;
     align-self: center;
 }
 
-.dialog .body .image-dialog img {
+.dialog .main .image-dialog img {
     align-self: center;
     max-width: 650px;
     max-height: 600px;
@@ -3215,47 +3214,47 @@ folder-list .folder.created.selected .folder-header .fa-trash {
     margin: 2px 5px;
 }
 
-.dialog .body .summary {
+.dialog .main .summary {
     flex: 1;
 }
 
-.dialog .body .summary .content {
+.dialog .main .summary .content {
     padding: 5px;
     background-color: var(--dark-blue);
     border-radius: var(--default-border-radius);
     height: 100%;
 }
 
-.dialog .body .summary .content * {
+.dialog .main .summary .content * {
     cursor: default;
     gap: var(--default-gap-size);
     ;
 }
 
-.dialog .body .summary .content .header-info .img-container {
+.dialog .main .summary .content .header-info .img-container {
     border-radius: var(--default-border-radius);
     min-height: 64px;
     min-width: 64px;
 }
 
-.dialog .body .summary .content .header-info .img-container img {
+.dialog .main .summary .content .header-info .img-container img {
     max-height: 64px;
     max-width: 64px;
 }
 
-.dialog .body .summary .content .header-info .img-container img.empty {
+.dialog .main .summary .content .header-info .img-container img.empty {
     height: 64px;
     width: 64px;
 }
 
-.dialog .body .summary .content .header-info input {
+.dialog .main .summary .content .header-info input {
     font-size: 25px;
     background-color: var(--dark-redT87);
     box-shadow: var(--small-shadow);
     font-weight: bold;
 }
 
-.dialog .body .summary .content div#flavorText {
+.dialog .main .summary .content div#flavorText {
     height: 100%;
     margin-top: 5px;
     background-color: var(--background-color);
@@ -3265,7 +3264,7 @@ folder-list .folder.created.selected .folder-header .fa-trash {
     padding-inline: 5px;
 }
 
-.dialog .body .summary .content div#flavorText:focus-visible {
+.dialog .main .summary .content div#flavorText:focus-visible {
     outline: none;
 }
 
