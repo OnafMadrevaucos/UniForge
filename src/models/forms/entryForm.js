@@ -493,7 +493,7 @@ export default class EntryForm extends SidebarForm {
     const eventFlavorEditor = tinymce.get('eventFlavorEditor');
     eventFlavorEditor.setContent('');
 
-    this.reconfigureDatePickers();
+    this.clearDatePickers();
 
     const addEventButton = this.querySelector('#addEventButton');
     addEventButton.innerHTML = '<i class="fas fa-square-plus"></i> Adicionar Evento';
@@ -566,27 +566,10 @@ export default class EntryForm extends SidebarForm {
   }
 
   /**
-    * Carrega os DatePickers associados à instância.
-    * Para cada DatePicker, chama o método `_loadDatePicker`, passando o primeiro calendário disponível.
-    */
-  configureDatePickers() {
-    const calendars = this.data.calendars;
-    // Itera sobre todos os valores do objeto `datePickers`.
-    Object.values(this.datePickers).forEach(pickers => {
-      /**
-       * Carrega o DatePicker com o primeiro calendário disponível.
-       * @method _loadDatePicker
-       * @param {Object} calendar - O primeiro calendário no objeto `calendars`.
-       */
-      pickers._loadDatePicker(Object.values(calendars)[0]);
-    });
-  }
-
-  /**
   * Recarrega os DatePickers associados à instância.
-  * Para cada DatePicker, chama o método `_loadDatePicker`, passando o calendário escolhido.
+  * Para cada DatePicker, chama o método `load`, passando o calendário escolhido.
   */
-  reconfigureDatePickers(event) {
+  configureDatePickers(event) {
     const calendars = this.data.calendars;
 
     const calendarType = this.querySelector('#calendarType');
@@ -600,17 +583,14 @@ export default class EntryForm extends SidebarForm {
       if (event.e_day)
         this.datePickers.end.selectFullDate(event.e_day, event.e_month, event.e_year);
     } else { // Senão, limpe os DatePickers.
-
-      // Itera sobre todos os valores do objeto `datePickers`.
-      Object.values(this.datePickers).forEach(pickers => {
-        /**
-         * Carrega o DatePicker com o primeiro calendário disponível.
-         * @method _loadDatePicker
-         * @param {Object} calendar - O primeiro calendário no objeto `calendars`.
-         */
-        pickers._reloadDatePicker(Object.values(calendars)[0]);
-      });
+      this.clearDatePickers();
     }
+  }
+
+  clearDatePickers() {
+    Object.values(this.datePickers).forEach(datePicker => {
+      datePicker.clear();
+    });
   }
 
   /* ---------------------------------------------------------------------------------------------------------------- */
@@ -667,6 +647,10 @@ export default class EntryForm extends SidebarForm {
       const sectionButtons = this.querySelectorAll('#sections .tabs-options button');
       sectionButtons.forEach(button => {
         button.addEventListener('click', (event) => { this.onSectionButtonClick(event); });
+      });
+
+      Object.values(this.datePickers).forEach(picker => {
+        picker.prepare();
       });
 
       const newEventButton = this.querySelector('#addEventButton');
@@ -800,12 +784,12 @@ export default class EntryForm extends SidebarForm {
    */
   onDateTypeChange(event) {
     const select = event.target;
-    const dateType = select.value;
+    const dateType = Number(select.value) - 1;
 
     const calendar = this.data.calendars[dateType];
 
     Object.values(this.datePickers).forEach(pickers => {
-      pickers._loadDatePicker(calendar);
+      pickers.load(calendar);
     });
   }
 
@@ -841,7 +825,7 @@ export default class EntryForm extends SidebarForm {
     relevance.value = event.relevance;
     calendarType.value = event.clid;
 
-    this.reconfigureDatePickers(event);
+    this.configureDatePickers(event);
 
     tinymce.get('eventFlavorEditor').setContent(event.flavor);
 
@@ -1070,7 +1054,7 @@ export default class EntryForm extends SidebarForm {
         ext: entry.ext
       };
 
-      this.reconfigureDatePickers(entry);
+      this.configureDatePickers(null);
 
       const entryType = this.querySelector('#entryType');
 

@@ -214,7 +214,7 @@ export default class BaseForm extends Application {
   _onAppActive(event) {
     const clickedApp = event.target.closest('.container');
     const clickedAppUuid = clickedApp.id?.split('-')[1];
-    if(clickedAppUuid === uniforge.form.uuid) return;
+    if(clickedAppUuid === uniforge.form?.uuid) return;
 
     this._activateForm();
   }

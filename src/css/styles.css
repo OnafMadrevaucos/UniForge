@@ -153,6 +153,7 @@
     --dark-text-highlight: 2px 2px 2px var(--highlight-red);
     --sidebar-shadow: 4px 0 8px rgba(0, 0, 0, 0.2);
     --dialog-shadow: 5px 0 10px var(--shadow-color);
+    --calendar-shadow: 0 2px 6px rgba(0, 0, 0, 1);
 
     /* Dimensions */
     --fill-width: -webkit-fill-available;
@@ -954,7 +955,7 @@ input:checked+.slider::before {
 
 /* --- Overlay --- */
 .overlay {
-    position: fixed;
+    position: absolute;
     top: 0;
     left: 0;
     width: 100vw;
@@ -973,22 +974,19 @@ input:checked+.slider::before {
     transform: scale(1);
 }
 
-.overlay:has(> .form) {
+.overlay.form-overlay {
     background: transparent;
 }
-.overlay:has(> .dialog) {
+.overlay.dialog-overlay {    
     background: rgba(0, 0, 0, 0.5);
+    z-index: 1100;
 }
 
 /* ------ Container ------*/
 .container {
     position: absolute;
-    z-index: 1002;    
+        
 }
-.container.active {
-    z-index: 1003;
-}
-
 .container .header-bar:hover {
     cursor: grab;
 }
@@ -1002,10 +1000,12 @@ input:checked+.slider::before {
     border-bottom-right-radius: var(--default-border-radius);
     border-bottom-left-radius: var(--default-border-radius);
     box-shadow: var(--default-shadow);
+    z-index: 1002;
     transition: height 0.5s ease, width 0.25s linear;
 }
-
-
+.form.container.active {
+    z-index: 1003;
+}
 
 .form.container:not(.maximized) {
     height: 0vh;
@@ -1027,6 +1027,10 @@ input:checked+.slider::before {
     top: -25px;
     flex-wrap: wrap;
     justify-content: flex-end;
+}
+
+.form:not(.maximized) .header-bar {
+    box-shadow: var(--small-shadow);
 }
 
 .form .header-bar .form.title {
@@ -1102,6 +1106,298 @@ input:checked+.slider::before {
 .form.container:not(.maximized) .main {
     display: none;
 }
+
+/* ------ Dialog ------ */
+.dialog {
+    position: fixed;
+    top: 50%;
+    background: var(--background-color);
+    font-size: var(--default-size);
+    padding-block: 10px;
+    border: none;
+    border-radius: 8px;
+    box-shadow: var(--dialog-shadow);
+    margin: 0;
+    padding: 0;
+    z-index: 1101;
+}
+
+.dialog:hover {
+    cursor: default;
+}
+
+.dialog .content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    height: var(--fill-height);
+}
+
+.dialog .header-bar {
+    gap: var(--default-gap-size);
+    background: var(--dark-red);
+    border-radius: var(--title-header-radius);
+    box-shadow: var(--small-shadow);
+    margin-right: 5px;
+    margin-block: 10px 5px;
+}
+
+.dialog .header-bar h2 {
+    flex: 1;
+    color: var(--light-text-color);
+    margin: 0;
+    padding-left: 20px;
+    font-size: 18px;
+    font-weight: bold;
+    text-shadow: none;
+}
+
+.dialog .header-bar a {
+    flex: 0;
+    color: var(--light-text-color);
+    align-self: center;
+    text-align: end;
+    margin-right: 5px;
+    padding-inline: 2.65px 2.5px;
+    border-radius: 50%;
+}
+
+.dialog .header-bar a:hover {
+    cursor: pointer;
+    color: var(--dark-red);
+    background-color: var(--light-text-color);
+}
+
+.dialog .main {
+    height: var(--fill-height);
+    margin-bottom: 10px;
+    padding-inline: 10px;
+    font-size: var(--default-size);
+    color: var(--light-text-color);
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.dialog .main:has(.sidebar) {
+    padding-inline: 0;
+}
+
+.dialog .main:has(.family-dialog) {
+    overflow-y: hidden;
+}
+
+.dialog .main .link-dialog {
+    gap: var(--default-gap-size);
+    ;
+}
+
+.dialog .main .image-dialog,
+.dialog .main .chapter-dialog {
+    overflow: hidden;
+}
+
+.dialog .main input,
+.dialog .main select {
+    flex: 2;
+}
+
+.dialog .main input,
+.dialog .main .button {
+    margin-block: 3px;
+}
+
+.dialog .main .button {
+    width: fit-content;
+    margin-left: 3px;
+    border: none;
+    box-shadow: var(--small-shadow);
+    color: var(--background-color);
+}
+
+.dialog .main .button:hover {
+    background-color: var(--dark-red);
+    color: var(--light-text-color);
+}
+
+.dialog .main .folder-list {
+    margin-top: 5px;
+    gap: var(--default-gap-size);
+    ;
+}
+
+.dialog .main .folder-list li:not(.entry-item) {
+    margin-top: 3px;
+    flex-direction: column;
+    display: flex;
+    width: var(--fill-width);
+    align-items: flex-start;
+}
+
+.dialog .main .folder-list li:not(.entry-item) .folder-header {
+    width: var(--fill-width);
+}
+
+.dialog .main .folder {
+    text-decoration: none;
+    color: var(--light-text-color);
+    display: flex;
+    align-items: center;
+    padding: 5px 10px;
+    border-radius: 4px;
+    transition: background 0.3s;
+}
+
+.dialog .main .folder-list .folder .folder-header:hover,
+.dialog .main .folder-list .folder.selected .folder-header {
+    background: var(--blue);
+    color: var(--red);
+}
+
+.dialog .main .folder-list .folder.created:not(.selected) a {
+    display: none;
+}
+
+.dialog .main .folder-list .folder.created.selected a {
+    flex: 0;
+    text-align: end;
+}
+
+.dialog .main .folder-list .folder.created.selected .fa-trash {
+    z-index: 1150;
+}
+
+.dialog .main .folder-list .folder.created.selected .fa-trash:hover {
+    background-color: var(--dark-blue);
+    color: var(--light-text-color);
+}
+
+.dialog .main .folder-list .fas {
+    margin-right: 10px;
+    align-self: center;
+}
+
+.dialog .main .image-dialog img {
+    align-self: center;
+    max-width: 650px;
+    max-height: 600px;
+}
+
+.dialog .sidebar {
+    flex: 0 0 30%;
+    padding: 5px;
+    border-radius: var(--default-border-radius);
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+}
+
+.dialog .sidebar h4 {
+    text-align: center;
+}
+
+.dialog .sidebar .folder-list {
+    flex: 1;
+    justify-items: flex-start;
+}
+
+.dialog .folder-list .folder-content .entry-list {
+    padding-left: 5px;
+}
+
+.link-dialog .folder-list .folder-content .entry-list .entry-item {
+    font-size: 10px;
+    padding: 5px 2px;
+    margin: 2px 5px;
+}
+
+.dialog .main .summary {
+    flex: 1;
+}
+
+.dialog .main .summary .content {
+    padding: 5px;
+    background-color: var(--dark-blue);
+    border-radius: var(--default-border-radius);
+    height: 100%;
+}
+
+.dialog .main .summary .content * {
+    cursor: default;
+    gap: var(--default-gap-size);
+    ;
+}
+
+.dialog .main .summary .content .header-info .img-container {
+    border-radius: var(--default-border-radius);
+    min-height: 64px;
+    min-width: 64px;
+}
+
+.dialog .main .summary .content .header-info .img-container img {
+    max-height: 64px;
+    max-width: 64px;
+}
+
+.dialog .main .summary .content .header-info .img-container img.empty {
+    height: 64px;
+    width: 64px;
+}
+
+.dialog .main .summary .content .header-info input {
+    font-size: 25px;
+    background-color: var(--dark-redT87);
+    box-shadow: var(--small-shadow);
+    font-weight: bold;
+}
+
+.dialog .main .summary .content div#flavorText {
+    height: 100%;
+    margin-top: 5px;
+    background-color: var(--background-color);
+    border-radius: var(--default-border-radius);
+    border: var(--info-content-border);
+    color: var(--light-text-color);
+    padding-inline: 5px;
+}
+
+.dialog .main .summary .content div#flavorText:focus-visible {
+    outline: none;
+}
+
+.dialog .buttons {
+    flex: 1;
+    display: flex;
+    justify-content: flex-end;
+    margin-inline: 5px;
+    gap: var(--default-gap-size);
+    ;
+}
+
+.dialog .buttons button {
+    flex: 1;
+    align-self: flex-end;
+    border: none;
+    border-radius: var(--default-border-radius);
+    cursor: pointer;
+    background: var(--dark-red);
+    box-shadow: var(--small-shadow);
+    color: var(--light-text-color);
+}
+
+.dialog .buttons button:hover {
+    background: var(--focus-red);
+    color: var(--background-color);
+}
+
+.dialog .dialog-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+}
+
 
 /* ------ Data Controls ------ */
 
@@ -1257,7 +1553,7 @@ input:checked+.slider::before {
 }
 
 .data-group .data:not(div) {
-    flex: 5;
+    flex: 2;
 }
 
 .data-group .type-label {
@@ -2673,7 +2969,7 @@ folder-list .folder.created.selected .folder-header .fa-trash {
 
 .calendar {
     display: none;
-    position: absolute;
+    position: fixed;
     top: 100%;
     left: 0;
     border: 1px solid #ccc;
@@ -2681,11 +2977,11 @@ folder-list .folder.created.selected .folder-header .fa-trash {
     z-index: 10;
     padding: 10px;
     border-radius: 4px;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-    width: 335px;
-    height: 400px;
-    max-width: 335px;
-    max-height: 400px;
+    box-shadow: var(--calendar-shadow);
+    width: 350px;
+    height: 310px;
+    max-width: 350px;
+    max-height: 310px;
 }
 
 .calendar-header {
@@ -3031,297 +3327,6 @@ folder-list .folder.created.selected .folder-header .fa-trash {
 .message.info {
     background-color: var(--info-blueT87);
     color: var(--grey);
-}
-
-/* ------ Dialog ------ */
-.dialog {
-    position: fixed;
-    top: 50%;
-    background: var(--background-color);
-    font-size: var(--default-size);
-    padding-block: 10px;
-    border: none;
-    border-radius: 8px;
-    box-shadow: var(--dialog-shadow);
-    margin: 0;
-    padding: 0;
-    z-index: 1100;
-}
-
-.dialog:hover {
-    cursor: default;
-}
-
-.dialog .content {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    height: var(--fill-height);
-}
-
-.dialog .header-bar {
-    gap: var(--default-gap-size);
-    background: var(--dark-red);
-    border-radius: var(--title-header-radius);
-    box-shadow: var(--small-shadow);
-    margin-right: 5px;
-    margin-block: 10px 5px;
-}
-
-.dialog .header-bar h2 {
-    flex: 1;
-    color: var(--light-text-color);
-    margin: 0;
-    padding-left: 20px;
-    font-size: 18px;
-    font-weight: bold;
-    text-shadow: none;
-}
-
-.dialog .header-bar a {
-    flex: 0;
-    color: var(--light-text-color);
-    align-self: center;
-    text-align: end;
-    margin-right: 5px;
-    padding-inline: 2.65px 2.5px;
-    border-radius: 50%;
-}
-
-.dialog .header-bar a:hover {
-    cursor: pointer;
-    color: var(--dark-red);
-    background-color: var(--light-text-color);
-}
-
-.dialog .main {
-    height: var(--fill-height);
-    margin-bottom: 10px;
-    padding-inline: 10px;
-    font-size: var(--default-size);
-    color: var(--light-text-color);
-    overflow-y: auto;
-    overflow-x: hidden;
-}
-
-.dialog .main:has(.sidebar) {
-    padding-inline: 0;
-}
-
-.dialog .main:has(.family-dialog) {
-    overflow-y: hidden;
-}
-
-.dialog .main .link-dialog {
-    gap: var(--default-gap-size);
-    ;
-}
-
-.dialog .main .image-dialog,
-.dialog .main .chapter-dialog {
-    overflow: hidden;
-}
-
-.dialog .main input,
-.dialog .main select {
-    flex: 2;
-}
-
-.dialog .main input,
-.dialog .main .button {
-    margin-block: 3px;
-}
-
-.dialog .main .button {
-    width: fit-content;
-    margin-left: 3px;
-    border: none;
-    box-shadow: var(--small-shadow);
-    color: var(--background-color);
-}
-
-.dialog .main .button:hover {
-    background-color: var(--dark-red);
-    color: var(--light-text-color);
-}
-
-.dialog .main .folder-list {
-    margin-top: 5px;
-    gap: var(--default-gap-size);
-    ;
-}
-
-.dialog .main .folder-list li:not(.entry-item) {
-    margin-top: 3px;
-    flex-direction: column;
-    display: flex;
-    width: var(--fill-width);
-    align-items: flex-start;
-}
-
-.dialog .main .folder-list li:not(.entry-item) .folder-header {
-    width: var(--fill-width);
-}
-
-.dialog .main .folder {
-    text-decoration: none;
-    color: var(--light-text-color);
-    display: flex;
-    align-items: center;
-    padding: 5px 10px;
-    border-radius: 4px;
-    transition: background 0.3s;
-}
-
-.dialog .main .folder-list .folder .folder-header:hover,
-.dialog .main .folder-list .folder.selected .folder-header {
-    background: var(--blue);
-    color: var(--red);
-}
-
-.dialog .main .folder-list .folder.created:not(.selected) a {
-    display: none;
-}
-
-.dialog .main .folder-list .folder.created.selected a {
-    flex: 0;
-    text-align: end;
-}
-
-.dialog .main .folder-list .folder.created.selected .fa-trash {
-    z-index: 1150;
-}
-
-.dialog .main .folder-list .folder.created.selected .fa-trash:hover {
-    background-color: var(--dark-blue);
-    color: var(--light-text-color);
-}
-
-.dialog .main .folder-list .fas {
-    margin-right: 10px;
-    align-self: center;
-}
-
-.dialog .main .image-dialog img {
-    align-self: center;
-    max-width: 650px;
-    max-height: 600px;
-}
-
-.dialog .sidebar {
-    flex: 0 0 30%;
-    padding: 5px;
-    border-radius: var(--default-border-radius);
-    border-top-left-radius: 0;
-    border-bottom-left-radius: 0;
-}
-
-.dialog .sidebar h4 {
-    text-align: center;
-}
-
-.dialog .sidebar .folder-list {
-    flex: 1;
-    justify-items: flex-start;
-}
-
-.dialog .folder-list .folder-content .entry-list {
-    padding-left: 5px;
-}
-
-.link-dialog .folder-list .folder-content .entry-list .entry-item {
-    font-size: 10px;
-    padding: 5px 2px;
-    margin: 2px 5px;
-}
-
-.dialog .main .summary {
-    flex: 1;
-}
-
-.dialog .main .summary .content {
-    padding: 5px;
-    background-color: var(--dark-blue);
-    border-radius: var(--default-border-radius);
-    height: 100%;
-}
-
-.dialog .main .summary .content * {
-    cursor: default;
-    gap: var(--default-gap-size);
-    ;
-}
-
-.dialog .main .summary .content .header-info .img-container {
-    border-radius: var(--default-border-radius);
-    min-height: 64px;
-    min-width: 64px;
-}
-
-.dialog .main .summary .content .header-info .img-container img {
-    max-height: 64px;
-    max-width: 64px;
-}
-
-.dialog .main .summary .content .header-info .img-container img.empty {
-    height: 64px;
-    width: 64px;
-}
-
-.dialog .main .summary .content .header-info input {
-    font-size: 25px;
-    background-color: var(--dark-redT87);
-    box-shadow: var(--small-shadow);
-    font-weight: bold;
-}
-
-.dialog .main .summary .content div#flavorText {
-    height: 100%;
-    margin-top: 5px;
-    background-color: var(--background-color);
-    border-radius: var(--default-border-radius);
-    border: var(--info-content-border);
-    color: var(--light-text-color);
-    padding-inline: 5px;
-}
-
-.dialog .main .summary .content div#flavorText:focus-visible {
-    outline: none;
-}
-
-.dialog .buttons {
-    flex: 1;
-    display: flex;
-    justify-content: flex-end;
-    margin-inline: 5px;
-    gap: var(--default-gap-size);
-    ;
-}
-
-.dialog .buttons button {
-    flex: 1;
-    align-self: flex-end;
-    border: none;
-    border-radius: var(--default-border-radius);
-    cursor: pointer;
-    background: var(--dark-red);
-    box-shadow: var(--small-shadow);
-    color: var(--light-text-color);
-}
-
-.dialog .buttons button:hover {
-    background: var(--focus-red);
-    color: var(--background-color);
-}
-
-.dialog .dialog-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.5);
-    z-index: 1000;
 }
 
 /* ------ Lineage ------*/

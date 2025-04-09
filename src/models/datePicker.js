@@ -58,10 +58,28 @@ export default class DatePicker {
     return this.dataGroup?.querySelector('#nextGroup') ?? null;
   }
 
-  setupDatePicker() {
+  prepare() {
     this.activateListeners();
 
     this.ready = true;
+  }
+
+  config(dateType, clearText = true) {  
+    if (clearText) this.dateDisplay.textContent = 'Selecione uma data';
+
+    // Defina meses, dias e anos customizados
+    this.months = dateType.months;
+    this.days = dateType.days;
+    this.daysInMonth = dateType.daysInMonth;    
+  }
+
+  load(dateType, clearText = true) {
+    this.config(dateType, clearText); 
+    this.updateCalendar(); // Inicializa o calendário
+  }
+
+  clear(){
+    this.#clearCalendar();
   }
 
   activateListeners() {
@@ -79,7 +97,15 @@ export default class DatePicker {
   }
 
   onDatePickerClick() {
-    this.calendar.classList.toggle('open');
+    const calendar = this.calendar;
+    const dateDisplay = this.dateDisplay;
+    const calendarRect = calendar.getBoundingClientRect();
+    const dateDisplayRect = dateDisplay.getBoundingClientRect();
+
+    calendar.style.top = `${dateDisplayRect.bottom}px`;
+    calendar.style.left = `${dateDisplayRect.left}px`;
+
+    calendar.classList.toggle('open');
   }
   onNextGroupClick(event) {
     event.stopPropagation(); // Impede que o clique "vaze" para o container e feche o calendário.
@@ -164,29 +190,11 @@ export default class DatePicker {
 
       this.calendar.classList.remove('open');
     }
-  }
-
-  _reloadDatePicker(dateType, clearText = true) {
-    // Se o DatePicker ainda não foi inicializado, inicialize-o
-    if (!this.ready) this.setupDatePicker();
-
-    if (clearText) this.dateDisplay.textContent = 'Selecione uma data';
-
-    // Defina meses, dias e anos customizados
-    this.months = dateType.months;
-    this.days = dateType.days;
-    this.daysInMonth = dateType.daysInMonth;
-  }
-
-  _loadDatePicker(dateType, clearText = true) {
-    this._reloadDatePicker(dateType, clearText);
-
-    this.updateCalendar(); // Inicializa o calendário
-  }
+  }  
 
   // Função para atualizar o calendário conforme o modo
   updateCalendar() {
-    this.refreshCalendar();
+    this.#clearCalendar();
 
     if (this.currentView === "years") {
       clearInterval(this.decrementInterval);
@@ -205,9 +213,10 @@ export default class DatePicker {
     this.changeView(this.currentView);
   }
   // Função para atualizar o calendário conforme o valor da data selecionada.
-  refreshCalendar() {
+  #clearCalendar() {
     this.calendarContent.innerHTML = '';
-    this.monthYearDisplay.textContent = `${this.months[this.currentMonth]} ${this.currentYear}`;
+    const yearStr = this.yearToString(this.currentYear);
+    this.monthYearDisplay.textContent = `${this.months[this.currentMonth]}, ${yearStr}`;
 
     this.calendarView.classList.remove(...this.calendarView.classList);
     this.calendarView.classList.add("calendar-view", this.currentView);
@@ -252,10 +261,11 @@ export default class DatePicker {
   // Seleciona a data
   selectDate(day) {
     this.currentDay = day;
+    const yearStr = this.yearToString(this.currentYear);
 
     this.selectedDate = { day: day, month: this.currentMonth, year: this.currentYear };
-    this.dateDisplay.textContent = `${this.months[this.currentMonth]} ${day},  ${this.currentYear}`;
-    this.dataGroup.dataset.date = `${day}/${this.months[this.currentMonth]}/${this.currentYear}`;
+    this.dateDisplay.textContent = `${this.months[this.currentMonth]} ${day},  ${yearStr}`;
+    this.dataGroup.dataset.date = `${day}/${this.months[this.currentMonth]}/${yearStr}`;
   }
 
   // Seleciona a data completa
@@ -264,11 +274,13 @@ export default class DatePicker {
     this.currentMonth = month;
     this.currentYear = year;
 
-    this.selectedDate = { day: day, month: this.currentMonth, year: this.currentYear };
-    this.dateDisplay.textContent = `${this.months[this.currentMonth]} ${day},  ${this.currentYear}`;
-    this.dataGroup.dataset.date = `${day}/${this.months[this.currentMonth]}/${this.currentYear}`;
+    const yearStr = this.yearToString(this.currentYear);
 
-    this.refreshCalendar();
+    this.selectedDate = { day: day, month: this.currentMonth, year: this.currentYear };
+    this.dateDisplay.textContent = `${this.months[this.currentMonth]} ${day},  ${yearStr}`;
+    this.dataGroup.dataset.date = `${day}-${this.months[this.currentMonth]}-${yearStr}`;
+
+    this.#clearCalendar();
   }
 
   // Exibe os dias do mês
@@ -308,12 +320,12 @@ export default class DatePicker {
 
   // Exibe as décadas
   showYears() {
-    // Calcula os 20 anos pertencentes ao intervalo 9 anteriores e 10 posteriores
-    const years = Array.from({ length: 20 }, (_, i) => this.currentYear - 9 + i).filter(year => year !== this.currentYear);
+    // Calcula os 20 anos pertencentes ao intervalo 9 anteriores e 10 posteriores.
+    const years = Array.from({ length: 20 }, (_, i) => this.currentYear - 9 + i).filter(year => year !== this.currentYear && year !== 0);
 
     years.forEach((year) => {
-      const yearDiv = document.createElement('div');
-      yearDiv.textContent = year;
+      const yearDiv = document.createElement('div');      
+      yearDiv.textContent = this.yearToString(year);
       yearDiv.className = 'year';
       yearDiv.addEventListener('click', (event) => {
         event.stopPropagation();
@@ -321,5 +333,10 @@ export default class DatePicker {
       });
       this.calendarContent.appendChild(yearDiv);
     });
+  }
+
+  yearToString(year) {
+    const suffix = year > 0 ? ' d.T.' : ' a.T.';
+    return `${Math.abs(year)}${suffix}`;
   }
 }

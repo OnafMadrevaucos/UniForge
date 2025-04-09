@@ -232,7 +232,7 @@ export default class Application {
 
         const overlay = document.createElement('div');
         overlay.id = `${this.style}Overlay-${this.uuid}`;
-        overlay.classList.add('overlay', 'flexrow');
+        overlay.classList.add('overlay', `${this.style}-overlay`, 'flexrow');
 
         const container = document.createElement('div');
         container.id = `${this.style}Container-${this.uuid}`;

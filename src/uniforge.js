@@ -518,7 +518,6 @@ function _checkMapVisibility() {
 
     // Se nenhum ponto da uniforge.mapOverlay estiver visível, ajustar a posição do mapa
     if (!isVisible) {
-
         // Encontrar o ponto mais próximo do centro da tela
         var closestPoint = points[0];
         var closestDistance = map.distance(uniforge.clickLatLang, points[0]);
