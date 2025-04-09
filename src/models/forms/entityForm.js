@@ -10,9 +10,9 @@ export default class EntityForm extends EntryForm {
     * @class
     * @extends EntryForm
     */
-  constructor() {
+  constructor(options = {}) {
     // Chama o construtor da classe pai com o parâmetro overlay.
-    super('Entidade');
+    super('Entidade', options);
 
     this.template = 'entityForm'; // Define o template do formulário. 
 

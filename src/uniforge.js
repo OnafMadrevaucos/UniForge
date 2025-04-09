@@ -296,26 +296,12 @@ function calculateZoomForTileScaleSimple(desiredTileScale) {
 function configureForms() {
     configureBody();
 
-    activateMainListeners();
-
-    configureMainForm();
-    configureEntryForm();
+    activateMainListeners();    
 }
 function configureBody() {
     const body = uniforge.html;
     const preparedBody = uniforge.parser.parseHTML(body.innerHTML, {});
     body.innerHTML = preparedBody;
-}
-function configureMainForm() {
-    const mainForm = document.getElementById('formContainer');
-    const preparedContent = uniforge.parser.parseHTML(mainForm.innerHTML, {});
-    mainForm.innerHTML = preparedContent;
-}
-
-function configureEntryForm() {
-    const entryForm = document.getElementById('entryFormContainer');
-    const preparedContent = uniforge.parser.parseHTML(entryForm.innerHTML, {});
-    entryForm.innerHTML = preparedContent;
 }
 
 function configureHooks() {
@@ -357,6 +343,7 @@ function activateMainListeners() {
     // Adiciona o Listener para chamar o Form correto ao clicar nos itens do menu.
     tabs.forEach(tab => {
         tab.addEventListener('click', () => {
+            tab.classList.add('disabled');
             renderForm(tab.getAttribute('data-target'));
         });
     });

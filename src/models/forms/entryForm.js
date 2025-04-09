@@ -18,8 +18,8 @@ export default class EntryForm extends SidebarForm {
    * 
    * @param {HTMLElement} title   - O título do formulário.
    */
-  constructor(title) {
-    super(title);
+  constructor(title, options = {}) {
+    super(title, options);
 
     /**
      * @type {string} - O modelo HTML utilizado pelo formulário.

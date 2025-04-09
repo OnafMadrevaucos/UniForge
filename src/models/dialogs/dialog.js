@@ -34,17 +34,6 @@ export default class Dialogs extends BaseDialog {
     this.type = options?.type ?? Dialogs.Type.CONFIRM;
   }
 
-  getBody() {
-    switch (this.type) {
-      case Dialogs.Type.SECURE:
-        return this.SecureConfirmBody;
-      case Dialogs.Type.IMAGE:
-        return this.ImageBody;
-      default:
-        return this.ConfirmBody;
-    }
-  }
-
   get ConfirmBody() {
     return this.options?.prompt ?? '';
   }
@@ -103,15 +92,21 @@ export default class Dialogs extends BaseDialog {
   }
 
   /**
-     * Renderiza o diálogo com o template Handlebars.
-     * Se o diálogo possuir um template, ele é carregado e renderizado
-     * no corpo do diálogo.
-     * @async
-     * @throws {Error} - Se ocorrer um erro ao carregar o template.
-     */
+  * Renderiza o corpo do diálogo.
+  * 
+  * @async
+  * @returns {HTMLElement} - O conteiner com os botões.
+  */
   async _prepareBody() {
     try {
-      return this.getBody();
+      switch (this.type) {
+        case Dialogs.Type.SECURE:
+          return this.SecureConfirmBody;
+        case Dialogs.Type.IMAGE:
+          return this.ImageBody;
+        default:
+          return this.ConfirmBody;
+      }
     } catch (error) {
       this.msgBox.showError(error);
     }

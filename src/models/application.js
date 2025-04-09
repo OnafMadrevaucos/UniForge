@@ -10,7 +10,7 @@ export default class Application {
         * @type {string}
         * 
         */
-        this.uuid = uniforge.utils.randomID();
+        this.uuid = uniforge.utils.randomID();        
 
         /**
         * Opções adicionais fornecidas à aplicação.
@@ -46,8 +46,8 @@ export default class Application {
          */
         this.state = {
             isDragging: false,
-            xDiff: 5,
-            yDiff: 5,
+            xDiff: 0,
+            yDiff: 0,
             x: 0,
             y: 0,
 
@@ -67,10 +67,19 @@ export default class Application {
     // Propriedade do template HTML da aplicação.
     #template;
 
+    /**
+    * Obtém as configurações padrões da aplicação.
+    */
+    get defaultOptions() {
+        return {          
+          classes: [this.style, 'container']
+        };
+    }
+
     get query() {
         return {
             overlay: this._buildSelector('Overlay'),
-            application: this._buildSelector('Container'),
+            app: this._buildSelector('Container'),
             header: this._buildSelector('Header'),
             main: this._buildSelector('Main'),
             close_btn: this._buildSelector('Close')
@@ -90,11 +99,20 @@ export default class Application {
     get ui() {
         return {
             overlay: document.querySelector(this.query.overlay),
-            application: document.querySelector(this.query.application),
+            app: document.querySelector(this.query.app),
             header: document.querySelector(this.query.header),
             main: document.querySelector(this.query.main),
             close_btn: document.querySelector(this.query.close_btn),
         };
+    }
+
+    /**
+    * Obtém o elemento pai que chamou a aplicação.
+    * @async
+    * @returns {HTMLElement}  - Elemento pai.
+    */
+    get parentElement() {
+        return document.querySelector('body.uniforge');
     }
 
     /**
@@ -210,13 +228,15 @@ export default class Application {
      * @throws {Error}           - Se ocorrer um erro ao renderizar o formulário.
     */
     async prepareTemplate() {
+        const classes = this.defaultOptions.classes;
+
         const overlay = document.createElement('div');
         overlay.id = `${this.style}Overlay-${this.uuid}`;
         overlay.classList.add('overlay', 'flexrow');
 
         const container = document.createElement('div');
         container.id = `${this.style}Container-${this.uuid}`;
-        container.classList.add(this.style, 'container', 'flexrow');
+        container.classList.add(...classes);
 
         const header = document.createElement('div');
         header.id = `${this.style}Header-${this.uuid}`;
@@ -226,11 +246,20 @@ export default class Application {
         main.id = `${this.style}Main-${this.uuid}`;
         main.classList.add('main', 'flexcol');
 
-        await this.prepareDerivedTemplate(container, header, main);        
-        overlay.appendChild(container);
+        await this.prepareDerivedTemplate(container, header, main);
 
         // Adiciona o overlay ao DOM.
         document.body.appendChild(overlay);
+        // Adiciona o container ao DOM.
+        document.body.appendChild(container);
+    }
+
+    /**
+    * Prepara o conteúdo do formulário substituindo seus placeholders e tags customizadas.
+    */
+    parseTemplate() {
+        const preparedContent = uniforge.parser.parseHTML(this.ui.app.innerHTML, this.data);
+        this.ui.app.innerHTML = preparedContent;
     }
 
     /**
@@ -253,7 +282,7 @@ export default class Application {
             await this.prepareTemplate();
 
             // Prepara o HTML da aplicação para renderização (Substitui pseudo-elements).
-            this.prepareContent();
+            this.parseTemplate();
 
             // Ativa os ouvintes de eventos básicos.
             this.activateBaseListeners();
@@ -293,7 +322,7 @@ export default class Application {
 
         try {
             if (this.configured) {
-                this.ui.overlay.classList.remove('hidden');
+                this.ui.app.classList.remove('hidden');
 
                 uniforge.form = this;
                 uniforge.state.save();
@@ -304,8 +333,8 @@ export default class Application {
     }
 
     close() {
-        this.clear();
-        this.ui.overlay.classList.add('hidden');
+        this.ui.app.remove();
+        this.ui.overlay.remove(); 
 
         // Limpa o conteúdo do formulário dos metadados da aplicação.
         uniforge.state.update(['currentForm', { name: null, state: null, activeTab: 0 }]);
@@ -320,16 +349,7 @@ export default class Application {
     clear() {
         // Limpa o conteúdo do formulário.
         this.ui.main.innerHTML = '';
-    }
-
-    /**
-    * Prepara o conteúdo do formulário substituindo seus placeholders e tags customizadas.
-    */
-    prepareContent() {
-        const preparedContent = uniforge.parser.parseHTML(this.ui.application.innerHTML, this.data);
-        this.ui.application.innerHTML = preparedContent;
-    }
-
+    }  
     /* ---------------------------------------------------------------------------------------------------------------- */
     // LISTENERS
     /**
@@ -337,35 +357,108 @@ export default class Application {
      * @private
      */
     activateBaseListeners() {
-        // Fecha aplicação ao clicar no botão de fechar.
-        this.ui.close_btn.addEventListener('click', this.onCloseClick.bind(this), { once: true });
-    }
+        const header = this.ui.header;
+        header.addEventListener('mousedown', (event) => { this._onMouseDown.bind(this)(event); });       
 
-    onCloseClick(event) {
+        const main = this.ui.main;
+        main.addEventListener('submit', (event) => { event.preventDefault(); });
+
+        document.addEventListener('mousemove', (event) => { this._onMouseMove.bind(this)(event); });
+        document.addEventListener('mouseup', (event) => { this._onMouseUp.bind(this)(event); });
+
+        // Fecha aplicação ao clicar no botão de fechar.
+        this.ui.close_btn.addEventListener('click', (event) => { this._onCloseClick.bind(this)(event); }, { once: true });
+    }    
+
+    /**
+    * Fecha a aplicação com clicar no botão de fechar no cabeçalho.
+    * 
+    * @param {MouseEvent} event - O evento de mouse.
+    */
+    _onCloseClick(event) {
+        event.preventDefault();
         event.stopPropagation();
-        this.#handleNavQueueOnClose(event);
+
+        //this.#handleNavQueueOnClose(event);
 
         this.close();
+    }
+    /**
+    * Inicia o processo de arraste do aplicação.
+    * 
+    * @param {MouseEvent} event - O evento de mouse.
+    */
+    _onMouseDown(event) {
+        event.stopPropagation();
+        this.state.isDragging = true;
+
+        // Obtém as coordenadas reais do diálogo
+        const appRect = this.ui.app.getBoundingClientRect();
+
+        // Calcula as diferenças entre o clique e a posição atual
+        this.state.xDiff = event.pageX - appRect.left;
+        this.state.yDiff = event.pageY - appRect.top;
+
+        const header = this.querySelector('.header-bar');
+        header.style.cursor = "grabbing";
+        document.body.style.userSelect = "none";
+    }
+
+    /**
+     * Manipula o movimento do arraste da aplicação.
+     * 
+     * @param {MouseEvent} event - O evento de movimento do mouse.
+     */
+    _onMouseMove(event) {
+        event.stopPropagation();
+        if (this.state.isDragging) {
+            const parentRect = this.parentElement.getBoundingClientRect();
+            const appRect = this.ui.app.getBoundingClientRect();
+            const headerRect = this.ui.header.getBoundingClientRect();
+
+            // Calcula as novas posições, respeitando os limites do parentElement.
+            const newX = event.pageX - this.state.xDiff;
+            const newY = event.pageY - this.state.yDiff;
+
+            this.state.x = Math.max(parentRect.left, Math.min(newX, parentRect.right - appRect.width));
+            this.state.y = Math.max((parentRect.top + headerRect.height), Math.min(newY, parentRect.bottom - appRect.height));
+
+            // Aplica as novas posições
+            this._refreshWindow();
+        }
+    }
+
+    /**
+     * Finaliza o arraste da aplicação.
+     */
+    _onMouseUp() {
+        if (!this.ui.app) return;
+
+        this.state.isDragging = false;
+
+        const header = this.ui.app.querySelector('.header-bar');
+        header.style.cursor = "grab";
+        document.body.style.userSelect = "";
     }
 
     /* ---------------------------------------------------------------------------------------------------------------- */
     // UTILITÁRIOS  
     /**
-     * Consulta um seletor CSS dentro do overlay principal.
+     * Consulta um seletor CSS dentro da aplicação.
      * @param {string} selector - O seletor CSS a ser buscado.
      * @returns {HTMLElement} O primeiro elemento correspondente.
      */
     querySelector(selector) {
-        return this.ui.overlay.querySelector(selector);
+        return this.ui.app.querySelector(selector);
     }
 
     /**
-     * Consulta todos os elementos correspondentes a um seletor CSS dentro do overlay principal.
+     * Consulta todos os elementos correspondentes a um seletor CSS dentro da aplicação.
      * @param {string} selector - O seletor CSS a ser buscado.
      * @returns {NodeList} Uma NodeList com os elementos correspondentes.
      */
     querySelectorAll(selector) {
-        return this.ui.overlay.querySelectorAll(selector);
+        return this.ui.app.querySelectorAll(selector);
     }
 
     /**
@@ -382,13 +475,55 @@ export default class Application {
     }
 
     /**
+     * Atualiza a posição da aplicação na tela com base no estado atual.
+     * @private
+    */
+    _refreshWindow() {
+        if (!this.ui.app) return;
+
+        this.ui.app.style.left = `${this.state.x}px`;
+        this.ui.app.style.top = `${this.state.y}px`;
+    }
+
+    /**
+    * Centraliza a aplicação ao elemento pai.     
+    */
+    _centerDialog() {
+        if (this.parentElement && this.ui.app) {
+            const parentRect = this.parentElement.getBoundingClientRect();
+            const appRect = this.ui.app.getBoundingClientRect();
+
+            let centerX = parentRect.left + (parentRect.width - appRect.width) / 2;
+            let centerY = parentRect.top + (parentRect.height - appRect.height) / 2;
+
+            /*
+            if (parentRect.x != 0 && parentRect.y != 0) {
+                // Calcula as coordenadas para centralizar o diálogo
+                centerX = parentRect.left + (parentRect.width - appRect.width) / 2;
+                centerY = parentRect.top + (parentRect.height - appRect.height) / 2;
+            } else {
+                // Calcula as coordenadas para centralizar o diálogo
+                centerX = (appRect.width) / 2;
+                centerY = (appRect.height) / 2;
+            }
+            */
+
+            // Define a posição do diálogo
+            this.ui.app.style.position = "absolute";
+            this.ui.app.style.left = `${centerX}px`;
+            this.ui.app.style.top = `${centerY}px`;
+        }
+    }
+
+    /**
    * Lida com a fila de navegação ao fechar o formulário.
    * @param {MouseEvent} event - O evento de clique para fechar.
    * @private
    */
     #handleNavQueueOnClose(event) {
-        const overlay = event.target.closest('.overlay');
-        if (overlay.id === 'formOverlay' || uniforge.navQueue.isFromTimeline()) {
+
+        const overlay = this.ui.overlay;
+        if (overlay) {
             uniforge.navQueue.clearQueue();
         } else if (overlay.id === 'entryFormOverlay') {
             if (uniforge.navQueue.isFromLibrary()) {

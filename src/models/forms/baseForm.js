@@ -9,8 +9,8 @@ export default class BaseForm extends Application {
    * Construtor da classe BaseForm.
    * @param {HTMLElement} title   - O título do formulário.
    */
-  constructor(title, options = {}) {
-    super(title, { style: Application.Styles.FORM, ...options });
+  constructor(title, options = {extraClasses: []}) {    
+    super(title, options);    
 
     /**
      * Gerenciador de conexão de Banco de Dados.
@@ -73,6 +73,17 @@ export default class BaseForm extends Application {
 
   /* ---------------------------------------------------------------------------------------------------------------- */
   // GETTERS E SETTERS
+  /**
+  * @overload
+  * @inheritdoc
+  */
+  get defaultOptions() {
+    const config = super.defaultOptions;   
+    return uniforge.utils.mergeObjects(config,{
+      style: Application.Styles.FORM,
+      classes: [...config.classes, 'maximized']
+    });
+  }
 
   /**
    * Obtém o container principal do formulário.
@@ -80,7 +91,7 @@ export default class BaseForm extends Application {
    * @returns {HTMLElement}  - O container principal do formulário.
    */
   get form() {
-    return this.ui.application;
+    return this.ui.app;
   }
 
   /**
@@ -118,8 +129,11 @@ export default class BaseForm extends Application {
     return data;
   }
 
-
-  async prepareDerivedTemplate(form, header, main) { 
+  /**
+  * Cria a estrutura específica do formulário.
+  * @interface
+  */
+  async prepareDerivedTemplate(form, header, main) {
     header.innerHTML = `
             <span class="${this.style} title">{{title}}</span>
             <switch id="deleteSwitch" class="hidden"></switch>
@@ -135,7 +149,6 @@ export default class BaseForm extends Application {
 
   /* ---------------------------------------------------------------------------------------------------------------- */
   // INTERFACE DE USUÁRIO  
-
   /**
    * Remove todos os elementos filhos de um elemento especificado ou do formulário principal.
    * @param {HTMLElement} [element={}] - O elemento cujos filhos devem ser removidos. Por padrão, é o formulário principal.
@@ -149,8 +162,25 @@ export default class BaseForm extends Application {
   /**
    * Exibe o formulário e o overlay associados.
    */
-  async showForm(forceLoad = false) {
-    this.show(forceLoad);
+  async showForm(forceLoad = false) {        
+    await this.show(forceLoad);
+
+    this._activateForm();
+  }
+
+  /**
+   * @inheritdoc
+   */
+  close() {  
+    const tabs = document.querySelectorAll('.tab');
+    let formTab = null;
+    tabs.forEach((tab) => {
+      if(tab.getAttribute('data-target') === this.type) formTab = tab;
+    });
+
+    formTab.classList.remove('disabled');
+
+    super.close();
   }
 
   /**
@@ -159,6 +189,64 @@ export default class BaseForm extends Application {
   hideForm() {
     this.close();
   }
+  /* ---------------------------------------------------------------------------------------------------------------- */
+  // LISTENERS
+  /**
+   * Configura ouvintes de eventos básicos para o formulário.
+   * @private
+   */
+  activateBaseListeners() {
+    super.activateBaseListeners();
+
+    const app = this.ui.app;
+    app.addEventListener('mousedown', (event) =>{ this._onAppActive.bind(this)(event); });
+
+    const header = this.ui.header;
+    header.addEventListener('dblclick', (event) => { this._onHeaderDblClick.bind(this)(event); });
+  }
+
+  _onMouseDown(event) {
+    super._onMouseDown(event);
+
+    this._activateForm();
+  }
+
+  _onAppActive(event) {
+    const clickedApp = event.target.closest('.container');
+    const clickedAppUuid = clickedApp.id?.split('-')[1];
+    if(clickedAppUuid === uniforge.form.uuid) return;
+
+    this._activateForm();
+  }
+
+  _onHeaderDblClick(event) {
+    event.stopPropagation();
+    this.ui.app.classList.toggle('maximized');
+    this.ui.overlay.classList.toggle('hidden');
+
+    if(this.ui.app.classList.contains('maximized')) this._activateForm();
+  }
+
+  _onSearchInputList(event) {
+    event.stopPropagation();
+    const input = event.target;
+    // Verifica se o valor do input corresponde a uma opção da datalist
+    const options = document.querySelectorAll(`datalist#${input.name} option`);
+    let isValid = false;
+    options.forEach(option => {
+      if (option.value === input.value) {
+        isValid = true;
+      }
+    });
+
+    // Aplica a cor de fundo personalizada se o valor for válido
+    if (isValid) {
+      input.style.backgroundColor = '#e0f7fa'; // Cor personalizada
+    } else {
+      input.style.backgroundColor = ''; // Volta ao padrão
+    }
+  }
+
   /* ---------------------------------------------------------------------------------------------------------------- */
   // CONFIGURAÇÃO
   /**
@@ -194,25 +282,13 @@ export default class BaseForm extends Application {
   }
 
   /* ---------------------------------------------------------------------------------------------------------------- */
-  // LISTENERS
+  // UTILITÁRIOS
+  _activateForm() {
+    const activeApps = document.querySelectorAll('.container.active');
+    activeApps.forEach((app) => app.classList.remove('active'));
 
-  onSearchInputList(event) {
-    event.stopPropagation();
-    const input = event.target;
-    // Verifica se o valor do input corresponde a uma opção da datalist
-    const options = document.querySelectorAll(`datalist#${input.name} option`);
-    let isValid = false;
-    options.forEach(option => {
-      if (option.value === input.value) {
-        isValid = true;
-      }
-    });
-
-    // Aplica a cor de fundo personalizada se o valor for válido
-    if (isValid) {
-      input.style.backgroundColor = '#e0f7fa'; // Cor personalizada
-    } else {
-      input.style.backgroundColor = ''; // Volta ao padrão
-    }
+    this.ui.app.classList.add('active');
+    uniforge.form = this;
   }
+  
 }

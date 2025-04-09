@@ -10,7 +10,7 @@
 /* Para telas pequenas (menos de 768px) */
 @media (max-width: 768px) {
     .entries .minimize-button {
-        left: 29vw;
+        left: 14vw;
     }
 
     .entries .minimize-button:has(+.sidebar.minimized) {
@@ -18,14 +18,14 @@
     }
 
     .sidebar {
-        width: 35vw;
+        width: 16vw;
     }
 }
 
 /* Para telas médias (entre 768px e 992px) */
 @media (min-width: 768px) and (max-width: 992px) {
     .entries .minimize-button {
-        left: 25vw;
+        left: 16vw;
     }
 
     .entries .minimize-button:has(+.sidebar.minimized) {
@@ -33,22 +33,22 @@
     }
 
     .sidebar {
-        width: 30vw;
+        width: 18vw;
     }
 }
 
 /* Para telas grandes (mais de 992px) */
 @media (min-width: 992px) {
     .entries .minimize-button {
-        left: 23vw;
+        left: 18vw;
     }
 
     .entries .minimize-button:has(+.sidebar.minimized) {
-        transform: translateX(-22.65vw);
+        transform: translateX(-17.65vw);
     }
 
     .sidebar {
-        width: 25vw;
+        width: 20vw;
     }
 }
 
@@ -118,7 +118,7 @@
     --heading-1-size: 40px;
     --heading-2-size: 30px;
     --heading-3-size: 14px;
-    --big-size: 20px;
+    --big-size: 16px;
     --default-size: 12px;
     --small-size: 11px;
     --smaller-size: 10.5px;
@@ -189,7 +189,7 @@
     flex: 2;
 }
 
-/* ------ Main Elements ------ */
+/* ------ Main Body ------ */
 body.uniforge {
     font-family: var(--default-font);
     color: var(--light-grey);
@@ -204,6 +204,8 @@ body.uniforge {
     background-image: url('../images/background.jpeg');
     overflow: hidden;
 }
+
+/* ------ Primitives ------- */
 
 *:disabled {
     cursor: default;
@@ -257,13 +259,6 @@ input.dial[type="number"] {
     color: var(--light-text-color);
     font-size: var(--default-size);
 }
-
-input[list] {
-    margin: 0;
-}
-
-/* Estilização quando o input está em foco */
-input[list]:focus {}
 
 input[type="text"]:focus,
 input[type="password"]:focus {
@@ -377,7 +372,7 @@ blockquote:not(:has(+ blockquote)) {
     margin-bottom: 0.5em;
 }
 
-/* ------ Estilo do Switch ------ */
+/* ------ Switch Control ------ */
 .switch {
     position: relative;
     display: inline-block;
@@ -442,7 +437,7 @@ input:checked+.slider::before {
 }
 
 
-/* ------ Miscelaneous ------ */
+/* ------ Separators ------ */
 .separator {
     height: 2px;
     background-color: var(--dark-red);
@@ -458,6 +453,7 @@ input:checked+.slider::before {
     height: 0px;
 }
 
+/* ------ Footers ------ */
 .footer {
     width: 45%;
     align-self: flex-end;
@@ -954,13 +950,15 @@ input:checked+.slider::before {
     display: none;
 }
 
+/* ------ Application Controls ------ */
+
+/* --- Overlay --- */
 .overlay {
     position: fixed;
     top: 0;
     left: 0;
     width: 100vw;
-    height: 100vh;
-    background: rgba(0, 0, 0, 0.8);
+    height: 100vh;    
     display: none;
     justify-content: center;
     align-items: center;
@@ -969,30 +967,57 @@ input:checked+.slider::before {
     transform: scale(0.5);
     transition: opacity 0.5s ease, transform 0.5s ease;
 }
-
 .overlay:not(.hidden) {
     display: flex;
     opacity: 1;
     transform: scale(1);
 }
 
-.overlay .form.container {
-    position: relative;
+.overlay:has(> .form) {
+    background: transparent;
+}
+.overlay:has(> .dialog) {
+    background: rgba(0, 0, 0, 0.5);
+}
+
+/* ------ Container ------*/
+.container {
+    position: absolute;
+    z-index: 1002;    
+}
+.container.active {
+    z-index: 1003;
+}
+
+.container .header-bar:hover {
+    cursor: grab;
+}
+
+/* --- Forms --- */
+.form.container {    
     background: var(--background-color);
-    height: 92%;
-    width: 90%;
-    margin: 1em;
+    height: 85vh;
+    width: 75vw;
+    margin-top: 5px;
     border-bottom-right-radius: var(--default-border-radius);
     border-bottom-left-radius: var(--default-border-radius);
     box-shadow: var(--default-shadow);
+    transition: height 0.5s ease, width 0.25s linear;
 }
 
-.overlay .form.container.fullscreen {
+
+
+.form.container:not(.maximized) {
+    height: 0vh;
+    width: 20vw;
+}
+
+.form.container.fullscreen {
     height: 90%;
     width: 97%;
 }
 
-.overlay .form.container .header-bar {
+.form .header-bar {
     border-top-left-radius: var(--default-border-radius);
     border-top-right-radius: var(--default-border-radius);
     background-color: var(--dark-red);
@@ -1004,7 +1029,7 @@ input:checked+.slider::before {
     justify-content: flex-end;
 }
 
-.overlay .form.container .header-bar .form.title {
+.form .header-bar .form.title {
     flex: 1;
     height: var(--fill-height);
     align-content: center;
@@ -1014,25 +1039,24 @@ input:checked+.slider::before {
     font-weight: bold;
     user-select: none;
 }
-
-.overlay .form.container .form.header-bar .switch {
+.form .header-bar .switch {
     margin-right: 5px;
+    z-index: 1004;
 }
-
-.overlay .form.container .form.header-bar .switch .slider {
+.form .header-bar .switch .slider {
     background-color: transparent;
 }
 
-.overlay .form-container .form.header-bar .switch input:checked+.slider {
+.form .header-bar .switch input:checked+.slider {
     background-color: var(--light-blue);
 }
 
-.overlay .form-container .form.header-bar .switch input:checked+.slider::before {
+.form .header-bar .switch input:checked+.slider::before {
     color: var(--dark-red);
     background-color: var(--light-grey);
 }
 
-.overlay .form-container .form.header-bar .slider::before {
+.form .header-bar .slider::before {
     color: var(--light-text-color);
     background-color: var(--light-text-color);
     font-family: 'Font Awesome 6 Free';
@@ -1044,7 +1068,7 @@ input:checked+.slider::before {
     line-height: 1.45em;
 }
 
-.overlay .form.container .header-bar .close-button {
+.form .header-bar .close-button {
     width: 18px;
     height: 18px;
     font-size: 18px;
@@ -1061,23 +1085,28 @@ input:checked+.slider::before {
     align-items: center;
 }
 
-.overlay .form.container .close-button:hover {
+.form .header-bar .close-button:hover {
     color: var(--dark-red);
     background-color: var(--light-text-color);
     text-shadow: none;
 }
 
-.overlay .form.container .main {
+.form .main {
     flex: 1;
+    transition: height 0.5s ease;
 }
 
-.overlay .form.container .main > div {
+.form .main > div {
     height: var(--fill-height);
-} 
+}
+.form.container:not(.maximized) .main {
+    display: none;
+}
+
+/* ------ Data Controls ------ */
 
 .data-complex {
     gap: var(--default-gap-size);
-    ;
     justify-content: space-between;
 }
 
@@ -3006,9 +3035,6 @@ folder-list .folder.created.selected .folder-header .fa-trash {
 
 /* ------ Dialog ------ */
 .dialog {
-    display: flex;
-    flex-direction: column;
-
     position: fixed;
     top: 50%;
     background: var(--background-color);
@@ -3035,16 +3061,11 @@ folder-list .folder.created.selected .folder-header .fa-trash {
 
 .dialog .header-bar {
     gap: var(--default-gap-size);
-    ;
     background: var(--dark-red);
     border-radius: var(--title-header-radius);
     box-shadow: var(--small-shadow);
     margin-right: 5px;
     margin-block: 10px 5px;
-}
-
-.dialog .header-bar:hover {
-    cursor: grab;
 }
 
 .dialog .header-bar h2 {
