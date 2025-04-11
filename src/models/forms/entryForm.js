@@ -75,8 +75,8 @@ export default class EntryForm extends SidebarForm {
     * Contém duas instâncias de `DatePicker` para 'startDate' (data de início) e 'endDate' (data de término).
     */
     this.datePickers = {
-      start: new DatePicker('startDate'),
-      end: new DatePicker('endDate')
+      startDate: new DatePicker('startDate'),
+      endDate: new DatePicker('endDate')
     }
 
     this.selection.event = null; // ID do Evento selecionado na EventTab.
@@ -493,7 +493,10 @@ export default class EntryForm extends SidebarForm {
     const eventFlavorEditor = tinymce.get('eventFlavorEditor');
     eventFlavorEditor.setContent('');
 
-    this.clearDatePickers();
+    this.datePickers.startDate.clearDate();
+
+    this.datePickers.endDate.dateInput.classList.add('disabled');
+    this.datePickers.endDate.clearDate();
 
     const addEventButton = this.querySelector('#addEventButton');
     addEventButton.innerHTML = '<i class="fas fa-square-plus"></i> Adicionar Evento';
@@ -570,26 +573,25 @@ export default class EntryForm extends SidebarForm {
   * Para cada DatePicker, chama o método `load`, passando o calendário escolhido.
   */
   configureDatePickers(event) {
-    const calendars = this.data.calendars;
-
     const calendarType = this.querySelector('#calendarType');
     calendarType.value = event?.clid ?? 1;
     calendarType.dispatchEvent(new Event('change'));
 
     // Se houver um evento, carregue o DatePicker com a data do evento.
     if (event) {
-      this.datePickers.start.selectFullDate(event.s_day, event.s_month, event.s_year);
+      this.datePickers.startDate.selectFullDate(event.s_day, event.s_month, event.s_year);
       // Se houver uma data de fim, carregue o DatePicker com a data do evento.
       if (event.e_day)
-        this.datePickers.end.selectFullDate(event.e_day, event.e_month, event.e_year);
-    } else { // Senão, limpe os DatePickers.
-      this.clearDatePickers();
-    }
+        this.datePickers.endDate.selectFullDate(event.e_day, event.e_month, event.e_year);
+    } 
   }
 
   clearDatePickers() {
     Object.values(this.datePickers).forEach(datePicker => {
-      datePicker.clear();
+      datePicker.clearDate();
+      
+      delete datePicker.minDate;
+      delete datePicker.maxDate;
     });
   }
 
@@ -651,6 +653,8 @@ export default class EntryForm extends SidebarForm {
 
       Object.values(this.datePickers).forEach(picker => {
         picker.prepare();
+
+        picker.addEventListener('change', (event) => this.onDatePickerChange(event));
       });
 
       const newEventButton = this.querySelector('#addEventButton');
@@ -793,6 +797,59 @@ export default class EntryForm extends SidebarForm {
     });
   }
 
+  onDatePickerChange(event) {
+    event.stopPropagation();
+
+    const dataGroup = event.target.closest('.data-group');
+    const pickerId = dataGroup.id;
+    const picker = this.datePickers[pickerId];
+
+    if (!picker.isEmpty) {
+
+      // Obtem as datas de inicio e fim.
+      const startDate = this.datePickers.startDate;
+      const endDate = this.datePickers.endDate;
+
+      if (picker.pickerId === startDate.pickerId) {
+        // Define a data de inicio no DatePicker de fim.
+        endDate.setMinDate(picker.date);
+        /*
+        // Data de inicio maior que a data de fim.
+        if (startDate.ticks > endDate.ticks && !endDate.isEmpty) {
+          this.msgBox.showWarning('Data de inicio maior que a data de fim.');
+          startDate.selectFullDate(endDate.date.day, endDate.date.month, endDate.date.year);
+        }
+
+        // Data de fim menor que a data de inicio.
+        if (endDate.ticks < startDate.ticks && !endDate.isEmpty) {
+          this.msgBox.showWarning('Data de fim menor que a data de inicio.');
+          endDate.selectFullDate(startDate.date.day, startDate.date.month, startDate.date.year);
+        }
+        */
+
+        endDate.dateInput.classList.remove('disabled');
+      }
+      if (picker.pickerId === endDate.pickerId) {
+
+        // Define a data de inicio no DatePicker de fim.
+        startDate.setMaxDate(picker.date);
+        /*
+        // Data de inicio maior que a data de fim.
+        if (startDate.ticks > endDate.ticks && !startDate.isEmpty) {
+          this.msgBox.showWarning('Data de inicio maior que a data de fim.');
+          startDate.selectFullDate(endDate.date.day, endDate.date.month, endDate.date.year);
+        }
+
+        // Data de fim menor que a data de inicio.
+        if (endDate.ticks < startDate.ticks && !startDate.isEmpty) {
+          this.msgBox.showWarning('Data de fim menor que a data de inicio.');
+          endDate.selectFullDate(startDate.date.day, startDate.date.month, startDate.date.year);
+        }
+        */
+      } 
+    }
+  }
+
   /**
        * Trata o evento de clique em uma se o de uma aba do formul rio.
        * @param {Event} event - O evento de clique no bot o de se o.
@@ -859,12 +916,12 @@ export default class EntryForm extends SidebarForm {
       relevance: relevance.value,
       clid: calendarType.value,
       flavor: tinymce.get('eventFlavorEditor').getContent() ?? '',
-      s_day: this.datePickers.start.selectedDate.day,
-      s_month: this.datePickers.start.selectedDate.month,
-      s_year: this.datePickers.start.selectedDate.year,
-      e_day: this.datePickers.end.selectedDate.day,
-      e_month: this.datePickers.end.selectedDate.month,
-      e_year: this.datePickers.end.selectedDate.year,
+      s_day: this.datePickers.startDate.date.day,
+      s_month: this.datePickers.startDate.date.month,
+      s_year: this.datePickers.startDate.date.year,
+      e_day: this.datePickers.endDate.isEmpty ? null : this.datePickers.endDate.date.day,
+      e_month: this.datePickers.endDate.isEmpty ? null : this.datePickers.endDate.date.month,
+      e_year: this.datePickers.endDate.isEmpty ? null : this.datePickers.endDate.date.year,
       dbAction: uniforge.doc.events.get(newEvid) ? 'u' : 'a'
     };
 

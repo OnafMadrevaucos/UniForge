@@ -355,11 +355,10 @@ function activateMainListeners() {
  * */
 function onTopbarButtonClick(event) {
     // Impedir que o clique no item desencadeie o clique fora do sidebar
-    event.stopPropagation();
-    const formContainer = document.getElementById('formContainer');
-    formContainer.classList.add('fullscreen');
+    event.stopPropagation();    
     const button = event.target.closest('.topbarBtn');
-
+    button.classList.add('disabled');
+    
     renderForm(button.getAttribute('data-target'));
 }
 

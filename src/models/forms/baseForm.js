@@ -173,12 +173,22 @@ export default class BaseForm extends Application {
    */
   close() {  
     const tabs = document.querySelectorAll('.tab');
-    let formTab = null;
+    let sourceFinded = false;
+    
     tabs.forEach((tab) => {
-      if(tab.getAttribute('data-target') === this.type) formTab = tab;
+      if(tab.getAttribute('data-target') === this.type) {
+        tab.classList.remove('disabled');
+        sourceFinded = true;
+      }
     });
 
-    formTab.classList.remove('disabled');
+    if(!sourceFinded) {    
+      const buttonsTool = document.querySelector('.buttons-tool');
+      const buttons = buttonsTool.querySelectorAll('button');
+      buttons.forEach((button) => {
+        if(button.getAttribute('data-target') === this.type) button.classList.remove('disabled');
+      });
+    }
 
     super.close();
   }

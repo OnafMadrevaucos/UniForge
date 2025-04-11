@@ -2,7 +2,7 @@ import BaseForm from "./baseForm.js";
 
 export default class SidebarForm extends BaseForm {
     constructor(title, options = {}) {
-        super(title, {extraClasses: ['flexrow'], ...options});
+        super(title, options);
 
         /**
          * Representa as seleções atuais no formulário.

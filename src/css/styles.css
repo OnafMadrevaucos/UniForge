@@ -208,9 +208,10 @@ body.uniforge {
 
 /* ------ Primitives ------- */
 
+*.disabled,
 *:disabled {
-    cursor: default;
-    pointer-events: none;
+    cursor: default !important;
+    pointer-events: none !important;
 }
 
 *:focus-visible {
@@ -506,8 +507,7 @@ input:checked+.slider::before {
     align-self: center;
 }
 
-.footer .buttons button.disabled {
-    pointer-events: none;
+.footer .buttons button.disabled {    
     background-color: var(--background-color);
     color: var(--light-text-color);
     border: var(--filled-border);
@@ -714,7 +714,10 @@ input:checked+.slider::before {
     box-shadow: var(--small-shadow);
     padding: 0;
 }
-
+#toolsTopbar .tools-container button.disabled {
+    background-color: var(--light-background-color);
+    color: var(--disabled-text-color);
+} 
 #toolsTopbar .tools-container button:hover {
     color: var(--light-text-color);
     background-color: var(--dark-red);
@@ -884,9 +887,7 @@ input:checked+.slider::before {
     font-weight: bold;
     transition: background 0.2s;
 }
-.tab.disabled {
-    cursor: default;
-    pointer-events: none;
+.tab.disabled {    
     color: var(--disabled-text-color);
 }
 
@@ -1007,6 +1008,7 @@ input:checked+.slider::before {
     z-index: 1003;
 }
 
+.form.container.fullscreen:not(.maximized),
 .form.container:not(.maximized) {
     height: 0vh;
     width: 20vw;
@@ -3021,13 +3023,20 @@ folder-list .folder.created.selected .folder-header .fa-trash {
     justify-content: center;
 }
 
+.calendar .years .calendar-content .year.invalid
+.calendar .months .calendar-content .month.invalid,
+.calendar .days .calendar-content .day.invalid {
+    background-color: var(--blue);
+    color: var(--dark-blue);
+    pointer-events: none;
+}
+
 /* Visualização dos dias */
 .days .calendar-content {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
     text-align: center;
     gap: var(--default-gap-size);
-    ;
 }
 
 .days .calendar-content .day {
@@ -3047,12 +3056,7 @@ folder-list .folder.created.selected .folder-header .fa-trash {
 
 /* Visualização dos meses */
 .months .calendar-content {
-    /*
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    */
     gap: var(--default-gap-size);
-    ;
 }
 
 .months .calendar-content .month {
@@ -3091,7 +3095,6 @@ folder-list .folder.created.selected .folder-header .fa-trash {
 .years .calendar-content .year:hover {
     background-color: var(--light-blue);
 }
-
 
 .zoom-out {
     transform: scale(0.8);

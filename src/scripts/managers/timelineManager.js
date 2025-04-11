@@ -6,7 +6,7 @@ export class TimelineManager extends BaseManager {
     constructor(form) {
         super(form);
 
-        this.subjectsTypes = this.getSubjects();
+        this.subjectsTypes = null;
         this.timeline = null;
     }
 

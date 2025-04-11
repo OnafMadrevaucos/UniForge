@@ -10,7 +10,10 @@ export default class EconomyForm extends EntryForm  {
         // Chama o construtor da classe pai com o parâmetro overlay.
         super('Economia');
 
-        this.type = 'economy'; // Define o tipo do formulário. 
+        /**
+        * @type {string} - Define o tipo do formulário.
+        */
+        this.type = 'economy'; 
     }
     
     /**

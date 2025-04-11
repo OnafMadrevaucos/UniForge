@@ -3,12 +3,33 @@ import SidebarForm from "./sidebarForm.js";
 
 export default class TimelineForm extends SidebarForm {
     constructor() {
-        const form = super('Linha do Tempo');
-        this.form = form;
+        super('Linha do Tempo');
+        
+        /**
+        * @type {string} - Define o tipo do formulário.
+        */
+        this.type = 'timeline';
 
+        /**
+        * @type {string} - O modelo HTML utilizado pelo formulário.
+        */
         this.template = 'timelineForm'; // Define o template do formulário. 
 
-        this.manager = new TimelineManager(form);
+        /**
+        * @type {TimelineManager} - O gerenciador de exibição da Timeline.
+        */
+        this.manager = new TimelineManager(this);
+    }
+
+    /**
+     * @overload
+     * @inheritdoc
+    */
+    get defaultOptions() { 
+        const config = super.defaultOptions;   
+        return uniforge.utils.mergeObjects(config,{
+            classes: [...config.classes,'fullscreen']
+        }); 
     }
 
     /**
@@ -16,14 +37,16 @@ export default class TimelineForm extends SidebarForm {
     * @async
     * @returns {Object} - Assuntos e suas categorias.
     */
-    async getTimelines() {
-        const data = await this.db.getAllTimelines();
+    prepareTimelines() {
+        const data = uniforge.doc.timelines.toObject();
 
+        /*
         if (data) {
             for (let timeline of Object.values(data)) {
                 timeline.entries = Object.values(await this.db.getEventsFromTimeline(timeline.tid));
             }
         }
+        */
         return data;
     }
 
@@ -31,40 +54,21 @@ export default class TimelineForm extends SidebarForm {
     * Obtém as categorias disponíveis para o formulário no banco de dados.
     * @returns {Object} - Categorias.
     */
-    async getData() {
-        const data = await super.getData();
+    async prepareData() {
+        super.prepareData();
 
-        data.timelines = await this.getTimelines();
+        this.data.timelines = this.prepareTimelines();
 
-        return data;
-    }
+        return this.data;
+    } 
 
-    async configureContent(form) {
-        this.data = await this.getData();
-
-        this.loadSidebarData(form);
-
-        this.activateListeners(form);
-    }
-
-    /**
-    * Carrega a lista de entradas da barra lateral.
-    * @param {HTMLElement} form - O formulário principal.
-    */
-    loadSidebarData(form) {
-        const data = this.data.timelines;
-        if(data) this.createFolderList(data);
+    /**@inheritdoc */
+    prepareFolders(data) {
+        const folders = uniforge.doc.timelines.filter(t => t.type === this.type);
+        data.folders = folders.sort();
     }
     /* ---------------------------------------------------------------------------------------------------------------- */
     // LISTENERS
-    /**
-     * Configura ouvintes de eventos básicos para o formulário.
-     * @param {HTMLElement} form - O formulário principal.
-     * @private
-     */
-    activateListeners(form) {
-        super.activateListeners(form);
-    }
     /**
    * Gerencia cliques duplos em itens de entrada.
    * @param {MouseEvent} event - O evento de clique duplo.

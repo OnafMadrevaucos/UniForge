@@ -144,6 +144,7 @@ function _parseCalendarTags(html) {
         return `
         <div class="date-input data ${extraClasses || ''}" id="dateInput" data-type="" data-date="">
             <div class="date-display" id="dateDisplay">Selecione uma data</div>
+            <input id="dateHiddenInput" class="hidden" >            
             <div class="calendar" id="calendar">
                 <div class="calendar-header">
                     <button id="prevGroup"><i class="fa-solid fa-caret-left"></i></button>
