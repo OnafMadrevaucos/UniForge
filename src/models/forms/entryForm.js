@@ -652,8 +652,7 @@ export default class EntryForm extends SidebarForm {
       });
 
       Object.values(this.datePickers).forEach(picker => {
-        picker.prepare();
-
+        picker.activateBaseListeners();
         picker.addEventListener('change', (event) => this.onDatePickerChange(event));
       });
 
@@ -793,7 +792,7 @@ export default class EntryForm extends SidebarForm {
     const calendar = this.data.calendars[dateType];
 
     Object.values(this.datePickers).forEach(pickers => {
-      pickers.load(calendar);
+      pickers.config(calendar);
     });
   }
 
@@ -810,42 +809,15 @@ export default class EntryForm extends SidebarForm {
       const startDate = this.datePickers.startDate;
       const endDate = this.datePickers.endDate;
 
-      if (picker.pickerId === startDate.pickerId) {
+      if (picker.id === startDate.id) {
         // Define a data de inicio no DatePicker de fim.
         endDate.setMinDate(picker.date);
-        /*
-        // Data de inicio maior que a data de fim.
-        if (startDate.ticks > endDate.ticks && !endDate.isEmpty) {
-          this.msgBox.showWarning('Data de inicio maior que a data de fim.');
-          startDate.selectFullDate(endDate.date.day, endDate.date.month, endDate.date.year);
-        }
-
-        // Data de fim menor que a data de inicio.
-        if (endDate.ticks < startDate.ticks && !endDate.isEmpty) {
-          this.msgBox.showWarning('Data de fim menor que a data de inicio.');
-          endDate.selectFullDate(startDate.date.day, startDate.date.month, startDate.date.year);
-        }
-        */
-
+        // Ativa o DatePicker de data final.
         endDate.dateInput.classList.remove('disabled');
       }
-      if (picker.pickerId === endDate.pickerId) {
-
+      if (picker.id === endDate.id) {
         // Define a data de inicio no DatePicker de fim.
-        startDate.setMaxDate(picker.date);
-        /*
-        // Data de inicio maior que a data de fim.
-        if (startDate.ticks > endDate.ticks && !startDate.isEmpty) {
-          this.msgBox.showWarning('Data de inicio maior que a data de fim.');
-          startDate.selectFullDate(endDate.date.day, endDate.date.month, endDate.date.year);
-        }
-
-        // Data de fim menor que a data de inicio.
-        if (endDate.ticks < startDate.ticks && !startDate.isEmpty) {
-          this.msgBox.showWarning('Data de fim menor que a data de inicio.');
-          endDate.selectFullDate(startDate.date.day, startDate.date.month, startDate.date.year);
-        }
-        */
+        startDate.setMaxDate(picker.date);        
       } 
     }
   }

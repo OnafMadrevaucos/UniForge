@@ -3023,7 +3023,13 @@ folder-list .folder.created.selected .folder-header .fa-trash {
     justify-content: center;
 }
 
-.calendar .years .calendar-content .year.invalid
+.calendar .years .calendar-content .year.selected,
+.calendar .months .calendar-content .month.selected,
+.calendar .days .calendar-content .day.selected {
+    background-color: var(--text-color);
+}
+
+.calendar .years .calendar-content .year.invalid,
 .calendar .months .calendar-content .month.invalid,
 .calendar .days .calendar-content .day.invalid {
     background-color: var(--blue);
