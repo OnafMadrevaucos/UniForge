@@ -137,7 +137,7 @@ export default class BaseForm extends Application {
     header.innerHTML = `
             <span class="${this.style} title">{{title}}</span>
             <switch id="deleteSwitch" class="hidden"></switch>
-            <a id="${this.style}Close-${this.uuid}" class="close-button flexcol"><i class="fas fa-xmark"></i></a>
+            <a id="${this.style}Close-${this.uuid}" class="close-button flexcol"><i class="fas fa-circle-xmark"></i></a>
         `;
 
     const html = await uniforge.utils.loadTemplate(this.template);

@@ -75,33 +75,35 @@
     --light-grey: #f0f0f0;
     --dark-grey: #0b0a13;
 
-    --blue: #403d52;
-    --light-blue: #4e4a66;
-    --dark-blue: #2c2c40;
+    --blue: #2c2b33;
+    --light-blue: #4c4a5f;       
+    --dark-blue : #1e1e27;
+    --dark-blueT50: #1e1e2780;
     --info-blue: #345fba;
 
-    --red: #a72626;
+    --red: #750c0c;
     --light-red: #e7b1b1;
     --hover-red: #cd9a9a;
     --border-red: #e39584;
     --focus-red: #df2121;
     --highlight-red: #cc3232;
-    --dark-red: #931a0f;
+    --dark-red: #63120c;
+    --header-red: #ff1a05;
 
     --yellow: #e4a11a;
-    --bright-yellow: #edb83f;
+    --bright-yellow: #ffc100;
     --light-yellow: #dba845;
     --border-yellow: #d4c694;
 
-    --green: #06a032;
-    --dark-green: #056c22;
+    --green: #0f732c;
+    --dark-green: #04531b;
 
     --redT50: #cc1f1f80;
     --redT87: #cc1f1fe0;
     --dark-redT87: #931a0fe0;
     --yellowT87: #e4a11ae0;
     --blueT50: #2c2c4080;
-    --info-blueT87: #345fbae0;
+    --info-blueT87: #0052ff;
 
     --text-color: #1f1e2c;
     --light-text-color: #d4c694;
@@ -109,7 +111,7 @@
     --background-color: #1e1e2fe5;
     --tooltip-background: #212121;
     --blockquote-background: #e6b74d;
-    --light-background-color: #353544;
+    --light-background-color: #2b2b37;
     --shadow-color: #141313;
     --shadow-header: #49443c;
 
@@ -119,6 +121,7 @@
     --heading-2-size: 30px;
     --heading-3-size: 14px;
     --big-size: 16px;
+    --tmce-size: 14px;
     --default-size: 12px;
     --small-size: 11px;
     --smaller-size: 10.5px;
@@ -207,7 +210,6 @@ body.uniforge {
 }
 
 /* ------ Primitives ------- */
-
 *.disabled,
 *:disabled {
     cursor: default !important;
@@ -257,7 +259,7 @@ input.dial[type="number"] {
     margin: 10px 0;
     border: var(--data-group-border);
     border-radius: 5px;
-    background: var(--dark-blue);
+    background: var(--light-background-color);
     color: var(--light-text-color);
     font-size: var(--default-size);
 }
@@ -284,7 +286,7 @@ fieldset {
 input[list],
 select {
     padding: 5px;
-    background-color: var(--dark-blue);
+    background-color: var(--light-background-color);
     cursor: pointer;
     font-size: var(--default-size);
     border-radius: var(--default-border-radius);
@@ -332,6 +334,10 @@ a#manageTypeButton {
 
 .dialog button {
     padding: 5px;
+}
+
+div.denim{
+    background-image: url('../images/denim065.png');
 }
 
 #mainPanel button,
@@ -678,7 +684,8 @@ input:checked+.slider::before {
     width: 35%;
     height: 64px;
     gap: var(--big-gap-size);
-    background-color: var(--dark-blue);
+    background-color: var(--dark-blue); 
+    background-image: url('../images/denim065.png');   
     padding: 4px 8px;
     border-radius: 0 0 8px 8px;
     align-self: center;
@@ -715,7 +722,7 @@ input:checked+.slider::before {
     padding: 0;
 }
 #toolsTopbar .tools-container button.disabled {
-    background-color: var(--light-background-color);
+    background-color: var(--dark-blue);
     color: var(--disabled-text-color);
 } 
 #toolsTopbar .tools-container button:hover {
@@ -755,6 +762,7 @@ input:checked+.slider::before {
     width: 75%;
     text-align: center;
     font-weight: bold;
+    background-color: var(--dark-blue);
 }
 
 #toolsTopbar .tools-container .time-tool .year-container span {
@@ -771,7 +779,7 @@ input:checked+.slider::before {
     width: 50px;
     height: 15px;
     justify-content: center;
-    background-color: var(--redT87);
+    background-color: var(--red);
     border-radius: 0 0 4px 4px;
     cursor: pointer;
     transform: translateY(-100%);
@@ -800,11 +808,13 @@ input:checked+.slider::before {
     user-select: none;
     position: fixed;
     text-align: center;
+    background-color: var(--dark-blue);
+    background-image: url('../images/denim065.png');
     left: 0;
     top: 0;
     height: var(--fill-height);
     width: 50px;
-    background: var(--dark-blue);
+    background-color: var(--dark-blue);
     display: flex;
     flex-direction: column;
     transition: width 0.3s ease-in-out;
@@ -991,6 +1001,10 @@ input:checked+.slider::before {
 .container .header-bar:hover {
     cursor: grab;
 }
+.container .header-bar .close-button:hover {
+    cursor: pointer;
+    text-shadow: 1px 1px 3px var(--dark-grey);
+}
 
 /* --- Forms --- */
 .form.container {    
@@ -1022,7 +1036,8 @@ input:checked+.slider::before {
 .form .header-bar {
     border-top-left-radius: var(--default-border-radius);
     border-top-right-radius: var(--default-border-radius);
-    background-color: var(--dark-red);
+    background-color: var(--header-red);
+    background-image: url(../images/denim065.png);
     width: 100%;
     height: 25px;
     position: absolute;
@@ -1091,12 +1106,6 @@ input:checked+.slider::before {
     align-items: center;
 }
 
-.form .header-bar .close-button:hover {
-    color: var(--dark-red);
-    background-color: var(--light-text-color);
-    text-shadow: none;
-}
-
 .form .main {
     flex: 1;
     transition: height 0.5s ease;
@@ -1136,8 +1145,9 @@ input:checked+.slider::before {
 }
 
 .dialog .header-bar {
-    gap: var(--default-gap-size);
-    background: var(--dark-red);
+    gap: var(--default-gap-size);    
+    background-color: var(--header-red);
+    background-image: url(../images/denim065.png);
     border-radius: var(--title-header-radius);
     box-shadow: var(--small-shadow);
     margin-right: 5px;
@@ -1164,15 +1174,10 @@ input:checked+.slider::before {
     border-radius: 50%;
 }
 
-.dialog .header-bar a:hover {
-    cursor: pointer;
-    color: var(--dark-red);
-    background-color: var(--light-text-color);
-}
 
 .dialog .main {
     height: var(--fill-height);
-    margin-bottom: 10px;
+    margin-block: 5px;
     padding-inline: 10px;
     font-size: var(--default-size);
     color: var(--light-text-color);
@@ -1606,47 +1611,47 @@ input:checked+.slider::before {
 }
 
 /* ------ Form Backgrounds ------ */
-#atlas {
-    background-image:
-        linear-gradient(180deg, rgba(255, 255, 255, 0) 45%, rgba(30, 30, 47, 1) 75%),
-        url('../images/maps.jpg');
+.content::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 0 0em;
+    height: 55%;
+    opacity: 0.5;
+    mask-image: linear-gradient(to bottom, var(--dark-blue), transparent);
+    z-index: 0;
+    transition: all 0.3s ease-in-out;
 }
-#history {
-    background-image:
-        linear-gradient(180deg, rgba(255, 255, 255, 0) 35%, rgba(30, 30, 47, 1) 70%),
-        url('../images/history.jpg');
-}
-#politics {
-    background-image:
-        linear-gradient(180deg, rgba(255, 255, 255, 0) 35%, rgba(30, 30, 47, 1) 70%),
-        url('../images/politics.jpeg');
-}
-#economy {
-    background-image:
-        linear-gradient(180deg, rgba(255, 255, 255, 0) 35%, rgba(30, 30, 47, 1) 70%),
-        url('../images/economy.jpeg');
-}
-#military {
-    background-image:
-        linear-gradient(180deg, rgba(255, 255, 255, 0) 35%, rgba(30, 30, 47, 1) 70%),
-        url('../images/military.jpeg');
-}
-#ideologies {
-    background-image:
-        linear-gradient(180deg, rgba(255, 255, 255, 0) 35%, rgba(30, 30, 47, 1) 70%),
-        url('../images/ideologies.jpeg');
+.sidebar.minimized+.content::before {
+    inset: 0 0 0 0em !important; 
 }
 
-#library {
+#atlas .content::before {    
+    background: url('../images/maps.jpg') no-repeat top center / cover; 
+}
+#history .content::before {    
+    background: url('../images/history.jpg') no-repeat top center / cover;     
+}
+#politics .content::before {
+    background: url('../images/politics.jpeg') no-repeat top center / cover;
+}
+#economy .content::before {
+    background: url('../images/economy.jpeg') no-repeat top center / cover;    
+}
+#military .content::before {
+    background: url('../images/military.jpeg') no-repeat top center / cover;
+}
+#ideologies .content::before {
+    background: url('../images/ideologies.jpeg') no-repeat top center / cover;
+}
+
+#library .content::before{
     background-image:
-        linear-gradient(180deg, rgba(255, 255, 255, 0) 35%, rgba(30, 30, 47, 1) 70%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0) 35%, var(--dark-blue) 70%),
         url('../images/grand-library.jpg');
 }
 
-#timeline:not(.folder) {
-    background-image:
-        linear-gradient(180deg, rgba(255, 255, 255, 0) 35%, rgba(30, 30, 47, 1) 70%),
-        url('../images/timeline.jpg');
+#timeline:not(.folder) .content::before{    
+    background: url('../images/timeline.jpg') no-repeat top center / cover;
 }
 
 /* ------ Dialogs Backgrounds ------ */
@@ -1656,20 +1661,13 @@ input:checked+.slider::before {
         url('../images/misc.jpg');
 }
 
-/* ------ Library Form ------ */
-#timeline .sidebar,
-#library .sidebar {
-    flex: 0 0 auto;
-    white-space: nowrap;
-    font-size: var(--small-size);
-}
-
 /* ------ Tabs Control ------ */
 .tabs-control {
     flex: 1;
     width: var(--fill-width);
     padding: 5px;
     overflow: auto;
+    z-index: 1;
 }
 
 .tabs-control .tabs-options button {
@@ -1711,6 +1709,8 @@ input:checked+.slider::before {
     padding: 5px;
     gap: var(--default-gap-size);
     overflow: auto;
+    border-radius: var(--default-border-radius);
+    box-shadow: var(--small-shadow);
 }
 
 .tabs-control .tab-content:not(.active) {
@@ -2422,15 +2422,34 @@ folder-list .folder.created.selected .folder-header .fa-trash {
     margin-right: 10px;
 }
 
+/* ------ Time Forge ------*/
+.time-forge {
+    flex: 1;
+    opacity: 1;
+    margin: var(--default-gap-size);
+    background-color: var(--blueT50);
+    border-radius: var(--default-border-radius);
+    padding: var(--default-gap-size);
+    box-shadow: var(--small-shadow);
+    transition: transform 0.3s ease;
+}
+
+.time-forge.hidden {
+    transform: scaleY(0);
+    pointer-events: none;    
+}
+
+.time-forge .header .close-forge {
+    font-size: var(--heading-2-size);
+}
+
 /* ------ Entries Type Form ------ */
 .entries {
     flex: 1;
     margin: 0;
     font-family: 'Georgia', serif;
-    color: var(--light-text-color);
-    background-size: cover;
-    background-repeat: no-repeat;
-    background-position: center;
+    color: var(--light-text-color);    
+    background-image: url(../images/denim065.png);   
     border-bottom-left-radius: var(--default-border-radius);
     border-bottom-right-radius: var(--default-border-radius);
     user-select: none;
@@ -2442,7 +2461,8 @@ folder-list .folder.created.selected .folder-header .fa-trash {
 
 .sidebar {
     white-space: nowrap;
-    background: var(--dark-blue);
+    background-color: var(--dark-blue);
+    background-image: url('../images/denim065.png');
     color: var(--light-text-color);
     padding: 20px;
     box-shadow: var(--sidebar-shadow);
@@ -2587,10 +2607,10 @@ folder-list .folder.created.selected .folder-header .fa-trash {
     transition: all 0.4s ease;
     padding: 0 2px;
     background-color: var(--light-blue);
+    background-image: url(../images/denim065.png);
     border-radius: 5px;
     border: var(--info-content-border);
     gap: var(--default-gap-size);
-    ;
 }
 
 .sidebar .footer .input-container.add-bar {
@@ -2612,6 +2632,7 @@ folder-list .folder.created.selected .folder-header .fa-trash {
     outline: none;
     padding: 2px 5px;
     margin-block: 5px;
+    background-color: var(--dark-blue);
     width: 95%;
 }
 
@@ -2659,6 +2680,7 @@ folder-list .folder.created.selected .folder-header .fa-trash {
 
 .panel .content,
 .entries .content {
+    position: relative;
     padding: 20px;
     padding-bottom: 15px;
     flex: 1;
@@ -2676,10 +2698,9 @@ folder-list .folder.created.selected .folder-header .fa-trash {
 
 .entries.timeline .content,
 .entries.article .content {
-    height: fit-content;
+    height: auto;
     background-size: cover;
     background-repeat: no-repeat;
-    background-color: #ffc56e83;
     background-blend-mode: multiply;
     transition: visibility 0.5s ease-in-out, background-image 0.5s ease-in-out;
 }
@@ -2691,15 +2712,15 @@ folder-list .folder.created.selected .folder-header .fa-trash {
 .panel .content .header,
 .entries .content .header {
     gap: var(--default-gap-size);
-    ;
+    z-index: 1;
 }
 
 .panel .content .header .title {
-    background-color: var(--background-color);
+    background-color: var(--dark-blue);
 }
 
 .entries .content .header .title {
-    background-color: var(--light-background-color);
+    background-color: var(--dark-blue);
 }
 
 .panel .content .header .title,
@@ -2715,12 +2736,9 @@ folder-list .folder.created.selected .folder-header .fa-trash {
     flex: 1;
 }
 
-.panel .content .info-set {
-    background: var(--background-color);
-}
-
+.panel .content .info-set, 
 .entries .content .info-set {
-    background: var(--light-background-color);
+    background: var(--dark-blue);
 }
 
 .panel .content .info-set,
@@ -2734,7 +2752,6 @@ folder-list .folder.created.selected .folder-header .fa-trash {
 
 .content .info-set .date-info {
     gap: var(--default-gap-size);
-    ;
 }
 
 .entries .content .info-set button {
@@ -2765,7 +2782,7 @@ folder-list .folder.created.selected .folder-header .fa-trash {
     align-items: center;
     justify-content: center;
     overflow: hidden;
-    background-color: var(--blueT50);
+    background-color: var(--dark-blueT50);
     box-shadow: var(--small-shadow);
     align-self: center;
     transition: background 0.3s;
@@ -2782,7 +2799,7 @@ folder-list .folder.created.selected .folder-header .fa-trash {
 
 .img-container:not(.delete):hover {
     cursor: pointer;
-    background-color: var(--background-color);
+    background-color: var(--dark-blue);
 }
 
 .img-container.delete:hover:has(img:not(.empty))::before {
@@ -2947,7 +2964,7 @@ folder-list .folder.created.selected .folder-header .fa-trash {
     position: relative;
     cursor: pointer;
     user-select: none;
-    background-color: var(--dark-blue);
+    background-color: var(--light-background-color);
     border-radius: var(--default-border-radius);
 }
 
@@ -2975,7 +2992,8 @@ folder-list .folder.created.selected .folder-header .fa-trash {
     top: 100%;
     left: 0;
     border: 1px solid #ccc;
-    background: var(--blue);
+    background-color: var(--light-blue);
+    background-image: url(../images/denim065.png);
     z-index: 10;
     padding: 10px;
     border-radius: 4px;
@@ -3026,7 +3044,7 @@ folder-list .folder.created.selected .folder-header .fa-trash {
 .calendar .years .calendar-content .year.selected,
 .calendar .months .calendar-content .month.selected,
 .calendar .days .calendar-content .day.selected {
-    background-color: var(--text-color);
+    background-color: var(--dark-grey);
 }
 
 .calendar .years .calendar-content .year.invalid,
@@ -3153,7 +3171,7 @@ folder-list .folder.created.selected .folder-header .fa-trash {
 
 .simple-tmce {
     margin-block: 5px;
-    background-color: var(--dark-blue);
+    background-color: var(--light-background-color);
     border-radius: var(--default-border-radius);
     box-shadow: var(--small-shadow);
     padding: 5px 10px;
@@ -3165,7 +3183,7 @@ folder-list .folder.created.selected .folder-header .fa-trash {
 }
 
 .simple-tmce * {
-    font-size: var(--default-size);
+    font-size: var(--tmce-size);
     line-height: 1.35em;
     margin: 0;
 }
@@ -3180,11 +3198,11 @@ folder-list .folder.created.selected .folder-header .fa-trash {
 }
 #tinymce {
     font-family: 'Georgia', serif;
-    font-size: 12px;
+    font-size: var(--tmce-size);
     line-height: 1.25em;
     color: var(--light-text-color);
     background: none;
-    background-color: var(--background-color);
+    background-color: var(--light-background-color);
     padding: 5px;
     height: 100%;
     margin: 0;
@@ -3193,7 +3211,7 @@ folder-list .folder.created.selected .folder-header .fa-trash {
 
 .simple-tmce::before,
 #tinymce::before {
-    font-size: var(--default-size);
+    font-size: var(--tmce-size);
     font-style: italic;
     color: var(--light-text-color) !important;
     line-height: 1.35em;
@@ -3324,17 +3342,20 @@ folder-list .folder.created.selected .folder-header .fa-trash {
 }
 
 .message.error {
-    background-color: var(--dark-redT87);
+    background-color: var(--header-red);
+    background-image: url(../images/denim065.png);
     color: var(--light-text-color);
 }
 
 .message.warning {
-    background-color: var(--yellowT87);
+    background-color: var(--bright-yellow);
+    background-image: url(../images/denim065.png);
     color: var(--grey);
 }
 
 .message.info {
     background-color: var(--info-blueT87);
+    background-image: url(../images/denim065.png);
     color: var(--grey);
 }
 
@@ -3370,6 +3391,7 @@ folder-list .folder.created.selected .folder-header .fa-trash {
     border-radius: 3px;
     box-shadow: var(--default-shadow);
     background-color: var(--grey);
+    background-image: url(../images/denim065.png);
     color: var(--text-color);
     z-index: 2000;
     padding: 8px;

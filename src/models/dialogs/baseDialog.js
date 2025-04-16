@@ -112,7 +112,7 @@ export default class BaseDialog extends Application {
 
         header.innerHTML = `
             <h2>${this.title}</h2>
-            <a id="${this.style}Close-${this.uuid}" class="close-button"><i class="fas fa-xmark"></i></a>
+            <a id="${this.style}Close-${this.uuid}" class="close-button"><i class="fas fa-circle-xmark"></i></a>
         `;
 
         const html = await this._prepareBody();

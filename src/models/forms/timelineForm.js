@@ -70,10 +70,42 @@ export default class TimelineForm extends SidebarForm {
     /* ---------------------------------------------------------------------------------------------------------------- */
     // LISTENERS
     /**
-   * Gerencia cliques duplos em itens de entrada.
-   * @param {MouseEvent} event - O evento de clique duplo.
-   * @private
-   */
+     * Configura ouvintes de eventos básicos para o formulário.
+     * @inheritdoc
+     */
+    activateListeners() {
+        super.activateListeners();
+
+        const newTimelineButton = this.querySelector('#newTimelineButton');
+        newTimelineButton.addEventListener('click', (event) => { this.onNewTimelineClick(event); });
+
+        const closeTimelineForgeButton = this.querySelector('#closeTimelineForgeButton');
+        closeTimelineForgeButton.addEventListener('click', (event) => { this.onCloseTimelineForgeClick(event); });
+    }
+
+    onNewTimelineClick(event) {
+        event.stopPropagation();
+        const timelineForge = this.querySelector('#timelineForge');
+        const timelineContainer = this.querySelector('#timelineContainer');
+
+        timelineContainer.classList.add('hidden');
+        timelineForge.classList.remove('hidden');
+    }
+
+    onCloseTimelineForgeClick(event) {
+        event.stopPropagation();
+        const timelineForge = this.querySelector('#timelineForge');
+        const timelineContainer = this.querySelector('#timelineContainer');
+
+        timelineForge.classList.add('hidden');
+        timelineContainer.classList.remove('hidden');        
+    }
+
+    /**
+     * Gerencia cliques duplos em itens de entrada.
+     * @param {MouseEvent} event - O evento de clique duplo.
+     * @protected
+    */
     async onEntryItemDoubleClick(event) {
         super.onEntryItemDoubleClick(event);
         // Obter a entrada clicada.

@@ -80,11 +80,10 @@ export default class MsgBox {
             messageObj.classList.add('show');
         }, 10); // Atraso para iniciar a animação de slide
 
-        
         // Remover a mensagem após a animação de exibição (durante o fade-in)
         setTimeout(() => {
             this._removeMessage(messageObj);
-        }, 3000); // Tempo para manter a mensagem visível (3 segundos)        
+        }, 5000); // Tempo para manter a mensagem visível (5 segundos)               
     }
 
     // Função para remover a mensagem após a animação

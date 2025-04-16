@@ -35,8 +35,8 @@ export default class SidebarForm extends BaseForm {
      */
     get ui() {
         const ui = {
-            sidebar: document.querySelector('.entries .sidebar'),
-            dialog: document.querySelector('.entries .sidebar #confirmDialog')
+            sidebar: document.querySelector(`#formMain-${this.uuid} .sidebar`),
+            dialog: document.querySelector(`#formMain-${this.uuid} .sidebar #confirmDialog`)
         };
         return uniforge.utils.mergeObjects(super.ui, ui);
     }

@@ -65,11 +65,6 @@ export default class EntryForm extends SidebarForm {
      */
     this.isEventForm = true;
 
-    /** 
-     * @type {Object} - Tooltip de interface do usuário. 
-     * */
-    this.ui.tooltip = uniforge.tooltip;
-
     /**
     * @property {Object} datePickers - Um objeto que gerencia os seletores de data para registro de entradas.
     * Contém duas instâncias de `DatePicker` para 'startDate' (data de início) e 'endDate' (data de término).

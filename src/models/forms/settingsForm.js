@@ -28,6 +28,12 @@ export default class SettingsForm extends EntryForm {
         * @type {DBManager}
         */
         this.db = uniforge.db;
+
+        /**
+        * O formulário de Configurações não possui funcionalidade de vinculação de Eventos.
+        * @type {boolean}
+        */
+        this.isEventForm = false;
     }
 
     /** @override */

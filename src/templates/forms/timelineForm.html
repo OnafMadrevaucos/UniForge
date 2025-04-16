@@ -1,9 +1,10 @@
 <div id="timeline" class="entries timeline flexrow">
   <a id="minimizeButton" class="minimize-button">
-    <i class="fa-solid fa-chevron-left"></i>
+    <i class="fas fa-chevron-left"></i>
   </a>
   <div id="sideBar" class="sidebar">
     <h3>Linhas do Tempo</h3>
+    <a id="newTimelineButton" class="flyer-button"><i class="fas fa-plus"></i> Nova Linha do Tempo</a>
     <ul id="folderList" class="folder-list">
     </ul>
     <div class="footer">
@@ -13,5 +14,19 @@
       </div>
     </div>
   </div>
-  <div id="timelineContainer" class="time-container"></div>
+  <div class="content flexcol">
+    <div id="timelineForge" class="time-forge flexcol hidden">
+      <div class="header flexrow">
+        <input id="titleInput" type="text" class="title" name="title" placeholder="Título da Linha do Tempo" disabled />        
+        <a id="closeTimelineForgeButton" class="close-forge"><i class="fa-solid fa-xmark"></i></a>
+      </div>
+      <div class="separator"></div>
+      <div class="event-selector flexrow">
+        <list id="eventList" class="event-list"></list>
+        <div class="timeline-preview"></div>
+      </div>
+    </div>
+  </div>
+  <div id="timelineContainer" class="time-container hidden"></div>
+</div>
 </div>
