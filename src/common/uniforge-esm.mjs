@@ -19,6 +19,7 @@ import LibraryForm from "../models/forms/libraryForm.js";
 import TimelineForm from "../models/forms/timelineForm.js";
 import { APP_STATES } from './utils/state.mjs';
 import { core } from './leaflet/module.mjs';
+import { generateFolderlistHTML } from './utils/html.mjs';
 'use strict';
 
 globalThis.store = new WeakMap(); // WeakMap para armazenar os dados de imagens associados aos elementos.
@@ -50,7 +51,10 @@ const utils = {
 
 const parser = {
     parseHTML: parserEsm.html.parseHTML,
-    generateItemList: parserEsm.html.generateListItemHTML,
+    generateList: utilsEsm.html.generateListHTML,
+    generateFolderlist: utilsEsm.html.generateFolderlistHTML,
+    generateItemList: utilsEsm.html.generateListItemHTML,
+    generateFolderItem: utilsEsm.html.generateFolderItemHTML,
     parseCssToJson: parserEsm.css.parseCssToJson
 }
 

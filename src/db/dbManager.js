@@ -295,6 +295,35 @@ export default class DBManager {
         return result;
     }
 
+    async addTimeline(data) {
+        let query = 'INSERT INTO timeline (tid, title, flavor) VALUES (?,?,?);';
+        let params = [];
+
+        const tid = !data.tid.isEmpty() ? data.tid : this.generateID();
+
+        params.push(tid);
+        params.push(data.title);
+        params.push(data.flavor);
+
+        let result = await uniforge.sql.exec(query, params);
+        let changes = result.changes;
+
+        const events = data.events;
+        events.forEach(async (event) => {
+           query = 'INSERT INTO _timelineEvent (tid, evid) VALUES (?,?);';
+           params = [];
+
+           params.push(tid);
+           params.push(event.evid);
+
+           result = await uniforge.sql.exec(query, params); 
+           changes += result.changes;
+        });
+        
+        result.changes = changes;
+        return result;
+    }
+
     /**
      * Adiciona um registro na tabela `_textImages` para armazenar uma imagem associada a um uuid.
      * 
@@ -481,8 +510,7 @@ export default class DBManager {
         const updateSet = this.buildUpdateSet([
             ['sid', data.sid],
             ['founder', data.founder],
-            ['tree', data.tree],
-            ['isDraft', data.isDraft]
+            ['tree', data.tree]
         ]);
 
         let query = `UPDATE lineageTree SET ${updateSet} WHERE ltid = ?`;
@@ -1405,7 +1433,6 @@ export default class DBManager {
         '`tid` VARCHAR(16) NOT NULL,' +             // Identificador da Linha do Tempo.        
         '`title` TEXT NOT NULL,' +                  // Título da Linha do Tempo.        
         '`flavor` TEXT NOT NULL,' +                 // Descrição adicional da Linha do Tempo.          
-        '`isDraft` BOOLEAN NOT NULL DEFAULT 0,' +   // A Linha do Tempo é um rascunho (falso por padrão).
         'PRIMARY KEY (`tid`))';
 
         const result = await uniforge.sql.exec(query);

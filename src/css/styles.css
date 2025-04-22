@@ -459,6 +459,7 @@ input:checked+.slider::before {
 
 .tiny.separator {
     height: 0px;
+    margin: 5px 0;
 }
 
 /* ------ Footers ------ */
@@ -1672,6 +1673,7 @@ input:checked+.slider::before {
 
 .tabs-control .tabs-options button {
     flex: 1;
+    gap: 5px;
     justify-content: center;
     align-items: center;
     border: none;
@@ -1970,7 +1972,79 @@ input:checked+.slider::before {
 }
 
 .timeline .content div {
+    z-index: 1;
     color: var(--light-text-color);
+}
+
+.timeline .content .time-manager {
+    position: absolute;
+    bottom: 0;
+    right: -5vw;
+    opacity: 0;
+    gap: var(--default-gap-size);
+    border-bottom-right-radius: var(--default-border-radius);
+    padding: 10vh 0.5vw 1vh 10vw;
+    transition: all 0.5s ease;
+    z-index: 1000;
+}
+.timeline .content .time-manager:has(.active),
+.timeline .content .time-manager:hover {
+    opacity: 1;
+    right: 0;
+}
+.timeline .content .time-manager button {
+    flex: 1;
+    border-radius: 50%;
+    align-items: center;
+    justify-content: center;
+}
+
+.timeline .content .time-manager button.active {
+    background-color: var(--dark-green) !important;
+    color: var(--light-text-color) !important;
+}
+.timeline .content .time-manager button.active:hover {
+    background-color: var(--green) !important;
+}
+
+.timeline .content .time-manager button.cancel {
+    background-color: var(--dark-red) !important;
+    color: var(--light-text-color) !important;
+}
+.timeline .content .time-manager button.cancel:hover {
+    background-color: var(--red) !important;
+}
+
+.timeline .content .time-manager button.new {    
+    height: 16px;
+    width: 16px;    
+    padding: 16px;    
+    font-size: 14px;
+    color: var(--dark-red);
+    background-color: var(--light-text-color);    
+    align-self: flex-end;
+    margin-bottom: 5px;
+}
+.timeline .content .time-manager button.manage {    
+    flex: 1;
+    height: 32px;
+    width: 32px;    
+    padding: 32px;    
+    font-size: 32px;
+    color: var(--light-text-color);    
+    align-self: center;
+}
+.timeline .content .time-manager button.manage.disabled {
+    color: var(--disabled-text-color);
+    background-color: var(--blue);
+}
+.timeline .content .time-manager button.new:not(.active):hover {
+    background-color: var(--dark-red);
+    color: var(--light-text-color);
+}
+.timeline .content .time-manager button.manage:not(.active):hover {
+    background-color: var(--light-text-color);
+    color: var(--dark-red);
 }
 
 .timeline .content .title-header {
@@ -2424,23 +2498,64 @@ folder-list .folder.created.selected .folder-header .fa-trash {
 
 /* ------ Time Forge ------*/
 .time-forge {
-    flex: 1;
-    opacity: 1;
-    margin: var(--default-gap-size);
+    position: absolute;
+    top: 10vh;    
+    height: 700px;
+    width: 770px;    
+    opacity: 0;
+    right: 0;
+    pointer-events: none; 
     background-color: var(--blueT50);
-    border-radius: var(--default-border-radius);
     padding: var(--default-gap-size);
     box-shadow: var(--small-shadow);
-    transition: transform 0.3s ease;
+    border-radius: var(--default-border-radius);
+    transition: all 0.3s ease;
 }
 
-.time-forge.hidden {
-    transform: scaleY(0);
-    pointer-events: none;    
+.time-forge.active {
+    right: 7vw;
+    opacity: 1;
+    pointer-events: all;
 }
 
-.time-forge .header .close-forge {
-    font-size: var(--heading-2-size);
+.time-forge .event-selector {
+    flex: 1;
+    background-color: var(--dark-blue);
+    background-image: url('../images/denim065.png');
+    box-shadow: var(--sidebar-shadow);
+    margin: -5px;
+    border-bottom-left-radius: inherit;
+    border-top-left-radius: inherit;
+}
+.time-forge .event-selector h4 {
+    margin-top: 5px;
+}
+.time-forge .event-selector .event-list {
+    flex: 1;
+    /* Permite rolagem se necessário */
+    overflow-y: scroll;
+    /* Garante que não ultrapasse a altura do contêiner */
+    max-height: 100%;  
+    padding: 5px;  
+}
+.time-forge .event-list li {
+    cursor: pointer;
+    padding: 5px 10px;
+    border-radius: var(--default-border-radius);
+    font-weight: bold;
+    transition: background 0.3s ease;
+}
+
+.time-forge .event-list li.checked .item-content,
+.time-forge .event-list li:hover .item-content{
+    color: var(--red);
+}
+
+.time-forge .timeline-data {
+    flex: 2;
+    height: var(--fill-height);
+    margin: 5px;
+    margin-left: 10px;
 }
 
 /* ------ Entries Type Form ------ */
@@ -2703,6 +2818,10 @@ folder-list .folder.created.selected .folder-header .fa-trash {
     background-repeat: no-repeat;
     background-blend-mode: multiply;
     transition: visibility 0.5s ease-in-out, background-image 0.5s ease-in-out;
+}
+
+.entries.timeline .tabs-control .tab-content {
+    padding: 0px 5px 0px 0px;
 }
 
 .entries.timeline .time-container {

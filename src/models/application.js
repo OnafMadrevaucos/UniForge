@@ -238,6 +238,9 @@ export default class Application {
         container.id = `${this.style}Container-${this.uuid}`;
         container.classList.add(...classes);
 
+        if(this.options.height) container.style.height = this.options.height;
+        if(this.options.width) container.style.width = this.options.width;
+
         const header = document.createElement('div');
         header.id = `${this.style}Header-${this.uuid}`;
         header.classList.add('header-bar', 'flexrow');

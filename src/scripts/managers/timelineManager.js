@@ -1,3 +1,4 @@
+import CustomDate from "../../common/primitives/date.mjs";
 import BaseForm from "../../models/forms/baseForm.js";
 import { BaseManager } from "./baseManager.js";
 import { LibraryManager, Entry } from "./libraryManager.js";
@@ -5,59 +6,87 @@ import { LibraryManager, Entry } from "./libraryManager.js";
 export class TimelineManager extends BaseManager {
     constructor(form) {
         super(form);
-
-        this.subjectsTypes = null;
-        this.timeline = null;
     }
 
-    getTimeline(source) {
-        // Obtém os dados da Entrada
-        const data = Database.timelines[source];
-        // Gera o objeto da Entrada
-        this.timeline = new Timeline(data, this);
+    #timeline = {
+        tid: '',
+        title: '',
+        flavor: '',
+        events: [],
+        calendar: null
+    };
 
-        return this.timeline;
-    }
-}
-
-export class Timeline {
-    constructor(data, manager) {
-        this.msgBox = uniforge.msgBox;
-        this.tooltip = uniforge.tooltip;
-
-        this.manager = manager;
-        this.form = manager.form;
-
-        this.anchorManager = null;
-
-        this.data = data;
-        this.overlay = null;
+    get timeline() {
+        return this.#timeline;
     }
 
-    // Atrela uma Entrada a um container para exibição
-    addTo(targetId) {
+    addEvent(event) {
+        const events = this.#timeline.events;
+        // Configura o calendário da linha do tempo, caso não tenha sido definido.
+        if(events.length === 0) {
+            const calendar = uniforge.doc.calendars.get(event.clid);
+            this.#timeline.calendar = calendar ?? null;
+        }
+
+        // Verifica que o calendário do evento é o mesmo que o da linha do tempo.
+        if(event.clid !== this.#timeline.calendar.clid) {
+            uniforge.msgBox.show('Erro', 'O evento não pode ser adicionado a linha do tempo, pois o calendário é diferente.', 'error');
+            return;
+        }
+
+        events.push(event);
+        // Ordena os eventos por ano de Início.
+        events.sort((a, b) => {
+            const calendar = this.#timeline.calendar;
+            const startDateA = new CustomDate(calendar, { day: a.s_day, month: a.s_month, year: a.s_year });
+            const startDateB = new CustomDate(calendar, { day: b.s_day, month: b.s_month, year: b.s_year });
+            return startDateA.ticks - startDateB.ticks;
+        });
+    }
+    removeEvent(event) {
+        const index = this.#timeline.events.findIndex(e => e._id == event._id);
+        this.#timeline.events.splice(index, 1);
+
+        // Verifica se a linha do tempo está vazia e remove o calendário.
+        if(this.#timeline.events.length === 0) {
+            this.#timeline.calendar = null;
+        }
+    }
+
+    async save() {
+        await uniforge.db.addTimeline(this.#timeline);
+        this.buildTimeline();
+    }
+    clear() {
+        this.#timeline = {
+            tid: '',
+            title: '',
+            flavor: '',
+            events: [],
+            calendar: null
+        };
+    }
+
+    buildTimeline() {
         // Obtém o element do Container da Entrada
-        const container = document.getElementById(targetId);         
-        // Recupera o Overlay a que o container está inserido
-        this.overlay = container.closest('.overlay');  
-        
-        // Cria o conteúdo da Entrada
-        const content = this.#createContent(this.data);   
+        const container = document.getElementById('timelineViewer');
 
-        // Limpa Form antes de adicionar nova Timeline
-        this.form.clear(container);
+        // Limpa o conteúdo do formulário.
+        container.innerHTML = '';
+
+        // Cria o conteúdo da Entrada
+        const content = this.#createContent();
 
         // Adiciona a nova Timeline ao container
         container.appendChild(content);
 
-        this.manager._preLoadContent();
-
-        return this.form;
+        return container;
     }
 
     // Cria o conteúdo da Linha do Tempo que será atribuído a um Element
-    #createContent(data) {
-        const content = document.createElement('div'); 
+    #createContent() {
+        const data = this.timeline;
+        const content = document.createElement('div');
         content.className = 'content flexcol';
 
         const titleHeader = document.createElement('div');
@@ -68,27 +97,27 @@ export class Timeline {
         timelineTitle.className = 'title';
         timelineTitle.textContent = data.title;
 
-        titleHeader.appendChild(timelineTitle);        
+        titleHeader.appendChild(timelineTitle);
 
-        const timeContent = document.createElement('div');        
+        const timeContent = document.createElement('div');
         timeContent.className = 'time-content flexcol';
 
         const timelineList = document.createElement('ul');
         timelineList.id = 'timelineList';
         timelineList.className = 'timeline-list';
-        timelineList.dataset.id = data.timelineId;
+        timelineList.dataset.id = data.tid;
 
         let isInverted = false;
         // Preenche o form com todas as entradas da Timeline
-        for(var entry of data.entries) {
-            if(entry.importance !== 'external') {
-                timelineList.appendChild(this.#newEntryItem(entry, isInverted));
+        for (var event of data.events) {
+            if (event.importance !== 'external') {
+                timelineList.appendChild(this.#newEventItem(event, isInverted));
             } else {
-                timelineList.appendChild(this.#newExternalLink(entry, isInverted));
+                timelineList.appendChild(this.#newExternalLink(event, isInverted));
             }
-            
+
             isInverted = !isInverted;
-        } 
+        }
 
         timeContent.appendChild(timelineList);
 
@@ -98,11 +127,11 @@ export class Timeline {
         content.appendChild(titleHeader);
         content.appendChild(this.#createTopBar());
         content.appendChild(timeContent);
-        
+
         return content;
     }
 
-    #createTopBar(){
+    #createTopBar() {
         const timelineTopBar = document.createElement('div');
         timelineTopBar.id = 'timelineTopBar';
         timelineTopBar.className = 'timeline-topbar flexcol hidden';
@@ -121,19 +150,19 @@ export class Timeline {
         return timelineTopBar;
     }
 
-    #newEntryItem(data, isInverted) {
-        const subjectType = this.manager.subjectsTypes[data.type];
+    #newEventItem(data, isInverted) {
+        const entryType = uniforge.doc.entryTypes.get(Number(data.etid));
 
         // Criação do elemento <li>
-        const li = document.createElement('li');        
-        li.classList.add('timeline-entry', `${data.importance}`);
-        if(isInverted) li.classList.add('inverted');
+        const li = document.createElement('li');
+        li.classList.add('timeline-entry', `${data.relevance}`);
+        if (isInverted) li.classList.add('inverted');
 
         // Criação do elemento <div> com classe "tl-circ"
         const tlCirc = document.createElement('div');
-        tlCirc.classList.add('tl-circ',`${data.importance}`);
+        tlCirc.classList.add('tl-circ', `${data.relevance}`);
         tlCirc.setAttribute('data-toggle', 'tooltip');
-        tlCirc.setAttribute('title', subjectType.title);
+        tlCirc.setAttribute('title', entryType.title);
         li.appendChild(tlCirc);
 
         // Criação do elemento <div> com classe "timeline-panel"
@@ -169,14 +198,14 @@ export class Timeline {
 
         // Criação da seção tl-heading
         const tlHeading = document.createElement('div');
-        tlHeading.className = 'tl-heading';        
+        tlHeading.className = 'tl-heading';
 
         const headerIconDiv = document.createElement('div');
         headerIconDiv.className = 'header-icon';
         const headerIcon = document.createElement('i');
-        headerIcon.className = subjectType.icon;
-        headerIcon.setAttribute('alt', subjectType.title);
-        headerIcon.setAttribute('title', subjectType.title);
+        headerIcon.className = entryType.icon;
+        headerIcon.setAttribute('alt', entryType.title);
+        headerIcon.setAttribute('title', entryType.title);
         headerIconDiv.appendChild(headerIcon);
 
         const tlHeadingDate = document.createElement('div');
@@ -188,18 +217,19 @@ export class Timeline {
         const historyYear = document.createElement('div');
         historyYear.className = 'history-year';
         const yearText = document.createElement('strong');
-        yearText.textContent = data.date.y;
+        yearText.textContent = (data.s_year < 0 ? `${Math.abs(data.s_year)} a.T.` : `${data.s_year} d.T.`);
         historyYear.appendChild(yearText);
 
+        const calendar = uniforge.doc.calendars.get(data.clid);
         const smallDate = document.createElement('small');
         const spanDate = document.createElement('span');
         const spanMonth = document.createElement('span');
         spanMonth.className = 'history-month';
-        spanMonth.textContent = data.date.m;
+        spanMonth.textContent = calendar.months[data.s_month];
 
         const spanDay = document.createElement('span');
         spanDay.className = 'history-day';
-        spanDay.textContent = `, ${data.date.d}`;
+        spanDay.textContent = `, ${data.s_day}`;
 
         spanDate.appendChild(spanMonth);
         spanDate.appendChild(spanDay);
@@ -222,7 +252,7 @@ export class Timeline {
 
         const historyCategory = document.createElement('span');
         historyCategory.className = 'history-category';
-        historyCategory.textContent = subjectType.title;
+        historyCategory.textContent = entryType.title;
 
         historyHeaderSection.appendChild(historyTitle);
         historyHeaderSection.appendChild(historyCategory);
@@ -236,21 +266,21 @@ export class Timeline {
         tlBody.className = 'tl-body';
 
         const blockquote = document.createElement('blockquote');
-        blockquote.className = 'flavortext';
-        const blockquoteText = document.createElement('p');
-        blockquoteText.className = 'flavortext';
-        blockquoteText.textContent = data.flavor;
-        blockquote.appendChild(blockquoteText);
+        if (!data.source.isEmpty()) {
+            const source = uniforge.doc.entries.get(data.source);
+            if (source) {                
+                blockquote.className = 'flavortext';
+                const blockquoteText = document.createElement('p');
+                blockquoteText.className = 'flavortext';
+                blockquoteText.textContent = source.flavor.replace(/<[^>]+>/g, '');
+                blockquote.appendChild(blockquoteText);
+            }
+        } else 
+            blockquote.className = 'flavortext hidden';
 
         const rowDiv = document.createElement('div');
         rowDiv.className = 'row';
-
-        for(var row of data.text) {
-            const p = document.createElement('p');
-            p.textContent = row;
-
-            rowDiv.appendChild(p);
-        } 
+        rowDiv.innerHTML = data.flavor;
 
         const historyTimelines = document.createElement('div');
         historyTimelines.className = 'history-timelines';
@@ -266,7 +296,7 @@ export class Timeline {
         const externalAnchor = document.createElement('a');
         externalAnchor.className = 'anchor';
         externalAnchor.setAttribute('data-tooltip', 'Artigo Completo');
-        externalAnchor.dataset.id = data.entryId;
+        externalAnchor.dataset.id = data.source;
         const externalIcon = document.createElement('i');
         externalIcon.className = 'fa-solid fa-arrow-up-right-from-square';
         externalAnchor.appendChild(externalIcon);
@@ -285,22 +315,22 @@ export class Timeline {
         timelinePanel.appendChild(tlSection);
 
         // Montando o elemento principal
-        li.appendChild(timelinePanel);        
+        li.appendChild(timelinePanel);
 
         return li;
     }
-    
+
     #newExternalLink(data, isInverted) {
         const linkTitle = 'Timeline Externa';
 
         // Criação do elemento <li>
-        const li = document.createElement('li');        
-        li.classList.add('timeline-entry', `${data.importance}`);
-        if(isInverted) li.classList.add('inverted');
+        const li = document.createElement('li');
+        li.classList.add('timeline-entry', `${data.relevance}`);
+        if (isInverted) li.classList.add('inverted');
 
         // Criação do elemento <div> com classe "tl-circ"
         const tlCirc = document.createElement('div');
-        tlCirc.classList.add('tl-circ', `${data.importance}`);
+        tlCirc.classList.add('tl-circ', `${data.relevance}`);
         tlCirc.setAttribute('data-toggle', 'tooltip');
         tlCirc.setAttribute('title', linkTitle);
         li.appendChild(tlCirc);
@@ -359,16 +389,16 @@ export class Timeline {
         historyYear.className = 'history-year';
 
         const yearText = document.createElement('strong');
-        yearText.textContent = `${data.date.y}`;
+        yearText.textContent = `${data.s_year}`;
         const smallDate = document.createElement('small');
 
         const spanMonth = document.createElement('span');
         spanMonth.className = 'history-month';
-        spanMonth.textContent = `${data.date.m}`;
+        spanMonth.textContent = `${data.s_month}`;
 
         const spanDay = document.createElement('span');
         spanDay.className = 'history-day';
-        spanDay.textContent = `, ${data.date.d}`;
+        spanDay.textContent = `, ${data.s_day}`;
 
         smallDate.appendChild(spanMonth);
         smallDate.appendChild(document.createTextNode(' ')); // Espaço
@@ -393,12 +423,12 @@ export class Timeline {
 
         const rowDiv = document.createElement('div');
         rowDiv.className = 'row';
-        for(var row of data.text) {
+        for (var row of data.flavor) {
             const p = document.createElement('p');
             p.textContent = row;
 
             rowDiv.appendChild(p);
-        } 
+        }
 
         const historyTimelines = document.createElement('div');
         historyTimelines.className = 'history-timelines';
@@ -413,7 +443,7 @@ export class Timeline {
         const externalAnchor = document.createElement('a');
         externalAnchor.className = 'anchor';
         externalAnchor.setAttribute('data-tooltip', 'Timeline Externa');
-        externalAnchor.dataset.id = data.entryId;
+        externalAnchor.dataset.id = data.source;
         const externalIcon = document.createElement('i');
         externalIcon.className = 'fa-solid fa-timeline';
         externalAnchor.appendChild(externalIcon);
@@ -447,17 +477,17 @@ export class Timeline {
         const overlay = document.getElementById('entryFormOverlay');
         const form = new BaseForm(overlay);
         this.anchorManager = new LibraryManager(form);
-        
+
         this.entry = this.anchorManager.getEntry(entryId);
 
         const newForm = this.entry.addTo('entryFormContent', true);
-        newForm.ui.prev_btn.setAttribute('data-tooltip', this.entry._getQueueText());        
+        newForm.ui.prev_btn.setAttribute('data-tooltip', this.entry._getQueueText());
         newForm.ui.prev_btn.classList.remove('invisible');
 
         newForm.showForm();
         document.body.style.cursor = 'default';
     }
-    
+
     _onTimeContentScroll() {
         const timeContent = this.overlay.querySelector('.time-content');
         const timelineTopBar = this.overlay.querySelector('#timelineTopBar');
@@ -468,14 +498,14 @@ export class Timeline {
             timelineTopBar.classList.add('hidden'); // Esconde o botão
         }
     }
-    
+
     _onScrollToTopClick(event) {
         event.stopPropagation();
         const timeContent = this.overlay.querySelector('.time-content');
 
         timeContent.scrollTo({
-          top: 0,
-          behavior: 'smooth', // Suaviza o movimento do scroll
+            top: 0,
+            behavior: 'smooth', // Suaviza o movimento do scroll
         });
     }
 }

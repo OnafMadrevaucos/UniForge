@@ -1,3 +1,4 @@
+import * as utils from '../utils/module.mjs';
 /**
      * Processa um código HTML substituindo as tags <switch>, <combo> e <calendar>, bem como todos os placeholders informados.
      * @param {string} html - A string HTML contendo as tags e placeholders.
@@ -165,13 +166,15 @@ function _parseCalendarTags(html) {
 
 function _parseFoldertreeTags(html, data) {
     console.log('UniForge | Substituindo tags de Foldertree...');
-    const regex = /<foldertree id="([^"]+)" item="([^"]+)"(\s+data-([^>]+))?(\s+fixed)?><\/foldertree>/g;
-    html = html.replace(regex, (match, id, itemKey, dataset) => {
+    const regex = /<foldertree id="([^"]+)"(\s+type="([^"]+)")?(\s+item="([^"]+)")(\s+data-([^>]+))?(\s+fixed)?><\/foldertree>/g;
+    html = html.replace(regex, (match, id, typeAttr, typeValue, itemAttr, itemKey, datasetAttr, dataset) => {
         const isFixedRegex = /\s+fixed/;
         const isFixed = isFixedRegex.test(match);
 
+        const type = typeAttr ? typeValue : 'default';
+
         console.log(`Correspondência encontrada: ${match}`);
-        console.log(`ID: ${id}, Item: ${itemKey}, ${dataset ? `Dados: ${dataset}` : ''}, isFixed: ${isFixed ? 'true' : 'false'}`);
+        console.log(`ID: ${id}, Tipo: ${type}, Item: ${itemKey}, ${dataset ? `Dados: ${dataset}` : ''}, isFixed: ${isFixed ? 'true' : 'false'}`);
 
         const datasetObj = {};
         if (dataset) {
@@ -187,35 +190,7 @@ function _parseFoldertreeTags(html, data) {
             return `<ul id="folderList" class="folder-list"></ul>`;
         }
 
-        // Variavel para armazenar o resultado do 'replace'.
-        let result = '<ul id="folderList" class="folder-list">';
-        const folders = data.folders;
-
-        folders.forEach(folder => {
-            if (!(itemKey in folder)) {
-                console.log(`O identificador '${itemKey}' não foi encontrado no objeto data ou a lista de itens está vazia. Retornando um <li> vazio.`);
-                return `<li class="folder created" data-id="${folder._id}"></li>`;
-            }
-
-            const itemList = folder[itemKey];
-            const folderHTML =
-                `<li class="folder created" data-id="${folder._id}">
-                    <div class="folder-header flexrow">
-                        <i class="fas fa-folder"></i>
-                        <span>${folder._label}</span>
-                    </div>
-                    <div class="folder-content">
-                        <ul class="entry-list">
-                            ${(itemList.length > 0 ? _generateFolderItemHTML(itemKey, itemList, isFixed) : '')}
-                        </ul>
-                    </div>
-                </li>`;
-
-            result += folderHTML;
-
-        });
-
-        result += '</ul>';
+        const result = utils.html.generateFolderlistHTML(data.folders, itemKey, type, isFixed);
         return result;
     });
 
@@ -307,20 +282,11 @@ function _replaceListTags(html, data) {
 
         if (!(valueKey in data)) {
             console.log(`O identificador da lista não foi encontrado no objeto data. Retornando um <ul> vazio.`);
-            return `<ul id="${id}" class="${extraClasses ? `${extraClasses}` : 'list'}"></ul>`;
+            return `<ul id="${id}" class="list${extraClasses ? ` ${extraClasses}` : ''}"></ul>`;
         }
 
         // Variavel para armazenar o resultado do 'replace'.
-        let result = `<ul id="${id}" class="${extraClasses ? `${extraClasses}` : 'list'}">`;
-        const listItems = data[valueKey];
-
-        listItems.forEach(item => {
-            const itemHTML = generateListItemHTML(item, {itemClass: itemClass});
-
-            result += itemHTML.outerHTML;
-        });
-
-        result += '</ul>';
+        const result = utils.html.generateListHTML(id, data[valueKey], {extraClasses, itemClass: itemClass});
         return result;
     });
 
@@ -329,53 +295,4 @@ function _replaceListTags(html, data) {
     return html;
 }
 
-export function generateListItemHTML(item, options={itemClass: null, withDelete: false}) {
-    const { itemClass, withDelete } = options;
-
-    const li = document.createElement('li');
-    li.className = itemClass ?? 'item';
-    li.setAttribute('data-value', item._value ?? '');
-
-    const div = document.createElement('div');
-    div.className = 'item-content flexrow';
-    div.innerHTML = item._icon ?? '';
-
-    const span = document.createElement('span');
-    span.className = 'flex-1';
-    span.textContent = item._label;
-
-    div.appendChild(span);
-
-    if (withDelete) {
-        const deleteButton = document.createElement('a');
-        deleteButton.className = 'delete-button';
-        deleteButton.innerHTML = '<i class="fas fa-trash"></i>';  
-
-        div.appendChild(deleteButton);      
-    }
-
-    li.appendChild(div);
-
-    return li;
-}
-
-/**
-* Uma função auxiliar para gerar o HTML dos itens de uma lista de pastas.
-* @param {Array} itemList      - A lista de itens de uma pasta.
-* @private
-*/
-function _generateFolderItemHTML(itemKey, itemList, isFixed) {
-    let html = '';
-
-    itemList.forEach(item => {
-        const data = uniforge.doc[itemKey].get(item._id);
-        html += `
-                <li class="entry-item flexrow" data-id="${data._id}">
-                    <i class="fas fa-file"></i>
-                    <span>${data._label}</span>${isFixed ? '' : '\n<a class="remove-button"><i class="fas fa-trash"></i></a>'}                    
-                </li>\n
-            `;
-    });
-
-    return html;
-}   
+   

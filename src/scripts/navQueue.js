@@ -1,5 +1,4 @@
 import { Entry } from "../scripts/managers/libraryManager.js";
-import { Timeline } from "../scripts/managers/timelineManager.js";
 
 /**
  * Classe NavQueue
