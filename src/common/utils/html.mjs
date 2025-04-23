@@ -16,7 +16,7 @@ export function generateListHTML(id, listItems, options = {}) {
 
 export function generateFolderlistHTML(folders, itemKey, type = 'default', isFixed = false) {
     // Variavel para armazenar o resultado do 'replace'.
-    let html = '<ul id="folderList" class="folder-list">';
+    let html = `<ul id="folderList" type="${type}" class="folder-list">`;
 
     if (type === 'default') {
         folders.forEach(folder => {

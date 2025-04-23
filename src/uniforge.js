@@ -245,7 +245,7 @@ function configureLeaflet() {
     map.fitBounds(bounds);
 
     // Adiciona a imagem personalizada como uma camada de tile
-    uniforge.mapOverlay = L.imageOverlay('./images/map.jpg', bounds, { zIndex: 1 /* Garantir que fique atrás do Layer do Grid */ });
+    uniforge.mapOverlay = L.imageOverlay('./ui/map.jpg', bounds, { zIndex: 1 /* Garantir que fique atrás do Layer do Grid */ });
     uniforge.mapOverlay.addTo(map);
 
     // Adicionar evento de mousedown ou mousemove para capturar o clique e mover o mapa

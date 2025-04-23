@@ -113,7 +113,7 @@ export default class LinkDialog extends Dialogs {
         const displayedImage = document.createElement("img");
         displayedImage.id = "displayedImage"; // Define o ID da imagem
         displayedImage.className = "img-displayed empty"; // Define classes CSS
-        displayedImage.src = "../../images/blank-image.svg"; // Define a fonte da imagem
+        displayedImage.src = "../../ui/blank-image.svg"; // Define a fonte da imagem
         displayedImage.alt = "Imagem Padrão"; // Define o texto alternativo
 
         /**
@@ -423,7 +423,7 @@ export default class LinkDialog extends Dialogs {
             displayedImage.src = imageUrl
             displayedImage.classList.remove('empty');
         } else {
-            displayedImage.src = "../../images/blank-image.svg";
+            displayedImage.src = "../../ui/blank-image.svg";
             displayedImage.classList.add('empty');
         }
 

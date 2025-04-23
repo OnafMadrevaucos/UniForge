@@ -187,7 +187,7 @@ function _parseFoldertreeTags(html, data) {
 
         if (!('folders' in data)) {
             console.log(`O identificador 'folders' não foi encontrado no objeto data. Retornando um <ul> vazio.`);
-            return `<ul id="folderList" class="folder-list"></ul>`;
+            return `<ul id="folderList" type="${type}" class="folder-list"></ul>`;
         }
 
         const result = utils.html.generateFolderlistHTML(data.folders, itemKey, type, isFixed);
@@ -220,7 +220,7 @@ function _parseSidetabsTags(html) {
                     <div class="tab-icon">
                         <div class="icon-border">
                             <div class="icon-background">
-                                <img src="images/icons/icone.svg" />
+                                <img src="ui/icons/icone.svg" />
                             </div>
                         </div>
                     </div>
@@ -245,7 +245,7 @@ function _parseSidetabsTags(html) {
                         <div class="tab-icon">
                             <div class="icon-border">
                                 <div class="icon-background">
-                                    <img src="images/icons/icone.svg" />
+                                    <img src="ui/icons/icone.svg" />
                                 </div>
                             </div>
                         </div>

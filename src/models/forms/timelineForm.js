@@ -41,26 +41,8 @@ export default class TimelineForm extends SidebarForm {
         });
     }
 
-    get _states() {
+    get states() {
         return this.#states;
-    }
-
-    /**
-    * Obtém as linhas do tempo de uma dada origem disponíveis no banco de dados.
-    * @async
-    * @returns {Object} - Assuntos e suas categorias.
-    */
-    prepareTimelines() {
-        const data = uniforge.doc.timelines.toObject();
-
-        /*
-        if (data) {
-            for (let timeline of Object.values(data)) {
-                timeline.entries = Object.values(await this.db.getEventsFromTimeline(timeline.tid));
-            }
-        }
-        */
-        return data;
     }
 
     /**
@@ -68,7 +50,10 @@ export default class TimelineForm extends SidebarForm {
     * @returns {Object} - Categorias.
     */
     async prepareData() {
-        super.prepareData();        
+        super.prepareData();     
+        
+        // Obtém todos os Eventos registrados.
+        this.data.events = uniforge.doc.events.toObject();
 
         return this.data;
     }
@@ -77,6 +62,12 @@ export default class TimelineForm extends SidebarForm {
     prepareFolders(data) {
         const folders = uniforge.doc.timelines.toObject();
         data.folders = folders.sort();
+    }
+
+    clearContent(clearSidebar = true) {
+       if (clearSidebar) super.clearContent();
+
+       this.manager.clear();
     }
     /* ---------------------------------------------------------------------------------------------------------------- */
     // INTERFACE DE USUÁRIO
@@ -88,7 +79,7 @@ export default class TimelineForm extends SidebarForm {
         await super.initialize();
 
         // Atribui o estado padrão aos controles do formulário.
-        this.controlStates(this._states.default);
+        this.controlStates(this.states.default);
     }
 
     controlStates(state) {
@@ -99,7 +90,7 @@ export default class TimelineForm extends SidebarForm {
 
         switch (state) {
             // ESTADO DE HABILITAÇÃO DE NOVA ENTRADA.
-            case this._states.newTimeline: {
+            case this.states.newTimeline: {
                 forge.classList.add('active');
 
                 manageButton.innerHTML = '<i class="fa-solid fa-check"></i>';
@@ -113,7 +104,7 @@ export default class TimelineForm extends SidebarForm {
 
             } break;
             // ESTADO DE EDIÇÃO DE ENTRADA.
-            case this._states.editTimeline: {
+            case this.states.editTimeline: {
                 forge.classList.add('active');
 
                 manageButton.innerHTML = '<i class="fa-solid fa-check"></i>';
@@ -141,6 +132,8 @@ export default class TimelineForm extends SidebarForm {
                 newButton.innerHTML = '<i class="fa-solid fa-calendar-plus"></i>';
                 newButton.setAttribute('data-tooltip', 'Nova Linha do Tempo');
                 newButton.classList.remove('cancel');
+
+                this.clearContent();
             } break;
         }
 
@@ -235,11 +228,11 @@ export default class TimelineForm extends SidebarForm {
     onNewTimelineForgeClick(event) {
         event.stopPropagation();
 
-        if (this.currentState === this._states.default) {
-            this.controlStates(this._states.newTimeline);
+        if (this.currentState === this.states.default) {
+            this.controlStates(this.states.newTimeline);
         } else {
             this.manager.clear();
-            this.controlStates(this._states.default);
+            this.controlStates(this.states.default);
         }
     }
 
@@ -251,12 +244,12 @@ export default class TimelineForm extends SidebarForm {
     onManageTimelineClick(event) {
         event.stopPropagation();
 
-        if (this.currentState === this._states.default) {
-            this.controlStates(this._states.editTimeline);
+        if (this.currentState === this.states.default) {
+            this.controlStates(this.states.editTimeline);
         } else {
             this.manager.timeline.title = titleInput.value;
             this.manager.save();
-            this.controlStates(this._states.default);
+            this.controlStates(this.states.default);
         }
     }
 
@@ -317,11 +310,27 @@ export default class TimelineForm extends SidebarForm {
         }
     }
 
+    /**@inheritdoc */
+    onFolderClick(event) {
+        super.onFolderClick(event);
+        this.controlStates(this.states.default);
+    }
+
+    /**@inheritdoc */
+    onFolderDoubleClick(event) {
+        super.onFolderDoubleClick(event);
+        const folder = event.target.closest('.folder');
+        const timelineId = folder.dataset.id;
+        const timeline = uniforge.doc.timelines.get(timelineId);
+
+        this.manager.loadTimeline(timeline);
+    }
+
     /**
      * Gerencia cliques duplos em itens de entrada.
      * @param {MouseEvent} event - O evento de clique duplo.
      * @protected
-    */
+    
     async onEntryItemDoubleClick(event) {
         super.onEntryItemDoubleClick(event);
         // Obter a entrada clicada.
@@ -331,6 +340,7 @@ export default class TimelineForm extends SidebarForm {
 
         this.manager.getEntry(data).addTo('entryContainer', false);
     }
+    */
 
     onSearchButtonClick(event) {
         // Impedir que o clique no item desencadeie o clique fora do sidebar

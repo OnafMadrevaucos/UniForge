@@ -20,6 +20,25 @@ export class TimelineManager extends BaseManager {
         return this.#timeline;
     }
 
+    loadTimeline(timeline) {        
+        this.#timeline = {
+            tid: timeline.tid,
+            title: timeline.title,
+            flavor: timeline.flavor,
+            events: timeline.events.toObject(),
+            calendar: null
+        };
+        const events = this.#timeline.events;
+
+        // Configura o calendário da linha do tempo, caso não tenha sido definido.
+        if(events.length > 0) {
+            const calendar = uniforge.doc.calendars.get(events[0].clid);
+            this.#timeline.calendar = calendar ?? null;
+        }
+
+        this.buildTimeline();
+    }
+
     addEvent(event) {
         const events = this.#timeline.events;
         // Configura o calendário da linha do tempo, caso não tenha sido definido.
@@ -65,6 +84,11 @@ export class TimelineManager extends BaseManager {
             events: [],
             calendar: null
         };
+
+        // Obtém o element do Container da Entrada
+        const container = document.getElementById('timelineViewer');
+        // Limpa o conteúdo da Linha do Tempo.
+        container.innerHTML = '';
     }
 
     buildTimeline() {

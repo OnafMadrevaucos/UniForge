@@ -12,17 +12,29 @@ export default class SidebarForm extends BaseForm {
             folder: null,
             entry: null,
         };
+
+        /**
+        * O ícone Font Awesome para quando uma entrada é selecionada.
+        * @type {string}
+        * 
+        */
+        this.selectedIcon = 'fas fa-eye';
     }
 
     /**
      * @overload
      * @inheritdoc
     */
-    get defaultOptions() { 
-        const config = super.defaultOptions;   
-        return uniforge.utils.mergeObjects(config,{
-            classes: [...config.classes,'flexrow']
-        }); 
+    get defaultOptions() {
+        const config = super.defaultOptions;
+        return uniforge.utils.mergeObjects(config, {
+            classes: [...config.classes, 'flexrow']
+        });
+    }
+
+    get isSimpleSidebar() {
+        const folderList = document.getElementById('folderList');
+        return folderList.type === 'simple';
     }
 
     /**
@@ -79,7 +91,11 @@ export default class SidebarForm extends BaseForm {
             item.classList.remove('selected');
             const icon = item.querySelector('.fas');
             icon.classList.remove(...icon.classList);
-            icon.classList.add('fas', 'fa-folder');
+
+            if (this.isSimpleSidebar)
+                icon.classList.add('fas', 'fa-file');
+            else
+                icon.classList.add('fas', 'fa-folder');
         });
     }
 
@@ -105,14 +121,40 @@ export default class SidebarForm extends BaseForm {
         if (folders) this.createFolderList(folders);
     }
 
+    /**
+     * Cria a lista de pastas da barra lateral.
+     * @param {Object} data - Dados da pasta. Deve ter o formato:
+     */
     createFolderList(data) {
         const folderList = this.querySelector('#folderList');
         folderList.innerHTML = '';
 
         for (const value of Object.values(data)) {
-            const folder = this.createFolderItem(value);
+            const folder = (this.isSimpleSidebar) ? this.createSimpleFolderItem(value) : this.createFolderItem(value);
             folderList.appendChild(folder);
         }
+    }
+
+    createSimpleFolderItem(data) {
+        const folderList = this.querySelector('#folderList');
+
+        const folder = document.createElement('li');
+        folder.classList.add('folder', 'created');
+        folder.dataset.cid = data.cid ?? null;
+        folder.dataset.sid = data.sid ?? null;
+        folder.dataset.tid = data.tid ?? null;
+
+        const folderContent = document.createElement('div');
+        folderContent.className = 'folder-header flexrow';
+
+        const span = document.createElement('span');
+        span.textContent = data.title;
+        folderContent.innerHTML = `<i class="fas fa-file"></i> ${span.outerHTML}`;
+
+        folder.appendChild(folderContent);
+        folderList.appendChild(folder);
+
+        return folder;
     }
 
     /**
@@ -192,23 +234,30 @@ export default class SidebarForm extends BaseForm {
             if (minimizeButton) minimizeButton.addEventListener('click', (event) => { this.onMinimizeClick(event); });
 
             const folders = this.querySelectorAll('.folder');
-            const items = this.querySelectorAll('.entry-item');
 
             folders.forEach(item => {
                 const folderHeader = item.querySelector('.folder-header');
-                folderHeader.addEventListener('click', (event) => {
+                
+                item.addEventListener('click', (event) => {
                     this.onFolderClick(event);
                 });
+
+                if (this.isSimpleSidebar) item.addEventListener('dblclick', (event) => { this.onFolderDoubleClick(event); });
             });
 
-            items.forEach(item => {
-                item.addEventListener('click', (event) => {
-                    this.onEntryItemClick(event);
+            // Se o tipo de lista não for 'simple', adiciona ouvintes de eventos para os itens de Entrada.
+            if (!this.isSimpleSidebar) {
+                const items = this.querySelectorAll('.entry-item');
+
+                items.forEach(item => {
+                    item.addEventListener('click', (event) => {
+                        this.onEntryItemClick(event);
+                    });
+                    item.addEventListener('dblclick', (event) => {
+                        this.onEntryItemDoubleClick(event);
+                    });
                 });
-                item.addEventListener('dblclick', (event) => {
-                    this.onEntryItemDoubleClick(event);
-                });
-            });
+            }
         }
     }
 
@@ -246,7 +295,8 @@ export default class SidebarForm extends BaseForm {
     */
     onSidebarClick(event) {
         event.stopPropagation();
-        if (event.target.classList.contains('entry-item')) return;
+        if (!this.isSimpleSidebar && event.target.classList.contains('.entry-item')) return;
+        if (this.isSimpleSidebar && event.target.classList.contains('.folder')) return;
 
         this.clearContent();
         if (this.controlStates) this.controlStates(this.states.default);
@@ -269,12 +319,35 @@ export default class SidebarForm extends BaseForm {
 
         this.#clearFolderList();
 
+        // Se a pasta já estiver selecionada, não faz nada.
         if (!isSelected) {
-            clickedFolder.classList.add('selected');
-            const folderIcon = clickedFolder.querySelector('.fas');
-            folderIcon.classList.remove(...folderIcon.classList);
-            folderIcon.classList.add('fas', 'fa-folder-open');
+            // Se não for um sidebar simples, seleciona a nova Pasta.
+            if (!this.isSimpleSidebar) {
+                clickedFolder.classList.add('selected');
+                const folderIcon = clickedFolder.querySelector('.fas');
+                folderIcon.classList.remove(...folderIcon.classList);
+                folderIcon.classList.add('fas', 'fa-folder-open');
+
+                this.selection.folder = clickedFolder;
+            } else {
+                this.selection.folder = null;
+            }
         }
+    }
+
+    /**
+     * Gerencia cliques duplos em pastas.
+     * @param {MouseEvent} event - O evento de clique duplo.
+     * @private
+     */
+    onFolderDoubleClick(event) {
+        event.stopPropagation();
+        const clickedFolder = event.target.closest('.folder');
+        this.#clearFolderList();
+        clickedFolder.classList.add('selected');
+        const folderIcon = clickedFolder.querySelector('i');
+        folderIcon.classList.remove(...folderIcon.classList);
+        folderIcon.className = this.selectedIcon;
 
         this.selection.folder = clickedFolder;
     }
@@ -321,7 +394,11 @@ export default class SidebarForm extends BaseForm {
             item.classList.remove('selected');
             const folderIcon = item.querySelector('.fas');
             folderIcon.classList.remove(...folderIcon.classList);
-            folderIcon.classList.add('fas', 'fa-folder');
+
+            if (this.isSimpleSidebar)
+                folderIcon.classList.add('fas', 'fa-file');
+            else
+                folderIcon.classList.add('fas', 'fa-folder');
         });
         this.#clearEntryList();
         this.selection.folder = null;

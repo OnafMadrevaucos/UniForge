@@ -94,6 +94,7 @@
     --bright-yellow: #ffc100;
     --light-yellow: #dba845;
     --border-yellow: #d4c694;
+    --lib-background: #f1ebe8;
 
     --green: #0f732c;
     --dark-green: #04531b;
@@ -205,7 +206,7 @@ body.uniforge {
     margin: 0;
     background-repeat: no-repeat;
     background-size: cover;
-    background-image: url('../images/background.jpeg');
+    background-image: url('../ui/background.jpeg');
     overflow: hidden;
 }
 
@@ -337,7 +338,7 @@ a#manageTypeButton {
 }
 
 div.denim{
-    background-image: url('../images/denim065.png');
+    background-image: url('../ui/denim065.png');
 }
 
 #mainPanel button,
@@ -633,7 +634,7 @@ input:checked+.slider::before {
     height: 100vh;
     margin: 0;
     padding: 0;
-    background-image: url('../images/world-background.jpeg');
+    background-image: url('../ui/world-background.jpeg');
     box-shadow: var(--default-shadow);
 }
 
@@ -686,7 +687,7 @@ input:checked+.slider::before {
     height: 64px;
     gap: var(--big-gap-size);
     background-color: var(--dark-blue); 
-    background-image: url('../images/denim065.png');   
+    background-image: url('../ui/denim065.png');   
     padding: 4px 8px;
     border-radius: 0 0 8px 8px;
     align-self: center;
@@ -810,7 +811,7 @@ input:checked+.slider::before {
     position: fixed;
     text-align: center;
     background-color: var(--dark-blue);
-    background-image: url('../images/denim065.png');
+    background-image: url('../ui/denim065.png');
     left: 0;
     top: 0;
     height: var(--fill-height);
@@ -1038,7 +1039,7 @@ input:checked+.slider::before {
     border-top-left-radius: var(--default-border-radius);
     border-top-right-radius: var(--default-border-radius);
     background-color: var(--header-red);
-    background-image: url(../images/denim065.png);
+    background-image: url(../ui/denim065.png);
     width: 100%;
     height: 25px;
     position: absolute;
@@ -1148,7 +1149,7 @@ input:checked+.slider::before {
 .dialog .header-bar {
     gap: var(--default-gap-size);    
     background-color: var(--header-red);
-    background-image: url(../images/denim065.png);
+    background-image: url(../ui/denim065.png);
     border-radius: var(--title-header-radius);
     box-shadow: var(--small-shadow);
     margin-right: 5px;
@@ -1627,39 +1628,39 @@ input:checked+.slider::before {
 }
 
 #atlas .content::before {    
-    background: url('../images/maps.jpg') no-repeat top center / cover; 
+    background: url('../ui/maps.jpg') no-repeat top center / cover; 
 }
 #history .content::before {    
-    background: url('../images/history.jpg') no-repeat top center / cover;     
+    background: url('../ui/history.jpg') no-repeat top center / cover;     
 }
 #politics .content::before {
-    background: url('../images/politics.jpeg') no-repeat top center / cover;
+    background: url('../ui/politics.jpeg') no-repeat top center / cover;
 }
 #economy .content::before {
-    background: url('../images/economy.jpeg') no-repeat top center / cover;    
+    background: url('../ui/economy.jpeg') no-repeat top center / cover;    
 }
 #military .content::before {
-    background: url('../images/military.jpeg') no-repeat top center / cover;
+    background: url('../ui/military.jpeg') no-repeat top center / cover;
 }
 #ideologies .content::before {
-    background: url('../images/ideologies.jpeg') no-repeat top center / cover;
+    background: url('../ui/ideologies.jpeg') no-repeat top center / cover;
 }
 
 #library .content::before{
     background-image:
         linear-gradient(180deg, rgba(255, 255, 255, 0) 35%, var(--dark-blue) 70%),
-        url('../images/grand-library.jpg');
+        url('../ui/grand-library.jpg');
 }
 
-#timeline:not(.folder) .content::before{    
-    background: url('../images/timeline.jpg') no-repeat top center / cover;
+#timeline .content:has(.time-container):before{    
+    background: url('../ui/timeline.jpg') no-repeat top center / cover;
 }
 
 /* ------ Dialogs Backgrounds ------ */
 .source-dialog {
     background-image:
         linear-gradient(180deg, rgba(255, 255, 255, 0) 35%, rgba(30, 30, 47, 1) 70%),
-        url('../images/misc.jpg');
+        url('../ui/misc.jpg');
 }
 
 /* ------ Tabs Control ------ */
@@ -1765,7 +1766,7 @@ input:checked+.slider::before {
 #settings .settings-container .panel {
     background-image:
         linear-gradient(180deg, rgba(255, 255, 255, 0) 35%, rgba(30, 30, 47, 1) 70%),
-        url('../images/settings.jpg');
+        url('../ui/settings.jpg');
     padding-inline: 5px;
     flex: 1;
 }
@@ -1979,24 +1980,31 @@ input:checked+.slider::before {
 .timeline .content .time-manager {
     position: absolute;
     bottom: 0;
-    right: -5vw;
+    right: 0;
     opacity: 0;
     gap: var(--default-gap-size);
+    background: linear-gradient(315deg, rgba(99, 18, 12, 1) 0%, rgba(99, 18, 12, 0) 55%);
+    border-top-left-radius: 100%;
     border-bottom-right-radius: var(--default-border-radius);
-    padding: 10vh 0.5vw 1vh 10vw;
+    padding: 10vh 0.5vw 1vh 5vw;
     transition: all 0.5s ease;
     z-index: 1000;
 }
 .timeline .content .time-manager:has(.active),
 .timeline .content .time-manager:hover {
     opacity: 1;
-    right: 0;
 }
 .timeline .content .time-manager button {
     flex: 1;
     border-radius: 50%;
     align-items: center;
     justify-content: center;
+    right: -5vw;
+    transition: all 0.3s ease;
+}
+
+.timeline .content .time-manager:hover button {
+    right: 0;
 }
 
 .timeline .content .time-manager button.active {
@@ -2046,6 +2054,7 @@ input:checked+.slider::before {
     background-color: var(--light-text-color);
     color: var(--dark-red);
 }
+
 
 .timeline .content .title-header {
     font-size: var(--title-size);
@@ -2521,7 +2530,7 @@ folder-list .folder.created.selected .folder-header .fa-trash {
 .time-forge .event-selector {
     flex: 1;
     background-color: var(--dark-blue);
-    background-image: url('../images/denim065.png');
+    background-image: url('../ui/denim065.png');
     box-shadow: var(--sidebar-shadow);
     margin: -5px;
     border-bottom-left-radius: inherit;
@@ -2564,7 +2573,7 @@ folder-list .folder.created.selected .folder-header .fa-trash {
     margin: 0;
     font-family: 'Georgia', serif;
     color: var(--light-text-color);    
-    background-image: url(../images/denim065.png);   
+    background-image: url(../ui/denim065.png);   
     border-bottom-left-radius: var(--default-border-radius);
     border-bottom-right-radius: var(--default-border-radius);
     user-select: none;
@@ -2577,7 +2586,7 @@ folder-list .folder.created.selected .folder-header .fa-trash {
 .sidebar {
     white-space: nowrap;
     background-color: var(--dark-blue);
-    background-image: url('../images/denim065.png');
+    background-image: url('../ui/denim065.png');
     color: var(--light-text-color);
     padding: 20px;
     box-shadow: var(--sidebar-shadow);
@@ -2722,7 +2731,7 @@ folder-list .folder.created.selected .folder-header .fa-trash {
     transition: all 0.4s ease;
     padding: 0 2px;
     background-color: var(--light-blue);
-    background-image: url(../images/denim065.png);
+    background-image: url(../ui/denim065.png);
     border-radius: 5px;
     border: var(--info-content-border);
     gap: var(--default-gap-size);
@@ -2803,7 +2812,7 @@ folder-list .folder.created.selected .folder-header .fa-trash {
 }
 
 .entries .content.loaded {
-    background-image: url(../images/lib-background.png);
+    background-image: url(../ui/lib-background.png);
     visibility: visible;
 }
 
@@ -2825,6 +2834,9 @@ folder-list .folder.created.selected .folder-header .fa-trash {
 }
 
 .entries.timeline .time-container {
+    background: url(../ui/texture1.webp) no-repeat top center / auto 770px, var(--lib-background) url(../ui/texture2.webp) no-repeat bottom center / auto 704px;
+    border-radius: var(--default-border-radius);
+    box-shadow: var(--small-shadow);
     overflow-y: scroll;
 }
 
@@ -2989,7 +3001,7 @@ folder-list .folder.created.selected .folder-header .fa-trash {
 .dialog:has(.main .family-dialog) {
     background-image:
         linear-gradient(180deg, rgba(255, 255, 255, 0) 35%, rgba(30, 30, 47, 1) 70%),
-        url('../images/lineage.jpeg');
+        url('../ui/lineage.jpeg');
     background-size: contain;
     background-position-x: 0.65vw;
 }
@@ -3112,7 +3124,7 @@ folder-list .folder.created.selected .folder-header .fa-trash {
     left: 0;
     border: 1px solid #ccc;
     background-color: var(--light-blue);
-    background-image: url(../images/denim065.png);
+    background-image: url(../ui/denim065.png);
     z-index: 10;
     padding: 10px;
     border-radius: 4px;
@@ -3462,19 +3474,19 @@ folder-list .folder.created.selected .folder-header .fa-trash {
 
 .message.error {
     background-color: var(--header-red);
-    background-image: url(../images/denim065.png);
+    background-image: url(../ui/denim065.png);
     color: var(--light-text-color);
 }
 
 .message.warning {
     background-color: var(--bright-yellow);
-    background-image: url(../images/denim065.png);
+    background-image: url(../ui/denim065.png);
     color: var(--grey);
 }
 
 .message.info {
     background-color: var(--info-blueT87);
-    background-image: url(../images/denim065.png);
+    background-image: url(../ui/denim065.png);
     color: var(--grey);
 }
 
@@ -3510,7 +3522,7 @@ folder-list .folder.created.selected .folder-header .fa-trash {
     border-radius: 3px;
     box-shadow: var(--default-shadow);
     background-color: var(--grey);
-    background-image: url(../images/denim065.png);
+    background-image: url(../ui/denim065.png);
     color: var(--text-color);
     z-index: 2000;
     padding: 8px;

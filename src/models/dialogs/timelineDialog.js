@@ -246,7 +246,7 @@ export default class TimelineDialog extends BaseDialog {
             displayedImage.src = imageUrl
             displayedImage.classList.remove('empty');
         } else {
-            displayedImage.src = "../../images/blank-image.svg";
+            displayedImage.src = "../../ui/blank-image.svg";
             displayedImage.classList.add('empty');
         }
 

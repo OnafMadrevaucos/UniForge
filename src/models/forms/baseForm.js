@@ -28,14 +28,7 @@ export default class BaseForm extends Application {
      * O caminho para quando a entrada não possui imagem.
      * @type {string}
      */
-    this.blankImgUrl = uniforge.urls.blankImg;
-
-    /**
-        * O ícone Font Awesome para quando uma entrada é selecionada.
-        * @type {string}
-        * 
-        */
-    this.selectedIcon = 'fas fa-eye';
+    this.blankImgUrl = uniforge.urls.blankImg;    
 
     /**
      * Indica se o formulário está oculto inicialmente.

@@ -108,7 +108,7 @@ function CreateWindow() {
       contextIsolation: true,
       nodeIntegration: false
     },
-    icon: './src/images/icons/icone.png',
+    icon: './src/ui/icons/icone.png',
     show: false,
   });
 
