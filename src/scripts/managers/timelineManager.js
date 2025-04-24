@@ -1,4 +1,5 @@
 import CustomDate from "../../common/primitives/date.mjs";
+import Dialogs from "../../models/dialogs/dialog.js";
 import BaseForm from "../../models/forms/baseForm.js";
 import { BaseManager } from "./baseManager.js";
 import { LibraryManager, Entry } from "./libraryManager.js";
@@ -18,6 +19,10 @@ export class TimelineManager extends BaseManager {
 
     get timeline() {
         return this.#timeline;
+    }
+
+    get isNewTimeline() {
+        return this.#timeline.tid.isEmpty();
     }
 
     loadTimeline(timeline) {        
@@ -76,6 +81,10 @@ export class TimelineManager extends BaseManager {
         await uniforge.db.addTimeline(this.#timeline);
         this.buildTimeline();
     }
+    async update() {
+        await uniforge.db.updateTimeline(this.#timeline);
+        this.buildTimeline();
+    }
     clear() {
         this.#timeline = {
             tid: '',
@@ -111,7 +120,7 @@ export class TimelineManager extends BaseManager {
     #createContent() {
         const data = this.timeline;
         const content = document.createElement('div');
-        content.className = 'content flexcol';
+        content.className = 'time-content flexcol';
 
         const titleHeader = document.createElement('div');
         titleHeader.className = 'title-header flexrow';
@@ -123,8 +132,9 @@ export class TimelineManager extends BaseManager {
 
         titleHeader.appendChild(timelineTitle);
 
-        const timeContent = document.createElement('div');
-        timeContent.className = 'time-content flexcol';
+        const timelineContent = document.createElement('div');
+        timelineContent.id = 'timelineContent';
+        timelineContent.className = 'timeline-content flexcol';
 
         const timelineList = document.createElement('ul');
         timelineList.id = 'timelineList';
@@ -143,14 +153,14 @@ export class TimelineManager extends BaseManager {
             isInverted = !isInverted;
         }
 
-        timeContent.appendChild(timelineList);
+        timelineContent.appendChild(timelineList);
 
         // Adiciona evento para monitorar o scroll
-        timeContent.addEventListener('scroll', () => { this._onTimeContentScroll(); });
+        timelineContent.addEventListener('scroll', () => { this._onTimeContentScroll(); });
 
         content.appendChild(titleHeader);
         content.appendChild(this.#createTopBar());
-        content.appendChild(timeContent);
+        content.appendChild(timelineContent);
 
         return content;
     }
@@ -179,6 +189,7 @@ export class TimelineManager extends BaseManager {
 
         // Criação do elemento <li>
         const li = document.createElement('li');
+        li.dataset.id = data._id;
         li.classList.add('timeline-entry', `${data.relevance}`);
         if (isInverted) li.classList.add('inverted');
 
@@ -205,6 +216,8 @@ export class TimelineManager extends BaseManager {
         editIcon.setAttribute('aria-hidden', 'true');
         editButton.appendChild(editIcon);
 
+        editButton.addEventListener('click', (event) => { this._onEditEventClick(event); });
+
         const deleteButton = document.createElement('button');
         deleteButton.className = 'btn btn-danger btn-xs confirmation';
         deleteButton.setAttribute('href', '#');
@@ -212,6 +225,8 @@ export class TimelineManager extends BaseManager {
         deleteIcon.className = 'fas fa-trash';
         deleteIcon.setAttribute('aria-hidden', 'true');
         deleteButton.appendChild(deleteIcon);
+
+        deleteButton.addEventListener('click', (event) => { this._onDeleteEventClick(event); });
 
         btnGroup.appendChild(editButton);
         btnGroup.appendChild(deleteButton);
@@ -226,10 +241,10 @@ export class TimelineManager extends BaseManager {
 
         const headerIconDiv = document.createElement('div');
         headerIconDiv.className = 'header-icon';
+        headerIconDiv.setAttribute('data-tooltip', entryType.title);
+        if(isInverted) headerIconDiv.setAttribute('data-tooltip-left', '');
         const headerIcon = document.createElement('i');
         headerIcon.className = entryType.icon;
-        headerIcon.setAttribute('alt', entryType.title);
-        headerIcon.setAttribute('title', entryType.title);
         headerIconDiv.appendChild(headerIcon);
 
         const tlHeadingDate = document.createElement('div');
@@ -513,10 +528,10 @@ export class TimelineManager extends BaseManager {
     }
 
     _onTimeContentScroll() {
-        const timeContent = this.overlay.querySelector('.time-content');
-        const timelineTopBar = this.overlay.querySelector('#timelineTopBar');
+        const timelineContent = this.form.querySelector('#timelineContent');
+        const timelineTopBar = this.form.querySelector('#timelineTopBar');
 
-        if (timeContent.scrollTop > 100) {
+        if (timelineContent.scrollTop > 100) {
             timelineTopBar.classList.remove('hidden'); // Mostra o botão
         } else {
             timelineTopBar.classList.add('hidden'); // Esconde o botão
@@ -525,11 +540,30 @@ export class TimelineManager extends BaseManager {
 
     _onScrollToTopClick(event) {
         event.stopPropagation();
-        const timeContent = this.overlay.querySelector('.time-content');
+        const timelineContent = this.form.querySelector('#timelineContent');
 
-        timeContent.scrollTo({
+        timelineContent.scrollTo({
             top: 0,
             behavior: 'smooth', // Suaviza o movimento do scroll
         });
+    }
+
+    _onEditEventClick(event) {
+        event.stopPropagation();
+        
+    }
+    async _onDeleteEventClick(event) {
+        event.stopPropagation();
+        if(await Dialogs.confirm('Remover Evento', 'Deseja remover o Evento?')) {
+            const timelineList = this.form.querySelector('#timelineList');            
+            const item = event.target.closest('li.timeline-entry');
+            const tid = timelineList.dataset.id;
+            const eid = item.dataset.id;
+
+            const eventData = this.#timeline.events.find(e => e._id == eid);
+            this.removeEvent(eventData);
+            await uniforge.db.deleteTimelineEvent(tid, eid);
+            this.buildTimeline();
+        }
     }
 }

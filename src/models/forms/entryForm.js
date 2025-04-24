@@ -631,7 +631,9 @@ export default class EntryForm extends SidebarForm {
 
     entriesList.forEach(item => {
       const deleteIcon = item.querySelector('.remove-button');
-      deleteIcon.addEventListener('click', (event) => { this.onOpenDialogClick(event, item); });
+      
+      if(deleteIcon)
+        deleteIcon.addEventListener('click', (event) => { this.onOpenDialogClick(event, item); });
     });
 
     yesBtn.addEventListener('click', (event) => { this.onDeleteClick(event); });

@@ -97,8 +97,8 @@ globalThis.uniforge = {
     * @property {string} blankImg   - Imagem padrão usada para campos de imagem vazios.
     */
     urls: {
-        background: './images/lib-background.png',
-        blankImg: './images/blank-image.svg'
+        background: './ui/lib-background.png',
+        blankImg: './ui/blank-image.svg'
     },
 
     /**

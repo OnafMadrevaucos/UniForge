@@ -50,8 +50,8 @@ export default class TimelineForm extends SidebarForm {
     * @returns {Object} - Categorias.
     */
     async prepareData() {
-        super.prepareData();     
-        
+        super.prepareData();
+
         // Obtém todos os Eventos registrados.
         this.data.events = uniforge.doc.events.toObject();
 
@@ -65,9 +65,12 @@ export default class TimelineForm extends SidebarForm {
     }
 
     clearContent(clearSidebar = true) {
-       if (clearSidebar) super.clearContent();
+        if (clearSidebar) super.clearContent();
 
-       this.manager.clear();
+        const manageTimelineButton = this.querySelector('#manageTimelineButton');
+        manageTimelineButton.classList.add('disabled');
+
+        this.manager.clear();
     }
     /* ---------------------------------------------------------------------------------------------------------------- */
     // INTERFACE DE USUÁRIO
@@ -120,6 +123,8 @@ export default class TimelineForm extends SidebarForm {
             // ESTADO PADRÃO.
             default: {
                 forge.classList.remove('active');
+                const titleInput = forge.querySelector('#titleInput');
+                titleInput.value = '';
 
                 manageButton.innerHTML = '<i class="fas fa-pen-to-square"></i>';
                 manageButton.setAttribute('data-tooltip', 'Gerenciar Linha do Tempo');
@@ -245,10 +250,23 @@ export default class TimelineForm extends SidebarForm {
         event.stopPropagation();
 
         if (this.currentState === this.states.default) {
+            const folder = this.selection.folder;
+            const titleSpan = folder.querySelector('span');
+            const title = titleSpan.innerText;
+
+            const forge = this.querySelector('#timelineForge');
+            const titleInput = forge.querySelector('#titleInput');
+            titleInput.value = title;
+
             this.controlStates(this.states.editTimeline);
         } else {
             this.manager.timeline.title = titleInput.value;
-            this.manager.save();
+
+            if(this.manager.isNewTimeline)
+                this.manager.save();
+            else 
+                this.manager.update();
+
             this.controlStates(this.states.default);
         }
     }
@@ -322,6 +340,11 @@ export default class TimelineForm extends SidebarForm {
         const folder = event.target.closest('.folder');
         const timelineId = folder.dataset.id;
         const timeline = uniforge.doc.timelines.get(timelineId);
+
+        if (this.selection.folder) {
+            const manageTimelineButton = this.querySelector('#manageTimelineButton');
+            manageTimelineButton.classList.remove('disabled');
+        }
 
         this.manager.loadTimeline(timeline);
     }

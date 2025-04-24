@@ -309,18 +309,27 @@ export default class DBManager {
         let changes = result.changes;
 
         const events = data.events;
-        events.forEach(async (event) => {
-           query = 'INSERT INTO _timelineEvent (tid, evid) VALUES (?,?);';
-           params = [];
-
-           params.push(tid);
-           params.push(event.evid);
-
-           result = await uniforge.sql.exec(query, params); 
+        events.forEach(async (event) => { 
+           result = await this.addTimelineEvent({
+                tid: tid,
+                evid: event.evid
+           }); 
            changes += result.changes;
         });
         
         result.changes = changes;
+        return result;
+    }
+
+    async addTimelineEvent(data) {
+        let query = 'INSERT INTO _timelineEvent (tid, evid) VALUES (?,?);';
+        let params = [];
+
+        params.push(data.tid);
+        params.push(data.evid);
+
+        let result = await uniforge.sql.exec(query, params);
+
         return result;
     }
 
@@ -508,13 +517,12 @@ export default class DBManager {
      */
     async updateTimeline(data) {
         const updateSet = this.buildUpdateSet([
-            ['sid', data.sid],
-            ['founder', data.founder],
-            ['tree', data.tree]
+            ['title', data.title],
+            ['flavor', data.flavor]
         ]);
 
-        let query = `UPDATE lineageTree SET ${updateSet} WHERE ltid = ?`;
-        let params = [data.ltid];
+        let query = `UPDATE timeline SET ${updateSet} WHERE tid = ?`;
+        let params = [data.tid];
         const result = await uniforge.sql.exec(query, params);
 
         return result;
@@ -609,6 +617,14 @@ export default class DBManager {
     async deleteTimeline(tid) {
         let query = 'DELETE FROM timeline WHERE tid = ?;';
         let params = [tid];
+        const result = await uniforge.sql.exec(query, params);
+
+        return result;
+    }
+
+    async deleteTimelineEvent(tid, evid) {
+        let query = 'DELETE FROM _timelineEvent WHERE tid = ? AND evid = ?;';
+        let params = [tid, evid];
         const result = await uniforge.sql.exec(query, params);
 
         return result;
