@@ -17,6 +17,29 @@ export function get(_id) {
 }
 
 /**
+* Adiciona um método hasValue ao Set.prototype para verificar se existe um membro do conjunto com base em um valor informado.
+*
+* @method hasId
+* @memberof Set.prototype
+* @param {Object} data          - Uma propriedade que possua o valor _id.
+* @returns {Boolean}            - Retorna true se o membro do conjunto tem uma propriedade _id igual ao valor fornecido, ou false caso contrário.
+*/
+export function hasId(data) {
+
+    // Verifica se o argumento é um objeto e possui a propriedade _id.
+    if (typeof data !== "object" || !data.hasOwnProperty("_id")) {
+        throw new Error("O argumento deve ser um objeto com a propriedade _id.");
+    }
+
+    // Itera sobre os membros do conjunto.        
+    for (const member of this) {
+        // Verifica se o membro tem uma propriedade _id e se ela é igual ao _id fornecido.
+        if (member._id === data._id) return true;
+    }
+    return false;
+}
+
+/**
    * Retorna a diferença entre dois conjuntos.
    * @memberof Set.prototype
    * 
@@ -187,22 +210,29 @@ export function filter(test) {
 * Ordena um Set usando a mesma lógica da função sort() de um array.
 * 
 * @see Array#sort
-* @returns {Set} - Um novo Set com os elementos ordenados.
+* @param {null} [compareFn=null]        - Uma função de comparação opcional que define a ordem de classificação.
+*                                         Se não for fornecida, os elementos serão ordenados em ordem lexicográfica.
+* @returns {Set}                        - Um novo Set com os elementos ordenados.
 */
-export function sort() {
+export function sort(compareFn = null) {
     // Converte o Set em um array.
     const sorted = Array.from(this);
-    // Ordena o array.
-    sorted.sort((a, b) => {
-        // Verifica se os elementos têm o campo _label
-        if (a._label && b._label) {
-            // Ordena os elementos com base no campo _label
-            return a._label.localeCompare(b._label);
-        } else {
-            // Ordena os elementos com base no valor padrão
-            return a.localeCompare(b);
-        }
-    });
+
+    if (compareFn) {
+        sorted.sort(compareFn);
+    } else {
+        // Ordena o array.
+        sorted.sort((a, b) => {
+            // Verifica se os elementos têm o campo _label
+            if (a._label && b._label) {
+                // Ordena os elementos com base no campo _label
+                return a._label.localeCompare(b._label);
+            } else {
+                // Ordena os elementos com base no valor padrão
+                return a.localeCompare(b);
+            }
+        });
+    }
     // Cria um novo Set com os elementos ordenados.
     return new Set(sorted);
 }
@@ -288,6 +318,7 @@ console.log('UniForge | Atribuindo primitivos ao protótipo dos Sets...');
 // Atribui primitivos ao protótipo de Set
 Object.defineProperties(Set.prototype, {
     get: { value: get, configurable: true },
+    hasId: { value: hasId, configurable: true },
     difference: { value: difference, configurable: true },
     symmetricDifference: { value: symmetricDifference, configurable: true },
     equals: { value: equals, configurable: true },

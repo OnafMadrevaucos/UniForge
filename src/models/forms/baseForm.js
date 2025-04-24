@@ -132,9 +132,11 @@ export default class BaseForm extends Application {
             <switch id="deleteSwitch" class="hidden"></switch>
             <a id="${this.style}Close-${this.uuid}" class="close-button flexcol"><i class="fas fa-circle-xmark"></i></a>
         `;
-
     const html = await uniforge.utils.loadTemplate(this.template);
-    main.innerHTML = html;
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, 'text/html');
+    const mainContent = doc.body.firstChild;
+    main.appendChild(mainContent);
 
     form.appendChild(header);
     form.appendChild(main);

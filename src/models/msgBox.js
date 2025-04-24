@@ -5,18 +5,18 @@ export default class MsgBox {
         this.maxMessages = maxMessages;
     }
 
-    // Função para mostrar a mensagem de erro com animação
+    // Função para mostrar a mensagem de erro com animação.
     showError(message, error) {    
-        console.error(error ?? message);    
+        console.error(error);    
         this._showMsg(message, 'error');
     }
-    // Função para mostrar a mensagem de aviso com animação
-    showWarning(message, warning) {
+    // Função para mostrar a mensagem de aviso com animação.
+    showWarning(message, warning=null) {
         console.warn(warning ?? message);
         this._showMsg(message, 'warning');
     }
-    // Função para mostrar a mensagem de aviso com animação
-    showInfo(message, info) {
+    // Função para mostrar a mensagem de aviso com animação.
+    showInfo(message, info=null) {
         console.info(info ?? message);
         this._showMsg(message, 'info');
     }

@@ -166,15 +166,14 @@ function _parseCalendarTags(html) {
 
 function _parseFoldertreeTags(html, data) {
     console.log('UniForge | Substituindo tags de Foldertree...');
-    const regex = /<foldertree id="([^"]+)"(\s+type="([^"]+)")?(\s+item="([^"]+)")(\s+data-([^>]+))?(\s+fixed)?><\/foldertree>/g;
-    html = html.replace(regex, (match, id, typeAttr, typeValue, itemAttr, itemKey, datasetAttr, dataset) => {
-        const isFixedRegex = /\s+fixed/;
-        const isFixed = isFixedRegex.test(match);
+    const regex = /<foldertree id="([^"]+)"(\s+type="([^"]+)")?(\s+item="([^"]+)")(\s+data-([^>]+))?(\s+fixed="([^"]+)")?><\/foldertree>/g;
+    html = html.replace(regex, (match, id, typeAttr, typeValue, itemAttr, itemKey, datasetAttr, dataset, fixedAttr, fixed) => {        
+        const isFixed = fixedAttr ? (fixed === 'true' ? true : false) : false;
 
         const type = typeAttr ? typeValue : 'default';
 
         console.log(`Correspondência encontrada: ${match}`);
-        console.log(`ID: ${id}, Tipo: ${type}, Item: ${itemKey}, ${dataset ? `Dados: ${dataset}` : ''}, isFixed: ${isFixed ? 'true' : 'false'}`);
+        console.log(`ID: ${id}, Tipo: ${type}, Item: ${itemKey}, ${dataset ? `Dados: ${dataset}` : ''}, isFixed: ${isFixed}`);
 
         const datasetObj = {};
         if (dataset) {

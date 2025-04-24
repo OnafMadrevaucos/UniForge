@@ -1,5 +1,6 @@
 import CustomDate from "../../common/primitives/date.mjs";
 import { TimelineManager } from "../../scripts/managers/timelineManager.js";
+import Dialogs from "../dialogs/dialog.js";
 import SidebarForm from "./sidebarForm.js";
 
 export default class TimelineForm extends SidebarForm {
@@ -22,6 +23,8 @@ export default class TimelineForm extends SidebarForm {
         this.manager = new TimelineManager(this);
 
         this.currentState = this.#states.default; // Estado atual do formulário.
+
+        this.eventCheckedIcon = 'fa-calendar-check'; // Ícone de Evento selecionado.
     }
 
     #states = {
@@ -70,6 +73,17 @@ export default class TimelineForm extends SidebarForm {
         const manageTimelineButton = this.querySelector('#manageTimelineButton');
         manageTimelineButton.classList.add('disabled');
 
+        const eventList = this.querySelector('#eventList');
+        const eventItens = eventList.querySelectorAll('.item');
+        eventItens.forEach(item => {
+            item.classList.remove('checked');
+            const content = item.querySelector('.item-content');
+            const icon = content.querySelector('.icon');
+            // Remove o ícone de evento selecionado, se houver.
+            if (icon) icon.remove();
+        });
+
+        this.selection.folder = null; // Limpa a seleção de pasta.
         this.manager.clear();
     }
     /* ---------------------------------------------------------------------------------------------------------------- */
@@ -119,6 +133,9 @@ export default class TimelineForm extends SidebarForm {
                 newButton.setAttribute('data-tooltip', 'Cancelar');
                 newButton.classList.add('cancel');
 
+                const deleteTimelineButton = this.querySelector('#deleteTimelineButton');
+                deleteTimelineButton.classList.remove('disabled');
+
             } break;
             // ESTADO PADRÃO.
             default: {
@@ -137,6 +154,9 @@ export default class TimelineForm extends SidebarForm {
                 newButton.innerHTML = '<i class="fa-solid fa-calendar-plus"></i>';
                 newButton.setAttribute('data-tooltip', 'Nova Linha do Tempo');
                 newButton.classList.remove('cancel');
+
+                const deleteTimelineButton = this.querySelector('#deleteTimelineButton');
+                deleteTimelineButton.classList.add('disabled');
 
                 this.clearContent();
             } break;
@@ -216,6 +236,9 @@ export default class TimelineForm extends SidebarForm {
         const manageTimelineButton = this.querySelector('#manageTimelineButton');
         manageTimelineButton.addEventListener('click', (event) => { this.onManageTimelineClick(event); });
 
+        const deleteTimelineButton = this.querySelector('#deleteTimelineButton');
+        deleteTimelineButton.addEventListener('click', (event) => { this.onDeleteTimeline(event); });
+
         const eventList = this.querySelector('#eventList');
         const eventItens = eventList.querySelectorAll('.item');
 
@@ -223,6 +246,9 @@ export default class TimelineForm extends SidebarForm {
             item.addEventListener('click', (event) => { this.onEventClick(event); });
             item.addEventListener('dblclick', (event) => { this.onEventDoubleClick(event); });
         });
+
+        const searchEventInput = this.querySelector('#searchEvents input');
+        searchEventInput.addEventListener('input', (event) => { this.onSearchInput(event); });
     }
 
     /**
@@ -230,13 +256,19 @@ export default class TimelineForm extends SidebarForm {
      * Alterna entre o estado de criação e o estado de edição da linha do tempo.
      * @param {MouseEvent} event - O evento de clique.
      */
-    onNewTimelineForgeClick(event) {
+    async onNewTimelineForgeClick(event) {
         event.stopPropagation();
 
         if (this.currentState === this.states.default) {
+            // Verifica se já existe uma linha do tempo aberta.
+            if (this.selection.folder) {
+                // Se já existe uma linha do tempo aberta, pergunta se deseja fechá-la.
+                if (await Dialogs.confirm('Linha do Tempo Aberta', 'Uma linha do tempo já está aberta. Será necessário fechá-la para criar uma nova linha do tempo. Deseja continuar?')) {
+                    this.clearContent();
+                } else return; // Se o usuário não confirmar, aborte.
+            }
             this.controlStates(this.states.newTimeline);
         } else {
-            this.manager.clear();
             this.controlStates(this.states.default);
         }
     }
@@ -246,31 +278,28 @@ export default class TimelineForm extends SidebarForm {
      * Alterna entre o estado de edição e o estado de criação da linha do tempo.
      * @param {MouseEvent} event - O evento de clique.
      */
-    onManageTimelineClick(event) {
+    async onManageTimelineClick(event) {
         event.stopPropagation();
 
         if (this.currentState === this.states.default) {
-            const folder = this.selection.folder;
-            const titleSpan = folder.querySelector('span');
-            const title = titleSpan.innerText;
-
-            const forge = this.querySelector('#timelineForge');
-            const titleInput = forge.querySelector('#titleInput');
-            titleInput.value = title;
+            this._showTimeForge();
 
             this.controlStates(this.states.editTimeline);
         } else {
+            const forge = this.querySelector('#timelineForge');
+            const titleInput = forge.querySelector('#titleInput');
+
             this.manager.timeline.title = titleInput.value;
+            const committed = await this.manager.commit();
 
-            if(this.manager.isNewTimeline)
-                this.manager.save();
-            else 
-                this.manager.update();
-
-            this.controlStates(this.states.default);
+            if(committed || committed === null) this.controlStates(this.states.default);
         }
     }
 
+    /**
+     * Gerencia o clique em um item de Evento na lista de Eventos.
+     * @param {MouseEvent} event - O evento de clique.
+     */
     onEventClick(event) {
         event.stopPropagation();
         const item = event.target.closest('.item');
@@ -304,6 +333,14 @@ export default class TimelineForm extends SidebarForm {
         tinymce.get('eventFlavorEditor').setContent(eventData.flavor);
     }
 
+    /**
+     * Trata o evento de duplo clique em um item de evento na lista.
+     * Alterna a classe "checked" do item e, se o item estiver "checked", adiciona o ícone
+     * de evento selecionado e o evento à lista de eventos do gerenciador.
+     * Se o item estiver desmarcado, remove o ícone de evento selecionado e o evento da lista
+     * de eventos do gerenciador.
+     * @param {MouseEvent} event - O evento de duplo clique no item de evento.
+     */
     onEventDoubleClick(event) {
         event.stopPropagation();
         const item = event.target.closest('.item');
@@ -313,18 +350,59 @@ export default class TimelineForm extends SidebarForm {
         if (item.classList.contains('checked')) {
             //'<i class="fa-solid fa-calendar-check"></i>'
             const checkedIcon = document.createElement('i');
-            checkedIcon.classList.add('fa-solid', 'fa-calendar-check', 'icon');
+            checkedIcon.classList.add('fas', this.eventCheckedIcon, 'icon');
 
-            const eventData = uniforge.doc.events.get(item.dataset.value);
+            const eventData = uniforge.doc.events.get(item.dataset.value);            
             this.manager.addEvent(eventData);
 
             content.appendChild(checkedIcon);
         } else {
             const checkedIcon = content.querySelector('.icon');
-            checkedIcon.remove();
+            if (checkedIcon) checkedIcon.remove();
 
-            const event = uniforge.doc.events.get(item.dataset.value);
-            this.manager.removeEvent(event);
+            const evid = item.dataset.value;
+            this.manager.removeEvent(evid);
+        }
+    }
+
+    /**
+     * Filtra os eventos da lista de acordo com a string de pesquisa digitada.
+     * Oculta os itens que não contenham a string de pesquisa no título e
+     * que não estejam marcados como "checked".
+     * @param {InputEvent} event - O evento de input no campo de pesquisa.
+     */
+    onSearchInput(event) {
+        const searchInput = event.target;
+        const query = searchInput.value.toLowerCase().trim();
+
+        const eventList = this.querySelector('#eventList');
+        const eventItens = eventList.querySelectorAll('.item');
+
+        eventItens.forEach(item => {
+            const evid = item.dataset.value;
+            const eventData = uniforge.doc.events.get(evid);
+
+            // Verifica se o título do evento contém a string de pesquisa e se o item está marcado como "checked".
+            if (eventData.title.toLowerCase().includes(query) || item.classList.contains('checked')) {
+                item.classList.remove('hidden');
+            }
+            else { // Se não, oculta o item.
+                item.classList.add('hidden');
+            }
+        });
+    }
+
+    /**
+     * Gerencia o clique no botão de excluir linha do tempo.
+     * Verifica se o usuário deseja excluir a linha do tempo e, se sim, a exclui.
+     * @param {MouseEvent} event - O evento de clique.
+     */
+    async onDeleteTimeline(event) {
+        event.stopPropagation();
+
+        if(await Dialogs.confirm('Excluir Linha do Tempo', 'Você tem certeza que deseja excluir esta Linha do Tempo?')) {
+            await this.manager.deleteTimeline();
+            this.controlStates(this.states.default);
         }
     }
 
@@ -349,99 +427,19 @@ export default class TimelineForm extends SidebarForm {
         this.manager.loadTimeline(timeline);
     }
 
-    /**
-     * Gerencia cliques duplos em itens de entrada.
-     * @param {MouseEvent} event - O evento de clique duplo.
-     * @protected
-    
-    async onEntryItemDoubleClick(event) {
-        super.onEntryItemDoubleClick(event);
-        // Obter a entrada clicada.
-        const entry = event.target.closest('.entry-item');
-        const entryId = entry.dataset.id;
-        const data = await uniforge.db.getEntryWithIcon(entryId);
-
-        this.manager.getEntry(data).addTo('entryContainer', false);
-    }
-    */
-
     onSearchButtonClick(event) {
-        // Impedir que o clique no item desencadeie o clique fora do sidebar
         event.stopPropagation();
 
-        console.log('*CLICK*')
+        console.log('*CLICK*');
     }
-
-    /*
-    onEntryItemClick(event){
-        // Impedir que o clique no item desencadeie o clique fora do sidebar
-        event.stopPropagation();
-
-        const folderList = this.form.querySelectorAll('#folderList .list-item');
-        const item = event.target;
-      
-        // Remover a classe 'selected' de todos os itens
-        folderList.forEach(i => {
-          i.classList.remove('selected')
-          const folderIcon = i.querySelector('.fas');
-          folderIcon.classList.remove(...folderIcon.classList);
-          folderIcon.classList.add('fas', 'fa-folder');
-        });
-            
-        // Adicionar a classe 'selected' ao item clicado
-        item.classList.add('selected');
-        const folderIcon = item.querySelector('.fas');
-        folderIcon.classList.remove(...folderIcon.classList);
-        folderIcon.classList.add('fas', 'fa-folder-open');
-    }
-    onSearchButtonClick(event) { 
-        // Impedir que o clique no item desencadeie o clique fora do sidebar
-        event.stopPropagation();
-        
-        console.log('*CLICK*')
-    }*/
+   
     /* ---------------------------------------------------------------------------------------------------------------- */
-    // UTILITÁRIOS
-    /** */
-    _timeForgeControl(state, buttonA, buttonB) {
-        const forge = this.querySelector('#timelineForge');
-
-        switch (state) {
-            case 'start': {
-                forge.classList.add('active');
-
-                buttonA.innerHTML = '<i class="fa-solid fa-check"></i>';
-                buttonB.innerHTML = '<i class="fa-solid fa-xmark"></i>';
-
-                buttonB.classList.remove('active');
-                buttonB.classList.add('cancel');
-            } break;
-            case 'cancel': {
-                forge.classList.remove('active');
-
-                buttonA.classList.remove('active');
-                buttonA.classList.remove('cancel');
-
-                buttonB.classList.remove('active');
-            } break;
-            case 'end': {
-                forge.classList.remove('active');
-
-                buttonA.classList.remove('active');
-                buttonB.classList.remove('cancel');
-            } break;
-            default: {
-                forge.classList.remove('active');
-
-                buttonB.classList.remove('cancel');
-            } break;
-        }
-    }
+    // UTILITÁRIOS    
     /**
-   * Configura o editor TinyMCE com funcionalidades inline.
-   * @protected
-   * @param {Object} editor - Instância do editor TinyMCE.
-   */
+     * Configura o editor TinyMCE com funcionalidades inline.
+     * @protected
+     * @param {Object} editor - Instância do editor TinyMCE.
+    */
     _setupInlineTinyMCE(editor) {
         // Número máximo de caractéres do editor Tiny MCE de floreio.
         const maxCharacters = 1024;
@@ -488,5 +486,36 @@ export default class TimelineForm extends SidebarForm {
                 editor.setContent(truncatedText); // Trunca o conteúdo
             }
         });
+    }
+
+    /**
+     * Mostra a janela de edição de linha do tempo (Time Forge) com os dados da pasta selecionada.
+     * @private
+     */
+    _showTimeForge() {
+        const folder = this.selection.folder;
+        const titleSpan = folder.querySelector('span');
+        const title = titleSpan.innerText;
+
+        const forge = this.querySelector('#timelineForge');
+        const titleInput = forge.querySelector('#titleInput');
+        titleInput.value = title;
+
+        const eventList = this.querySelector('#eventList');
+        const eventItens = eventList.querySelectorAll('.item');
+
+        eventItens.forEach(item => {
+            const evid = item.dataset.value;
+            if (this.manager.hasEvent(evid)) {
+                item.classList.add('checked');
+                const content = item.querySelector('.item-content');
+                
+                // Adiciona o ícone de evento selecionado.
+                const checkedIcon = document.createElement('i');
+                checkedIcon.classList.add('fas', this.eventCheckedIcon, 'icon');
+                content.appendChild(checkedIcon);
+            }
+        });
+
     }
 }

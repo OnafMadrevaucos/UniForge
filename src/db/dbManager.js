@@ -129,13 +129,16 @@ export default class DBManager {
         let query = 'INSERT INTO chapter (cid, tome, title, icon, type) VALUES (?,?,?,?,?);';
         let params = [];
 
-        params.push(this.generateID());
+        const cid = !data.cid?.isEmpty() ? data.cid : this.generateID();
+
+        params.push(cid);
         params.push(data.tome);
         params.push(data.title);
         params.push(data.icon);
         params.push(Number(data.type) ?? 0);
 
         const result = await uniforge.sql.exec(query, params);
+        result.addedId = cid;
 
         return result;
     }
@@ -155,13 +158,16 @@ export default class DBManager {
         let query = 'INSERT INTO section (sid, cid, title, htmlString, isDraft) VALUES (?,?,?,?,?);';
         const params = [];
 
-        params.push(data.sid ?? this.generateID());
+        const sid = !data.sid?.isEmpty() ? data.sid : this.generateID();
+
+        params.push(sid);
         params.push(data.cid);
         params.push(data.title);
         params.push(data.htmlString);
         params.push(Number(data.isDraft));
 
         const result = await uniforge.sql.exec(query, params);
+        result.addedId = sid;
 
         return result;
     }
@@ -185,7 +191,9 @@ export default class DBManager {
         let query = 'INSERT INTO entry (eid, sid, etid, title, flavor, htmlString, img, ext, isDraft) VALUES (?,?,?,?,?,?,?,?,?);';
         let params = [];
 
-        params.push(data.eid ?? this.generateID());
+        const eid = !data.eid?.isEmpty() ? data.eid : this.generateID();
+
+        params.push(eid);
         params.push(data.sid);
         params.push(Number(data.etid));        
         params.push(data.title);
@@ -227,7 +235,9 @@ export default class DBManager {
         query += 'VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);';
         const params = [];
 
-        params.push(data.evid ?? this.generateID());
+        const evid = !data.evid?.isEmpty() ? data.evid : this.generateID();
+
+        params.push(evid);
         params.push(data.sid);
         params.push(Number(data.etid));
         params.push(data.title);
@@ -244,6 +254,7 @@ export default class DBManager {
         params.push(Number(data.isDraft ?? false));        
 
         const result = await uniforge.sql.exec(query, params);
+        result.addedId = evid;
 
         return result;
     }            
@@ -262,7 +273,9 @@ export default class DBManager {
         query += 'VALUES (?,?,?,?,?,?);';
         const params = [];
 
-        params.push(data.ltid ?? this.generateID());
+        const ltid = !data.ltid?.isEmpty() ? data.ltid : this.generateID();
+
+        params.push(ltid);
         params.push(data.sid);
         params.push(data.title);
         params.push(data.founder);
@@ -270,6 +283,7 @@ export default class DBManager {
         params.push(data.isDraft);
 
         const result = await uniforge.sql.exec(query, params);
+        result.addedId = ltid;
 
         return result;
     }
@@ -299,25 +313,15 @@ export default class DBManager {
         let query = 'INSERT INTO timeline (tid, title, flavor) VALUES (?,?,?);';
         let params = [];
 
-        const tid = !data.tid.isEmpty() ? data.tid : this.generateID();
+        const tid = !data.tid?.isEmpty() ? data.tid : this.generateID();
 
         params.push(tid);
         params.push(data.title);
         params.push(data.flavor);
 
         let result = await uniforge.sql.exec(query, params);
-        let changes = result.changes;
+        result.addedId = tid;
 
-        const events = data.events;
-        events.forEach(async (event) => { 
-           result = await this.addTimelineEvent({
-                tid: tid,
-                evid: event.evid
-           }); 
-           changes += result.changes;
-        });
-        
-        result.changes = changes;
         return result;
     }
 
@@ -329,7 +333,6 @@ export default class DBManager {
         params.push(data.evid);
 
         let result = await uniforge.sql.exec(query, params);
-
         return result;
     }
 
@@ -1921,12 +1924,24 @@ export default class DBManager {
     }
 
     /**
+     * Valida se os dados de uma Linha do Tempo são válidos.
+     * @param {Object} timeline - Dados da Linha do Tempo a ser validada.
+     * @returns {string} - Erro(s) encontrado(s) ou uma string vazia se a Linha do Tempo for válida.
+     */
+    validateTimeline(timeline) {        
+        if (timeline.title?.isEmpty())
+            return 'É necessário informar um título válido para a Linha do Tempo.';
+        if (timeline.events.size < 1)
+            return 'A Linha do Tempo deve conter pelo menos um Evento.';                 
+        return '';
+    }
+
+    /**
      * Valida se os dados de um Evento de Linhagem são válidos.
      * @param {Object} data - Dados do Evento a ser validado.
      * @returns {string} - Erro(s) encontrado(s) ou uma string vazia se o Evento for válido.
      */
     validateLineage(data) {
-
         if (data.sid.isEmpty())
             return 'O identificador de Seção da Linhagem é inválido.';        
         if (data.title.isEmpty())

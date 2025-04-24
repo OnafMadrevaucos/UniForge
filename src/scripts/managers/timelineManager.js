@@ -13,7 +13,7 @@ export class TimelineManager extends BaseManager {
         tid: '',
         title: '',
         flavor: '',
-        events: [],
+        events: new Set(),
         calendar: null
     };
 
@@ -25,18 +25,25 @@ export class TimelineManager extends BaseManager {
         return this.#timeline.tid.isEmpty();
     }
 
-    loadTimeline(timeline) {        
+    loadTimeline(timeline) {
         this.#timeline = {
             tid: timeline.tid,
             title: timeline.title,
             flavor: timeline.flavor,
-            events: timeline.events.toObject(),
+            events: new Set(),
             calendar: null
         };
-        const events = this.#timeline.events;
+
+        const events = timeline.events.toObject();
+        events.forEach(event => {
+            event.dbAction = '-',
+                event.committed = true
+        });
+
+        this.#timeline.events = timeline.events;
 
         // Configura o calendário da linha do tempo, caso não tenha sido definido.
-        if(events.length > 0) {
+        if (events.length > 0) {
             const calendar = uniforge.doc.calendars.get(events[0].clid);
             this.#timeline.calendar = calendar ?? null;
         }
@@ -44,53 +51,160 @@ export class TimelineManager extends BaseManager {
         this.buildTimeline();
     }
 
-    addEvent(event) {
-        const events = this.#timeline.events;
-        // Configura o calendário da linha do tempo, caso não tenha sido definido.
-        if(events.length === 0) {
-            const calendar = uniforge.doc.calendars.get(event.clid);
-            this.#timeline.calendar = calendar ?? null;
+    async deleteTimeline() {
+        const tid = this.#timeline.tid;
+        if (!tid.isEmpty()) {
+            await uniforge.db.deleteTimeline(tid);            
         }
+    }
 
-        // Verifica que o calendário do evento é o mesmo que o da linha do tempo.
-        if(event.clid !== this.#timeline.calendar.clid) {
+    async commit() {
+        try {
+            // Valida os dados da linha do tempo.
+            let validation = uniforge.db.validateTimeline(this.#timeline);
+            if (!validation.isEmpty()) {
+                this.msgBox.showWarning(validation);
+                return false;
+            }
+
+            // Inicia a transação de salvamento.
+            await uniforge.sql.exec('BEGIN TRANSACTION');
+            let result = null;
+
+            // Verifica se se trata de uma nova linha do tempo ou uma já existente.
+            //
+            // Se for uma nova linha do tempo, adiciona-a ao banco de dados.
+            // Se for uma linha do tempo já existente, atualiza-a no banco de dados.
+            if (this.isNewTimeline) {
+                result = await uniforge.db.addTimeline(this.#timeline);
+                const tid = result.addedId;
+
+                this.#timeline.tid = tid;
+            } else {
+                result = await uniforge.db.updateTimeline(this.#timeline);
+            }
+
+            const events = this.#timeline.events.toObject();
+            events.forEach(async event => {
+                if (event.dbAction === 'a') {
+                    await this.insertEvent(event._id);
+                } else if (event.dbAction === 'd') {
+                    await this.deleteEvent(event._id);
+                }
+            });
+
+            this.buildTimeline();
+            // Finaliza a transação de salvamento.
+            await uniforge.sql.exec('COMMIT');
+
+            return true;
+        } catch (error) {
+            uniforge.msgBox.showError('Erro ao adicionar evneto à linha do tempo.', error);
+
+            console.warn('O Banco de Dados sofrerá rollback...');
+            // Faz rollback em caso de erro no processo de salvamento.
+            await uniforge.sql.exec('ROLLBACK');
+
+            return null;
+        }
+    }
+
+    addEvent(newEvent) {
+        const events = this.#timeline.events;
+
+        // Verifica que o calendário do evento é o mesmo que o da linha do tempo. Se não for, aborta.
+        if (this.#timeline.calendar && newEvent.clid !== this.#timeline.calendar.clid) {
             uniforge.msgBox.show('Erro', 'O evento não pode ser adicionado a linha do tempo, pois o calendário é diferente.', 'error');
             return;
         }
 
-        events.push(event);
-        // Ordena os eventos por ano de Início.
-        events.sort((a, b) => {
+        // O evento já existe na linha do tempo.
+        if (events.hasId(newEvent)) {
+            const event = events.get(newEvent._id);
+            // O Evento já está comitado ao banco de dados. Aborte.
+            if (event.committed) {
+                event.dbAction = '-';
+                return;
+            }
+            // Marque o evento para inclusão no banco de dados.
+            event.dbAction = 'a';
+        } else {
+            // O evento ainda não existe no banco de dados.
+            newEvent.committed = false;
+            // Marque o evento para inclusão no banco de dados.
+            newEvent.dbAction = 'a';
+            // Adicona o evento à lista de Eventos da linha do tempo. 
+            // OBS.: Nem todo evento na lista está presente no banco de dados.
+            events.add(newEvent);
+        }
+
+        // Verifica que o calendário do evento é o mesmo que o da linha do tempo.
+        if (this.#timeline.calendar && newEvent.clid !== this.#timeline.calendar.clid) {
+            uniforge.msgBox.show('Erro', 'O evento não pode ser adicionado a linha do tempo, pois o calendário é diferente.', 'error');
+            return;
+        }
+
+        // Configura o calendário da linha do tempo, caso não tenha sido definido.
+        if (events.size === 1) {
+            const firstEvent = events.first();
+            const calendar = uniforge.doc.calendars.get(firstEvent.clid);            
+
+            this.#timeline.calendar = calendar ?? null;
+        }
+
+        // Ordena os eventos por Data de Início.
+        this.sortEvents();
+    }
+    removeEvent(evid) {
+        const events = this.#timeline.events;
+
+        // Verifica se o evento existe na linha do tempo.
+        const event = events.get(evid);
+        // Tentativa de remover um evento que não existe na linha do tempo. Aborte.
+        if (!event) return;
+
+        // Marque o evento para remoção do banco de dados.
+        event.dbAction = 'd';
+
+        // Verifica se a linha do tempo está vazia e remove o calendário.
+        if (this.#timeline.events.length === 0) {
+            this.#timeline.calendar = null;
+        }
+    }
+    /**
+     * Ordena os eventos da linha do tempo por Data de Início.
+     * A ordenação é feita considerando o calendário da linha do tempo.
+     * @return {void}
+     */
+    sortEvents() {
+        this.#timeline.events = this.#timeline.events.sort((a, b) => {
             const calendar = this.#timeline.calendar;
             const startDateA = new CustomDate(calendar, { day: a.s_day, month: a.s_month, year: a.s_year });
             const startDateB = new CustomDate(calendar, { day: b.s_day, month: b.s_month, year: b.s_year });
             return startDateA.ticks - startDateB.ticks;
         });
     }
-    removeEvent(event) {
-        const index = this.#timeline.events.findIndex(e => e._id == event._id);
-        this.#timeline.events.splice(index, 1);
-
-        // Verifica se a linha do tempo está vazia e remove o calendário.
-        if(this.#timeline.events.length === 0) {
-            this.#timeline.calendar = null;
-        }
+    async insertEvent(evid) {
+        const tid = this.timeline.tid;
+        if (!tid.isEmpty()) await uniforge.db.addTimelineEvent({ tid, evid });
+    }
+    async deleteEvent(evid) {
+        const tid = this.timeline.tid;
+        if (!tid.isEmpty()) await uniforge.db.deleteTimelineEvent(tid, evid);
+    }
+    hasEvent(evid) {
+        const events = this.#timeline.events;
+        const event = events.get(evid);
+        if (!event || event.dbAction === 'd') return false;
+        return true;
     }
 
-    async save() {
-        await uniforge.db.addTimeline(this.#timeline);
-        this.buildTimeline();
-    }
-    async update() {
-        await uniforge.db.updateTimeline(this.#timeline);
-        this.buildTimeline();
-    }
     clear() {
         this.#timeline = {
             tid: '',
             title: '',
             flavor: '',
-            events: [],
+            events: new Set(),
             calendar: null
         };
 
@@ -118,7 +232,7 @@ export class TimelineManager extends BaseManager {
 
     // Cria o conteúdo da Linha do Tempo que será atribuído a um Element
     #createContent() {
-        const data = this.timeline;
+        const data = this.#timeline;
         const content = document.createElement('div');
         content.className = 'time-content flexcol';
 
@@ -142,9 +256,16 @@ export class TimelineManager extends BaseManager {
         timelineList.dataset.id = data.tid;
 
         let isInverted = false;
+
+        // Ordena os eventos por Data de Início.
+        this.sortEvents();
+        let events = data.events;
+
         // Preenche o form com todas as entradas da Timeline
-        for (var event of data.events) {
-            if (event.importance !== 'external') {
+        for (var event of events) {
+            if (event.dbAction === 'd') continue; // Ignora eventos marcados para remoção.
+
+            if (event.relevance !== 'external') {
                 timelineList.appendChild(this.#newEventItem(event, isInverted));
             } else {
                 timelineList.appendChild(this.#newExternalLink(event, isInverted));
@@ -242,7 +363,7 @@ export class TimelineManager extends BaseManager {
         const headerIconDiv = document.createElement('div');
         headerIconDiv.className = 'header-icon';
         headerIconDiv.setAttribute('data-tooltip', entryType.title);
-        if(isInverted) headerIconDiv.setAttribute('data-tooltip-left', '');
+        if (isInverted) headerIconDiv.setAttribute('data-tooltip-left', '');
         const headerIcon = document.createElement('i');
         headerIcon.className = entryType.icon;
         headerIconDiv.appendChild(headerIcon);
@@ -307,14 +428,14 @@ export class TimelineManager extends BaseManager {
         const blockquote = document.createElement('blockquote');
         if (!data.source.isEmpty()) {
             const source = uniforge.doc.entries.get(data.source);
-            if (source) {                
+            if (source) {
                 blockquote.className = 'flavortext';
                 const blockquoteText = document.createElement('p');
                 blockquoteText.className = 'flavortext';
                 blockquoteText.textContent = source.flavor.replace(/<[^>]+>/g, '');
                 blockquote.appendChild(blockquoteText);
             }
-        } else 
+        } else
             blockquote.className = 'flavortext hidden';
 
         const rowDiv = document.createElement('div');
@@ -550,19 +671,16 @@ export class TimelineManager extends BaseManager {
 
     _onEditEventClick(event) {
         event.stopPropagation();
-        
+
     }
     async _onDeleteEventClick(event) {
         event.stopPropagation();
-        if(await Dialogs.confirm('Remover Evento', 'Deseja remover o Evento?')) {
-            const timelineList = this.form.querySelector('#timelineList');            
+        if (await Dialogs.confirm('Remover Evento', 'Deseja remover o Evento?')) {
             const item = event.target.closest('li.timeline-entry');
-            const tid = timelineList.dataset.id;
-            const eid = item.dataset.id;
+            const evid = item.dataset.id;
 
-            const eventData = this.#timeline.events.find(e => e._id == eid);
-            this.removeEvent(eventData);
-            await uniforge.db.deleteTimelineEvent(tid, eid);
+            this.removeEvent(evid);
+            await this.deleteEvent(evid);
             this.buildTimeline();
         }
     }

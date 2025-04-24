@@ -2133,7 +2133,7 @@ input:checked+.slider::before {
 
 .timeline .timeline-content {
     overflow-x: hidden;
-    overflow-y: auto;
+    overflow-y: scroll;
 }
 
 .timeline .timeline-content .timeline-list {
@@ -2179,8 +2179,8 @@ input:checked+.slider::before {
 }
 
 .timeline .timeline-content .timeline-list li .tl-circ {
-    position: absolute;
-    top: 8.5vh;
+    position: relative;
+    top: 11vh;
     left: 35.6vw;
     text-align: center;
     background: var(--dark-red);
@@ -2195,6 +2195,11 @@ input:checked+.slider::before {
     border-bottom-right-radius: 50%;
     border-bottom-left-radius: 50%;
     z-index: 1;
+    transition: left 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.timeline:has(>.minimized) .timeline-content .timeline-list li .tl-circ {
+    left: 44.55vw;
 }
 
 .timeline .timeline-content .timeline-list li .tl-circ.minor {
@@ -2534,6 +2539,16 @@ folder-list .folder.created.selected .folder-header .fa-trash {
     pointer-events: all;
 }
 
+.time-forge .search-bar {
+    padding: 5px;
+    gap: var(--default-gap-size);
+}
+
+.time-forge .search-bar input {
+    flex: 1;
+    margin: 0;
+}
+
 .time-forge .event-selector {
     flex: 1;
     background-color: var(--dark-blue);
@@ -2572,6 +2587,10 @@ folder-list .folder.created.selected .folder-header .fa-trash {
     height: var(--fill-height);
     margin: 5px;
     margin-left: 10px;
+}
+.time-forge .timeline-data .footer {
+    width: var(--fill-width);
+    margin-top: 10px;
 }
 
 /* ------ Entries Type Form ------ */

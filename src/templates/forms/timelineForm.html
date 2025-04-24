@@ -4,7 +4,7 @@
   </a>
   <div id="sideBar" class="sidebar">
     <h3>Linhas do Tempo</h3>
-    <foldertree id="folderList" type="simple" item="timelines"></foldertree>
+    <foldertree id="folderList" type="simple" item="timelines" fixed="true"></foldertree>
     </ul>
     <div class="footer">
       <div id="searchEntry" class="input-container search-bar flexrow">
@@ -16,10 +16,13 @@
   <div class="content flexcol">    
     <div id="timelineViewer" class="time-container flex-1"></div>
     <div id="timelineForge" class="time-forge flex-1 flexrow">      
-      <div class="event-selector flexcol">
+      <div class="event-selector flexcol">        
         <h4>Eventos</h4>
         <div class="tiny separator"></div>
         <list id="eventList" value="events" class="event-list"></list>
+        <div id="searchEvents" class="input-container search-bar flexrow">
+          <input type="text" class="search-data" placeholder="Pesquisar evento...">
+        </div>
       </div>
       <div class="event-info timeline-data flexcol">
         <div class="header flexrow">
@@ -59,6 +62,7 @@
             <div class="text-content not-editable"></div>
           </div>
         </fieldset>
+        <div class="footer flexrow flex-1"><button id="deleteTimelineButton" class="disabled"><i class="fa-solid fa-trash"></i> Excluir Linha do Tempo</button></div>
       </div>
     </div>
     <div class="time-manager flexrow">

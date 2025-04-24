@@ -1001,15 +1001,18 @@ export default class EntryForm extends SidebarForm {
           htmlString: tinymce.get('mainEditor').getContent() ?? ''
         });
 
-        let result = uniforge.db.validateEntry(data);
-        if (result !== '') {
-          this.msgBox.showWarning(result);
-          saved = false;
+        let validation = uniforge.db.validateEntry(data);
+        if (validation !== '') {
+          this.msgBox.showWarning(validation);
+          return;
         }
 
         // Verifica se o item já existe no banco de dados.
         if (this.isUpdate) this._updateEntry(data);
         else this._addEntry(data);
+
+        // Finaliza a transação de salvamento.
+        await uniforge.sql.exec('COMMIT');
       }
     } catch (error) {
       this.msgBox.showError(error);
