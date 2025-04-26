@@ -281,7 +281,7 @@ export default class BaseForm extends Application {
         return false;
       }
     } catch (error) {
-      this.msgBox.showError(error.message);
+      this.msgBox.showError(error);
       return false;
     }
   }

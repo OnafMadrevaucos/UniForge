@@ -225,7 +225,7 @@ export default class SettingsForm extends EntryForm {
 
             if (await Dialogs.confirm(title, dialogMessage)) {
                 // Inicia a transação de salvamento.
-                await uniforge.sql.exec('BEGIN TRANSACTION');
+                await uniforge.db.beginTransaction();
 
                 // Realiza o processo de salvamento (adição ou remoção) de uma Seção.
                 let saved = true;
@@ -246,7 +246,7 @@ export default class SettingsForm extends EntryForm {
                 const validate = uniforge.db.validateSection(data);
                 if (validate !== '') {
                     this.msgBox.showWarning(validate);
-                    saved = false;
+                    return;
                 }
 
                 if (this.isUpdate) {
@@ -258,25 +258,17 @@ export default class SettingsForm extends EntryForm {
                     this.msgBox.showInfo('Seção criada com sucesso.');
                 }
 
-                // Verifica se o salvamento foi bem-sucedido. Se sim, comita a transação.
-                if (saved) {
-                    // Comita a transação de salvamento.
-                    await uniforge.sql.exec('COMMIT');
-                    uniforge.state.update(['currentForm', { name: this.title, state: this.type, activeTab: this.activeTabIdx }]);
-                    await this.refresh();
-                } else {
-                    console.warn('O Banco de Dados sofrerá rollback...');
-                    // Faz rollback em caso de erro no processo de salvamento.
-                    await uniforge.sql.exec('ROLLBACK');
-                }
+                // Comita a transação de salvamento.
+                await uniforge.db.commitTransaction();
+                uniforge.state.update(['currentForm', { name: this.title, state: this.type, activeTab: this.activeTabIdx }]);
+                await this.refresh();
             }
         }
         catch (error) {
             this.msgBox.showError(error);
 
-            console.warn('O Banco de Dados sofrerá rollback...');
             // Faz rollback em caso de erro no processo de salvamento.
-            await uniforge.sql.exec('ROLLBACK');
+            await uniforge.db.rollbackTransaction(error);
         }
     }
 
@@ -323,7 +315,7 @@ export default class SettingsForm extends EntryForm {
         event.stopPropagation();
         const id = this.ui.dialog.dataset.id;
 
-        await uniforge.db.deleteSection(id); 
+        await uniforge.db.deleteSection(id);
         this.msgBox.showInfo('Seção removida com sucesso.');
         await this.refresh();
     }

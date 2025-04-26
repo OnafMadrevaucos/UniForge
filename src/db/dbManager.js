@@ -17,10 +17,100 @@ export default class DBManager {
             createLineageTreeTable: () => this.createLineageTreeTable(),
             createLineageTypeTable: () => this.createLineageTypeTable(),
             createTimelineTable: () => this.createTimelineTable(),
-            createTimelineEventsTable: () => this.createTimelineEventsTable(),            
+            createTimelineEventsTable: () => this.createTimelineEventsTable(),
             createTextImagesTable: () => this.createTextImagesTable(),
             createSettingsTable: () => this.createSettingsTable()
         };
+    }
+
+    #state = {
+        transactionStarted: false,
+        results: [],
+        changes: 0
+    }
+
+    get transactionStarted() {
+        return this.#state.transactionStarted;
+    }
+    get result() {
+        const results = this.#state.results;
+        if (results.length > 0) {
+            return results[results.length - 1];
+        } else
+            return null;
+    }
+    get results() {
+        const results = this.#state.results;
+        if (results.length > 0) {
+            return this.#state.results;
+        } else
+            return null;
+    }
+    get totalCanges() {
+        return this.#state.changes;
+    }
+
+    set transactionStarted(value) {
+        this.#state.transactionStarted = value;
+    }
+    set results(value) {
+        // Verifica se o valor passado é nulo ou indefinido.
+        if (!value) throw new Error('O valor passado não pode ser nulo ou indefinido.');
+
+        // O valor é oriundo de uma query que realiza uma alteração no banco de dados (INSERT, UPDATE ou DELETE).
+        if (!Array.isArray(value)) {
+            if (!value.hasOwnProperty('changes') || !value.hasOwnProperty('lastInsertRowid'))
+                throw new Error('O valor passado não é um resultado de execução de query.');
+            else {
+                // Adiciona o ID do último registro inserido ao resultado.
+                value['addedId'] = value['lastInsertRowid'];
+                this.#state.changes += value.changes;
+            }
+        }
+        this.#state.results.push(value);
+    }
+
+    clear() {
+        this.#state = {
+            transactionStarted: false,
+            results: [],
+            changes: 0
+        }
+    }
+
+
+    async beginTransaction() {
+        if (!this.transactionStarted) {
+            console.log('UniForge | Abrindo transação....');
+            // Limpa o estado atual do gerenciador do banco de dados.
+            this.clear();
+            // Inicia uma nova transação.
+            await uniforge.sql.exec('BEGIN TRANSACTION');
+            // Registra o início da transação.
+            this.transactionStarted = true;
+        } else console.warn('UniForge | Há outra transação ainda aberta, finalize-a primeiro.');
+    }
+
+    async commitTransaction() {
+        if (this.transactionStarted) {
+            console.log('UniForge | Confirmando transação....');
+            await uniforge.sql.exec('COMMIT');
+
+            // Se a operação afetou alguma linha, atualiza base de dados.
+            if (this.totalCanges > 0) this.rebuildDocs();
+
+            this.transactionStarted = false;
+        } else console.warn('UniForge | Nenhuma transação aberta encontrada.');
+    }
+
+    async rollbackTransaction(motive = '') {
+        if (this.transactionStarted) {
+            console.log(`UniForge | A transação teve de ser revertida.${!motive.isEmpty() ? ` Motivo: ${motive}` : ''}.`);
+            // Reverte a transação.
+            await uniforge.sql.exec('ROLLBACK');
+            // Reverte o estado do gerenciador do banco de dados para o padrão.
+            this.clear();
+        } else console.warn('UniForge | Nenhuma transação aberta encontrada.');
     }
 
     async getAllTables() {
@@ -32,7 +122,7 @@ export default class DBManager {
 
     async deleteTable(tableName) {
         const query = `DROP TABLE IF EXISTS ${tableName}`;
-        return await uniforge.sql.exec(query);
+        return await this.#execQuery(query);
     }
 
     /**
@@ -40,19 +130,22 @@ export default class DBManager {
      * @returns {Promise<boolean>} - true se a operação for bem sucedida, false caso contrário.
     */
     async resetDatabase() {
+        // Limpa o estado atual do gerenciador do banco de dados.
+        this.clear();
+
         const queires = [
             'DROP TABLE IF EXISTS _textImages',
             'DROP TABLE IF EXISTS _timelineEvent',
             'DROP TABLE IF EXISTS tome',
             'DROP TABLE IF EXISTS chapter',
             'DROP TABLE IF EXISTS section',
-            'DROP TABLE IF EXISTS entry',            
+            'DROP TABLE IF EXISTS entry',
             'DROP TABLE IF EXISTS event',
             'DROP TABLE IF EXISTS lineageTree',
             'DROP TABLE IF EXISTS lineageType',
             'DROP TABLE IF EXISTS timeline',
             'DROP TABLE IF EXISTS relevance',
-            'DROP TABLE IF EXISTS entryType', 
+            'DROP TABLE IF EXISTS entryType',
             'DROP TABLE IF EXISTS settings'
         ];
 
@@ -60,12 +153,12 @@ export default class DBManager {
 
         try {
             // Inicia a transação principal.
-            await uniforge.sql.exec('BEGIN TRANSACTION');
+            await this.beginTransaction();
 
             let count = 0;
 
             for (let query of queires) {
-                await uniforge.sql.exec(query);
+                await this.#execQuery(query);
                 count++;
 
                 console.log(`Tabela ${count} de ${totalQueries} deletada.`);
@@ -73,7 +166,7 @@ export default class DBManager {
 
             await this.createEntryTypeTable();
             await this.createRelevanceTable();
-            await this.createTextImagesTable();  
+            await this.createTextImagesTable();
             await this.createTomeTable();
             await this.createChapterTable();
             await this.createSectionTable();
@@ -81,37 +174,35 @@ export default class DBManager {
             await this.createEventTable();
             await this.createLineageTreeTable();
             await this.createLineageTypeTable();
-            await this.createTimelineTable();            
+            await this.createTimelineTable();
             await this.createTimelineEventsTable();
             await this.createSettingsTable();
-            
+
 
             // Comita a transação principal.
-            await uniforge.sql.exec('COMMIT');
+            await this.commitTransaction();
         } catch (error) {
             // Faz rollback em caso de erro ao criar as tabelas do banco de dados.
-            await uniforge.sql.exec('ROLLBACK');
-            console.error('Erro ao resetar o banco de dados, operação abortada.', error);
+            await this.rollbackTransaction(error);
             return false;
         }
 
         try {
             // Inicia a transação para popular o Banco de Dados com informações padrão.
-            await uniforge.sql.exec('BEGIN TRANSACTION');
+            await this.beginTransaction();
 
             await this.populateTomeTable();
             await this.populateEntryTypeTable();
             await this.populateRelevanceTable();
 
             // Comita a transação.
-            await uniforge.sql.exec('COMMIT');
+            await this.commitTransaction();
             return true;
         } catch (error) {
             // Faz rollback em caso de erro ao popular as tabelas.
-            await uniforge.sql.exec('ROLLBACK');
-            console.error('Erro ao popular o banco de dados, apenas as tabelas foram criadas.', error);
+            await this.rollbackTransaction(error);
             return false;
-        }        
+        }
     }
 
     /**
@@ -137,10 +228,9 @@ export default class DBManager {
         params.push(data.icon);
         params.push(Number(data.type) ?? 0);
 
-        const result = await uniforge.sql.exec(query, params);
-        result.addedId = cid;
+        this.results = await this.#execQuery(query, params);
 
-        return result;
+        return this.result;
     }
 
     /**
@@ -166,12 +256,11 @@ export default class DBManager {
         params.push(data.htmlString);
         params.push(Number(data.isDraft));
 
-        const result = await uniforge.sql.exec(query, params);
-        result.addedId = sid;
+        this.results = await this.#execQuery(query, params);
 
-        return result;
+        return this.result;
     }
-    
+
     /**
      * Adiciona uma nova entrada na tabela `entry`.
      * 
@@ -195,7 +284,7 @@ export default class DBManager {
 
         params.push(eid);
         params.push(data.sid);
-        params.push(Number(data.etid));        
+        params.push(Number(data.etid));
         params.push(data.title);
         params.push(data.flavor);
         params.push(data.htmlString);
@@ -203,10 +292,9 @@ export default class DBManager {
         params.push(data.ext ?? 'jpeg');
         params.push(Number(data.isDraft));
 
-        const result = await uniforge.sql.exec(query, params);
-        result.addedId = eid;
+        this.results = await this.#execQuery(query, params);
 
-        return result;
+        return this.result;
     }
 
     /**
@@ -250,14 +338,14 @@ export default class DBManager {
         params.push(data.s_day);
         params.push(data.e_year);
         params.push(data.e_month);
-        params.push(data.e_day); 
-        params.push(Number(data.isDraft ?? false));        
+        params.push(data.e_day);
+        params.push(Number(data.isDraft ?? false));
 
-        const result = await uniforge.sql.exec(query, params);
+        this.results = await this.#execQuery(query, params);
         result.addedId = evid;
 
-        return result;
-    }            
+        return this.result;
+    }
 
     /**
      * Adiciona uma nova Árvore de Linhagem ao banco de dados.
@@ -282,10 +370,10 @@ export default class DBManager {
         params.push(data.tree);
         params.push(data.isDraft);
 
-        const result = await uniforge.sql.exec(query, params);
+        this.results = await this.#execQuery(query, params);
         result.addedId = ltid;
 
-        return result;
+        return this.result;
     }
 
     /**
@@ -304,9 +392,9 @@ export default class DBManager {
         params.push(data.tag);
         params.push(data.label);
 
-        const result = await uniforge.sql.exec(query, params);
+        this.results = await this.#execQuery(query, params);
 
-        return result;
+        return this.result;
     }
 
     async addTimeline(data) {
@@ -319,10 +407,10 @@ export default class DBManager {
         params.push(data.title);
         params.push(data.flavor);
 
-        let result = await uniforge.sql.exec(query, params);
+        let result = await this.#execQuery(query, params);
         result.addedId = tid;
 
-        return result;
+        return this.result;
     }
 
     async addTimelineEvent(data) {
@@ -332,8 +420,8 @@ export default class DBManager {
         params.push(data.tid);
         params.push(data.evid);
 
-        let result = await uniforge.sql.exec(query, params);
-        return result;
+        let result = await this.#execQuery(query, params);
+        return this.result;
     }
 
     /**
@@ -356,9 +444,9 @@ export default class DBManager {
         params.push(blob.img);
         params.push(blob.ext);
 
-        const result = await uniforge.sql.exec(query, params);
+        this.results = await this.#execQuery(query, params);
 
-        return result;
+        return this.result;
     }
 
     /**
@@ -374,19 +462,18 @@ export default class DBManager {
      * @returns {Promise<Object>} - Resultado da execução do comando de atualização.
     */
     async updateSection(data) {
-
         const updateSet = this.buildUpdateSet([
             ['cid', data.cid],
-            ['title', data.title],            
+            ['title', data.title],
             ['htmlString', data.htmlString],
             ['isDraft', Number(data.isDraft)]
         ]);
 
         let query = `UPDATE section SET ${updateSet} WHERE sid = ?`;
         let params = [data.sid];
-        const result = await uniforge.sql.exec(query, params);
+        this.results = await this.#execQuery(query, params);
 
-        return result;
+        return this.result;
     }
 
     /**
@@ -419,9 +506,9 @@ export default class DBManager {
 
         let query = `UPDATE entry SET ${updateSet} WHERE eid = ?`;
         let params = [data.eid];
-        const result = await uniforge.sql.exec(query, params);
+        this.results = await this.#execQuery(query, params);
 
-        return result;
+        return this.result;
     }
 
     /**
@@ -461,9 +548,9 @@ export default class DBManager {
 
         let query = `UPDATE event SET ${updateSet} WHERE evid = ?`;
         let params = [data.evid];
-        const result = await uniforge.sql.exec(query, params);
+        this.results = await this.#execQuery(query, params);
 
-        return result;
+        return this.result;
     }
 
     /**
@@ -478,15 +565,15 @@ export default class DBManager {
      */
     async updateLineageTree(data) {
         const updateSet = this.buildUpdateSet([
-            ['title', data.title]    
+            ['title', data.title]
             ['tree', data.tree]
         ]);
 
         let query = `UPDATE lineageTree SET ${updateSet} WHERE ltid = ?`;
         let params = [data.ltid];
-        const result = await uniforge.sql.exec(query, params);
+        this.results = await this.#execQuery(query, params);
 
-        return result;
+        return this.result;
     }
 
     /**
@@ -505,9 +592,9 @@ export default class DBManager {
 
         let query = `UPDATE lineageType SET ${updateSet} WHERE ltid = ?`;
         let params = [data.ltid];
-        const result = await uniforge.sql.exec(query, params);
+        this.results = await this.#execQuery(query, params);
 
-        return result;
+        return this.result;
     }
 
     /**
@@ -526,9 +613,9 @@ export default class DBManager {
 
         let query = `UPDATE timeline SET ${updateSet} WHERE tid = ?`;
         let params = [data.tid];
-        const result = await uniforge.sql.exec(query, params);
+        this.results = await this.#execQuery(query, params);
 
-        return result;
+        return this.result;
     }
 
     /**
@@ -537,22 +624,29 @@ export default class DBManager {
      * @returns {Promise<Object>} A resposta do banco de dados, com as queries executadas para deletar a Seção e as Entradas.
      */
     async deleteSection(sid) {
-        let result = {};
         let query = 'DELETE FROM section WHERE sid = ?;';
         const params = [sid];
 
-        result.sectionQuery = await uniforge.sql.exec(query, params);
+        try {
+            this.beginTransaction();
 
-        query = 'DELETE FROM entry WHERE sid = ?;'
-        result.entryQuery = await uniforge.sql.exec(query, params);
+            this.results = await this.#execQuery(query, params);
 
-        query = 'DELETE FROM event WHERE sid = ?;'
-        result.eventQuery = await uniforge.sql.exec(query, params);
+            query = 'DELETE FROM entry WHERE sid = ?;'
+            this.results = await this.#execQuery(query, params);
 
-        query = 'DELETE FROM lineageTree WHERE sid = ?;'
-        result.lineageQuery = await uniforge.sql.exec(query, params);
+            query = 'DELETE FROM event WHERE sid = ?;'
+            this.results = await this.#execQuery(query, params);
 
-        return result;
+            query = 'DELETE FROM lineageTree WHERE sid = ?;'
+            this.results = await this.#execQuery(query, params);
+
+            this.commitTransaction();
+        } catch (error) {
+            this.rollbackTransaction(error);
+        }
+
+        return this.results;
     }
 
     /**
@@ -561,16 +655,22 @@ export default class DBManager {
      * @returns {Promise<Object>} A resposta do banco de dados.
      */
     async deleteEntry(eid) {
-        let result = {};
-        let query = 'DELETE FROM entry WHERE eid = ?;';
-        let params = [eid];
+        try {
+            this.beginTransaction();
+            let query = 'DELETE FROM entry WHERE eid = ?;';
+            let params = [eid];
 
-        result.entryQuery = await uniforge.sql.exec(query, params);
+            this.results = await this.#execQuery(query, params);
 
-        query = 'DELETE FROM event WHERE source = ?;';
-        result.eventQuery = await uniforge.sql.exec(query, params);
+            query = 'DELETE FROM event WHERE source = ?;';
+            this.results = await this.#execQuery(query, params);
 
-        return result;
+            this.commitTransaction();
+        } catch (error) {
+            this.rollbackTransaction(error);
+        }
+
+        return this.results;
     }
 
     /**
@@ -581,9 +681,9 @@ export default class DBManager {
     async deleteEvent(evid) {
         let query = 'DELETE FROM event WHERE evid = ?;';
         const params = [evid];
-        const result = await uniforge.sql.exec(query, params);
+        this.results = await this.#execQuery(query, params);
 
-        return result;
+        return this.result;
     }
 
     /**
@@ -594,9 +694,9 @@ export default class DBManager {
     async deleteLineageTree(ltid) {
         let query = 'DELETE FROM lineageTree WHERE ltid = ?;';
         let params = [ltid];
-        const result = await uniforge.sql.exec(query, params);
+        this.results = await this.#execQuery(query, params);
 
-        return result;
+        return this.result;
     }
 
     /**
@@ -607,9 +707,9 @@ export default class DBManager {
     async deleteLineageType(ltid) {
         let query = 'DELETE FROM lineageType WHERE ltid = ?;';
         let params = [ltid];
-        const result = await uniforge.sql.exec(query, params);
+        this.results = await this.#execQuery(query, params);
 
-        return result;
+        return this.result;
     }
 
     /**
@@ -620,17 +720,17 @@ export default class DBManager {
     async deleteTimeline(tid) {
         let query = 'DELETE FROM timeline WHERE tid = ?;';
         let params = [tid];
-        const result = await uniforge.sql.exec(query, params);
+        this.results = await this.#execQuery(query, params);
 
-        return result;
+        return this.result;
     }
 
     async deleteTimelineEvent(tid, evid) {
         let query = 'DELETE FROM _timelineEvent WHERE tid = ? AND evid = ?;';
         let params = [tid, evid];
-        const result = await uniforge.sql.exec(query, params);
+        this.results = await this.#execQuery(query, params);
 
-        return result;
+        return this.result;
     }
 
     /**
@@ -644,10 +744,8 @@ export default class DBManager {
         let query = 'SELECT * FROM chapter AS C WHERE C.cid = ?';
         const params = [cid];
 
-        const rows = await uniforge.sql.query(query, params);
-
-        if (rows.length >= 1) return rows[0];
-        else return null;
+        this.results = await uniforge.sql.query(query, params);
+        return this.result;
     }
     /**
      * Obtém o Tomo a que o capítulo pertence.
@@ -661,10 +759,9 @@ export default class DBManager {
         query += 'INNER JOIN tome AS T ON T.title = C.tome ';
         query += 'WHERE C.cid = ?;';
         const params = [cid];
-        const rows = await uniforge.sql.query(query, params);
 
-        if (rows.length >= 1) return rows[0];
-        else return null;
+        this.results = await uniforge.sql.query(query, params);
+        return this.result;
     }
 
     /**
@@ -682,10 +779,9 @@ export default class DBManager {
     async getSection(sid) {
         let query = 'SELECT * FROM section WHERE sid = ?';
         const params = [sid];
-        const rows = await uniforge.sql.query(query, params);
 
-        if (rows.length >= 1) return rows[0];
-        else return null;
+        this.results = await uniforge.sql.query(query, params);
+        return this.result;
     }
 
     /**
@@ -700,11 +796,11 @@ export default class DBManager {
             'INNER JOIN chapter AS C ON C.cid = S.cid ' +
             `WHERE S.tome = ?`;
         const params = [tome];
-        const rows = await uniforge.sql.query(query, params);
 
-        return rows;
+        this.results = await uniforge.sql.query(query, params);
+        return this.result;
     }
-    
+
     /**
      * Obtém as seções pertencentes a um capítulo específico.
      * 
@@ -716,8 +812,8 @@ export default class DBManager {
         let query = 'SELECT * FROM section AS S WHERE S.cid = ?;';
         const params = [cid];
 
-        const rows = await uniforge.sql.query(query, params);
-        return rows;
+        this.results = await uniforge.sql.query(query, params);
+        return this.result;
     }
 
     /**
@@ -730,10 +826,8 @@ export default class DBManager {
         let query = 'SELECT * FROM entry WHERE eid = ?;';
         const params = [eid];
 
-        const rows = await uniforge.sql.query(query, params);
-
-        if (rows.length >= 1) return rows[0];
-        else return null;
+        this.results = await uniforge.sql.query(query, params);
+        return this.result;
     }
 
     /**
@@ -748,12 +842,10 @@ export default class DBManager {
         query += 'WHERE eid = ?'
         const params = [eid];
 
-        const rows = await uniforge.sql.query(query, params);
+        this.results = await uniforge.sql.query(query, params);
+        return this.result;
+    }
 
-        if (rows.length >= 1) return rows[0];
-        else return null;
-    }    
-    
     /**
      * Recupera todas as entradas de uma seção específica.
      * 
@@ -764,9 +856,9 @@ export default class DBManager {
         let query = 'SELECT * FROM entry WHERE sid = ?;';
         const params = [sid];
 
-        const rows = await uniforge.sql.query(query, params);
-        return rows;
-    } 
+        this.results = await uniforge.sql.query(query, params);
+        return this.result;
+    }
 
     /**
      * Recupera a Árvore de Linhagem de um Tomo.
@@ -783,10 +875,8 @@ export default class DBManager {
         let query = 'SELECT * FROM lineageTree WHERE ltid = ?;';
         const params = [ltid];
 
-        const rows = await uniforge.sql.query(query, params);
-
-        if (rows.length >= 1) return rows[0];
-        else return null;
+        this.results = await uniforge.sql.query(query, params);
+        return this.result;
     }
 
     /**
@@ -800,10 +890,8 @@ export default class DBManager {
         let query = 'SELECT * FROM lineageType WHERE ltid = ? AND tag = ?;';
         const params = [data.ltid, data.tag];
 
-        const rows = await uniforge.sql.query(query, params);
-
-        if (rows.length >= 1) return rows[0];
-        else return null;
+        this.results = await uniforge.sql.query(query, params);
+        return this.result;
     }
 
     /**
@@ -815,11 +903,9 @@ export default class DBManager {
         let query = 'SELECT * FROM timeline WHERE tid = ?;';
         const params = [tid];
 
-        const rows = await uniforge.sql.query(query, params);
-
-        if (rows.length >= 1) return rows[0];
-        else return null;
-    } 
+        this.results = await uniforge.sql.query(query, params);
+        return this.result;
+    }
 
     /**
      * Retorna uma imagem associada a um uuid da tabela `_textImages`.
@@ -832,8 +918,8 @@ export default class DBManager {
         let query = 'SELECT * FROM _textImages AS TI WHERE TI.uuid = ?;';
         const params = [uuid];
 
-        const rows = await uniforge.sql.query(query, params);
-        return rows;
+        this.results = await uniforge.sql.query(query, params);
+        return this.result;
     }
 
     /**
@@ -887,7 +973,7 @@ export default class DBManager {
         return result;
     }
 
-    
+
 
     async getAllFolders(root = '*') {
         let query = '';
@@ -902,8 +988,8 @@ export default class DBManager {
 
             return await uniforge.sql.query(query, params);
         }
-    }   
-    
+    }
+
     /**
      * Recupera todos os Tomos.
      * @return {Promise<Array<Object>>} Retorna um array de objetos com as informações de cada Tomo.
@@ -912,13 +998,13 @@ export default class DBManager {
      */
     async getAllTomes() {
         const query = 'SELECT * FROM tome';
-        const result = await uniforge.sql.query(query);
-        return result.map(row => ({
+        this.results = await uniforge.sql.query(query);
+        return this.result.map(row => ({
             _id: row.title,
             ...row
         }));
     }
-    
+
     /**
      * Recupera todos os Capítulos.
      * @return {Promise<Array<Object>>} Retorna um array de objetos com as informações de cada Capítulo.
@@ -932,14 +1018,14 @@ export default class DBManager {
      */
     async getAllChapters() {
         const query = 'SELECT * FROM chapter ORDER BY title';
-        const result = await uniforge.sql.query(query);
-        return result.map(row => ({
+        this.results = await uniforge.sql.query(query);
+        return this.result.map(row => ({
             _id: row.cid,
             _label: row.title,
             ...row
         }));
     }
-    
+
     /**
      * Recupera todas as Seções.
      * @return {Promise<Array<Object>>} Retorna um array de objetos com as informações de cada Seções.
@@ -953,8 +1039,8 @@ export default class DBManager {
      */
     async getAllSections() {
         const query = 'SELECT * FROM section';
-        const result = await uniforge.sql.query(query);
-        return result.map(row => ({
+        this.results = await uniforge.sql.query(query);
+        return this.result.map(row => ({
             _id: row.sid,
             _label: row.title,
             ...row
@@ -975,9 +1061,9 @@ export default class DBManager {
         query = 'SELECT S.*, C.icon FROM section AS S ';
         query += 'INNER JOIN chapter AS C ON C.cid = S.cid ';
         query += 'ORDER BY C.title, s.title;';
-        const rows = await uniforge.sql.query(query);
+        this.results = await uniforge.sql.query(query);
 
-        rows.forEach(async row => {
+        this.result.forEach(async row => {
             row._id = row.cid;
             row._label = row.title;
             row.entries = await this.getEntriesFromSection(row.sid);
@@ -988,9 +1074,9 @@ export default class DBManager {
             });
         });
 
-        return rows;
+        return this.result;
     }
-    
+
     /**
      * Recupera todas as Entradas.
      * @return {Promise<Array<Object>>} Retorna um array de objetos com as informações de cada Entrada.
@@ -1009,8 +1095,8 @@ export default class DBManager {
 
     async getAllEntries() {
         const query = 'SELECT * FROM entry';
-        const result = await uniforge.sql.query(query);
-        return result.map(row => ({
+        this.results = await uniforge.sql.query(query);
+        return this.result.map(row => ({
             _id: row.eid,
             _label: row.title,
             ...row
@@ -1060,11 +1146,10 @@ export default class DBManager {
         query += 'INNER JOIN section AS S ON S.cid = E.cid ';
         query += 'INNER JOIN chapter AS C ON C.sid = S.sid ';
 
-        const rows = await uniforge.sql.query(query);
-
-        return rows;
+        this.results = await uniforge.sql.query(query);
+        return this.result;
     }
-    
+
     /**
      * Recupera todos os Eventos.
      * @return {Promise<Array<Object>>} Retorna um array de objetos com as informações de cada Evento.
@@ -1086,14 +1171,14 @@ export default class DBManager {
     */
     async getAllEvents() {
         const query = 'SELECT * FROM event';
-        const result = await uniforge.sql.query(query);
-        return result.map(row => ({
+        this.results = await uniforge.sql.query(query);
+        return this.result.map(row => ({
             _id: row.evid,
             ...row
         }));
     }
 
-    
+
     /**
      * Recupera todas as árvores de linhagem.
      * @return {Promise<Array<Object>>} Retorna um array de objetos com as informações de cada Árvore de Linhagem.
@@ -1106,8 +1191,8 @@ export default class DBManager {
     */
     async getAllLineageTrees() {
         const query = 'SELECT * FROM lineageTree';
-        const result = await uniforge.sql.query(query);
-        return result.map(row => ({
+        this.results = await uniforge.sql.query(query);
+        return this.result.map(row => ({
             _id: row.ltid,
             _label: row.title,
             ...row
@@ -1126,15 +1211,15 @@ export default class DBManager {
     */
     async getAllLineageTypes() {
         const query = 'SELECT * FROM lineageType';
-        const result = await uniforge.sql.query(query);
-        return result.map(row => ({
+        this.results = await uniforge.sql.query(query);
+        return this.result.map(row => ({
             _id: row.tag,
             _label: row.label,
             ...row
         }));
     }
 
-    
+
     /**
      * Recupera todas as Linhas do Tempo.
      * @return {Promise<Array<Object>>} Retorna um array de objetos com as informações de cada Linha do Tempo.
@@ -1147,8 +1232,8 @@ export default class DBManager {
     */
     async getAllTimelines() {
         const query = 'SELECT * FROM timeline';
-        const result = await uniforge.sql.query(query);
-        return result.map(row => ({
+        this.results = await uniforge.sql.query(query);
+        return this.result.map(row => ({
             _id: row.tid,
             _label: row.title,
             ...row
@@ -1163,15 +1248,15 @@ export default class DBManager {
     */
     async getAllTimelineEvents() {
         const query = 'SELECT * FROM _timelineEvent';
-        const result = await uniforge.sql.query(query);
-        return result;
+        this.results = await uniforge.sql.query(query);
+        return this.result;
     }
 
     // Função para a tabela calendars
     async getAllCalendars() {
         const query = 'SELECT * FROM calendars';
-        const result = await uniforge.sql.query(query);
-        return result.map(row => ({
+        this.results = await uniforge.sql.query(query);
+        return this.result.map(row => ({
             _id: Number(row.clid),
             _label: row.label,
             ...row
@@ -1181,8 +1266,8 @@ export default class DBManager {
     // Função para a tabela calendarsMonths
     async getAllCalendarsMonths() {
         const query = 'SELECT * FROM calendarsMonths';
-        const result = await uniforge.sql.query(query);
-        return result.map(row => ({
+        this.results = await uniforge.sql.query(query);
+        return this.result.map(row => ({
             _id: row.clmid,
             _label: row.label,
             ...row
@@ -1192,8 +1277,8 @@ export default class DBManager {
     // Função para a tabela calendarsDays
     async getAllCalendarsDays() {
         const query = 'SELECT * FROM calendarsDays';
-        const result = await uniforge.sql.query(query);
-        return result.map(row => ({
+        this.results = await uniforge.sql.query(query);
+        return this.result.map(row => ({
             _id: row.cldid,
             _label: row.label,
             ...row
@@ -1203,28 +1288,28 @@ export default class DBManager {
     // Função para a tabela calendarsDaysInMonths
     async getAllCalendarsDaysInMonths() {
         const query = 'SELECT * FROM calendarsDaysInMonths';
-        const result = await uniforge.sql.query(query);
-        return result.map(row => ({
+        this.results = await uniforge.sql.query(query);
+        return this.result.map(row => ({
             _id: row.cldmid,
             ...row
         }));
-    }    
+    }
 
     // Função para a tabela _textImages
     async getAllTextImages() {
         const query = 'SELECT * FROM _textImages';
-        const result = await uniforge.sql.query(query);
-        return result.map(row => ({
+        this.results = await uniforge.sql.query(query);
+        return this.result.map(row => ({
             _id: row.uuid,
             ...row
         }));
-    }    
+    }
 
     // Função para a tabela relevance
     async getAllRelevances() {
         const query = 'SELECT * FROM relevance';
-        const result = await uniforge.sql.query(query);
-        return result.map(row => ({
+        this.results = await uniforge.sql.query(query);
+        return this.result.map(row => ({
             _id: row.rid,
             _label: row.title,
             ...row
@@ -1239,8 +1324,8 @@ export default class DBManager {
      */
     async getAllChapterTypes() {
         let query = 'SELECT * FROM chapterType';
-        const result = await uniforge.sql.query(query);
-        return result.map(row => ({
+        this.results = await uniforge.sql.query(query);
+        return this.result.map(row => ({
             _id: row.ctid,
             _label: row.title,
             ...row
@@ -1250,19 +1335,19 @@ export default class DBManager {
     // Função para a tabela entryTypes
     async getAllEntryTypes() {
         const query = 'SELECT * FROM entryType';
-        const result = await uniforge.sql.query(query);
-        return result.map(row => ({
+        this.results = await uniforge.sql.query(query);
+        return this.result.map(row => ({
             _id: row.etid,
             _label: row.title,
             ...row
         }));
-    }    
+    }
 
     // Função para a tabela settings
     async getAllSettings() {
         const query = 'SELECT * FROM settings';
-        const result = await uniforge.sql.query(query);
-        return result.map(row => ({
+        this.results = await uniforge.sql.query(query);
+        return this.result.map(row => ({
             _id: row.tag,
             _label: row.title,
             ...row
@@ -1283,10 +1368,10 @@ export default class DBManager {
             '`icon` VARCHAR(255) NOT NULL,' + // Ícone do Tomo.
             'PRIMARY KEY (`title`))';
 
-        const result = await uniforge.sql.exec(query);
+        this.results = await this.#execQuery(query);
         console.log('Tabela \'tome\' criada....OK.');
-        
-        return result;
+
+        return this.result;
     }
 
     /**
@@ -1305,10 +1390,10 @@ export default class DBManager {
             '`type` INTEGER NOT NULL,' +            // Tipo do Capítulo (material, imaterial, linhagem).
             'PRIMARY KEY (`cid`))';
 
-        const result = await uniforge.sql.exec(query);
+        this.results = await this.#execQuery(query);
         console.log('Tabela \'chapter\' criada....OK.');
-        
-        return result;
+
+        return this.result;
     }
 
     /**
@@ -1327,10 +1412,10 @@ export default class DBManager {
             '`isDraft` BOOLEAN NOT NULL DEFAULT 0,' +   // A Seção é um rascunho (falso por padrão).
             'PRIMARY KEY (`sid`,`cid`))';
 
-        const result = await uniforge.sql.exec(query);
+        this.results = await this.#execQuery(query);
         console.log('Tabela \'section\' criada....OK.');
-        
-        return result;
+
+        return this.result;
     }
 
     /**
@@ -1342,21 +1427,21 @@ export default class DBManager {
      */
     async createEntryTable() {
         const query = 'CREATE TABLE IF NOT EXISTS `entry` (' +
-        '`eid` VARCHAR(16) NOT NULL,' +             // Identificador da Entrada.
-        '`sid` VARCHAR(16) NOT NULL,' +             // Identificador da Seção a que a Entrada pertence.
-        '`etid` INTEGER NOT NULL DEFAULT 1,' +      // Tipo de Entrada.
-        '`title` TEXT NOT NULL,' +                  // Título da Entrada.
-        '`flavor` TEXT NULL,' +                     // Texto de floreio da Entrada.
-        '`htmlString` TEXT NULL,' +                 // Corpo do texto de descrição da Entrada.
-        '`img` BLOB NULL,' +                        // BLOB da imagem da Entrada.
-        '`ext` VARCHAR(5) NULL,' +                  // Extensão original do arquivo da imagem da Entrada.
-        '`isDraft` BOOLEAN NOT NULL DEFAULT 0,' +   // A Entrada é um rascunho (falso por padrão).
-        'PRIMARY KEY (`eid`,`sid`))';        
+            '`eid` VARCHAR(16) NOT NULL,' +             // Identificador da Entrada.
+            '`sid` VARCHAR(16) NOT NULL,' +             // Identificador da Seção a que a Entrada pertence.
+            '`etid` INTEGER NOT NULL DEFAULT 1,' +      // Tipo de Entrada.
+            '`title` TEXT NOT NULL,' +                  // Título da Entrada.
+            '`flavor` TEXT NULL,' +                     // Texto de floreio da Entrada.
+            '`htmlString` TEXT NULL,' +                 // Corpo do texto de descrição da Entrada.
+            '`img` BLOB NULL,' +                        // BLOB da imagem da Entrada.
+            '`ext` VARCHAR(5) NULL,' +                  // Extensão original do arquivo da imagem da Entrada.
+            '`isDraft` BOOLEAN NOT NULL DEFAULT 0,' +   // A Entrada é um rascunho (falso por padrão).
+            'PRIMARY KEY (`eid`,`sid`))';
 
-        const result = await uniforge.sql.exec(query);
+        this.results = await this.#execQuery(query);
         console.log('Tabela \'entry\' criada....OK.');
-        
-        return result;
+
+        return this.result;
     }
 
     /**
@@ -1368,27 +1453,27 @@ export default class DBManager {
      */
     async createEventTable() {
         const query = 'CREATE TABLE IF NOT EXISTS `event` (' +
-        '`evid` VARCHAR(16) NOT NULL,' +                // Identificador do Evento.
-        '`sid` VARCHAR(16) NOT NULL,' +                 // Identificador da Seção a que o Evento pertence.
-        '`etid` INTEGER NOT NULL DEFAULT 1,' +          // Tipo de Evento.        
-        '`title` TEXT NOT NULL,' +                      // Título do Evento.
-        '`flavor` TEXT NULL,' +                         // Texto de floreio do Evento. 
-        '`relevance` INTEGER NOT NULL DEFAULT 1,' +     // Relevância da Evento.       
-        '`source` VARCHAR(16) NULL,' +                  // Entrada fonte do Evento.
-        '`clid` INTEGER NOT NULL DEFAULT 1,' +          // Tipo do Calendário.
-        '`s_day` INTEGER NOT NULL DEFAULT 1,' +         // Dia de Início do Evento.
-        '`s_month` INTEGER NOT NULL DEFAULT 1,' +       // Mês de Início do Evento.
-        '`s_year` INTEGER NOT NULL DEFAULT 1,' +        // Ano de Início do Evento.
-        '`e_day` INTEGER NULL,' +                       // Dia de Final do Evento.
-        '`e_month` INTEGER NULL,' +                     // Mês de Final do Evento.
-        '`e_year` INTEGER NULL,' +                      // Ano de Final do Evento.
-        '`isDraft` BOOLEAN NOT NULL DEFAULT 0,' +       // O Evento é um rascunho (falso por padrão).
-        'PRIMARY KEY (`evid`,`sid`))';        
+            '`evid` VARCHAR(16) NOT NULL,' +                // Identificador do Evento.
+            '`sid` VARCHAR(16) NOT NULL,' +                 // Identificador da Seção a que o Evento pertence.
+            '`etid` INTEGER NOT NULL DEFAULT 1,' +          // Tipo de Evento.        
+            '`title` TEXT NOT NULL,' +                      // Título do Evento.
+            '`flavor` TEXT NULL,' +                         // Texto de floreio do Evento. 
+            '`relevance` INTEGER NOT NULL DEFAULT 1,' +     // Relevância da Evento.       
+            '`source` VARCHAR(16) NULL,' +                  // Entrada fonte do Evento.
+            '`clid` INTEGER NOT NULL DEFAULT 1,' +          // Tipo do Calendário.
+            '`s_day` INTEGER NOT NULL DEFAULT 1,' +         // Dia de Início do Evento.
+            '`s_month` INTEGER NOT NULL DEFAULT 1,' +       // Mês de Início do Evento.
+            '`s_year` INTEGER NOT NULL DEFAULT 1,' +        // Ano de Início do Evento.
+            '`e_day` INTEGER NULL,' +                       // Dia de Final do Evento.
+            '`e_month` INTEGER NULL,' +                     // Mês de Final do Evento.
+            '`e_year` INTEGER NULL,' +                      // Ano de Final do Evento.
+            '`isDraft` BOOLEAN NOT NULL DEFAULT 0,' +       // O Evento é um rascunho (falso por padrão).
+            'PRIMARY KEY (`evid`,`sid`))';
 
-        const result = await uniforge.sql.exec(query);
+        this.results = await this.#execQuery(query);
         console.log('Tabela \'event\' criada....OK.');
-        
-        return result;
+
+        return this.result;
     }
 
     /**
@@ -1400,18 +1485,18 @@ export default class DBManager {
      */
     async createLineageTreeTable() {
         const query = 'CREATE TABLE IF NOT EXISTS `lineageTree` (' +
-        '`ltid` VARCHAR(16) NOT NULL,' +            // Identificador da Linhagem.
-        '`sid` VARCHAR(16) NOT NULL,' +             // Identificador da Seção a que a Linhagem pertence.
-        '`title` TEXT NOT NULL,' +                  // Título da Árvore.
-        '`founder` VARCHAR(16) NOT NULL,' +         // Fundador da Linhagem (Identificador daprimeira Primeira da linhagem).
-        '`tree` TEXT NOT NULL,' +                   // Árvore da Linhagem (Utilizado o formato 'FamilyScript').        
-        '`isDraft` BOOLEAN NULL DEFAULT 0,' +   // A linhagem é um rascunho (falso por padrão).
-        'PRIMARY KEY (`ltid`,`sid`))';
+            '`ltid` VARCHAR(16) NOT NULL,' +            // Identificador da Linhagem.
+            '`sid` VARCHAR(16) NOT NULL,' +             // Identificador da Seção a que a Linhagem pertence.
+            '`title` TEXT NOT NULL,' +                  // Título da Árvore.
+            '`founder` VARCHAR(16) NOT NULL,' +         // Fundador da Linhagem (Identificador daprimeira Primeira da linhagem).
+            '`tree` TEXT NOT NULL,' +                   // Árvore da Linhagem (Utilizado o formato 'FamilyScript').        
+            '`isDraft` BOOLEAN NULL DEFAULT 0,' +   // A linhagem é um rascunho (falso por padrão).
+            'PRIMARY KEY (`ltid`,`sid`))';
 
-        const result = await uniforge.sql.exec(query);
+        this.results = await this.#execQuery(query);
         console.log('Tabela \'lineageTree\' criada....OK.');
-        
-        return result;
+
+        return this.result;
     }
 
 
@@ -1426,15 +1511,15 @@ export default class DBManager {
     */
     async createLineageTypeTable() {
         const query = 'CREATE TABLE IF NOT EXISTS `lineageType` (' +
-        '`ltid` VARCHAR(16) NOT NULL,' +            // Identificador da Linhagem.
-        '`tag` VARCHAR(5) NOT NULL,' +              // Identificador da Seção a que a Linhagem pertence.
-        '`label` VARCHAR(255) NOT NULL,' +          // Fundador da Linhagem (Identificador daprimeira Primeira da linhagem).        
-        'PRIMARY KEY (`tag`))';
+            '`ltid` VARCHAR(16) NOT NULL,' +            // Identificador da Linhagem.
+            '`tag` VARCHAR(5) NOT NULL,' +              // Identificador da Seção a que a Linhagem pertence.
+            '`label` VARCHAR(255) NOT NULL,' +          // Fundador da Linhagem (Identificador daprimeira Primeira da linhagem).        
+            'PRIMARY KEY (`tag`))';
 
-        const result = await uniforge.sql.exec(query);
+        this.results = await this.#execQuery(query);
         console.log('Tabela \'lineageType\' criada....OK.');
-        
-        return result;
+
+        return this.result;
     }
 
     /**
@@ -1449,15 +1534,15 @@ export default class DBManager {
     */
     async createTimelineTable() {
         const query = 'CREATE TABLE IF NOT EXISTS `timeline` (' +
-        '`tid` VARCHAR(16) NOT NULL,' +             // Identificador da Linha do Tempo.        
-        '`title` TEXT NOT NULL,' +                  // Título da Linha do Tempo.        
-        '`flavor` TEXT NOT NULL,' +                 // Descrição adicional da Linha do Tempo.          
-        'PRIMARY KEY (`tid`))';
+            '`tid` VARCHAR(16) NOT NULL,' +             // Identificador da Linha do Tempo.        
+            '`title` TEXT NOT NULL,' +                  // Título da Linha do Tempo.        
+            '`flavor` TEXT NOT NULL,' +                 // Descrição adicional da Linha do Tempo.          
+            'PRIMARY KEY (`tid`))';
 
-        const result = await uniforge.sql.exec(query);
+        this.results = await this.#execQuery(query);
         console.log('Tabela \'timeline\' criada....OK.');
-        
-        return result;
+
+        return this.result;
     }
     /**
      * Cria a tabela '_timelineEvent' no banco de dados.
@@ -1469,14 +1554,14 @@ export default class DBManager {
      */
     async createTimelineEventsTable() {
         const query = 'CREATE TABLE IF NOT EXISTS `_timelineEvent` (' +
-        '`tid` VARCHAR(16) NOT NULL,' +             // Identificador da Linha do Tempo.
-        '`evid` VARCHAR(16) NOT NULL,' +            // Identificador do Evento.
-        'PRIMARY KEY (`tid`, `evid`))';
+            '`tid` VARCHAR(16) NOT NULL,' +             // Identificador da Linha do Tempo.
+            '`evid` VARCHAR(16) NOT NULL,' +            // Identificador do Evento.
+            'PRIMARY KEY (`tid`, `evid`))';
 
-        const result = await uniforge.sql.exec(query);
+        this.results = await this.#execQuery(query);
         console.log('Tabela \'_timelineEvent\' criada....OK.');
-        
-        return result;
+
+        return this.result;
     }
 
 
@@ -1490,16 +1575,16 @@ export default class DBManager {
      */
     async createTextImagesTable() {
         const query = 'CREATE TABLE IF NOT EXISTS `_textImages` (' +
-        '`uuid` VARCHAR(16) NOT NULL,' +                // Identificador da Linhagem.        
-        '`img` BLOB NOT NULL,' +                        // Árvore da Linhagem (Utilizado o formato 'FamilyScript').        
-        '`ext` VARCHAR(5) NOT NULL DEFAULT `jpeg`,' +   // A linhagem é um rascunho (falso por padrão).
-        'PRIMARY KEY (`uuid`))';       
+            '`uuid` VARCHAR(16) NOT NULL,' +                // Identificador da Linhagem.        
+            '`img` BLOB NOT NULL,' +                        // Árvore da Linhagem (Utilizado o formato 'FamilyScript').        
+            '`ext` VARCHAR(5) NOT NULL DEFAULT `jpeg`,' +   // A linhagem é um rascunho (falso por padrão).
+            'PRIMARY KEY (`uuid`))';
 
-        const result = await uniforge.sql.exec(query);
+        this.results = await this.#execQuery(query);
         console.log('Tabela \'_textImages\' criada....OK.');
-        
-        return result;
-    }    
+
+        return this.result;
+    }
 
     /**
      * Cria a tabela 'entryType' no banco de dados.
@@ -1511,22 +1596,19 @@ export default class DBManager {
     */
     async createEntryTypeTable() {
         let query = 'DROP TABLE IF EXISTS entryType';
-        let changes = 0;
-        let result = await uniforge.sql.exec(query);
-        changes += result.changes;       
+        this.results = await this.#execQuery(query);
 
         query = 'CREATE TABLE IF NOT EXISTS `entryType` (' +
-        '`etid` INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,' +  // Identificador dos Tipos de Entrada.        
-        '`title` TEXT NOT NULL,' +                              // Título do Tipo de Entrada.
-        '`icon` VARCHAR(255) NULL,' +                           // Ícone do Tipo de Entrada.
-        '`isMaterial` BOOLEAN NOT NULL DEFAULT 1,' +            // A Seção é material (true por padrão).
-        'UNIQUE (`etid`))';
+            '`etid` INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,' +  // Identificador dos Tipos de Entrada.        
+            '`title` TEXT NOT NULL,' +                              // Título do Tipo de Entrada.
+            '`icon` VARCHAR(255) NULL,' +                           // Ícone do Tipo de Entrada.
+            '`isMaterial` BOOLEAN NOT NULL DEFAULT 1,' +            // A Seção é material (true por padrão).
+            'UNIQUE (`etid`))';
 
-        result = await uniforge.sql.exec(query);
-        changes += result.changes; 
+        this.results = await this.#execQuery(query);
         console.log('Tabela \'entryType\' criada....OK.');
-        
-        return result;
+
+        return this.result;
     }
 
     /**
@@ -1540,19 +1622,17 @@ export default class DBManager {
     async createRelevanceTable() {
         let query = 'DROP TABLE IF EXISTS relevance';
         let changes = 0;
-        let result = await uniforge.sql.exec(query);
-        changes += result.changes;       
+        this.results = await this.#execQuery(query);
 
         query = 'CREATE TABLE IF NOT EXISTS `relevance` (' +
-        '`rid` INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,' +   // Identificador da Relevância.        
-        '`title` VARCHAR(255) NULL,' +                          // Título da Relevância.        
-        'UNIQUE (`rid`))';
-        
-        result = await uniforge.sql.exec(query);
-        changes += result.changes; 
+            '`rid` INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,' +   // Identificador da Relevância.        
+            '`title` VARCHAR(255) NULL,' +                          // Título da Relevância.        
+            'UNIQUE (`rid`))';
+
+        this.results = await this.#execQuery(query);
         console.log('Tabela \'relevance\' criada....OK.');
-        
-        return result;
+
+        return this.result;
     }
 
     /**
@@ -1567,7 +1647,7 @@ export default class DBManager {
             {
                 title: 'atlas',
                 label: 'Atlas',
-                icon: 'fas fa-compass-drafting'                
+                icon: 'fas fa-compass-drafting'
             },
             {
                 title: 'history',
@@ -1588,24 +1668,21 @@ export default class DBManager {
                 title: 'military',
                 label: 'Militar',
                 icon: 'fas fa-shield'
-            },            
+            },
             {
                 title: 'entity',
                 label: 'Entidades',
                 icon: 'fas fa-people-group'
-            },            
+            },
             {
                 title: 'ideologies',
                 label: 'Ideologias',
                 icon: 'fas fa-landmark'
-            }                       
+            }
         ];
 
         let query = 'INSERT INTO tome (title, label, icon) ';
         query += 'VALUES (?,?,?);';
-
-        let result = {};
-        let changes = 0;
 
         tomes.forEach(async tome => {
             let params = [];
@@ -1614,13 +1691,11 @@ export default class DBManager {
             params.push(tome.label);
             params.push(tome.icon);
 
-            result = await uniforge.sql.exec(query, params);
-            changes += result.changes;
+            this.results = await this.#execQuery(query, params);
         });
         console.log('Tabela \'tome\' populada....OK.');
 
-        result.changes = changes;
-        return result;
+        return this.result;
     }
     /**
      * Popula a tabela 'entryType' com registros de Tipos de Entradas.
@@ -1645,7 +1720,7 @@ export default class DBManager {
                 title: 'Descoberta',
                 icon: 'fas fa-book-open-reader',
                 isMaterial: 0
-            },            
+            },
             {
                 title: 'Evento',
                 icon: 'fas fa-calendar-day',
@@ -1670,14 +1745,11 @@ export default class DBManager {
                 title: 'Pessoa',
                 icon: 'fas fa-user-large',
                 isMaterial: 1
-            }                        
+            }
         ];
 
         let query = 'INSERT INTO entryType (title, icon, isMaterial) ';
         query += 'VALUES (?,?,?);';
-
-        let result = {};
-        let changes = 0;
 
         entryTypes.forEach(async entryType => {
             let params = [];
@@ -1686,13 +1758,10 @@ export default class DBManager {
             params.push(entryType.icon);
             params.push(entryType.isMaterial);
 
-            result = await uniforge.sql.exec(query, params);
-            changes += result.changes;
+            this.results = await this.#execQuery(query, params);
         });
         console.log('Tabela \'entryType\' populada....OK.');
-
-        result.changes = changes;
-        return result;
+        return this.result;
     }
     /**
      * Popula a tabela 'relevance' com registros de relevância de entradas.
@@ -1711,27 +1780,21 @@ export default class DBManager {
             },
             {
                 title: 'Major'
-            }                       
+            }
         ];
 
         let query = 'INSERT INTO relevance (title) ';
         query += 'VALUES (?);';
-
-        let result = {};
-        let changes = 0;
 
         relevances.forEach(async relevance => {
             let params = [];
 
             params.push(relevance.title);
 
-            result = await uniforge.sql.exec(query, params);
-            changes += result.changes;
+            this.results = await this.#execQuery(query, params);
         });
         console.log('Tabela \'relevance\' populada....OK.');
-
-        result.changes = changes;
-        return result;
+        return this.result;
     }
 
     /**
@@ -1748,11 +1811,11 @@ export default class DBManager {
             '\"group\" VARCHAR(50) NOT NULL,' +     // Grupo de configuração
             'value TEXT NOT NULL)';             // Valor da configuração
 
-        const result = await uniforge.sql.exec(query);
+        this.results = await this.#execQuery(query);
         console.log('Tabela \'settings\' criada....OK.');
 
-        return result;
-    }  
+        return this.result;
+    }
 
     /**
      * Cria a tabela 'calendars' no banco de dados.
@@ -1765,11 +1828,11 @@ export default class DBManager {
     async createCalendarTable() {
         let query = 'CREATE TABLE IF NOT EXISTS calendars (clid INTEGER PRIMARY KEY,' +
             'label TEXT)';                 // Título do calendário
-       
-        const result = await uniforge.sql.exec(query);
+
+        this.results = await this.#execQuery(query);
         console.log('Tabela \'calendar\' criada....OK.');
-        
-        return result;
+
+        return this.result;
     }
 
     /**
@@ -1785,11 +1848,11 @@ export default class DBManager {
             'clid INTEGER,' +
             'label TEXT)';                 // Título do MÊS do calendário
 
-        
-        const result = await uniforge.sql.exec(query);
+
+        this.results = await this.#execQuery(query);
         console.log('Tabela \'calendarsMonths\' criada....OK.');
-        
-        return result;
+
+        return this.result;
     }
 
     /**
@@ -1804,11 +1867,11 @@ export default class DBManager {
         let query = 'CREATE TABLE IF NOT EXISTS calendarsDays (cldid INTEGER PRIMARY KEY,' +
             'clid INTEGER,' +
             'label TEXT)';                 // Título do DIAS do calendário
-        
-        const result = await uniforge.sql.exec(query);
+
+        this.results = await this.#execQuery(query);
         console.log('Tabela \'calendarsDays\' criada....OK.');
-        
-        return result;
+
+        return this.result;
     }
 
     /**
@@ -1825,10 +1888,10 @@ export default class DBManager {
             'clmid INTEGER,' +
             'days INTEGER)';                // Número de DIAS por MÊS do calendário
 
-        const result = await uniforge.sql.exec(query);
+        this.results = await this.#execQuery(query);
         console.log('Tabela \'calendarsDaysInMonths\' criada....OK.');
-        
-        return result;
+
+        return this.result;
     }
 
     /**
@@ -1838,8 +1901,14 @@ export default class DBManager {
      * @returns {Object} - Resultado da execução.
      * @throws {Error} - Caso ocorra algum erro no banco de dados.
      */
-    async execQuery(query, params = []) {
-        return await uniforge.sql.exec(query, params);
+    async #execQuery(query, params = []) {
+        // Verifica se a transação é única, nesse caso, limpa o estado atual.
+        if (!this.transactionStarted) this.clear();
+
+        if (params.length > 0)
+            return await uniforge.sql.exec(query, params);
+        else
+            return await uniforge.sql.exec(query);
     }
 
     /**
@@ -1850,7 +1919,7 @@ export default class DBManager {
     validateChapter(data) {
 
         if (data.tome?.isEmpty())
-            return 'É necessário informar um Tomo para o Capítulo.';        
+            return 'É necessário informar um Tomo para o Capítulo.';
         if (data.title?.isEmpty())
             return 'É necessário informar um Título válido para o Capítulo.';
         if (data.icon?.isEmpty())
@@ -1859,7 +1928,7 @@ export default class DBManager {
             return 'É necessário informar um Tipo válido o Capítulo.';
 
         return '';
-    } 
+    }
 
     /**
      * Valida se os dados de uma Seção são válidos.
@@ -1876,7 +1945,7 @@ export default class DBManager {
             return 'É necessário informar um título válido para a Categoria.';
 
         return '';
-    } 
+    }
 
     /**
      * Valida se os dados de um Entrada são válidos.
@@ -1892,10 +1961,10 @@ export default class DBManager {
         if (!entry.etid)
             return 'É necessário selecionar um Tipo de Entrada.';
         if (entry.title?.isEmpty())
-            return 'É necessário informar um título válido para a Entrada.'; 
+            return 'É necessário informar um título válido para a Entrada.';
         return '';
-    }  
-    
+    }
+
     /**
      * Valida se os dados de um Evento são válidos.
      * @param {Object} event - Dados do Evento a ser validado.
@@ -1919,7 +1988,7 @@ export default class DBManager {
         if (event.s_month < 0)
             return 'Um Evento deve informar uma data inicial. O mês informado é inválido.';
         if (!event.s_day || event.s_day < 1)
-            return 'Um Evento deve informar uma data inicial. O dia informado é inválido.';         
+            return 'Um Evento deve informar uma data inicial. O dia informado é inválido.';
         return '';
     }
 
@@ -1928,11 +1997,11 @@ export default class DBManager {
      * @param {Object} timeline - Dados da Linha do Tempo a ser validada.
      * @returns {string} - Erro(s) encontrado(s) ou uma string vazia se a Linha do Tempo for válida.
      */
-    validateTimeline(timeline) {        
+    validateTimeline(timeline) {
         if (timeline.title?.isEmpty())
             return 'É necessário informar um título válido para a Linha do Tempo.';
         if (timeline.events.size < 1)
-            return 'A Linha do Tempo deve conter pelo menos um Evento.';                 
+            return 'A Linha do Tempo deve conter pelo menos um Evento.';
         return '';
     }
 
@@ -1943,13 +2012,13 @@ export default class DBManager {
      */
     validateLineage(data) {
         if (data.sid.isEmpty())
-            return 'O identificador de Seção da Linhagem é inválido.';        
+            return 'O identificador de Seção da Linhagem é inválido.';
         if (data.title.isEmpty())
             return 'É necessário informar um título válido para a Linhagem.';
         if (!data.founder)
-            return 'É necessário informar o Fundador da Linhagem.';        
+            return 'É necessário informar o Fundador da Linhagem.';
         if (!data.tree)
-            return 'É necessário informar o familyScript da Árvore da Linhagem.';                      
+            return 'É necessário informar o familyScript da Árvore da Linhagem.';
 
         return '';
     }
@@ -1962,7 +2031,7 @@ export default class DBManager {
     validatePolitics(data) {
 
         if (data.sid.isEmpty())
-            return 'O identificador de Seção da Entrada é inválido.'; 
+            return 'O identificador de Seção da Entrada é inválido.';
         if (data.title.isEmpty())
             return 'É necessário informar um título válido para a Entrada.';
         if (!data.etid)
@@ -1979,14 +2048,14 @@ export default class DBManager {
         return uniforge.utils.randomID();
     }
 
-    buildUpdateSet(columns, updateOptions={}) {
+    buildUpdateSet(columns, updateOptions = {}) {
         const withNulls = updateOptions.withNulls || false;
 
         const updateSet = columns
             .filter(([label, value]) => label.trim() && (withNulls || value !== null && value !== undefined && value !== '')) // Remove colunas ou valores vazios
             .map(([label, value]) => {
-                if(value === undefined || value === '') value = null;
-                
+                if (value === undefined || value === '') value = null;
+
                 if (typeof value === 'string') {
                     // Strings cercadas por aspas simples
                     return `${label} = '${value}'`;
@@ -2005,5 +2074,17 @@ export default class DBManager {
             .map(([column, value]) => `${column} = ${typeof value === 'string' ? `'${value}'` : value}`) // Formata cada dupla
             .join(' AND '); // Junta tudo com ' AND '
         return whereClause;
+    }
+
+    /**
+    * Recria o conjunto de dados (Set) baseado nos dados atuais do banco de dados.
+    * 
+    * @async
+    * @returns {Promise<void>}
+    */
+    async rebuildDocs() {
+        console.log('UniForge | Recriando base de dados....');
+        const data = await DBDocuments.UniForgeData();
+        uniforge.doc = new DBDocuments(data);
     }
 }

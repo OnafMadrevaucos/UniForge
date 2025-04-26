@@ -68,7 +68,7 @@ export class TimelineManager extends BaseManager {
             }
 
             // Inicia a transação de salvamento.
-            await uniforge.sql.exec('BEGIN TRANSACTION');
+            await uniforge.db.beginTransaction();
             let result = null;
 
             // Verifica se se trata de uma nova linha do tempo ou uma já existente.
@@ -95,15 +95,14 @@ export class TimelineManager extends BaseManager {
 
             this.buildTimeline();
             // Finaliza a transação de salvamento.
-            await uniforge.sql.exec('COMMIT');
+            await uniforge.db.commitTransaction();
 
             return true;
         } catch (error) {
             uniforge.msgBox.showError('Erro ao adicionar evneto à linha do tempo.', error);
-
-            console.warn('O Banco de Dados sofrerá rollback...');
+            
             // Faz rollback em caso de erro no processo de salvamento.
-            await uniforge.sql.exec('ROLLBACK');
+            await uniforge.db.rollbackTransaction(error);
 
             return null;
         }
@@ -190,7 +189,11 @@ export class TimelineManager extends BaseManager {
     }
     async deleteEvent(evid) {
         const tid = this.timeline.tid;
-        if (!tid.isEmpty()) await uniforge.db.deleteTimelineEvent(tid, evid);
+        if (!tid.isEmpty()) { 
+            const result = await uniforge.db.deleteTimelineEvent(tid, evid);
+            // Se o evento foi removido do banco de dados, reconstrua a base de dados.
+            if(result?.changes > 0) await uniforge.db.rebuildDocs();
+        }
     }
     hasEvent(evid) {
         const events = this.#timeline.events;

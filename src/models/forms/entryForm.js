@@ -986,10 +986,8 @@ export default class EntryForm extends SidebarForm {
         uniforge.utils.mergeObjects(data, this.selectedImg);
 
         // Inicia a transação de salvamento.
-        await uniforge.sql.exec('BEGIN TRANSACTION');
-        // Realiza o processo de salvamento (adição ou remoção) de uma Entrada.
-        let saved = true;
-
+        await uniforge.db.beginTransaction();
+        
         const headerInfo = this.querySelector('.header-info');
         const entryType = this.querySelector('#entryType');
 
@@ -1012,14 +1010,14 @@ export default class EntryForm extends SidebarForm {
         else this._addEntry(data);
 
         // Finaliza a transação de salvamento.
-        await uniforge.sql.exec('COMMIT');
+        await uniforge.db.commitTransaction();
+        await this.refresh();
       }
     } catch (error) {
       this.msgBox.showError(error);
 
-      console.warn('O Banco de Dados sofrerá rollback...');
       // Faz rollback em caso de erro no processo de salvamento.
-      await uniforge.sql.exec('ROLLBACK');
+      await uniforge.db.rollbackTransaction(error);
     }
   }
 

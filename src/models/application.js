@@ -302,6 +302,36 @@ export default class Application {
         }
     }
 
+    async renderContent() {
+        // Função para obter os dados comuns à toda aplicação.
+        this.data = this.prepareBaseData();
+
+        // Função para obter os dados específicos da aplicação.
+        if (this.prepareData) this.prepareData();
+
+        // Obtem os elementos HTML para renderização.
+        const container = this.ui.app;
+        const header = this.ui.header;
+        const main = this.ui.main;
+
+        // Prepara o HTML específico da aplicação para renderização.
+        await this.prepareDerivedTemplate(container, header, main);
+
+        // Prepara o HTML da aplicação para renderização (Substitui pseudo-elements).
+        this.parseTemplate();
+
+        // Ativa os ouvintes de eventos básicos.
+        this.activateBaseListeners();
+
+        // Configura os conteúdos específicos da aplicação.
+        await this.initialize();
+
+        this.rendered = true;
+        await triggerHook('afterRender');
+
+        return this.rendered;
+    }
+
     /**
     * Limpa o formulário e re-exibe o conteúdo com os dados atuais.
     * 
@@ -310,9 +340,8 @@ export default class Application {
     */
     async refresh() {
         try {
-            this.clear();
-            this.rendered = false;
-            await this.render();
+            this.clear();            
+            await this.renderContent();
 
         } catch (error) {
             console.error(error);
@@ -350,8 +379,12 @@ export default class Application {
     * Limpa o HTML e atualiza o estado do Uniforge de acordo.
     */
     clear() {
+        // Limpa o conjunto de dados do formulário.
+        this.data = null;
         // Limpa o conteúdo do formulário.
         this.ui.main.innerHTML = '';
+        // Marca o formulário como não renderizado.
+        this.rendered = false;
     }  
     /* ---------------------------------------------------------------------------------------------------------------- */
     // LISTENERS

@@ -292,7 +292,13 @@ export default class TimelineForm extends SidebarForm {
             this.manager.timeline.title = titleInput.value;
             const committed = await this.manager.commit();
 
-            if(committed || committed === null) this.controlStates(this.states.default);
+            // Se a linha do tempo foi salva com sucesso, atualiza o título da pasta.
+            if(committed) { 
+                this.refresh();
+            } else if (committed === null) {
+                // Se o usuário não confirmou a exclusão, retorna ao estado padrão.
+                this.controlStates(this.states.default);
+            }
         }
     }
 

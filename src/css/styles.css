@@ -2180,8 +2180,8 @@ input:checked+.slider::before {
 
 .timeline .timeline-content .timeline-list li .tl-circ {
     position: relative;
-    top: 11vh;
-    left: 35.6vw;
+    top: 9.5vh;
+    left: 35.9vw;
     text-align: center;
     background: var(--dark-red);
     color: var(--light-text-color);
@@ -2244,7 +2244,7 @@ input:checked+.slider::before {
 
 .timeline-list li.inverted .timeline-panel:after {
     border-left-width: 0;
-    border-right-width: 14px;
+    border-right-width: 15px;
     left: -14px;
     right: auto;
 }
