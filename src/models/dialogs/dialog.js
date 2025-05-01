@@ -108,7 +108,7 @@ export default class Dialogs extends BaseDialog {
           return this.ConfirmBody;
       }
     } catch (error) {
-      this.msgBox.showError(error);
+      this.msgBox.showError(error.message, error);
     }
   } 
 

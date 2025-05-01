@@ -316,8 +316,8 @@ export default class TimelineForm extends SidebarForm {
         const eventEntryType = this.querySelector('#eventEntryType');
         const eventRelevance = this.querySelector('#relevance');
         const eventCalendarType = this.querySelector('#calendarType');
-        const eventStartDate = this.querySelector('#startDate');
-        const eventEndDate = this.querySelector('#endDate');
+        const eventStartDate = this.querySelector('#startDateViewer');
+        const eventEndDate = this.querySelector('#endDateViewer');
 
         eventTitle.value = eventData.title;
 

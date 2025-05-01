@@ -265,7 +265,7 @@ export default class SettingsForm extends EntryForm {
             }
         }
         catch (error) {
-            this.msgBox.showError(error);
+            this.msgBox.showError(error.message, error);
 
             // Faz rollback em caso de erro no processo de salvamento.
             await uniforge.db.rollbackTransaction(error);

@@ -75,7 +75,7 @@ export default class BaseDialog extends Application {
             const html = uniforge.parser.parseHTML(rawHtml, this.data);
             return html;
         } catch (error) {
-            this.msgBox.showError(error);
+            this.msgBox.showError(error.message, error);
         }
     }
 
@@ -162,7 +162,7 @@ export default class BaseDialog extends Application {
                 this.close();
             }
         } catch (error) {
-            this.msgBox.showError(error);
+            this.msgBox.showError(error.message, error);
         }
     } 
 

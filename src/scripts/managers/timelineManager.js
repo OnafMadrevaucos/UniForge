@@ -1,6 +1,7 @@
 import CustomDate from "../../common/primitives/date.mjs";
 import Dialogs from "../../models/dialogs/dialog.js";
 import BaseForm from "../../models/forms/baseForm.js";
+import SimpleEntryForm from "../../models/forms/simpleEntryForm.js";
 import { BaseManager } from "./baseManager.js";
 import { LibraryManager, Entry } from "./libraryManager.js";
 
@@ -331,7 +332,7 @@ export class TimelineManager extends BaseManager {
         // Criação da seção de botões
         const btnGroup = document.createElement('div');
         btnGroup.className = 'btn-group-hover';
-
+        
         const editButton = document.createElement('button');
         editButton.className = 'btn btn-primary btn-xs';
         editButton.setAttribute('href', '#');
@@ -339,6 +340,12 @@ export class TimelineManager extends BaseManager {
         editIcon.className = 'fas fa-pencil';
         editIcon.setAttribute('aria-hidden', 'true');
         editButton.appendChild(editIcon);
+
+        // Verifica se o evento possui uma Entrada associada a ele.
+        // Se não houver, desabilita o botão de edição.
+        if(data.source === null || data.source.isEmpty()){
+            editButton.classList.add('disabled');
+        }
 
         editButton.addEventListener('click', (event) => { this._onEditEventClick(event); });
 
@@ -429,7 +436,7 @@ export class TimelineManager extends BaseManager {
         tlBody.className = 'tl-body';
 
         const blockquote = document.createElement('blockquote');
-        if (!data.source.isEmpty()) {
+        if (data.source !== null && !data.source.isEmpty()) {
             const source = uniforge.doc.entries.get(data.source);
             if (source) {
                 blockquote.className = 'flavortext';
@@ -672,9 +679,24 @@ export class TimelineManager extends BaseManager {
         });
     }
 
-    _onEditEventClick(event) {
-        event.stopPropagation();
+    _onEditEventClick(clickEvent) {
+        clickEvent.stopPropagation();
+        const button = clickEvent.target.closest('button');
+        button.classList.add('disabled');
 
+        const item = clickEvent.target.closest('li.timeline-entry');
+        const evid = item.dataset.id;
+        const event = uniforge.doc.events.get(evid);
+        // Verifica se o evento existe.
+        if(!event){
+            uniforge.msgBox.showError('Evento não encontrado.', new Error('Evento não encontrado.'));
+            return;
+        }
+
+        const eid = event.source;
+        const entry = uniforge.doc.entries.get(eid);
+        const editForm = new SimpleEntryForm(button, entry);
+        editForm.showForm(true);
     }
     async _onDeleteEventClick(event) {
         event.stopPropagation();

@@ -2331,6 +2331,10 @@ input:checked+.slider::before {
     background-color: var(--dark-red);
     box-shadow: var(--small-shadow);
 }
+.timeline-list .timeline-panel .btn-group-hover button.disabled {
+    background-color: var(--dark-blue);
+    color: var(--disabled-text-color);
+} 
 
 .timeline-list .timeline-entry .tl-heading {
     text-align: center;
