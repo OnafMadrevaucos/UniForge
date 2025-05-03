@@ -72,7 +72,7 @@ export default class BaseDialog extends Application {
         try {
             const rawHtml = await uniforge.utils.loadTemplate(this.template);
 
-            const html = uniforge.parser.parseHTML(rawHtml, this.data);
+            const html = uniforge.parser.parseHTML(rawHtml.outerHTML, this.data);
             return html;
         } catch (error) {
             this.msgBox.showError(error.message, error);
@@ -129,11 +129,8 @@ export default class BaseDialog extends Application {
     * Exibe o diálogo na página.
     * @inheritdoc
     */
-    async render(force = false) {
-        super.render();
-
-        if (force) this.show();
-
+    async render() {
+        await super.render();
         return true;
     }
     

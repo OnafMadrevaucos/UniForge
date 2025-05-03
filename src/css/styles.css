@@ -9,6 +9,9 @@
 
 /* Para telas pequenas (menos de 768px) */
 @media (max-width: 768px) {
+    .form.container.active {
+        max-height: 600px;
+    }
     .entries .minimize-button {
         left: 14vw;
     }
@@ -22,8 +25,12 @@
     }
 }
 
-/* Para telas médias (entre 768px e 992px) */
-@media (min-width: 768px) and (max-width: 992px) {
+/* Para telas médias (entre 768px e 1080px) */
+@media (min-width: 768px) and (max-width: 1080px) {
+    .form.container.active {
+        max-height: 850px;
+    }
+
     .entries .minimize-button {
         left: 16vw;
     }
@@ -37,8 +44,8 @@
     }
 }
 
-/* Para telas grandes (mais de 992px) */
-@media (min-width: 992px) {
+/* Para telas grandes (mais de 1080px) */
+@media (min-width: 1081px) {
     .entries .minimize-button {
         left: 18vw;
     }
@@ -108,6 +115,7 @@
 
     --text-color: #1f1e2c;
     --light-text-color: #d4c694;
+    --dark-text-color: #20201d;
     --disabled-text-color: #6d664e;
     --background-color: #1e1e2fe5;
     --tooltip-background: #212121;
@@ -1012,7 +1020,8 @@ input:checked+.slider::before {
 .form.container {    
     background: var(--background-color);
     height: 85vh;
-    width: 75vw;
+    width: 85vw;
+    max-height: 95vh;
     margin-top: 5px;
     border-bottom-right-radius: var(--default-border-radius);
     border-bottom-left-radius: var(--default-border-radius);
@@ -1110,6 +1119,7 @@ input:checked+.slider::before {
 
 .form .main {
     flex: 1;
+    height: var(--fill-height);
     transition: height 0.5s ease;
 }
 
@@ -1407,6 +1417,32 @@ input:checked+.slider::before {
     z-index: 1000;
 }
 
+.link-dialog.entries {
+    background-image: none;
+}
+.link-dialog .sidebar {
+    border-radius: 0;
+    border: none;
+}
+.link-dialog .sidebar .folder-list {
+    flex: none;
+}
+.link-dialog .sidebar .folder-list li:not(.entry-item) {
+    margin-bottom: 0;
+    padding-block: 0;
+}
+.link-dialog div.content {
+    padding-block: 5px;
+    padding-inline: 10px;
+}
+.link-dialog .content .title {
+    font-size: var(--heading-2-size);
+}
+
+.link-dialog .content .simple-tmce {
+    max-height: none;
+    height: var(--fill-height);
+}
 
 /* ------ Data Controls ------ */
 
@@ -1623,6 +1659,10 @@ input:checked+.slider::before {
     z-index: 0;
     transition: all 0.3s ease-in-out;
 }
+#viewer .content::before {
+    content: none;
+}
+
 .sidebar.minimized+.content::before {
     inset: 0 0 0 0em !important; 
 }
@@ -1645,11 +1685,8 @@ input:checked+.slider::before {
 #ideologies .content::before {
     background: url('../ui/ideologies.jpeg') no-repeat top center / cover;
 }
-
-#library .content::before{
-    background-image:
-        linear-gradient(180deg, rgba(255, 255, 255, 0) 35%, var(--dark-blue) 70%),
-        url('../ui/grand-library.jpg');
+#codex .content::before{
+    background: url('../ui/grand-library.jpg') no-repeat top center / cover;
 }
 
 #timeline .content:has(.time-container):before{    
@@ -1734,7 +1771,10 @@ input:checked+.slider::before {
 
 .tabs-control .tab-content div.list li .item-content {
     gap: var(--default-gap-size);
-    ;
+}
+
+.tabs-control .tab-content div.event-info {
+    overflow-x: hidden;
 }
 
 /* ------ Settings Form ------ */
@@ -1844,12 +1884,18 @@ input:checked+.slider::before {
     height: var(--fill-height);
 }
 
-.article .article-container {
-    flex: 1;
-    margin: 5px;
+.timeline .main-viewer,
+.article .main-viewer {
+    background: url(../ui/texture1.webp) no-repeat top center / auto 770px, var(--lib-background) url(../ui/texture2.webp) no-repeat bottom center / auto 704px;
     border-radius: var(--default-border-radius);
+    box-shadow: var(--small-shadow);
     overflow-y: scroll;
-    overflow-x: hidden;
+}
+
+.timeline .content .main-viewer,
+.article .content .main-viewer,
+.article .content.main-viewer {
+    padding: 15px;
 }
 
 #tinymce .text-content,
@@ -1863,28 +1909,24 @@ input:checked+.slider::before {
     color: var(--text-color);
 }
 
+.article .content div {
+    z-index: 1;
+}
+
 .article .content .title-header {
     font-size: var(--title-size);
     text-align: center;
     background-color: var(--dark-red);
     color: var(--light-text-color);
     margin: 0;
-    margin-left: -25px;
+    margin-left: -15px;
     margin-bottom: 0.5em;
     border-radius: var(--title-header-radius);
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
     padding-bottom: 5px;
-    padding-right: 10px;
+    padding-inline: 10px;
     box-shadow: var(--small-shadow);
-}
-
-.article .content .title-header .prev-entry {
-    background: transparent;
-    box-shadow: none;
-    font-size: var(--heading-1-size);
-    color: var(--light-text-color);
-    flex: 0;
-    opacity: 1;
-    align-self: center;
 }
 
 .article .content .title-header .prev-entry:not(.invisible):not(.disabled):hover {
@@ -1931,6 +1973,7 @@ input:checked+.slider::before {
 
 #entryFormOverlay .article .content p,
 .article .content p {
+    color: var(--dark-text-color);
     margin-block: 0.25em;
 }
 
@@ -1940,15 +1983,15 @@ input:checked+.slider::before {
 }
 
 #tinymce .text-content figure,
-.article .article-container figure {
+.article .text-content figure {
     align-self: center;
     max-width: 100%;
     overflow: hidden;
     margin: 0 auto;
 }
 
-#tinymce .text-content figure img,
-.article .article-container figure img {
+#tinymce figure img,
+.article .text-content figure img {
     align-self: center;
     display: block;
     height: auto;
@@ -1957,13 +2000,16 @@ input:checked+.slider::before {
     max-width: 100%;
 }
 
-#tinymce .text-content figure .img-caption,
-.article .article-container .content .img-caption {
+#tinymce figure .img-caption,
+.article .text-content figure .img-caption {
     text-align: center;
     font-size: small;
     font-weight: bold;
     font-style: italic;
     margin-bottom: 0.75em;
+}
+.article .text-content figure .img-caption {
+    color: var(--dark-red)
 }
 
 /* ------ Timeline Form ------ */
@@ -2863,13 +2909,6 @@ folder-list .folder.created.selected .folder-header .fa-trash {
     padding: 0px 5px 0px 0px;
 }
 
-.entries.timeline .time-container {
-    background: url(../ui/texture1.webp) no-repeat top center / auto 770px, var(--lib-background) url(../ui/texture2.webp) no-repeat bottom center / auto 704px;
-    border-radius: var(--default-border-radius);
-    box-shadow: var(--small-shadow);
-    overflow-y: scroll;
-}
-
 .panel .content .header,
 .entries .content .header {
     gap: var(--default-gap-size);
@@ -3552,7 +3591,6 @@ folder-list .folder.created.selected .folder-header .fa-trash {
     border-radius: 3px;
     box-shadow: var(--default-shadow);
     background-color: var(--grey);
-    background-image: url(../ui/denim065.png);
     color: var(--text-color);
     z-index: 2000;
     padding: 8px;

@@ -56,23 +56,6 @@ const _loremIpsum = [
 ];
 
 /**
-     * Carrega um template HTML de um arquivo externo.
-     * 
-     * @async
-     * @function loadTemplate
-     * @param {string} filePath - Caminho do arquivo do template.
-     * @returns {Promise<string>} String HTML do conteúdo do arquivo.
-     * @throws {Error} - Se o arquivo não for encontrado ou não for possível ler seu conteúdo.
-     */
-export async function loadTemplate(filePath) {
-    const response = await fetch(filePath);
-    if (!response.ok) throw new Error('Erro ao carregar o arquivo. Detalhes: ' + response.statusText);
-
-    const htmlString = await response.text();
-    return htmlString;
-} 
-
-/**
        * Testa se um valor é "vazio"; seja undefined ou um objeto sem conteúdo.
        * @param {*} value       - O valor a ser testado
        * @returns {boolean}     - O valor é vazio?

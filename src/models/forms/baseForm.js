@@ -132,10 +132,8 @@ export default class BaseForm extends Application {
             <switch id="deleteSwitch" class="hidden"></switch>
             <a id="${this.style}Close-${this.uuid}" class="close-button flexcol"><i class="fas fa-circle-xmark"></i></a>
         `;
-    const html = await uniforge.utils.loadTemplate(this.template);
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(html, 'text/html');
-    const mainContent = doc.body.firstChild;
+        
+    const mainContent = await uniforge.utils.loadTemplate(this.template);
     main.appendChild(mainContent);
 
     form.appendChild(header);
@@ -157,8 +155,8 @@ export default class BaseForm extends Application {
   /**
    * Exibe o formulário e o overlay associados.
    */
-  async showForm(forceLoad = false) {        
-    await this.show(forceLoad);
+  async show(forceLoad = false) {        
+    await super.show(forceLoad);
 
     this._activateForm();
   }
@@ -265,12 +263,10 @@ export default class BaseForm extends Application {
         await this.configureContent();
 
         if (this.activateListeners) {
-
           // Ativa os demais ouvintes.
           this.activateListeners();
 
-          this.configured = true;
-          return this.configured;
+          return true;
         } else {
           this.msgBox.showError('Não é possível iniciar a construção do formulário. Método \'activateListeners\' não foi implementado.');
           return false;
@@ -284,6 +280,16 @@ export default class BaseForm extends Application {
       this.msgBox.showError(error.message, error);
       return false;
     }
+  }
+  
+  /**
+   * Adiciona um listener de eventos ao aplicativo de interface do usuário.
+   * @param {string} event - O nome do evento a ser adicionado.
+   * @param {Function} callback - A função a ser executada quando o evento for disparado.
+   */
+  addEventListener(event, callback) {
+    if(!this.rendered) throw new Error('O formulário ainda não foi renderizado e não pode receber ouvintes.');
+    this.ui.app.addEventListener(event, callback);
   }
 
   /* ---------------------------------------------------------------------------------------------------------------- */

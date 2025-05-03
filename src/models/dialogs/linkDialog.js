@@ -1,192 +1,143 @@
-import Dialogs from "./dialog.js";
+import BaseDialog from "./baseDialog.js";
+import CustomDate from "../../common/primitives/date.mjs";
 
-export default class LinkDialog extends Dialogs {
+export default class LinkDialog extends BaseDialog {
     constructor(dialogData = {}, options = {}) {
         super(dialogData, uniforge.utils.mergeObjects(options, {
-            height: '500px', 
-            width: '600px'
+            height: '500px',
+            width: '675px'
         }));
 
         this.sourceId = options?.id ?? null;
 
         this.sourceType = options?.type ?? null;
-    }
 
-    async getBody() {
-        /**
-         * Cria o elemento raiz div principal que conterá toda a estrutura.
-         */
-        const body = document.createElement("div");
-        body.className = "link-dialog entries flexrow"; // Define as classes CSS para o elemento raiz
-
-        /**
-         * Criação da sidebar (barra lateral esquerda).
-         */
-        const sidebar = document.createElement("div");
-        sidebar.className = "sidebar"; // Define a classe CSS para a sidebar
-
-        /**
-         * Cria a lista de pastas dentro da sidebar.
-         */
-        const folderList = document.createElement("ul");
-        folderList.id = "folderList"; // Define o ID para referência futura
-        folderList.className = "folder-list"; // Define a classe CSS para estilização
-        sidebar.appendChild(folderList); // Adiciona a lista de pastas à sidebar        
-
-        const entryFolder = this.createFolderItem('entry', 'Entrada');
-        const timelineFolder = this.createFolderItem('timeline', 'Linhas do Tempo');
-
-        folderList.appendChild(entryFolder);
-        folderList.appendChild(timelineFolder);
-
-        /**
-         * Cria o footer dentro da sidebar.
-         */
-        const footer = document.createElement("div");
-        footer.className = "footer"; // Define a classe CSS para o footer
-
-        /**
-         * Cria o container para a barra de pesquisa.
-         */
-        const searchEntry = document.createElement("div");
-        searchEntry.id = "searchEntry"; // Define o ID para referência futura
-        searchEntry.className = "input-container search-bar flexrow"; // Define classes CSS
-
-        /**
-         * Cria o campo de entrada de texto para pesquisa.
-         */
-        const searchInput = document.createElement("input");
-        searchInput.type = "text"; // Define o tipo de entrada
-        searchInput.id = "searchInput"; // Define o ID para referência futura
-        searchInput.className = "search-data"; // Define a classe CSS para estilização
-        searchInput.placeholder = "Pesquisar entrada..."; // Define o texto do placeholder
-
-        /**
-         * Cria o botão de pesquisa.
-         */
-        const searchBtn = document.createElement("button");
-        searchBtn.id = "searchBtn"; // Define o ID do botão
-        searchBtn.className = "search-button"; // Define a classe CSS
-
-        /**
-         * Adiciona o ícone dentro do botão de pesquisa.
-         */
-        const searchIcon = document.createElement("i");
-        searchIcon.className = "fas fa-magnifying-glass"; // Define a classe CSS do ícone
-        searchBtn.appendChild(searchIcon); // Adiciona o ícone ao botão
-
-        /**
-         * Monta a barra de pesquisa e adiciona ao footer.
-         */
-        searchEntry.appendChild(searchInput);
-        searchEntry.appendChild(searchBtn);
-        footer.appendChild(searchEntry);
-
-        /**
-         * Adiciona o footer à sidebar e a sidebar ao elemento raiz.
-         */
-        sidebar.appendChild(footer);
-        body.appendChild(sidebar);
-
-        /**
-         * Cria o content-summary (área de conteúdo principal).
-         */
-        const contentSummary = document.createElement("div");
-        contentSummary.className = "summary"; // Define as classes CSS
-
-        /**
-         * Cria o header dentro do content-summary.
-         */
-        const header = document.createElement("div");
-        header.className = "content flexcol"; // Define as classes CSS para o layout
-
-        /**
-         * Cria o container de imagem dentro do header.
-         */
-        const imageContainer = document.createElement("div");
-        imageContainer.id = "imageContainer"; // Define o ID para referência futura
-        imageContainer.className = "img-container disabled"; // Define classes CSS
-
-        /**
-         * Cria o elemento de imagem exibida.
-         */
-        const displayedImage = document.createElement("img");
-        displayedImage.id = "displayedImage"; // Define o ID da imagem
-        displayedImage.className = "img-displayed empty"; // Define classes CSS
-        displayedImage.src = "../../ui/blank-image.svg"; // Define a fonte da imagem
-        displayedImage.alt = "Imagem Padrão"; // Define o texto alternativo
-
-        /**
-         * Cria o campo de entrada de arquivo oculto.
-         */
-        const hiddenFileInput = document.createElement("input");
-        hiddenFileInput.id = "hiddenFileInput"; // Define o ID do campo de arquivo
-        hiddenFileInput.type = "file"; // Define o tipo de entrada
-        hiddenFileInput.className = "hidden"; // Define a classe CSS
-        hiddenFileInput.accept = "image/*"; // Define o tipo de arquivo aceito
-
-        /**
-         * Monta o container de imagem.
-         */
-        imageContainer.appendChild(displayedImage);
-        imageContainer.appendChild(hiddenFileInput);
-
-        /**
-         * Cria o container de informações do header.
-         */
-        const headerInfo = document.createElement("div");
-        headerInfo.className = "header-info flexrow"; // Define as classes CSS
-
-        /**
-         * Cria o campo de entrada para o título.
-         */
-        const titleInput = document.createElement("input");
-        titleInput.id = "titleInput"; // Define o ID do campo de título
-        titleInput.type = "text"; // Define o tipo de entrada
-        titleInput.className = "title"; // Define a classe CSS
-        titleInput.name = "title"; // Define o nome do campo
-        titleInput.setAttribute('value', 'Título da Entrada'); // Define o texto do placeholder
-        titleInput.disabled = true; // Define o campo como desabilitado
-
-        /**
-         * Cria a área de texto para o flavor text.
-         */
-        const flavorText = document.createElement("div");
-        flavorText.id = "flavorText"; // Define o ID da área de texto        
-
-        /**
-         * Monta o container de informações do header.
-         */
-        headerInfo.appendChild(imageContainer);
-        headerInfo.appendChild(titleInput);
-
-        /**
-         * Monta o header com o container de imagem e as informações.
-         */
-        header.appendChild(headerInfo);
-        header.appendChild(flavorText);
-
-        /**
-         * Adiciona o header ao content-summary e o content-summary ao elemento raiz.
-         */
-        contentSummary.appendChild(header);
-        body.appendChild(contentSummary);
-
-        return body;
+        this.template = 'linkDialog'; // Define o template do diálogo.
     }
 
     /**
-   * Inicializa e configura o editor TinyMCE.
-   * Remove qualquer instância existente antes de reconfigurar.
-   * @private
-   */
-    async getTinyMCE() {
-        if (tinymce.get('flavorText')) {
-            tinymce.remove('#flavorText');
+    * Prepara os dados do diálogo e configura o diálogo com os dados preparados.
+    * @inheritdoc
+    */
+    prepareData() {
+        this.prepareFolders(this.data);
+
+        this.data.entryTypes = uniforge.doc.entryTypes.toObject();
+        this.data.relevances = uniforge.doc.relevances.toObject();
+    }
+
+    prepareFolders(data) {
+        const entries = uniforge.doc.entries.toObject();
+        const events = uniforge.doc.events.toObject();
+        const lineages = uniforge.doc.lineages.toObject();
+        const timelines = uniforge.doc.timelines.toObject();
+
+        const folders = [];
+
+        const entryFolder = {
+            _label: 'Entradas',
+            _id: 'entries',
+            entries: []
+        };
+
+        entries.forEach((entry) => {
+            const folder = {
+                _label: entry.title,
+                _id: entry.eid
+            };
+
+            entryFolder.entries.push(folder);
+        });
+
+        folders.push(entryFolder);
+
+        const eventFolder = {
+            _label: 'Eventos',
+            _id: 'events',
+            events: []
+        };
+
+        events.forEach((event) => {
+            const folder = {
+                _label: event.title,
+                _id: event.evid
+            };
+
+            eventFolder.events.push(folder);
+        });
+
+        folders.push(eventFolder);
+
+        const lineageFolder = {
+            _label: 'Linhagens',
+            _id: 'lineages',
+            lineages: []
+        };
+
+        lineages.forEach((lineage) => {
+            const folder = {
+                _label: lineage.title,
+                _id: lineage.ltid
+            };
+
+            lineageFolder.lineages.push(folder);
+        });
+
+        folders.push(lineageFolder);
+
+        const timelineFolder = {
+            _label: 'Linhas do Tempo',
+            _id: 'timelines',
+            timelines: []
+        };
+
+        timelines.forEach((timeline) => {
+            const folder = {
+                _label: timeline.title,
+                _id: timeline.tid
+            };
+
+            timelineFolder.timelines.push(folder);
+        });
+
+        folders.push(timelineFolder);
+
+        data.folders = folders.sort();
+    }
+
+    async configureElements() {
+        await this.configureFlavorTinyMCE();
+    }
+
+    clearElements() {
+        const titleInput = this.querySelector('#titleInput');
+        const entryType = this.querySelector('#entryType');
+        const relevance = this.querySelector('#relevance');
+        const startDateInput = this.querySelector('#startDateInput');
+        const endDateInput = this.querySelector('#endDateInput');
+
+        titleInput.value = '';
+        entryType.value = '';
+        relevance.value = '';
+        startDateInput.value = '';
+        endDateInput.value = '';
+
+        tinymce.get('linkflavorEditor').setContent('');
+
+        this._clearEntryList();
+        this._clearFolderList();
+    }
+
+    /**
+    * Configura o editor TinyMCE para o texto de floreio da Entrada.
+    */
+    async configureFlavorTinyMCE() {
+        if (tinymce.get('linkflavorEditor')) {
+            tinymce.remove('#linkflavorEditor');
         }
 
         const options = uniforge.utils.mergeObjects(uniforge.tinymceOptions.lite, {
-            selector: 'div#flavorText',
+            selector: 'div#linkflavorEditor',
             readonly: true,
             init_instance_callback: (editor) => {
                 editor.setContent(""); // Garante que o editor seja iniciado vazio.
@@ -198,37 +149,17 @@ export default class LinkDialog extends Dialogs {
         await tinymce.init(options);
     }
 
-    async _prepare() {
-        await super._prepare(); // Gera a estrutura base do diálogo   
-
-        const entryFolder = this.querySelector('#entry');
-        const timelineFolder = this.querySelector('#timeline');
-
-        const entryList = entryFolder.querySelector('.entry-list');
-        const timelineList = timelineFolder.querySelector('.entry-list');
-
-        const items = await this.db.getAllEntriesAndTimelinesExcept(this.sourceId, this.sourceType);
-        items.forEach(item => {
-            if (item.type == 'entry') {
-                const entryItem = this.createItem(item);
-                entryList.appendChild(entryItem);
-            } else if (item.type == 'timeline') {
-                const timelineItem = this.createItem(item);
-                timelineList.appendChild(timelineItem);
-            }
-        });
-
-        await this.getTinyMCE();
-    }
-
     /**
     * Configura ouvintes de eventos básicos para o dialog.
     * @protected
     */
-    _activateListeners() {
-        super._activateListeners();
+    activateListeners() {
+        super.activateListeners();
+        const sidebar = this.querySelector('.sidebar');
         const folders = this.querySelectorAll('.folder');
         const itemsList = this.querySelectorAll('.entry-item');
+
+        sidebar.addEventListener('click', (event) => { this._onSidebarClick(event); });
 
         folders.forEach(item => {
             const folderHeader = item.querySelector('.folder-header');
@@ -243,87 +174,12 @@ export default class LinkDialog extends Dialogs {
     }
 
     /**
-   * Cria uma nova pasta.
-   * @param {Object} data - Dados da pasta a ser criada.
-   * @returns {HTMLElement} - Elemento de um folder da lista de pastas.
-   */
-    createFolderItem(type, title) {
-        const folder = document.createElement('li');
-        folder.id = type;
-        folder.className = 'folder flexcol';
-        folder.dataset.type = type;
-
-        const folderHeader = document.createElement('div');
-        folderHeader.className = 'folder-header flexrow';
-
-        const span = document.createElement('span');
-        span.textContent = title;
-        folderHeader.innerHTML = `<i class="fas fa-folder"></i> ${span.outerHTML}`;
-
-        const folderContent = document.createElement('div');
-        folderContent.className = 'folder-content';
-        const entryList = document.createElement('ul');
-        entryList.className = 'entry-list';
-
-        folderContent.appendChild(entryList);
-        folder.appendChild(folderHeader);
-        folder.appendChild(folderContent);
-
-        return folder;
-    }
-
-    /**
-     * Cria um novo item para uma pasta da lista.
-     * @param {Object} data - Dados do item a ser criado.
-     * @returns {HTMLElement} - Elemento de um item da lista de pastas.
-     */
-    createItem(data) {
-        const entryItem = document.createElement('li');
-        entryItem.className = 'entry-item flexrow';
-        entryItem.dataset.id = data.id;
-        entryItem.dataset.type = data.type;
-
-        const icon = document.createElement('i');
-        icon.className = data.icon;
-
-        const span = document.createElement('span');
-        span.textContent = data.title;
-
-        entryItem.appendChild(icon);
-        entryItem.appendChild(span);
-
-        return entryItem;
-    }
-
-    static async configDialog(source) {        
-        function getLinkData(event) {
-            const button = event.target.closest('.dialog-button');
-            const item = JSON.parse(button.dataset.item); 
-            
-            return item;            
-        }
-
-        return new Promise((resolve, reject) => {
-            const dialogData = {
-                title: 'Novo Vínculo',
-                buttons: {
-                    cancel: {
-                        label: "Cancelar",
-                        icon: "fas fa-xmark",
-                        callback: () => resolve(null)
-                    },
-                    link: {
-                        label: "Vincular",
-                        icon: "fas fa-link",
-                        callback: (event) => { resolve(getLinkData(event)); }
-                    }
-                },
-                abort: () => resolve(null)
-            };
-
-            const dialog = new this(dialogData, source);
-            dialog.render();
-        });
+    * Gerencia cliques no sidebar.
+    * @param {MouseEvent} event - O evento de clique.
+    */
+    _onSidebarClick(event) {
+        event.stopPropagation();
+        if (event.target.classList.contains('sidebar')) this.clearElements();
     }
 
     /**
@@ -367,30 +223,16 @@ export default class LinkDialog extends Dialogs {
         const itemsList = this.querySelectorAll('.entry-item');
         itemsList.forEach(item => {
             item.classList.remove('selected');
+            const itemIcon = item.querySelector('.fas');
+            itemIcon.classList.remove(...itemIcon.classList);
+            itemIcon.classList.add('fas', 'fa-file');
         });
     }
 
-    _onEntryItemClick(event) {
-        // Impedir que o clique no item desencadeie o clique fora do sidebar
-        event.stopPropagation();
-
-        const dialog = event.target.closest('.dialog');
-        const folderList = dialog.querySelectorAll('.folder');
-        const item = event.target;
-
-        // Remover a classe 'selected' de todos os itens
-        folderList.forEach(i => {
-            i.classList.remove('selected')
-            const folderIcon = i.querySelector('.fas');
-            folderIcon.classList.remove(...folderIcon.classList);
-            folderIcon.classList.add('fas', 'fa-folder');
-        });
-
-        // Adicionar a classe 'selected' ao item clicado
-        item.classList.add('selected');
-        const folderIcon = item.querySelector('.fas');
-        folderIcon.classList.remove(...folderIcon.classList);
-        folderIcon.classList.add('fas', 'fa-folder-open');
+    _resetGroups() {
+        this._toggleEventGroups(false);
+        this._toggleLineageGroups(false);
+        this._toggleTimelineGroups(false);
     }
 
     /**
@@ -400,38 +242,109 @@ export default class LinkDialog extends Dialogs {
     */
     async _onEntryItemDoubleClick(event) {
         const item = event.target.closest('.entry-item');
-        const type = item.dataset.type;
+        const folder = event.target.closest('.folder-list');
         const itemId = item.dataset.id;
 
+        this._resetGroups();
+
         let data = null;
-        if (type == 'entry')
-            data = await this.db.getEntry(itemId);
-        else
-            data = await this.db.getTimeline(itemId);        
+        switch (folder.id) {
+            case 'entryList':
+                data = uniforge.doc.entries.get(itemId);
+                data.type = 'entry';
+                break;
+            case 'eventList':
+                data = uniforge.doc.events.get(itemId);
+                data.type = 'event';
+                this._toggleEventGroups(true);
+                break;
+            case 'lineageList':
+                data = uniforge.doc.lineages.get(itemId);
+                data.type = 'lineage';
+                this._toggleLineageGroups(true);
+                break;
+            case 'timelineList':
+                data = uniforge.doc.timelines.get(itemId);
+                data.type = 'timeline';
+                this._toggleTimelineGroups(true);
+                break;
+            default:
+                throw new Error('A pasta selecionada é inválida.');
+        }
 
-        data.type = type;
-
-        const displayedImage = this.querySelector('#displayedImage');
         const titleInput = this.querySelector('#titleInput');
+        const entryType = this.querySelector('#entryType');
+        const founderInput = this.querySelector('#founderInput');
+        const relevance = this.querySelector('#relevance');
+        const startDateInput = this.querySelector('#startDateInput');
+        const endDateInput = this.querySelector('#endDateInput');
 
         titleInput.value = data.title;
-        tinymce.get('flavorText').setContent(data.flavor);
+        entryType.value = data.etid;
+        tinymce.get('linkflavorEditor').setContent(data.flavor);
 
-        if (data.img) {
-            const imageUrl = await uniforge.utils.blobToImage(data.img, data.ext);
+        if (data.type === 'event') {
+            relevance.value = data.relevance;
 
-            displayedImage.src = imageUrl
-            displayedImage.classList.remove('empty');
-        } else {
-            displayedImage.src = "../../ui/blank-image.svg";
-            displayedImage.classList.add('empty');
+            const calendar = uniforge.doc.calendars.get(data.clid);
+            if (!calendar) throw new Error('Calendário informado não encontrado.');
+
+            const startDate = new CustomDate(calendar, { day: data.s_day, month: data.s_month, year: data.s_year });
+            startDateInput.value = startDate.toString('MMn DD, YYYYs');
+
+            if (data.e_day) {
+                const endDate = new CustomDate(calendar, { day: data.e_day, month: data.e_month, year: data.e_year });
+                endDateInput.value = endDate.toString('MMn DD, YYYYs');
+            } else {
+                endDateInput.value = '—';
+            }
+        }
+
+        if (data.type === 'lineage') {
+            founderInput.value = data.founder;
+        }
+
+        if (data.type === 'timeline' && !data.events.isEmpty()) {
+            const calendar = uniforge.doc.calendars.get(data.events.first().clid);
+            if (!calendar) throw new Error('Calendário informado não encontrado.');
+
+            // Mostra a data de fim do último somente se houver mais de um evento na Linha do Tempo.
+            // Caso contrário, as datas serão idênticas, pois first() e last() retornam o mesmo valor.
+            if (data.events.size > 1) {
+                const sortedEvents = data.events.sort((a, b) => {
+                    const startDateA = new CustomDate(calendar, { day: a.s_day, month: a.s_month, year: a.s_year });
+                    const startDateB = new CustomDate(calendar, { day: b.s_day, month: b.s_month, year: b.s_year });
+                    return startDateA.ticks - startDateB.ticks;
+                });
+
+                const firstEvent = sortedEvents.first();
+                const lastEvent = sortedEvents.last();
+
+                const startDate = new CustomDate(calendar, { day: firstEvent.s_day, month: firstEvent.s_month, year: firstEvent.s_year });
+                const endDate = new CustomDate(calendar, { day: lastEvent.s_day, month: lastEvent.s_month, year: lastEvent.s_year });
+
+                startDateInput.value = startDate.toString('MMn DD, YYYYs');
+                endDateInput.value = endDate.toString('MMn DD, YYYYs');
+            } else {
+                const startDate = new CustomDate(calendar, { day: data.events.first().s_day, month: data.events.first().s_month, year: data.events.first().s_year });
+
+                startDateInput.value = startDate.toString('MMn DD, YYYYs');
+                endDateInput.value = '—';
+            }
         }
 
         // Foca no campo de Título.    
         titleInput.focus();
 
         const linkButton = this.querySelector('#link');
-        linkButton.dataset.item = JSON.stringify({id: itemId, type: type});
+        linkButton.dataset.item = JSON.stringify({ id: itemId, type: data.type });
+
+        this._clearEntryList();
+
+        item.classList.add('selected');
+        const itemIcon = item.querySelector('.fas');
+        itemIcon.classList.remove(...itemIcon.classList);
+        itemIcon.classList.add('fas', 'fa-eye');
     }
 
     /**
@@ -463,6 +376,68 @@ export default class LinkDialog extends Dialogs {
             if (bookmark) {
                 editor.selection.moveToBookmark(bookmark);
             }
-        };        
+        };
+    }
+
+    _toggleEventGroups(show = false) {
+        const relevanceGroup = this.querySelector('#relevanceGroup');
+        const dateGroup = this.querySelector('#dateGroup');
+
+        if (show) {
+            relevanceGroup.classList.remove('hidden');
+            dateGroup.classList.remove('hidden');
+        } else {
+            relevanceGroup.classList.add('hidden');
+            dateGroup.classList.add('hidden');
+        }
+    }
+    _toggleLineageGroups(show = false) {
+        const founderGroup = this.querySelector('#founderGroup');
+
+        if (show) {
+            founderGroup.classList.remove('hidden');
+        } else {
+            founderGroup.classList.add('hidden');
+        }
+    }
+    _toggleTimelineGroups(show = false) {
+        const entryTypeGroup = this.querySelector('#entryTypeGroup');
+        const dateGroup = this.querySelector('#dateGroup');
+
+        if (show) {
+            entryTypeGroup.classList.add('hidden');
+            dateGroup.classList.remove('hidden');
+        } else {
+            entryTypeGroup.classList.remove('hidden');
+            dateGroup.classList.add('hidden');
+        }
+    }
+
+    static async configDialog(source, options = {}) {
+        return new Promise((resolve, reject) => {
+            options = uniforge.utils.mergeObjects(options, { source: source, alwaysClose: true });
+            const dialog = new this({
+                title: 'Novo Vínculo',
+                buttons: {
+                    cancel: {
+                        label: "Cancelar",
+                        icon: "fas fa-xmark",
+                        callback: () => resolve(null)
+                    },
+                    link: {
+                        label: "Vincular",
+                        icon: "fas fa-link",
+                        callback: (html, event) => {
+                            const button = event.target.closest('.dialog-button');
+                            const item = JSON.parse(button.dataset.item);
+
+                            resolve(item);
+                        }
+                    }
+                },
+                abort: () => resolve(null)
+            }, options);
+            dialog.show(true);
+        });
     }
 }

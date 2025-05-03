@@ -6,8 +6,10 @@ export default class MsgBox {
     }
 
     // Função para mostrar a mensagem de erro com animação.
-    showError(message, error) {    
-        console.error(error);    
+    showError(message, error) {  
+        // Se houver um erro, exibe a mensagem de erro no console.
+        // Caso contrário, exibe apenas a mensagem padrão.
+        if(error) console.error(error);    
         this._showMsg(message, 'error');
     }
     // Função para mostrar a mensagem de aviso com animação.

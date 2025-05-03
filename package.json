@@ -21,6 +21,7 @@
     "electron": "^33.2.1",
     "electron-builder": "^25.1.8",
     "fs": "^0.0.1-security",
+    "gojs": "^3.0.21",
     "handlebars": "^4.7.8",
     "leaflet": "^1.9.4",
     "leaflet-draw": "^1.0.4",

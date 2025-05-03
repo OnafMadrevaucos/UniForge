@@ -100,6 +100,16 @@ export function first() {
 }
 
 /**
+ * Retorna o último valor do conjunto.
+ * @memberof Set.prototype
+ * 
+ * @returns {*}             - O último elemento do conjunto, ou undefined
+ */
+export function last() {
+    return this.toObject().last();
+}
+
+/**
  * Retorna a interseção entre dois conjuntos.
  * @memberof Set.prototype
  * 
@@ -314,6 +324,17 @@ export function some(test) {
     return false;
 }
 
+/**
+ * Verifica se o conjunto está vazio.
+ * @memberof Set.prototype
+ * 
+ * @returns {boolean} `true` se o conjunto estiver vazio, caso contrário `false`.
+ */
+
+export function isEmpty() {
+    return this.size === 0;
+}
+
 console.log('UniForge | Atribuindo primitivos ao protótipo dos Sets...');
 // Atribui primitivos ao protótipo de Set
 Object.defineProperties(Set.prototype, {
@@ -326,6 +347,7 @@ Object.defineProperties(Set.prototype, {
     filter: { value: filter, configurable: true },
     find: { value: find, configurable: true },
     first: { value: first, configurable: true },
+    last: { value: last, configurable: true },
     intersection: { value: intersection, configurable: true },
     intersects: { value: intersects, configurable: true },
     union: { value: union, configurable: true },
@@ -334,5 +356,6 @@ Object.defineProperties(Set.prototype, {
     reduce: { value: reduce, configurable: true },
     some: { value: some, configurable: true },
     sort: { value: sort, configurable: true },
-    toObject: { value: toObject, configurable: true }
+    toObject: { value: toObject, configurable: true },
+    isEmpty: { value: isEmpty, configurable: true }
 });

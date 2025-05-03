@@ -3,7 +3,7 @@ import Dialogs from "../../models/dialogs/dialog.js";
 import BaseForm from "../../models/forms/baseForm.js";
 import SimpleEntryForm from "../../models/forms/simpleEntryForm.js";
 import { BaseManager } from "./baseManager.js";
-import { LibraryManager, Entry } from "./libraryManager.js";
+import { CodexManager } from "./codexManager.js";
 
 export class TimelineManager extends BaseManager {
     constructor(form) {
@@ -225,10 +225,10 @@ export class TimelineManager extends BaseManager {
         // Limpa o conteúdo do formulário.
         container.innerHTML = '';
 
-        // Cria o conteúdo da Entrada
+        // Cria o conteúdo da Entrada.
         const content = this.#createContent();
 
-        // Adiciona a nova Timeline ao container
+        // Adiciona a nova Timeline ao container.
         container.appendChild(content);
 
         return container;
@@ -646,16 +646,7 @@ export class TimelineManager extends BaseManager {
         document.body.style.cursor = 'wait';
         const overlay = document.getElementById('entryFormOverlay');
         const form = new BaseForm(overlay);
-        this.anchorManager = new LibraryManager(form);
-
-        this.entry = this.anchorManager.getEntry(entryId);
-
-        const newForm = this.entry.addTo('entryFormContent', true);
-        newForm.ui.prev_btn.setAttribute('data-tooltip', this.entry._getQueueText());
-        newForm.ui.prev_btn.classList.remove('invisible');
-
-        newForm.showForm();
-        document.body.style.cursor = 'default';
+        this.anchorManager = new CodexManager(form);
     }
 
     _onTimeContentScroll() {
@@ -696,7 +687,7 @@ export class TimelineManager extends BaseManager {
         const eid = event.source;
         const entry = uniforge.doc.entries.get(eid);
         const editForm = new SimpleEntryForm(button, entry);
-        editForm.showForm(true);
+        editForm.show(true);
     }
     async _onDeleteEventClick(event) {
         event.stopPropagation();

@@ -1,0 +1,25 @@
+<div id="codex" class="entries article flexrow">
+    <a id="minimizeButton" class="minimize-button">
+      <i class="fa-solid fa-chevron-left"></i>
+    </a>
+    <div id="sideBar" class="sidebar">
+      <h3>{{title}}</h3>
+      <foldertree id="sections" item="entries"></foldertree>
+      <div class="footer">
+        <div id="confirmDialog" class="confirmation-tooltip hidden" data-item="" data-action="">
+          <p id="confirmation-message"></p>
+          <div class="confirmation-buttons">
+            <button id="confirm-yes" class="confirm-btn">Sim</button>
+            <button id="confirm-no" class="confirm-btn">Não</button>
+          </div>
+        </div>
+        <div id="searchEntry" class="input-container search-bar flexrow">
+          <input type="text" id="searchInput" class="search-data" placeholder="Pesquisar entrada...">
+          <button id="searchBtn" class="search-button"><i class="fas fa-magnifying-glass"></i></button>
+        </div>
+      </div>
+    </div>
+    <div class="content flexcol">
+      <div id="entryViewer" class="main-viewer entry-container flex-1"></div>
+    </div>
+  </div>

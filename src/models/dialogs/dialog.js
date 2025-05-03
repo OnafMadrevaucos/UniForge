@@ -148,8 +148,8 @@ export default class Dialogs extends BaseDialog {
           }
         },
         abort: () => reject(false)
-      }, { prompt: message, alwaysClose: true});
-      dialog.render();
+      }, { prompt: message, alwaysClose: true});      
+      dialog.show(true);
     });
   }
 
@@ -189,7 +189,7 @@ export default class Dialogs extends BaseDialog {
         },
         abort: () => resolve(null)
       }, { hasTemplate: false, type: Dialogs.Type.SECURE });
-      dialog.render();
+      dialog.show(true);
     });
   }
 
@@ -208,7 +208,7 @@ export default class Dialogs extends BaseDialog {
         abort: () => resolve()
       };
       const dialog = new this(dialogData, { hasTemplate: false, imageUrl, width: '75%', type: Dialogs.Type.IMAGE });
-      dialog.render(false);
+      dialog.show(true);
     });
   }
 }

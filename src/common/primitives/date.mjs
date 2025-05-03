@@ -5,9 +5,9 @@ export default class CustomDate {
       };
   
       if (date && !date.isEmpty()) {
-        this.day = date.day;
-        this.month = date.month;
-        this.year = date.year;
+        this.day = date.day ?? this.#day;
+        this.month = date.month ?? this.#month;
+        this.year = date.year ?? this.#year;
       }
     }
   

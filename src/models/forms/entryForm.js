@@ -729,7 +729,7 @@ export default class EntryForm extends SidebarForm {
       const confirm = await Dialogs.confirm('Apagar Imagem', 'Deseja remover a imagem?')
       if (confirm) {
 
-        this.selectedImg.rawData = null;
+        this.selectedImg.raw = null;
 
         displayedImage.src = this.blankImgUrl;
         displayedImage.classList.add('empty');
@@ -746,8 +746,8 @@ export default class EntryForm extends SidebarForm {
   async onImageRightClick(event, displayedImage) {
     event.preventDefault();
 
-    if (this.selectedImg.rawData && !displayedImage.classList.contains('empty')) {
-      const imageUrl = await uniforge.utils.blobToImage(this.selectedImg.rawData, this.selectedImg.ext);
+    if (this.selectedImg.raw && !displayedImage.classList.contains('empty')) {
+      const imageUrl = await uniforge.utils.blobToImage(this.selectedImg.raw, this.selectedImg.ext);
       await Dialogs.showImagem('Exibir Imagem', imageUrl);
     }
   }
@@ -1197,7 +1197,7 @@ export default class EntryForm extends SidebarForm {
 
     // Se uma imagem foi selecionada, insira-a no editor.
     if (image) {
-      const rawData = image.data;
+      const data = image.data;
 
       // Recupera o elemento do editor TinyMCE.
       const editorTexarea = editor.targetElm;
@@ -1211,7 +1211,7 @@ export default class EntryForm extends SidebarForm {
       imgWrapper.contenteditable = 'false';
 
       const newImage = document.createElement('img');
-      const imageURL = await uniforge.utils.blobToImage(rawData.img, rawData.ext);
+      const imageURL = await uniforge.utils.blobToImage(data.raw, data.ext);
       newImage.src = imageURL;
 
       const newCaption = document.createElement('figcaption');
@@ -1225,7 +1225,7 @@ export default class EntryForm extends SidebarForm {
       // Insira o HTML na posição atual do cursor.
       editor.execCommand('mceInsertContent', false, imgWrapper.outerHTML);
       // Registra o Blob da imagem no banco de dados.
-      await uniforge.db.addEntriesTextImages(image);
+      await uniforge.db.addTextImages(image);
       // Atualiza a contagem de imagens no editor.
       this._updateImageCount(editor);
     }
@@ -1316,7 +1316,7 @@ export default class EntryForm extends SidebarForm {
     imgArray.forEach(async (img) => {
       const uuid = img.dataset.uuid; // Obtém o uuid armazenado no <div>
       const data = await uniforge.db.getEntriesTextImage(uuid); // Obtém a imagem do banco de dados
-      const imageURL = uniforge.utils.blobToImage(data.img, data.ext); // Converte o blob da imagem para URL
+      const imageURL = uniforge.utils.blobToImage(data.raw, data.ext); // Converte o blob da imagem para URL
     });
   }
 

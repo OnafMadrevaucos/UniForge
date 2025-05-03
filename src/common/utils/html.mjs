@@ -1,3 +1,24 @@
+/**
+     * Carrega um template HTML de um arquivo externo.
+     * 
+     * @async
+     * @function loadTemplate
+     * @param {string} filePath - Caminho do arquivo do template.
+     * @returns {Promise<string>} String HTML do conteúdo do arquivo.
+     * @throws {Error} - Se o arquivo não for encontrado ou não for possível ler seu conteúdo.
+     */
+export async function loadTemplate(filePath) {
+    const response = await fetch(filePath);
+    if (!response.ok) throw new Error('Erro ao carregar o arquivo. Detalhes: ' + response.statusText);
+
+    const htmlString = await response.text();
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(htmlString, 'text/html');
+    const content = doc.body.firstChild;
+
+    return content;
+} 
+
 export function generateListHTML(id, listItems, options = {}) {
     const extraClasses = options.extraClasses;
     const itemClass = options.itemClass;
@@ -14,9 +35,9 @@ export function generateListHTML(id, listItems, options = {}) {
     return html;
 }
 
-export function generateFolderlistHTML(folders, itemKey, type = 'default', isFixed = false) {
+export function generateFolderlistHTML(id, folders, itemKey, type = 'default', isFixed = false) {
     // Variavel para armazenar o resultado do 'replace'.
-    let html = `<ul id="folderList" type="${type}" class="folder-list">`;
+    let html = `<ul id="${id ?? 'folderList'}" type="${type}" class="folder-list">`;
 
     if (type === 'default') {
         folders.forEach(folder => {

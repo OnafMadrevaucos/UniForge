@@ -1,7 +1,6 @@
 import MsgBox from "./models/msgBox.js";
 
 import { LinkTooltip } from "./scripts/linkTooltip.js";
-import { NavQueue } from "./scripts/navQueue.js";
 import { registerHook, triggerHook } from "./scripts/hooks.js";
 
 import DBManager from "./db/dbManager.js";
@@ -126,14 +125,7 @@ uniforge.utils.mergeObjects(uniforge, {
         },
         msgBox: new MsgBox(6),
         tooltip: new LinkTooltip()
-    },
-
-    /**
-     * Instância do gerenciador de fila de navegação.
-     * 
-     * @type {NavQueue}
-     */
-    navQueue: new NavQueue(), // Fila de controle de navegação   
+    }, 
 
     lineageEditor: {
         props: {
@@ -316,7 +308,7 @@ function activateMainListeners() {
     const topBar = document.getElementById('topBarContainer');
     const toggleTab = document.getElementById('toggleTab');
     // Lógica de UI para os botões do Menu de Ferramentas Superior.
-    const libraryBtn = document.getElementById('libraryBtn');
+    const codexBtn = document.getElementById('codexBtn');
     const timelineBtn = document.getElementById('timelineBtn');
     const tenYrsBack = document.getElementById('tenYearsBack');
     const oneYearBack = document.getElementById('yearBack');
@@ -330,7 +322,7 @@ function activateMainListeners() {
         toggleTab.classList.toggle('visible');
     });
 
-    libraryBtn.addEventListener('click', (event) => { onTopbarButtonClick(event); });
+    codexBtn.addEventListener('click', (event) => { onTopbarButtonClick(event); });
     timelineBtn.addEventListener('click', (event) => { onTopbarButtonClick(event); });
 
     tenYrsBack.addEventListener('click', (event) => { onChangeTime(event, -10); });
@@ -437,11 +429,11 @@ async function renderForm(targetId, showAfter = true) {
     try {
         await triggerHook('beforeRender');
 
-        const form = _loadTemplate(targetId);
+        const form = new uniforge.forms[targetId]();
         if (!form)
             throw new Error(`O template para o formulário '${targetId}' não foi encontrado.`);
 
-        if (showAfter) await form.showForm(true);
+        if (showAfter) await form.show(true);
     } catch (error) {
         uniforge.msgBox.showError(error.message);
     }
@@ -461,20 +453,9 @@ async function recoverForm(form) {
         await triggerHook('beforeRender');
         if (!form) throw new Error(`O formulário '${form}' não foi encontrado.`);
 
-        await form.showForm(true);
+        await form.show(true);
     } catch (error) {
         uniforge.msgBox.showError(error.message);
-    }
-}
-
-// JavaScript to load partials
-function _loadTemplate(id) {
-    try {
-        // Verifica o ID do template e carrega o formulário correspondente.
-        const form = new uniforge.forms[id]();
-        return form;
-    } catch (error) {
-        throw new Error(`O formulário do identificador '${id}' não foi carregado corretamente. Detalhes: ${error}`);
     }
 }
 

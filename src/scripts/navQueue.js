@@ -25,6 +25,15 @@ export class NavQueue {
   }
 
   /**
+  * Retorna o tamanho da fila.
+  * 
+  * @returns {number} O número de elementos na fila.
+  */
+  get size() {
+    return this.queue.length;
+  }
+
+  /**
    * Retorna o elemento da fila no índice especificado.
    * 
    * @param {number} index - O índice do elemento a ser retornado.
@@ -36,7 +45,7 @@ export class NavQueue {
       return null;
     }
 
-    if (index < 0 || index >= this.size()) {
+    if (index < 0 || index >= this.size) {
       console.error("Erro: O índice se encontra fora da Fila de Navegação.");
       return null;
     }
@@ -83,7 +92,7 @@ export class NavQueue {
       return null;
     }
 
-    return this.queue.at(this.size() - 1);
+    return this.queue.at(this.size - 1);
   }
 
   /**
@@ -118,22 +127,13 @@ export class NavQueue {
       return null;
     }
     return this.queue.shift();
-  }
-
-  /**
-   * Retorna o tamanho da fila.
-   * 
-   * @returns {number} O número de elementos na fila.
-   */
-  size() {
-    return this.queue.length;
-  }
+  }  
 
   /**
    * Limpa todos os elementos da fila e redefine a origem.
    */
   clearQueue() {
-    if (this.size() > 0) {
+    if (this.size > 0) {
       this.queue = [];
       this.origin = '';
     }
@@ -145,7 +145,7 @@ export class NavQueue {
    * @returns {boolean} `true` se a fila tiver exatamente um elemento, caso contrário `false`.
    */
   hasLastItem() {
-    return this.size() === 1;
+    return this.size === 1;
   }
 
   /**

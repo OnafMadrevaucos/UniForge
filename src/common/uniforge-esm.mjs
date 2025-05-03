@@ -6,6 +6,8 @@ import * as parserEsm from './parsers/module.mjs';
 import * as gojs from './gojs/module.mjs';
 import * as leafletEsm from './leaflet/module.mjs';
 
+import ArticleForm from '../models/forms/articleForm.js';
+
 import AtlasForm from "../models/forms/atlasForm.js";
 import EntityForm from "../models/forms/entityForm.js";
 import HistoryForm from '../models/forms/historyForm.js';
@@ -15,7 +17,7 @@ import MilitaryForm from '../models/forms/militaryForm.js';
 import IdeologyForm from '../models/forms/ideologyForm.js';
 
 import SettingsForm from "../models/forms/settingsForm.js";
-import LibraryForm from "../models/forms/libraryForm.js";
+import CodexForm from "../models/forms/codexForm.js";
 import TimelineForm from "../models/forms/timelineForm.js";
 import { APP_STATES } from './utils/state.mjs';
 import { core } from './leaflet/module.mjs';
@@ -42,7 +44,7 @@ const utils = {
     randomString: utilsEsm.random.generateRandomString,
     randomNumber: utilsEsm.random.generateRandomNumber,
     loremIpsum: utilsEsm.helpers.loremIpsum,
-    loadTemplate: utilsEsm.helpers.loadTemplate,
+    loadTemplate: utilsEsm.html.loadTemplate,
     isEmpty: utilsEsm.helpers.isEmpty,
     timeSince: utilsEsm.helpers.timeSince,
     getFontAwesomeIcons: utilsEsm.helpers.getFontAwesomeIcons,
@@ -185,6 +187,7 @@ globalThis.uniforge = {
     * @type {Forms}
     */
     forms: {
+        article: ArticleForm,
         atlas: AtlasForm,
         entity: EntityForm,
         history: HistoryForm,
@@ -193,8 +196,8 @@ globalThis.uniforge = {
         military: MilitaryForm, 
         ideologies: IdeologyForm,
         settings: SettingsForm,
-        library: LibraryForm,
-        timeline: TimelineForm
+        codex: CodexForm,
+        timeline: TimelineForm 
     },
 
     /**

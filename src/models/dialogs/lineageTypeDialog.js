@@ -51,8 +51,8 @@ export default class LineageTypeDialog extends BaseDialog {
         this.typesToCommit.clear();
     }
 
-    _activateListeners() {
-        super._activateListeners();
+    activateListeners() {
+        super.activateListeners();
 
         const clearButton = this.querySelector('#clearButton');
         clearButton.addEventListener('click', (event) => { this.onClearTypeClick(event); });
@@ -193,7 +193,7 @@ export default class LineageTypeDialog extends BaseDialog {
                 },
                 abort: () => resolve(null)
             }, options);
-            dialog.render(true);            
+            dialog.show(true);            
         });
     }
 

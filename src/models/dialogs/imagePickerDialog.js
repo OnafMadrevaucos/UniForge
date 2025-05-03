@@ -1,84 +1,21 @@
-import Dialogs from "./dialog.js";
+import BaseDialog from "./baseDialog.js";
 
-export default class FilePickerDialog extends Dialogs {
+export default class FilePickerDialog extends BaseDialog {
     constructor(dialogData = {}, options = {}) {
         super(dialogData, uniforge.utils.mergeObjects(options, {
-            height: '150px', 
+            //height: '185px',
             width: '475px'
         }));
+
+        this.template = 'filePickerDialog'; // Define o template do diálogo.
     }
 
-    /**
-     * Retorna o body do diálogo com os elementos de escolha de imagem e legenda.
-     * @override
-     * @returns {Promise<HTMLDivElement>} - Retorna uma Promise que se resolve com o body do diálogo.
-     */
-    async getBody() {
-        // Cria o body
-        const body = document.createElement('div');
-        body.className = 'image-dialog flexcol';
-
-        const fileGroup = document.createElement('div');
-        fileGroup.className = 'data-group text file';
-
-        const fileLabel = document.createElement('span');
-        fileLabel.className = 'data-label';
-        fileLabel.textContent = 'Escolha uma imagem: ';
-
-        const fileContainer = document.createElement('div');
-        fileContainer.id = 'fileContainer';
-        fileContainer.className = 'file-container flexrow';
-
-        const chosenFilePath = document.createElement('input');
-        chosenFilePath.type = 'text';
-        chosenFilePath.id = 'chosenFilePath';
-        chosenFilePath.className = 'file-path';
-        chosenFilePath.disabled = true;
-
-        const chooseFileButton = document.createElement('a');
-        chooseFileButton.id = 'chooseFileButton';
-        chooseFileButton.innerHTML = '<i class="fas fa-upload"></i>';
-
-        const hiddenImageInput = document.createElement('input');
-        hiddenImageInput.type = 'file';
-        hiddenImageInput.id = 'hiddenImageInput';
-        hiddenImageInput.className = 'hidden';
-        hiddenImageInput.accept = 'image/*';   
-        
-        fileContainer.appendChild(fileLabel);
-        fileContainer.appendChild(chosenFilePath);
-        fileContainer.appendChild(chooseFileButton);
-        fileContainer.appendChild(hiddenImageInput);
-
-        fileGroup.appendChild(fileContainer);
-
-        const captionGroup = document.createElement('div');
-        captionGroup.className = 'data-group text';
-
-        const captionLabel = document.createElement('span');
-        captionLabel.className = 'data-label';
-        captionLabel.textContent = 'Legenda: ';
-
-        const captionInput = document.createElement('input');
-        captionInput.id = 'captionInput';
-        captionInput.type = 'text';
-        captionInput.placeholder = 'Digite a legenda...';
-
-        captionGroup.appendChild(captionLabel);
-        captionGroup.appendChild(captionInput);
-
-        body.appendChild(fileGroup);
-        body.appendChild(captionGroup);
-
-        return body;
-    }  
-    
     /**
     * Configura ouvintes de eventos básicos para o dialog.
     * @protected
     */
-    _activateListeners() {
-        super._activateListeners();
+    activateListeners() {
+        super.activateListeners();
 
         const hiddenImageInput = this.querySelector('#hiddenImageInput');
         const chooseFileButton = this.querySelector('#chooseFileButton');
@@ -98,31 +35,21 @@ export default class FilePickerDialog extends Dialogs {
 
         // Verifica se um arquivo foi selecionado e se é uma imagem.
         if (file && file.type.startsWith('image/')) {
-          // Cria um URL temporário para o arquivo selecionado.
-          const imageURL = URL.createObjectURL(file);
-    
-          // Atualiza a imagem exibida.
-          chosenFilePath.value = imageURL;
+            // Cria um URL temporário para o arquivo selecionado.
+            const imageURL = URL.createObjectURL(file);
 
-          const data = await uniforge.utils.imageToBlob(file);
-          uniforge.utils.associateDataWithElement(chosenFilePath, data);
+            // Atualiza a imagem exibida.
+            chosenFilePath.value = imageURL;
+
+            const data = await uniforge.utils.imageToBlob(file);
+            uniforge.utils.associateData(chosenFilePath, data);
         }
     }
 
-    static async configDialog() {
-        function getImage(event) {  
-            event.stopPropagation();
-            const chosenFilePath = document.querySelector('#chosenFilePath');
-            const captionInput = document.querySelector('#captionInput');
-
-            const data = uniforge.utils.getAsociatedData(chosenFilePath);
-            data.caption = captionInput.value;
-                        
-            return data;
-        }
-
+    static async configDialog(options = {}) {
+        options = uniforge.utils.mergeObjects(options, { alwaysClose: true });
         return new Promise((resolve, reject) => {
-            const dialogData = {
+            const dialog = new this({
                 title: 'Enviar Imagem',
                 buttons: {
                     cancel: {
@@ -133,14 +60,19 @@ export default class FilePickerDialog extends Dialogs {
                     link: {
                         label: "Enviar",
                         icon: "fas fa-link",
-                        callback: (event) => { resolve(getImage(event)); }
+                        callback: () => {
+                            const chosenFilePath = document.querySelector('#chosenFilePath');
+                            const captionInput = document.querySelector('#captionInput');
+
+                            const data = uniforge.utils.getAsociatedData(chosenFilePath);
+                            data.caption = captionInput.value;
+                            resolve(data);
+                        }
                     }
                 },
                 abort: () => resolve(null)
-            };
-
-            const dialog = new this(dialogData);
-            dialog.render();
+            }, options);
+            dialog.show(true);
         });
     }
 }

@@ -436,12 +436,12 @@ export default class DBManager {
      * @returns {Promise<Object>} - Resultado da execu o do comando.
      */
     async addTextImages(data) {
-        let query = 'INSERT INTO _textImages (uuid, img, ext) VALUES (?,?,?);';
+        let query = 'INSERT INTO _textImages (uuid, raw, ext) VALUES (?,?,?);';
         const params = [];
         const blob = data.data;
 
         params.push(data.uuid);
-        params.push(blob.img);
+        params.push(blob.raw);
         params.push(blob.ext);
 
         this.results = await this.#execQuery(query, params);
@@ -1576,7 +1576,7 @@ export default class DBManager {
     async createTextImagesTable() {
         const query = 'CREATE TABLE IF NOT EXISTS `_textImages` (' +
             '`uuid` VARCHAR(16) NOT NULL,' +                // Identificador da Linhagem.        
-            '`img` BLOB NOT NULL,' +                        // Árvore da Linhagem (Utilizado o formato 'FamilyScript').        
+            '`raw` BLOB NOT NULL,' +                        // Árvore da Linhagem (Utilizado o formato 'FamilyScript').        
             '`ext` VARCHAR(5) NOT NULL DEFAULT `jpeg`,' +   // A linhagem é um rascunho (falso por padrão).
             'PRIMARY KEY (`uuid`))';
 

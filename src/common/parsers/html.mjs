@@ -43,8 +43,31 @@ function _parsePlaceholders(html, data) {
     const regex = /{{(.*?)}}/g;
 
     html = html.replace(regex, (match, key) => {
+        // Remova os espaços em branco do inicio e fim da possível chave.
         key = key.trim();
-        return key in data ? data[key] : (key in data.labels ? data.labels[key] : '');
+
+        // Caso o placeholder possua um '.' ele pode ser um objeto aninhado.
+        if (key.includes('.')) {
+            // Obtenha todas as possíveis chaves do objeto.
+            const keys = key.split('.');
+            // Inicie o resultado com o objeto principal.
+            let result = data;
+
+            // Percorra as chaves e obtenha o valor correspondente.
+            for (const k of keys) {
+                // Verifique se a chave existe no objeto atual.
+                if (result && Object.prototype.hasOwnProperty.call(result, k)) {
+                    // Se existir, obtenha o valor correspondente.
+                    result = result[k];
+                } else {
+                    // Caso contrario, o valor encontrado pela regex é apenas um label.
+                    return data.labels[key];
+                }
+            }
+            return result;
+        } else {
+            return key in data ? data[key] : (key in data.labels ? data.labels[key] : '');
+        }
     })
 
     return html;
@@ -167,7 +190,7 @@ function _parseCalendarTags(html) {
 function _parseFoldertreeTags(html, data) {
     console.log('UniForge | Substituindo tags de Foldertree...');
     const regex = /<foldertree id="([^"]+)"(\s+type="([^"]+)")?(\s+item="([^"]+)")(\s+data-([^>]+))?(\s+fixed="([^"]+)")?><\/foldertree>/g;
-    html = html.replace(regex, (match, id, typeAttr, typeValue, itemAttr, itemKey, datasetAttr, dataset, fixedAttr, fixed) => {        
+    html = html.replace(regex, (match, id, typeAttr, typeValue, itemAttr, itemKey, datasetAttr, dataset, fixedAttr, fixed) => {
         const isFixed = fixedAttr ? (fixed === 'true' ? true : false) : false;
 
         const type = typeAttr ? typeValue : 'default';
@@ -186,10 +209,10 @@ function _parseFoldertreeTags(html, data) {
 
         if (!('folders' in data)) {
             console.log(`O identificador 'folders' não foi encontrado no objeto data. Retornando um <ul> vazio.`);
-            return `<ul id="folderList" type="${type}" class="folder-list"></ul>`;
+            return `<ul id="folderList" type="${type}" class="folder-list" type="${type}"></ul>`;
         }
 
-        const result = utils.html.generateFolderlistHTML(data.folders, itemKey, type, isFixed);
+        const result = utils.html.generateFolderlistHTML(id, data.folders, itemKey, type, isFixed);
         return result;
     });
 
@@ -285,7 +308,7 @@ function _replaceListTags(html, data) {
         }
 
         // Variavel para armazenar o resultado do 'replace'.
-        const result = utils.html.generateListHTML(id, data[valueKey], {extraClasses, itemClass: itemClass});
+        const result = utils.html.generateListHTML(id, data[valueKey], { extraClasses, itemClass: itemClass });
         return result;
     });
 
@@ -294,4 +317,4 @@ function _replaceListTags(html, data) {
     return html;
 }
 
-   
+

@@ -1,4 +1,5 @@
-const store = globalThis.store;
+import { randomID } from "./random.mjs";
+
 
 /**
  * Obtém os dados associados a um elemento HTML.
@@ -6,7 +7,9 @@ const store = globalThis.store;
  * @returns {Object}             - Os dados associados ao element.
  */
 export function getAsociatedData(element) {
-    return store.get(element);
+    const store = globalThis.store;
+
+    return store.get(element) ?? null;
 }
 /**
         * Associa uma imagem a um elemento HTML.
@@ -15,6 +18,11 @@ export function getAsociatedData(element) {
         */
 export function associateData(element, data) {
     console.log(`UniForge | Associando um dado ao element '${element.name}'...`);
+
+    const store = globalThis.store;
+
+    // Inicializa o WeakMap se ainda não foi criado.
+    if(!store) globalThis.store = new WeakMap();
 
     const uniqueId = randomID(); // Generate a unique ID
     element.dataset.uuid = uniqueId;    // Store the ID in the element's dataset
@@ -70,10 +78,10 @@ export async function imageToBlob(file) {
         // Obtém a extensão do arquivo de imagem.
         const fileExt = file?.name.split('.').pop().toLowerCase();
 
-        data.rawData = base64;
+        data.raw = base64;
         data.ext = fileExt;
     } else {
-        data.rawData = null;
+        data.raw = null;
         data.ext = null;
     }
 

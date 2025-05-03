@@ -10,7 +10,7 @@ export default class Application {
         * @type {string}
         * 
         */
-        this.uuid = uniforge.utils.randomID();        
+        this.uuid = uniforge.utils.randomID();
 
         /**
         * Opções adicionais fornecidas à aplicação.
@@ -67,12 +67,17 @@ export default class Application {
     // Propriedade do template HTML da aplicação.
     #template;
 
+    #html = {
+        overlay: '',
+        app: ''
+    };
+
     /**
     * Obtém as configurações padrões da aplicação.
     */
     get defaultOptions() {
-        return {          
-          classes: [this.style, 'container']
+        return {
+            classes: [this.style, 'container']
         };
     }
 
@@ -85,6 +90,8 @@ export default class Application {
             close_btn: this._buildSelector('Close')
         };
     }
+
+
 
     /**
     * Propriedade que retorna um objeto com referências para elementos do formulário.
@@ -131,6 +138,10 @@ export default class Application {
     */
     get hasTemplate() {
         return this.template ? true : false;
+    }
+
+    get html() {
+        return this.#html;
     }
 
     /** 
@@ -238,8 +249,8 @@ export default class Application {
         container.id = `${this.style}Container-${this.uuid}`;
         container.classList.add(...classes);
 
-        if(this.options.height) container.style.height = this.options.height;
-        if(this.options.width) container.style.width = this.options.width;
+        if (this.options.height) container.style.height = this.options.height;
+        if (this.options.width) container.style.width = this.options.width;
 
         const header = document.createElement('div');
         header.id = `${this.style}Header-${this.uuid}`;
@@ -251,18 +262,15 @@ export default class Application {
 
         await this.prepareDerivedTemplate(container, header, main);
 
-        // Adiciona o overlay ao DOM.
-        document.body.appendChild(overlay);
-        // Adiciona o container ao DOM.
-        document.body.appendChild(container);
+        this.html.overlay = overlay.outerHTML;
+        this.html.app = container.outerHTML;
     }
 
     /**
     * Prepara o conteúdo do formulário substituindo seus placeholders e tags customizadas.
     */
     parseTemplate() {
-        const preparedContent = uniforge.parser.parseHTML(this.ui.app.innerHTML, this.data);
-        this.ui.app.innerHTML = preparedContent;
+        this.html.app = uniforge.parser.parseHTML(this.html.app, this.data);
     }
 
     /**
@@ -287,18 +295,12 @@ export default class Application {
             // Prepara o HTML da aplicação para renderização (Substitui pseudo-elements).
             this.parseTemplate();
 
-            // Ativa os ouvintes de eventos básicos.
-            this.activateBaseListeners();
-
-            // Configura os conteúdos específicos da aplicação.
-            await this.initialize();
-
             this.rendered = true;
             await triggerHook('afterRender');
 
             return this.rendered;
         } catch (error) {
-            console.error(error);
+            this.msgBox.showError(error.message, error);
         }
     }
 
@@ -317,11 +319,13 @@ export default class Application {
         // Prepara o HTML específico da aplicação para renderização.
         await this.prepareDerivedTemplate(container, header, main);
 
+        this.html.app = container.outerHTML;
+
         // Prepara o HTML da aplicação para renderização (Substitui pseudo-elements).
         this.parseTemplate();
 
-        // Ativa os ouvintes de eventos básicos.
-        this.activateBaseListeners();
+        // Insere o formulário no DOM.
+        this.#hookContainerToDOM();
 
         // Configura os conteúdos específicos da aplicação.
         await this.initialize();
@@ -332,6 +336,20 @@ export default class Application {
         return this.rendered;
     }
 
+    async configure() {
+        try {
+        // Ativa os ouvintes de eventos básicos.
+        this.activateBaseListeners();
+
+        // Configura os conteúdos específicos da aplicação.
+        if(await this.initialize()) this.configured = true;
+
+        } catch (error) {
+            this.msgBox.showError(error.message, error);
+            this.configured = false;
+        }
+    }
+
     /**
     * Limpa o formulário e re-exibe o conteúdo com os dados atuais.
     * 
@@ -340,11 +358,14 @@ export default class Application {
     */
     async refresh() {
         try {
-            this.clear();            
+            // Limpa o formulário.
+            this.clear();
+
+            // Renderiza o formulário com os dados atuais.
             await this.renderContent();
 
         } catch (error) {
-            console.error(error);
+            this.msgBox.showError(error.message, error);
         }
     }
 
@@ -353,6 +374,13 @@ export default class Application {
         else throw new Error('Não foi possível exibir o formulário. O formulário não foi renderizado.');
 
         try {
+            // Envia o HTML para o DOM.
+            this.#hookToDOM();
+
+            // Configura as funcionalidades de interação da aplicação.
+            this.configure();
+
+            // Aplicação configurado corretamente, exiba-a.
             if (this.configured) {
                 this.ui.app.classList.remove('hidden');
 
@@ -360,13 +388,13 @@ export default class Application {
                 uniforge.state.save();
             }
         } catch (error) {
-            this.msgBox.showError(error.message);
+            this.msgBox.showError(error.message, error);
         }
     }
 
     close() {
         this.ui.app.remove();
-        this.ui.overlay.remove(); 
+        this.ui.overlay.remove();
 
         // Limpa o conteúdo do formulário dos metadados da aplicação.
         uniforge.state.update(['currentForm', { name: null, state: null, activeTab: 0 }]);
@@ -385,7 +413,44 @@ export default class Application {
         this.ui.main.innerHTML = '';
         // Marca o formulário como não renderizado.
         this.rendered = false;
-    }  
+    }
+
+    #hookToDOM() {
+        this.#hookOverlayToDOM();
+        this.#hookContainerToDOM();
+    }
+
+    #hookOverlayToDOM() {
+        const parser = new DOMParser();
+        let doc = null;
+
+        // Verifica se o overlay da aplicação foi renderizado corretamente.
+        if(!this.html.overlay || this.html.overlay.isEmpty())
+            throw new Error('O formulário precisa ter um overlay.');
+
+         // Obtém o elemento HTML do overlay da aplicação.
+         doc = parser.parseFromString(this.html.overlay, 'text/html');
+         const overlay = doc.body.firstChild;
+
+        // Adiciona o overlay ao DOM.
+        document.body.appendChild(overlay);
+    }
+
+    #hookContainerToDOM() {
+        const parser = new DOMParser();
+        let doc = null;
+
+        // Verifica se o container da aplicação foi renderizado corretamente.
+        if(!this.html.app || this.html.app.isEmpty())
+            throw new Error('O formulário precisa ter um container.');
+
+         // Obtém o elemento HTML do container da aplicação.
+         doc = parser.parseFromString(this.html.app, 'text/html');
+         const container = doc.body.firstChild;
+
+        // Adiciona o container ao DOM.
+        document.body.appendChild(container);
+    }
     /* ---------------------------------------------------------------------------------------------------------------- */
     // LISTENERS
     /**
@@ -394,7 +459,7 @@ export default class Application {
      */
     activateBaseListeners() {
         const header = this.ui.header;
-        header.addEventListener('mousedown', (event) => { this._onMouseDown.bind(this)(event); });       
+        header.addEventListener('mousedown', (event) => { this._onMouseDown.bind(this)(event); });
 
         const main = this.ui.main;
         main.addEventListener('submit', (event) => { event.preventDefault(); });
@@ -403,8 +468,8 @@ export default class Application {
         document.addEventListener('mouseup', (event) => { this._onMouseUp.bind(this)(event); });
 
         // Fecha aplicação ao clicar no botão de fechar.
-        this.ui.close_btn.addEventListener('click', (event) => { this._onCloseClick.bind(this)(event); }, { once: true });
-    }    
+        this.ui.close_btn.addEventListener('click', (event) => { this._onCloseClick.bind(this)(event); });
+    }
 
     /**
     * Fecha a aplicação com clicar no botão de fechar no cabeçalho.

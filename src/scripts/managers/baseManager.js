@@ -3,8 +3,6 @@ export class BaseManager {
         this.entryId = '';
 
         this.msgBox = uniforge.msgBox; 
-        this.tooltip = uniforge.tooltip;
-
         this.form = form;              
     }
 

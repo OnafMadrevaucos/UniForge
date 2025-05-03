@@ -12,7 +12,7 @@ export class LinkTooltip {
     return linkSpan.outerHTML;
   }
 
-  async _showLinkTooltip(event) {
+  _showLinkTooltip(event) {
     const span = event.target.closest('.linked-text');
 
     const link = {
@@ -22,11 +22,36 @@ export class LinkTooltip {
 
     let data = null;
 
-    if (link.type == 'entry') data = await uniforge.db.getEntryWithIcon(link.id);
-    else data = await uniforge.db.getTimelineWithIcon(link.id);
+    switch (link.type) {
+      case 'entry':
+        data = uniforge.doc.entries.get(link.id);
+        break;
+      case 'event':
+        data = uniforge.doc.events.get(link.id);
+        break;
+      case 'lineage':
+        data = uniforge.doc.lineages.get(link.id);
+        break;
+      case 'timeline':
+        data = uniforge.doc.timelines.get(link.id);
+        break;
+    }
 
     // Verifica se a entrada foi encontrada. Se não, não exibe o tooltip.
     if (!data) return;
+
+    if (link.type !== 'timeline') {
+      const section = uniforge.doc.sections.get(data.sid);
+      const chapter = uniforge.doc.chapters.get(section.cid);
+
+      // Verifica se o capítulo foi encontrado. Se não, não exibe o tooltip.
+      if (!chapter) return;
+
+      // Obtém o ícone do link a partir do capítulo.
+      data.icon = chapter.icon;
+    } else {
+      data.icon = 'fa-timeline';
+    }
 
     let tooltip = document.querySelector('.link-tooltip');
     let entryTitle = null; // Elemento do Título da Entrada
@@ -34,11 +59,11 @@ export class LinkTooltip {
     let entryIdParagraph = null; // Elemento do Identificador da Entrada
     let entryDescription = null; // Elemento da Descrição da Entrada
 
-    // Verifica se o tooltip precisa ser criado
+    // Verifica se o tooltip precisa ser criado.
     if (!tooltip) {
       tooltip = document.createElement('div');
       tooltip.id = 'linkTooltip';
-      tooltip.classList.add('link-tooltip', 'flexcol');
+      tooltip.classList.add('link-tooltip', 'flexcol', 'visible');
 
       const headerDiv = document.createElement('div');
       headerDiv.classList.add('header', 'flexrow');
@@ -73,7 +98,7 @@ export class LinkTooltip {
 
     // Preenche os elementos do tooltip
     entryTitle.textContent = data.title;
-    entryTypeIcon.innerHTML = `<i class='${data.icon}'></i>`;
+    entryTypeIcon.innerHTML = `<i class='fas ${data.icon}'></i>`;
     entryIdParagraph.textContent = `${link.id}`;
     entryDescription.innerHTML = data.flavor;
 
@@ -87,22 +112,20 @@ export class LinkTooltip {
     coord.Y = event.pageY + 25;
 
     if (coord.X + tooltipRect.width > viewportWidth) {
-      coord.X = viewportWidth - (tooltipRect.width + tooltipRect.width/2); // Ajusta para manter o tooltip visível
+      coord.X = viewportWidth - (tooltipRect.width + tooltipRect.width / 2); // Ajusta para manter o tooltip visível
     }
     if (coord.Y + tooltipRect.height > viewportHeight) {
-      coord.Y = viewportHeight - (tooltipRect.height + tooltipRect.height/2); // Ajusta para manter o tooltip visível
+      coord.Y = viewportHeight - (tooltipRect.height + tooltipRect.height / 2); // Ajusta para manter o tooltip visível
     }
 
     tooltip.style.left = `${coord.X}px`;
     tooltip.style.top = `${coord.Y}px`;
-    // Exibe o tooltip construído
-    tooltip.classList.add('visible');
   }
 
   _hideLinkTooltip() {
     const tooltip = document.querySelector('.link-tooltip');
     if (tooltip) {
-      tooltip.classList.remove('visible');
+      tooltip.remove();
     }
   }
 }

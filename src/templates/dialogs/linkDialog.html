@@ -1,0 +1,44 @@
+<div class="link-dialog entries flexrow">
+    <div class="sidebar">
+        <foldertree id="entryList" item="entries" fixed="true"></foldertree>
+        <foldertree id="eventList" item="events" fixed="true"></foldertree>
+        <foldertree id="lineageList" item="lineages" fixed="true"></foldertree>
+        <foldertree id="timelineList" item="timelines" fixed="true"></foldertree>
+        <div class="footer">
+            <div id="searchItem" class="input-container search-bar flexrow">
+                <input type="text" id="searchInput" class="search-data" placeholder="Pesquisar...">
+                <button id="searchBtn" class="search-button"><i class="fas fa-magnifying-glass"></i></button>
+            </div>
+        </div>
+    </div>
+    <div class="content flexcol">
+        <input id="titleInput" type="text" class="title" name="title" placeholder="Título da Entrada" disabled />
+        <fieldset class="info-set flexcol" disabled>
+            <div id="entryTypeGroup" class="data-group combo">
+                <span class="data-label">Tipo </span>
+                <combo id="entryType" value="entryTypes" />
+            </div>
+            <div id="founderGroup" class="data-group text hidden">
+                <span class="data-label">Fundador </span>
+                <input id="founderInput" type="text" class="data" />
+            </div>
+            <div id="linkflavorEditor" class="simple-tmce">
+                <div class="text-content editable"></div>
+            </div>
+            <div id="relevanceGroup" class="data-group combo hidden">
+                <span class="data-label">Relevância </span>
+                <combo id="relevance" value="relevances" />
+            </div>
+            <div id="dateGroup" class="data-complex flexrow hidden">
+                <div class="data-group text">
+                    <span class="data-label">Início </span>
+                    <input id="startDateInput" type="text" class="data" />
+                </div>
+                <div class="data-group text">
+                    <span class="data-label">Término </span>
+                    <input id="endDateInput" type="text" class="data" />
+                </div>
+            </div>
+        </fieldset>
+    </div>
+</div>

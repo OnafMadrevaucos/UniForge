@@ -33,7 +33,7 @@ export default class SidebarForm extends BaseForm {
     }
 
     get isSimpleSidebar() {
-        const folderList = document.getElementById('folderList');
+        const folderList = this.querySelector('.folder-list');
         return folderList.type === 'simple';
     }
 
@@ -233,30 +233,36 @@ export default class SidebarForm extends BaseForm {
             const minimizeButton = this.querySelector('#minimizeButton');
             if (minimizeButton) minimizeButton.addEventListener('click', (event) => { this.onMinimizeClick(event); });
 
-            const folders = this.querySelectorAll('.folder');
+            const folderList = this.querySelector('.folder-list');
+            if (folderList) {
 
-            folders.forEach(item => {
-                const folderHeader = item.querySelector('.folder-header');
-                
-                item.addEventListener('click', (event) => {
-                    this.onFolderClick(event);
-                });
+                const folders = this.querySelectorAll('.folder');
 
-                if (this.isSimpleSidebar) item.addEventListener('dblclick', (event) => { this.onFolderDoubleClick(event); });
-            });
+                const isSimpleSidebar = folderList.type === 'simple';
 
-            // Se o tipo de lista não for 'simple', adiciona ouvintes de eventos para os itens de Entrada.
-            if (!this.isSimpleSidebar) {
-                const items = this.querySelectorAll('.entry-item');
+                folders.forEach(item => {
+                    const folderHeader = item.querySelector('.folder-header');
 
-                items.forEach(item => {
                     item.addEventListener('click', (event) => {
-                        this.onEntryItemClick(event);
+                        this.onFolderClick(event);
                     });
-                    item.addEventListener('dblclick', (event) => {
-                        this.onEntryItemDoubleClick(event);
-                    });
+
+                    if (isSimpleSidebar) item.addEventListener('dblclick', (event) => { this.onFolderDoubleClick(event); });
                 });
+
+                // Se o tipo de lista não for 'simple', adiciona ouvintes de eventos para os itens de Entrada.
+                if (!isSimpleSidebar) {
+                    const items = this.querySelectorAll('.entry-item');
+
+                    items.forEach(item => {
+                        item.addEventListener('click', (event) => {
+                            this.onEntryItemClick(event);
+                        });
+                        item.addEventListener('dblclick', (event) => {
+                            this.onEntryItemDoubleClick(event);
+                        });
+                    });
+                }
             }
         }
     }
@@ -295,8 +301,8 @@ export default class SidebarForm extends BaseForm {
     */
     onSidebarClick(event) {
         event.stopPropagation();
-        if (!this.isSimpleSidebar && event.target.classList.contains('.entry-item')) return;
-        if (this.isSimpleSidebar && event.target.classList.contains('.folder')) return;
+        if (!this.isSimpleSidebar && event.target.classList.contains('entry-item')) return;
+        if (this.isSimpleSidebar && event.target.classList.contains('folder')) return;
 
         this.clearContent();
         if (this.controlStates) this.controlStates(this.states.default);
