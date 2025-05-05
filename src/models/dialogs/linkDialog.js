@@ -138,6 +138,7 @@ export default class LinkDialog extends BaseDialog {
 
         const options = uniforge.utils.mergeObjects(uniforge.tinymceOptions.lite, {
             selector: 'div#linkflavorEditor',
+            placeholder: "Descrição do link...",
             readonly: true,
             init_instance_callback: (editor) => {
                 editor.setContent(""); // Garante que o editor seja iniciado vazio.

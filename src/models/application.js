@@ -69,7 +69,8 @@ export default class Application {
 
     #html = {
         overlay: '',
-        app: ''
+        app: '',
+        main: ''
     };
 
     /**
@@ -269,8 +270,8 @@ export default class Application {
     /**
     * Prepara o conteúdo do formulário substituindo seus placeholders e tags customizadas.
     */
-    parseTemplate() {
-        this.html.app = uniforge.parser.parseHTML(this.html.app, this.data);
+    parseTemplate(html) {
+        return uniforge.parser.parseHTML(html, this.data);
     }
 
     /**
@@ -293,7 +294,7 @@ export default class Application {
             await this.prepareTemplate();
 
             // Prepara o HTML da aplicação para renderização (Substitui pseudo-elements).
-            this.parseTemplate();
+            this.html.app = this.parseTemplate(this.html.app);
 
             this.rendered = true;
             await triggerHook('afterRender');
@@ -312,20 +313,15 @@ export default class Application {
         if (this.prepareData) this.prepareData();
 
         // Obtem os elementos HTML para renderização.
-        const container = this.ui.app;
-        const header = this.ui.header;
         const main = this.ui.main;
 
         // Prepara o HTML específico da aplicação para renderização.
-        await this.prepareDerivedTemplate(container, header, main);
-
-        this.html.app = container.outerHTML;
+        this.html.main = await this.refreshDerivedTemplate(main);
 
         // Prepara o HTML da aplicação para renderização (Substitui pseudo-elements).
-        this.parseTemplate();
-
-        // Insere o formulário no DOM.
-        this.#hookContainerToDOM();
+        this.html.main = this.parseTemplate(this.html.main); 
+        
+        main.innerHTML = this.html.main;
 
         // Configura os conteúdos específicos da aplicação.
         await this.initialize();
@@ -450,6 +446,22 @@ export default class Application {
 
         // Adiciona o container ao DOM.
         document.body.appendChild(container);
+    }
+
+    #hookMainToContainer() {
+        const parser = new DOMParser();
+        let doc = null;
+
+        // Verifica se o container da aplicação foi renderizado corretamente.
+        if(!this.html.main || this.html.main.isEmpty())
+            throw new Error('O formulário precisa ter um main.');
+
+         // Obtém o elemento HTML do container da aplicação.
+         doc = parser.parseFromString(this.html.main, 'text/html');
+         const main = doc.body.firstChild;
+
+        // Adiciona o container ao DOM.
+        this.ui.app.appendChild(main);
     }
     /* ---------------------------------------------------------------------------------------------------------------- */
     // LISTENERS

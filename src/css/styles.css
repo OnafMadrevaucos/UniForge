@@ -1887,14 +1887,23 @@ input:checked+.slider::before {
 .timeline .main-viewer,
 .article .main-viewer {
     background: url(../ui/texture1.webp) no-repeat top center / auto 770px, var(--lib-background) url(../ui/texture2.webp) no-repeat bottom center / auto 704px;
-    border-radius: var(--default-border-radius);
+    border-radius: var(--default-border-radius);    
     box-shadow: var(--small-shadow);
     overflow-y: scroll;
 }
 
-.timeline .content .main-viewer,
-.article .content .main-viewer,
-.article .content.main-viewer {
+#viewer.timeline .main-viewer,
+#viewer.article .main-viewer {
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+}
+
+#viewer.timeline .content,
+.timeline .content .main-viewer {
+    padding: 0;
+}
+.article:not(.timeline) .content .main-viewer,
+.article:not(.timeline) .content.main-viewer {
     padding: 15px;
 }
 
@@ -1971,8 +1980,7 @@ input:checked+.slider::before {
     margin-top: 0.5em;
 }
 
-#entryFormOverlay .article .content p,
-.article .content p {
+.article:not(.timeline) .content p {
     color: var(--dark-text-color);
     margin-block: 0.25em;
 }
@@ -2227,7 +2235,7 @@ input:checked+.slider::before {
 .timeline .timeline-content .timeline-list li .tl-circ {
     position: relative;
     top: 9.5vh;
-    left: 35.9vw;
+    left: 36.24vw;
     text-align: center;
     background: var(--dark-red);
     color: var(--light-text-color);
@@ -2243,9 +2251,12 @@ input:checked+.slider::before {
     z-index: 1;
     transition: left 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
+.timeline.article .timeline-content .timeline-list li .tl-circ {
+    left: 23.45vw;
+}
 
 .timeline:has(>.minimized) .timeline-content .timeline-list li .tl-circ {
-    left: 44.55vw;
+    left: 45.45vw;
 }
 
 .timeline .timeline-content .timeline-list li .tl-circ.minor {
@@ -3634,11 +3645,23 @@ folder-list .folder.created.selected .folder-header .fa-trash {
     color: var(--background-color);
 }
 
+.link-tooltip .date {
+    justify-content: center;
+    gap: var(--default-gap-size);
+}
+.link-tooltip .date span {
+    font-style: normal;
+    color: var(--dark-red);}
+
 /* ------ Text Link ------ */
 #tinymce span.linked-text,
 .text-content span.linked-text {
     border-bottom: 1px dashed var(--red);
     cursor: alias;
+}
+
+.text-content span.linked-text[data-type="event"] {
+    cursor: help;
 }
 
 .text-content span.linked-text::after {

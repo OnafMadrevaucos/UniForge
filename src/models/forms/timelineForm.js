@@ -24,7 +24,7 @@ export default class TimelineForm extends SidebarForm {
 
         this.currentState = this.#states.default; // Estado atual do formulário.
 
-        this.eventCheckedIcon = 'fa-calendar-check'; // Ícone de Evento selecionado.
+        this.eventCheckedIcon = 'fa-calendar-check'; // Ícone de Evento selecionado.        
     }
 
     #states = {
@@ -46,6 +46,21 @@ export default class TimelineForm extends SidebarForm {
 
     get states() {
         return this.#states;
+    }
+
+    /**
+     * @overload
+     * Retorna um objeto com as seguintes propriedades:
+     *  - sidebar: O elemento HTML que representa a barra lateral do formulário.
+     *  - dialog: O elemento HTML que representa o diálogo de confirmação.
+     * 
+     * @returns {Object}  - Um objeto com as propriedades mencionadas acima.
+     */
+    get ui() {
+        const ui = {
+            forge: document.querySelector(`#formMain-${this.uuid} #timelineForge`)
+        };
+        return uniforge.utils.mergeObjects(super.ui, ui);
     }
 
     /**
@@ -85,6 +100,11 @@ export default class TimelineForm extends SidebarForm {
 
         this.selection.folder = null; // Limpa a seleção de pasta.
         this.manager.clear();
+
+        const titleInput = this.ui.forge.querySelector('#titleInput');
+        titleInput.value = '';
+
+        tinymce.get('timelineFlavorEditor').setContent('');
     }
     /* ---------------------------------------------------------------------------------------------------------------- */
     // INTERFACE DE USUÁRIO
@@ -103,7 +123,7 @@ export default class TimelineForm extends SidebarForm {
         const newButton = this.querySelector('#newTimelineButton');
         const manageButton = this.querySelector('#manageTimelineButton');
 
-        const forge = this.querySelector('#timelineForge');
+        const forge = this.ui.forge;
 
         switch (state) {
             // ESTADO DE HABILITAÇÃO DE NOVA ENTRADA.
@@ -140,8 +160,6 @@ export default class TimelineForm extends SidebarForm {
             // ESTADO PADRÃO.
             default: {
                 forge.classList.remove('active');
-                const titleInput = forge.querySelector('#titleInput');
-                titleInput.value = '';
 
                 manageButton.innerHTML = '<i class="fas fa-pen-to-square"></i>';
                 manageButton.setAttribute('data-tooltip', 'Gerenciar Linha do Tempo');
@@ -187,12 +205,12 @@ export default class TimelineForm extends SidebarForm {
     * Configura o editor TinyMCE para o texto de floreio da Linha do Tempo.
     */
     async configureFlavorTinyMCE() {
-        if (tinymce.get('flavorEditor')) {
-            tinymce.remove('#flavorEditor');
+        if (tinymce.get('timelineFlavorEditor')) {
+            tinymce.remove('#timelineFlavorEditor');
         }
 
         const options = uniforge.utils.mergeObjects(uniforge.tinymceOptions.simple, {
-            selector: 'div#flavorEditor',
+            selector: 'div#timelineFlavorEditor',
             placeholder: "Descrição da linha do tempo...",
             init_instance_callback: (editor) => {
                 editor.setContent(""); // Garante que o editor seja iniciado vazio.
@@ -290,6 +308,7 @@ export default class TimelineForm extends SidebarForm {
             const titleInput = forge.querySelector('#titleInput');
 
             this.manager.timeline.title = titleInput.value;
+            this.manager.timeline.flavor = tinymce.get('timelineFlavorEditor').getContent();
             const committed = await this.manager.commit();
 
             // Se a linha do tempo foi salva com sucesso, atualiza o título da pasta.
@@ -500,12 +519,17 @@ export default class TimelineForm extends SidebarForm {
      */
     _showTimeForge() {
         const folder = this.selection.folder;
-        const titleSpan = folder.querySelector('span');
-        const title = titleSpan.innerText;
+        const timelineId = folder.dataset.id;
+        const timeline = uniforge.doc.timelines.get(timelineId);
+
+        const title = timeline.title;
+        const flavor = timeline.flavor;
 
         const forge = this.querySelector('#timelineForge');
         const titleInput = forge.querySelector('#titleInput');
         titleInput.value = title;
+
+        tinymce.get('timelineFlavorEditor').setContent(flavor);
 
         const eventList = this.querySelector('#eventList');
         const eventItens = eventList.querySelectorAll('.item');
