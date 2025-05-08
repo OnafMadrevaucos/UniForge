@@ -658,10 +658,7 @@ export class TimelineManager extends BaseManager {
 
         uniforge.navQueue.push(this);
 
-        document.body.style.cursor = 'wait';
-        const overlay = document.getElementById('entryFormOverlay');
-        const form = new BaseForm(overlay);
-        this.anchorManager = new CodexManager(form);
+        document.body.style.cursor = 'wait';        
     }
 
     _onTimeContentScroll() {

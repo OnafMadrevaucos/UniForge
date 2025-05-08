@@ -800,7 +800,7 @@ export default class EntryForm extends SidebarForm {
     const pickerId = dataGroup.id;
     const picker = this.datePickers[pickerId];
 
-    if (!picker.isEmpty) {
+    if (!picker.empty) {
 
       // Obtem as datas de inicio e fim.
       const startDate = this.datePickers.startDate;

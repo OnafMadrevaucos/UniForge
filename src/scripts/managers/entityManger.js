@@ -1,7 +1,9 @@
 import EntrySearchDialog from "../../models/dialogs/entrySearchDialog.js";
 import { BaseManager } from "./baseManager.js";
+import dTree from "../../common/d3-tree/dtree.mjs";
+import CustomDate from "../../common/primitives/date.mjs";
 
-export default class LineageManager extends BaseManager {    
+export default class EntityManager extends BaseManager {
     testScript = 'iR3QK8\tpLucas\tTking\tlRodrigues Macedo\tgm\tmOLP90\tfA334F\tb19921222\n' +
         'iDKP41\tpJéssica Cristina\tTqueen\tlCarvalho Silva\tgf\tb19910725\n' +
         'iST78B\tpAlisson José\tTcivilian\tlLima\tgm\tb19920206\n' +
@@ -21,6 +23,8 @@ export default class LineageManager extends BaseManager {
         'iA334F\tpRodrigo\tlde Oliveira Macedo\tTcivilian\tgm\tb19650404\n' +
         'iOLP90\tpMaryleila\tlde Moura Rodrigues Macedo\tTqueen\tgf\tb19630907\n';
 
+    treeContainerId = '#treeContainer';
+
     /**
      * Objeto privado que gerencia os indivíduos (nós) e relacionamentos (galhos) de uma família.
     */
@@ -28,12 +32,55 @@ export default class LineageManager extends BaseManager {
         root: null,
         nodes: {},
         branches: []
-    };
+    };    
 
     get MAX_TIER() { return 99999; }
 
-    get editorConfig() {
+    get seedConfig() {
+        const MAX_TIER = this.MAX_TIER;
         return {
+            extra: (member) => {
+                return {
+                    'status': member.status,
+                    'surname': member.surname,
+                    'gender': member.gender,
+                    'born': member.born,
+                    'death': member.death,
+                    'tier': member.tier
+                };
+            }
+        };
+    }
+
+    get diagramConfig() {
+        return {
+            target: this.treeContainerId,
+            debug: false,
+            width: 600,
+            height: 600,
+            hideMarriageNodes: true,
+            marriageNodeSize: 10,
+            callbacks: {
+                nodeClick: this._onNodeClick,
+                textRenderer: this._renderText,
+                nodeRenderer: this._renderNode
+            },
+            margin: {
+                top: 0,
+                right: 0,
+                bottom: 0,
+                left: 0
+            },
+            nodeWidth: 150,
+            nodeMinHeight: 50,
+            styles: {
+                node: 'node',
+                linage: 'linage',
+                marriage: 'marriage',
+                text: 'node-text'
+            }
+        };
+        /*return {
             layout: new go.LayeredDigraphLayout({
                 direction: 90,
                 nodeSpacing: 20,
@@ -50,7 +97,7 @@ export default class LineageManager extends BaseManager {
                 }
             }),
             'toolManager.hoverDelay': 100
-        };
+        };*/
     }
 
     get Root() {
@@ -69,6 +116,10 @@ export default class LineageManager extends BaseManager {
         return this.#tree;
     }
 
+    get treeContainer() {
+        return this.form.querySelector(this.treeContainerId);
+    }
+
     set Root(value) {
         this.#tree.root = value;
         this.addNode(value, true);
@@ -77,46 +128,152 @@ export default class LineageManager extends BaseManager {
     /**
      * Constroe a Árvore de Linhagem no diagram de fluxograma.
      * @param {HTMLElement} container - O elemento HTML que irá conter o diagram de fluxograma.
-     */
-    buildTree() {
-        // Certifique-se de que a biblioteca GoJS foi carregada
-        if (typeof go === 'undefined') {
-            console.error('A biblioteca GoJS não foi carregada.');
-            return null;
+    */
+    async buildTree() {
+        const data = this._getNodeData();
+        const container = this.treeContainer;
+
+        if (data.length > 0) {
+            const seed = this.getSeed();
+            //const seed = await dSeeder.seed(data, this.Tree.root ,this.seedConfig);
+            container.classList.remove('empty');
+
+            this.diagram = dTree.init(seed, this.diagramConfig);
+        } else {
+            container.classList.add('empty');
+            container.innerHTML = '';
         }
 
-        const nodes = this._getNodeData();
-        const links = this._getLinkData();
-        
-        this.diagram = uniforge.diagrams.build('treeContainer', this.editorConfig, nodes, links);
         return this.diagram;
     }
 
     refreshTree() {
         // Verifica se o diagrama foi inicializado.
-        if(this.diagram) {
+        if (this.diagram) {
             // Limpa o diagrama atual.
             this.clearTree();
 
             // Cria um novo diagrama.
             this.buildTree();
-        }   
+        }
     }
 
-    clearTree(cleardata = false) { 
+    clearTree(cleardata = false) {
         // Limpa o diagrama atual, caso haja um inicializado.
-        if (this.diagram){
-            this.diagram.clear();  
-            this.diagram.div = null; // Limpa a referência ao diagrama.          
+        if (this.diagram) {
+            this.diagram = null;
+
+            const container = this.treeContainer;
+            container.innerHTML = '';
         }
 
-        if(cleardata) {
+        if (cleardata) {
             this.#tree = {
                 root: null,
                 nodes: {},
                 branches: []
             };
         }
+    }
+
+    getSeed() {
+        const tree = this.#tree;
+        const nodes = Object.values(tree.nodes);
+        const branches = tree.branches;
+        const root = tree.nodes[tree.root];
+
+        // Cria um objeto que mapeia os IDs dos nós para os objetos de nó
+        const nodeMap = {};
+        nodes.forEach(node => {
+            nodeMap[node.id] = node;
+        });
+
+        // Função recursiva para percorrer a árvore
+        function recursiveCall(node, depthOffset) {
+            const n = {
+                name: node.givenName,
+                depthOffset: depthOffset,
+                marriages: [],
+                extra: {
+                    status: node.title,
+                    gender: node.gender,
+                    born: node.birthDate,
+                    death: node.deathDate,
+                }
+            };
+
+            // Etapa 1: Busca relacionamentos do tipo 'mate'
+            branches.forEach(branch => {
+                if (branch.type === 'mate' && (branch.id1 === node.id || branch.id2 === node.id)) {
+                    const spouseId = branch.id1 === node.id ? branch.id2 : branch.id1;
+                    const spouseNode = nodeMap[spouseId];
+
+                    const spouseMates = branches                    
+                    .map(b => {
+                        if (b.type === 'mate' && (b.id1 === spouseId || b.id2 === spouseId) && (b.id1 !== node.id && b.id2 !== node.id)) {
+                            if(b.id1 !== spouseNode.id && b.id1 !== node.id) {
+                                return b.id1;
+                            } else if(b.id2 !== spouseNode.id && b.id2 !== node.id) {
+                                return b.id2;
+                            }
+                            return;
+                        }
+                    }).filter((b) => b !== undefined && b !== null);
+
+                    const spouseChild = branches                    
+                    .map(b => {
+                       if(b.type === 'genitor' && b.id1 === spouseId) return b.id2;
+                       else return;
+                    }).filter((b) => b !== undefined && b !== null);
+
+                    const marriage = {
+                        spouse: {
+                            name: spouseNode.givenName,
+                            extra: {
+                                status: spouseNode.title,
+                                gender: spouseNode.gender,
+                                born: spouseNode.birthDate,
+                                death: spouseNode.deathDate,
+                                others: {
+                                    spouseMates: spouseMates,
+                                    spouseChild: spouseChild
+                                }
+                            }
+                        },
+                        children: []
+                    };
+
+                    n.marriages.push(marriage);
+                }
+            });
+
+            // Etapa 2: Busca relacionamentos do tipo 'genitor'
+            branches.forEach(branch => {
+                if (branch.type === 'genitor' && branch.id1 === node.id) {
+                    const childId = branch.id2;
+                    const childNode = nodeMap[childId];
+
+                    const childD3Node = recursiveCall(childNode, depthOffset + 1);
+                    // Encontra o marriage onde o childNode deve ser incluído
+                    const marriage = n.marriages.find(marriage => {
+                        const spouse = nodes.find(genitor => {
+                            if (genitor.id !== node.id && (childNode.genitors.a === genitor.id || childNode.genitors.b === genitor.id)) return genitor;
+                        })
+                        return spouse.givenName === marriage.spouse.name;
+                    });
+
+                    if (marriage) {
+                        marriage.children.push(childD3Node);
+                    }
+                }
+            });
+
+            return n;
+        }
+        // Percorre a árvore de forma recursiva
+        const data = [recursiveCall(root, 1)];
+
+        return data;
     }
 
     addNode(entry, isRoot = false) {
@@ -126,7 +283,7 @@ export default class LineageManager extends BaseManager {
             id: entry.id ?? entry.eid,
             givenName: entry.givenName,
             birthDate: entry.birthDate ?? '00010101',
-            deathDate: entry.deathDate ?? '00010101',            
+            deathDate: entry.deathDate ?? '00010101',
             gender: entry.gender ?? 'n',
             title: entry.title ?? '',
             group: entry.group ?? '',
@@ -148,17 +305,17 @@ export default class LineageManager extends BaseManager {
         if (!node.groupOrder?.toString().isEmpty()) line += `\tO${node.groupOrder}`;
 
         // A raiz da árvore não tem genitores.
-        if(!isRoot){  
+        if (!isRoot) {
             if (!node.genitors.a?.isEmpty()) line += `\tm${node.genitors.a}`;
-            if (!node.genitors.b?.isEmpty()) line += `\tf${node.genitors.b}`; 
+            if (!node.genitors.b?.isEmpty()) line += `\tf${node.genitors.b}`;
         }
 
-        if (node.deceased) line += `\tz1`;  
-        if (node.hasImg) line += `\tr1`;   
-        
+        if (node.deceased) line += `\tz1`;
+        if (node.hasImg) line += `\tr1`;
+
         tree.nodes[node.id] = node;
 
-        this.refreshTree();        
+        this.refreshTree();
         return line;
     }
 
@@ -227,10 +384,10 @@ export default class LineageManager extends BaseManager {
                     switch (tag) {
                         case 'p':
                             node.givenName = data;
-                            break;                        
+                            break;
                         case 'T':
                             node.title = data;
-                            break;                        
+                            break;
                         case 'q':
                             node.group = data;
                             break;
@@ -313,7 +470,7 @@ export default class LineageManager extends BaseManager {
      * @returns {string} - O string em FamilyScript.
     */
     toFamilyScript() {
-        let scriptLines = [];       
+        let scriptLines = [];
 
         // Processar indivíduos.
         Object.values(this.#tree.nodes).forEach(node => {
@@ -372,28 +529,32 @@ export default class LineageManager extends BaseManager {
         let data = [];
         nodes.forEach(node => {
             const n = {
-                id: node.id,
-                key: node.id,
-                name: node.givenName,
-                status: node.title,
-                gender: node.gender,
-                born: node.birthDate,
-                death: node.deathDate,
-                tier: node.tier ?? this.MAX_TIER
+                'id': node.id,
+                'name': node.givenName,
+                "parent1Id": node.genitors.a ?? null,
+                "parent2Id": node.genitors.b ?? null,
+                'status': node.title,
+                'surname': node.surnameNow,
+                'gender': node.gender,
+                'born': node.birthDate,
+                'death': node.deathDate,
+                'tier': node.tier ?? this.MAX_TIER
+
             };
+
             data.push(n);
         });
 
         return data;
     }
 
-    _getLinkData() {
+    _getLinkData(id) {
         // Obtém a árvore de linhagem atual.
         const tree = this.#tree;
         // Verifica se a árvore de linhagem está vazia.
         if (!tree || tree.branches.length === 0) return [];
 
-        const branches = tree.branches;
+        const branches = tree.branches.filter(branch => branch.id2 === id);
 
         let data = [];
         branches.forEach(branch => {
@@ -438,5 +599,69 @@ export default class LineageManager extends BaseManager {
                 this._setNodeTiers(this.#tree.nodes[id2], tier - 1, visited);
             }
         }
+    }
+
+    _renderText(name, extra, textClass) {
+        if (name.isEmpty() || !extra) return '';
+
+        const text = document.createElement('div');
+        text.classList.add(textClass, 'flexcol');
+
+        const nameSpan = document.createElement('span');
+        nameSpan.innerHTML = name;
+
+        const dateDiv = document.createElement('div');
+        dateDiv.classList.add('node-dates', 'flexrow');
+
+        const bornDate = document.createElement('span');
+        bornDate.innerHTML = `<i class="fas fa-hourglass-start"></i> ${extra.born}`;
+        dateDiv.appendChild(bornDate);
+
+        if (extra.death) {
+            const deathDate = document.createElement('span');
+            deathDate.innerHTML = `<i class="fas fa-hourglass-end"></i> ${extra.death}`;
+            dateDiv.appendChild(deathDate);
+        }
+
+        if(extra.others) {
+             
+        }
+
+        const genderSpan = document.createElement('span');
+        genderSpan.classList.add('node-gender', extra.gender === 'm' ? 'male' : 'female');
+        genderSpan.innerHTML = extra.gender === 'm' ? 'Masc.' : 'Fem.';
+
+        text.appendChild(nameSpan);
+        text.appendChild(dateDiv);
+        text.appendChild(genderSpan);
+
+        return text;
+    }
+
+    _renderNode(name, x, y, width, height, extra, id, nodeClass, textClass, textRenderer) {
+        const node = document.createElement('div');
+        node.classList.add(nodeClass, 'flexrow');
+        node.id = 'node' + id;
+
+        const iconMap = {
+            'king': 'fa-chess-king',
+            'queen': 'fa-chess-queen',
+            'civilian': 'fa-user',
+            'princess': 'fa-crown'
+        }
+
+        const icon = document.createElement('div');
+        icon.classList.add('node-icon');
+        icon.innerHTML = `<i class="fas ${iconMap[extra.status]}"></i>`; ;
+        node.appendChild(icon);
+
+        const text = textRenderer(name, extra, textClass);
+        node.appendChild(text);
+
+        return node.outerHTML;
+    }
+
+    _onNodeClick(name, extra) {
+        console.log(name);
     }
 }

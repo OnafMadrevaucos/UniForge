@@ -1,10 +1,10 @@
 export default class CustomDate {
     constructor(calendar = {}, date = {}) {
-      if (calendar && !calendar.isEmpty()) {
+      if (calendar && !calendar.empty()) {
         this.calendar = calendar;
       };
   
-      if (date && !date.isEmpty()) {
+      if (date && !date.empty()) {
         this.day = date.day ?? this.#day;
         this.month = date.month ?? this.#month;
         this.year = date.year ?? this.#year;
