@@ -3619,6 +3619,8 @@ folder-list .folder.created.selected .folder-header .fa-trash {
     flex: 1;
     font-size: var(--default-size);
     gap: var(--small-gap-size);
+    height: var(--fill-height);
+    padding-top: 0.5vh;
 }
 .lineage-tree .node-text .node-dates {
     width: var(--fill-width);
@@ -3659,6 +3661,43 @@ folder-list .folder.created.selected .folder-header .fa-trash {
     background-color: pink;
     color: var(--dark-red);
     border-color: var(--dark-red);
+}
+.lineage-tree .node-text .info-footer {
+    border-top: 1px solid var(--dark-red);
+    margin-top: auto;
+    padding-top: 2px;
+    height: 20%;
+}
+.lineage-tree .node-text .info-footer .others {
+    flex: 1;
+    color: var(--light-blue);
+    font-size: var(--smaller-size);
+    align-content: center;    
+}
+.lineage-tree .node-text .info-footer .others:first-of-type {
+    border-right: 1px groove var(--blue);
+}
+.lineage-tree .node-text .info-footer .others[data-count]:hover {
+    color: var(--dark-red);
+    cursor: pointer;
+}
+.lineage-tree .node-text .info-footer .others::after {
+    display: none;
+}
+.lineage-tree .node-text .info-footer .others[data-count]::after {
+    position: relative;
+    top: -0.6vh;
+    left: 0.5vw;
+    display: block;
+    content: attr(data-count);
+    background-color: var(--dark-redT87);
+    color: var(--light-text-color);
+    font-size: var(--tiny-size);
+    border-radius: 50%;
+    height: 1em;
+    width: 1em;
+    line-height: 0.8em;
+    z-index: 9999;
 }
 
 .lineage-tree .node .node-icon {   

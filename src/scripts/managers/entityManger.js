@@ -32,7 +32,7 @@ export default class EntityManager extends BaseManager {
         root: null,
         nodes: {},
         branches: []
-    };    
+    };
 
     get MAX_TIER() { return 99999; }
 
@@ -72,7 +72,7 @@ export default class EntityManager extends BaseManager {
                 left: 0
             },
             nodeWidth: 150,
-            nodeMinHeight: 50,
+            nodeMinHeight: 65,
             styles: {
                 node: 'node',
                 linage: 'linage',
@@ -130,12 +130,10 @@ export default class EntityManager extends BaseManager {
      * @param {HTMLElement} container - O elemento HTML que irá conter o diagram de fluxograma.
     */
     async buildTree() {
-        const data = this._getNodeData();
+        const seed = Object.values(this.#tree.nodes);
         const container = this.treeContainer;
 
-        if (data.length > 0) {
-            const seed = this.getSeed();
-            //const seed = await dSeeder.seed(data, this.Tree.root ,this.seedConfig);
+        if (seed.length > 0) {
             container.classList.remove('empty');
 
             this.diagram = dTree.init(seed, this.diagramConfig);
@@ -176,142 +174,44 @@ export default class EntityManager extends BaseManager {
         }
     }
 
-    getSeed() {
-        const tree = this.#tree;
-        const nodes = Object.values(tree.nodes);
-        const branches = tree.branches;
-        const root = tree.nodes[tree.root];
-
-        // Cria um objeto que mapeia os IDs dos nós para os objetos de nó
-        const nodeMap = {};
-        nodes.forEach(node => {
-            nodeMap[node.id] = node;
-        });
-
-        // Função recursiva para percorrer a árvore
-        function recursiveCall(node, depthOffset) {
-            const n = {
-                name: node.givenName,
-                depthOffset: depthOffset,
-                marriages: [],
-                extra: {
-                    status: node.title,
-                    gender: node.gender,
-                    born: node.birthDate,
-                    death: node.deathDate,
-                }
-            };
-
-            // Etapa 1: Busca relacionamentos do tipo 'mate'
-            branches.forEach(branch => {
-                if (branch.type === 'mate' && (branch.id1 === node.id || branch.id2 === node.id)) {
-                    const spouseId = branch.id1 === node.id ? branch.id2 : branch.id1;
-                    const spouseNode = nodeMap[spouseId];
-
-                    const spouseMates = branches                    
-                    .map(b => {
-                        if (b.type === 'mate' && (b.id1 === spouseId || b.id2 === spouseId) && (b.id1 !== node.id && b.id2 !== node.id)) {
-                            if(b.id1 !== spouseNode.id && b.id1 !== node.id) {
-                                return b.id1;
-                            } else if(b.id2 !== spouseNode.id && b.id2 !== node.id) {
-                                return b.id2;
-                            }
-                            return;
-                        }
-                    }).filter((b) => b !== undefined && b !== null);
-
-                    const spouseChild = branches                    
-                    .map(b => {
-                       if(b.type === 'genitor' && b.id1 === spouseId) return b.id2;
-                       else return;
-                    }).filter((b) => b !== undefined && b !== null);
-
-                    const marriage = {
-                        spouse: {
-                            name: spouseNode.givenName,
-                            extra: {
-                                status: spouseNode.title,
-                                gender: spouseNode.gender,
-                                born: spouseNode.birthDate,
-                                death: spouseNode.deathDate,
-                                others: {
-                                    spouseMates: spouseMates,
-                                    spouseChild: spouseChild
-                                }
-                            }
-                        },
-                        children: []
-                    };
-
-                    n.marriages.push(marriage);
-                }
-            });
-
-            // Etapa 2: Busca relacionamentos do tipo 'genitor'
-            branches.forEach(branch => {
-                if (branch.type === 'genitor' && branch.id1 === node.id) {
-                    const childId = branch.id2;
-                    const childNode = nodeMap[childId];
-
-                    const childD3Node = recursiveCall(childNode, depthOffset + 1);
-                    // Encontra o marriage onde o childNode deve ser incluído
-                    const marriage = n.marriages.find(marriage => {
-                        const spouse = nodes.find(genitor => {
-                            if (genitor.id !== node.id && (childNode.genitors.a === genitor.id || childNode.genitors.b === genitor.id)) return genitor;
-                        })
-                        return spouse.givenName === marriage.spouse.name;
-                    });
-
-                    if (marriage) {
-                        marriage.children.push(childD3Node);
-                    }
-                }
-            });
-
-            return n;
-        }
-        // Percorre a árvore de forma recursiva
-        const data = [recursiveCall(root, 1)];
-
-        return data;
-    }
-
     addNode(entry, isRoot = false) {
         const tree = this.#tree;
 
         const node = {
             id: entry.id ?? entry.eid,
-            givenName: entry.givenName,
-            birthDate: entry.birthDate ?? '00010101',
-            deathDate: entry.deathDate ?? '00010101',
-            gender: entry.gender ?? 'n',
-            title: entry.title ?? '',
-            group: entry.group ?? '',
-            groupOrder: entry.groupOrder ?? 0,
-            genitors: entry.genitors ?? {},
-            deceased: entry.deceased ?? false,
-            isRoot: isRoot,
-            hasImg: (entry.img ? true : false)
+            name: entry.givenName,
+            depthOffset: 0,
+            marriages: [],
+            extra: {
+                born: entry.birthDate ?? '00010101',
+                death: entry.deathDate ?? '00010101',
+                gender: entry.gender ?? 'n',
+                title: entry.title ?? '',
+                group: entry.group ?? '',
+                groupOrder: entry.groupOrder ?? 0,
+                genitors: entry.genitors ?? { a: null, b: null },
+                deceased: entry.deceased ?? false,
+                isRoot: isRoot,
+            }
         }
 
         let line = `i${node.id}`;
 
-        if (!node.givenName?.isEmpty()) line += `\tp${node.givenName}`;
-        if (!node.title?.isEmpty()) line += `\tT${node.title}`;
-        if (!node.birthDate?.isEmpty()) line += `\tb${node.birthDate}`;
-        if (!node.deathDate?.isEmpty()) line += `\td${node.deathDate}`;
-        if (!node.gender?.isEmpty()) line += `\tg${node.gender}`;
-        if (!node.group?.isEmpty()) line += `\tq${node.group}`;
-        if (!node.groupOrder?.toString().isEmpty()) line += `\tO${node.groupOrder}`;
+        if (!node.name?.isEmpty()) line += `\tp${node.givenName}`;
+        if (!node.extra.title?.isEmpty()) line += `\tT${node.extra.title}`;
+        if (!node.extra.born?.isEmpty()) line += `\tb${node.extra.born}`;
+        if (!node.extra.death?.isEmpty()) line += `\td${node.extra.death}`;
+        if (!node.extra.gender?.isEmpty()) line += `\tg${node.extra.gender}`;
+        if (!node.extra.group?.isEmpty()) line += `\tq${node.extra.group}`;
+        if (!node.extra.groupOrder?.toString().isEmpty()) line += `\tO${node.extra.groupOrder}`;
 
         // A raiz da árvore não tem genitores.
         if (!isRoot) {
-            if (!node.genitors.a?.isEmpty()) line += `\tm${node.genitors.a}`;
-            if (!node.genitors.b?.isEmpty()) line += `\tf${node.genitors.b}`;
+            if (!node.extra.genitors.a?.isEmpty()) line += `\tm${node.extra.genitors.a}`;
+            if (!node.extra.genitors.b?.isEmpty()) line += `\tf${node.extra.genitors.b}`;
         }
 
-        if (node.deceased) line += `\tz1`;
-        if (node.hasImg) line += `\tr1`;
+        if (node.extra.deceased) line += `\tz1`;
 
         tree.nodes[node.id] = node;
 
@@ -371,11 +271,30 @@ export default class EntityManager extends BaseManager {
         };
 
         lines.forEach(line => {
+            const node = {
+                id: null,
+                name: null,
+                depthOffset: 0,
+                marriages: [],
+                extra: {
+                    status: null,
+                    gender: null,
+                    born: null,
+                    genitors: {
+                        a: null,
+                        b: null
+                    },
+                    deceased: false,
+                    death: null,
+                    group: null
+                }
+            };
+
             if (line.startsWith('i')) {
                 // Linha que representa um indivíduo
                 const [idPart, ...facts] = line.split('\t');
                 const id = idPart.substring(1);
-                const node = { id, genitors: {}, hasImg: false };
+                node.id = id;
 
                 facts.forEach(fact => {
                     const tag = fact[0];
@@ -383,42 +302,60 @@ export default class EntityManager extends BaseManager {
 
                     switch (tag) {
                         case 'p':
-                            node.givenName = data;
+                            node.name = data;
                             break;
                         case 'T':
-                            node.title = data;
+                            node.extra.status = data;
                             break;
                         case 'q':
-                            node.group = data;
+                            node.extra.group = data;
                             break;
                         case 'g':
-                            node.gender = data;
+                            node.extra.gender = data;
                             break;
                         case 'b':
-                            node.birthDate = this._formatDate(data);
+                            node.extra.born = this._formatDate(data);
                             break;
                         case 'z':
-                            node.deceased = (data === '1');
+                            node.extra.deceased = (data === '1');
                             break;
                         case 'd':
-                            node.deathDate = this._formatDate(data);
+                            node.extra.death = this._formatDate(data);
                             break;
                         case 'm': {
-                            node.genitors.a = data;
+                            node.extra.genitors.a = data;
                             tree.branches.push({ id1: data, id2: id, type: 'genitor' });
                         } break;
                         case 'f': {
-                            node.genitors.b = data;
+                            node.extra.genitors.b = data;
                             tree.branches.push({ id1: data, id2: id, type: 'genitor' });
                         } break;
                         case 's':
-                            node.partner = data;
-                            break;
-                        case 'r':
-                            node.hasImg = true;
+                            const marriage = {
+                                spouse: {
+                                    id: data
+                                },
+                                children: [],
+                                type: null
+                            }
+
+                            // Verifica se o parceiro ja possui casamento com o node atual.
+                            const partnerAlreadyHas = this.tree.nodes.find((node) => {
+                                // Encontra o node do parceiro.
+                                const partner = this.tree.nodes[data];
+                                // Percorre os casamentos do parceiro em busca do node atual.
+                                return partner.marriages.find((marriage) => {
+                                    return (marriage.spouse.id === node.id);
+                                })
+                            });
+
+                            // Se o parceiro ainda não possui casamento com o node atual, adiciona o casamento no node atual.
+                            if (!partnerAlreadyHas) {
+                                node.marriages.push(marriage);
+                            }
                             break;
                         case 'O':
-                            node.groupOrder = data;
+                            node.extra.order = data;
                             break;
                         default:
                             // Ignorar tags não reconhecidas
@@ -439,9 +376,63 @@ export default class EntityManager extends BaseManager {
 
                     switch (tag) {
                         case 'e':
+                            const ative = (data === '2');
+
+                            const node1 = tree.nodes[id1];
+                            const node2 = tree.nodes[id2];
+
+                            var marriageFound = false;
+
+                            // Verifica se o casamento ja foi adicionado no node 1.
+                            node1.marriages.forEach((marriage) => {
+                                // Verifica se o casamento é com o node 2. 
+                                if (marriage.spouse.id === node2.id) {
+                                    // Marca o casamento como seu status atual (active).
+                                    marriage.active = ative;
+                                    // Sinaliza que o casamento foi encontrado e não precisa ser procurado no node 2.                                    
+                                    marriageFound = true;
+                                }
+                            })
+
+                            // Caso o casamento ainda não tenha sido adicionado no node 1, verifica no node 2.
+                            if (!marriageFound) {
+                                node2.marriages.forEach((marriage) => {
+                                    // Verifica se o casamento é com o node 1. 
+                                    if (marriage.spouse.id === node1.id) {
+                                        // Marca o casamento como seu status atual (active).
+                                        marriage.active = ative;
+                                        // Sinaliza que o casamento foi encontrado e não precisa ser procurado no node 2.                                    
+                                        marriageFound = true;
+                                    }
+                                })
+                            }
+
+                            // Caso o casamento ainda não tenha sido adicionado no node 1 ou no node 2, adiciona o casamento no node 1.
+                            if (!marriageFound) {
+                                node1.marriages.push({ spouse: node2, active: ative, children: [] });
+                            }
+
                             branch.partners = data;
+
                             break;
                         case 'g':
+                            // Verifica se o node possui casamentos.
+                            if (node.marriages.length > 0) {
+                                // Percorre os casamentos do node se ele for o id1 ou o id2.
+                                if (id1 === node.id) {
+                                    node.marriages.forEach((marriage) => {
+                                        if (marriage.spouse.id === id2) {
+                                            marriage.status = data;
+                                        }
+                                    });
+                                } else if (id2 === node.id) {
+                                    node.marriages.forEach((marriage) => {
+                                        if (marriage.spouse.id === id1) {
+                                            marriage.status = data;
+                                        }
+                                    });
+                                }
+                            }
                             branch.status = data;
                             break;
                         case 'b':
@@ -459,6 +450,9 @@ export default class EntityManager extends BaseManager {
                 tree.branches.push(branch);
             }
         });
+
+        // Registra os pais de cada node.
+        this._registerParents();
 
         this.#tree = tree;
     }
@@ -497,6 +491,61 @@ export default class EntityManager extends BaseManager {
     }
 
     /**
+    * Método recursivo que percorre todo um array de nodes e registra os pais de cada node se existir.     
+    */
+    _registerParents() {
+        // Obtem o array de nodes.
+        const nodes = Object.values(this.#tree.nodes);
+        // Percorre o array de nodes.
+        nodes.forEach(node => {
+            // Verifica se o node tem pais (genitors.a e genitors.b).
+            if (node.extra.genitors.a && node.extra.genitors.b) {
+                // Procura os nodes correspondentes aos pais.
+                const mother = this._findNode(node.extra.genitors.a);
+                const father = this._findNode(node.extra.genitors.b);
+
+                // Se os pais forem encontrados.
+                if (mother && father) {
+                    // Verifica se a mother já tem um casamento com o father.
+                    if (!mother.marriages.find(marriage => marriage.spouse === father.id)) {
+                        // Se não, cria um novo casamento.
+                        mother.marriages.push({ spouse: father.id, children: [] });
+                    }
+
+                    // Verifica se o father já tem um casamento com a mother.
+                    if (!father.marriages.find(marriage => marriage.spouse === mother.id)) {
+                        // Se não, cria um novo casamento.
+                        father.marriages.push({ spouse: mother.id, children: [] });
+                    }
+
+                    // Adiciona o node filho à lista de filhos do casamento da mother e do father.
+                    mother.marriages.find(marriage => marriage.spouse === father.id).children.push(node.id);
+                    father.marriages.find(marriage => marriage.spouse === mother.id).children.push(node.id);
+                }
+            }
+
+            // Se o node tiver filhos, chama o método recursivamente.
+            if (node.children) {
+                registerParents(node.children);
+            }
+        });
+
+        // Atualiza o array de nodes.
+        this.#tree.nodes = nodes;
+    }
+
+    /**
+     * Função auxiliar que procura um node no array de nodes com base no id.
+     * 
+     * @param {Array} nodes - Array de nodes a ser percorrido.
+     * @param {Number} id - Id do node a ser procurado.
+     * @returns {Object} Node encontrado ou null se não for encontrado.
+     */
+    _findNode(id) {
+        return this.#tree.nodes.find(node => node.id === id);
+    }
+
+    /**
      * Gera um identificador único aleatório de 5 caracteres para uma entrada na árvore.
      * 
      * @returns {string} O identificador único gerado.
@@ -505,6 +554,7 @@ export default class EntityManager extends BaseManager {
     _generateID() {
         return uniforge.utils.generateRandomString(5, false, true);
     }
+
 
     _formatDate(dateStr) {
         const dateParts = dateStr.match(/(\d{4})(\d{2})(\d{2})/);
@@ -515,7 +565,7 @@ export default class EntityManager extends BaseManager {
         }
     }
 
-    _getNodeData() {
+    _getSeed() {
         // Obtém a árvore de linhagem atual.
         const tree = this.#tree;
         // Obtém o node raiz da árvore.
@@ -623,17 +673,40 @@ export default class EntityManager extends BaseManager {
             dateDiv.appendChild(deathDate);
         }
 
-        if(extra.others) {
-             
-        }
-
         const genderSpan = document.createElement('span');
         genderSpan.classList.add('node-gender', extra.gender === 'm' ? 'male' : 'female');
         genderSpan.innerHTML = extra.gender === 'm' ? 'Masc.' : 'Fem.';
 
+        const infoFooter = document.createElement('div');
+        infoFooter.classList.add('info-footer', 'flexrow');
+
+        const otherMates = document.createElement('div');
+        otherMates.classList.add('others');
+        otherMates.innerHTML = '<i class="fas fa-ring"></i>';
+
+        const otherChildren = document.createElement('div');
+        otherChildren.classList.add('others');
+        otherChildren.innerHTML = '<i class="fas fa-baby-carriage"></i>';
+
+        infoFooter.appendChild(otherMates);
+        infoFooter.appendChild(otherChildren);
+
         text.appendChild(nameSpan);
         text.appendChild(dateDiv);
         text.appendChild(genderSpan);
+        text.appendChild(infoFooter);
+
+        if (extra.others) {
+            let coord = { X: 0, Y: 0 };
+
+            if (extra.others.mates.length > 0) {
+                otherMates.setAttribute('data-count', extra.others.mates.length);
+            }
+
+            if (extra.others.children.length > 0) {
+                otherChildren.setAttribute('data-count', extra.others.children.length);
+            }
+        }
 
         return text;
     }
@@ -652,7 +725,7 @@ export default class EntityManager extends BaseManager {
 
         const icon = document.createElement('div');
         icon.classList.add('node-icon');
-        icon.innerHTML = `<i class="fas ${iconMap[extra.status]}"></i>`; ;
+        icon.innerHTML = `<i class="fas ${iconMap[extra.status]}"></i>`;;
         node.appendChild(icon);
 
         const text = textRenderer(name, extra, textClass);
