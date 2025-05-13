@@ -120,7 +120,7 @@ export default class EntityForm extends EntryForm {
   }
 
   configureDiagram() {
-    this.manager.buildTree();
+    //this.manager.buildTree();
   }
 
   /**
