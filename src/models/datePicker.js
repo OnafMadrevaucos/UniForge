@@ -23,7 +23,7 @@ export default class DatePicker {
     this.id = id;
 
     // Inicia com os dados informados o genrenciador interno de Data do DatePicker.
-    if (date && !date.isEmpty()) this.date = date;   
+    if (date && !date.empty()) this.date = date;   
   }
 
   #state = {

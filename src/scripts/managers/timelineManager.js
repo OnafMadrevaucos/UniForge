@@ -1,5 +1,6 @@
 import CustomDate from "../../common/primitives/date.mjs";
 import Dialogs from "../../models/dialogs/dialog.js";
+import ArticleForm from "../../models/forms/articleForm.js";
 import BaseForm from "../../models/forms/baseForm.js";
 import SimpleEntryForm from "../../models/forms/simpleEntryForm.js";
 import { BaseManager } from "./baseManager.js";
@@ -8,6 +9,11 @@ import { CodexManager } from "./codexManager.js";
 export class TimelineManager extends BaseManager {
     constructor(form) {
         super(form);
+
+        /**
+         * @type {boolean} - Indica se o formulário atual corresponde a um do tipo ArticleForm.
+         */
+        this.formIsArticle = (form instanceof ArticleForm);
     }
 
     #timeline = {
@@ -55,7 +61,7 @@ export class TimelineManager extends BaseManager {
     async deleteTimeline() {
         const tid = this.#timeline.tid;
         if (!tid.isEmpty()) {
-            await uniforge.db.deleteTimeline(tid);            
+            await uniforge.db.deleteTimeline(tid);
         }
     }
 
@@ -101,7 +107,7 @@ export class TimelineManager extends BaseManager {
             return true;
         } catch (error) {
             uniforge.msgBox.showError('Erro ao adicionar evneto à linha do tempo.', error);
-            
+
             // Faz rollback em caso de erro no processo de salvamento.
             await uniforge.db.rollbackTransaction(error);
 
@@ -147,7 +153,7 @@ export class TimelineManager extends BaseManager {
         // Configura o calendário da linha do tempo, caso não tenha sido definido.
         if (events.size === 1) {
             const firstEvent = events.first();
-            const calendar = uniforge.doc.calendars.get(firstEvent.clid);            
+            const calendar = uniforge.doc.calendars.get(firstEvent.clid);
 
             this.#timeline.calendar = calendar ?? null;
         }
@@ -190,10 +196,10 @@ export class TimelineManager extends BaseManager {
     }
     async deleteEvent(evid) {
         const tid = this.timeline.tid;
-        if (!tid.isEmpty()) { 
+        if (!tid.isEmpty()) {
             const result = await uniforge.db.deleteTimelineEvent(tid, evid);
             // Se o evento foi removido do banco de dados, reconstrua a base de dados.
-            if(result?.changes > 0) await uniforge.db.rebuildDocs();
+            if (result?.changes > 0) await uniforge.db.rebuildDocs();
         }
     }
     hasEvent(evid) {
@@ -213,14 +219,14 @@ export class TimelineManager extends BaseManager {
         };
 
         // Obtém o element do Container da Entrada
-        const container = document.getElementById('timelineViewer');
+        const container = this.form.querySelector('#timelineViewer');
         // Limpa o conteúdo da Linha do Tempo.
         container.innerHTML = '';
     }
 
     buildTimeline() {
         // Obtém o element do Container da Entrada
-        const container = document.getElementById('timelineViewer');
+        const container = this.form.querySelector('#timelineViewer');
 
         // Limpa o conteúdo do formulário.
         container.innerHTML = '';
@@ -329,39 +335,6 @@ export class TimelineManager extends BaseManager {
         const timelinePanel = document.createElement('div');
         timelinePanel.className = 'timeline-panel';
 
-        // Criação da seção de botões
-        const btnGroup = document.createElement('div');
-        btnGroup.className = 'btn-group-hover';
-        
-        const editButton = document.createElement('button');
-        editButton.className = 'btn btn-primary btn-xs';
-        editButton.setAttribute('href', '#');
-        const editIcon = document.createElement('i');
-        editIcon.className = 'fas fa-pencil';
-        editIcon.setAttribute('aria-hidden', 'true');
-        editButton.appendChild(editIcon);
-
-        // Verifica se o evento possui uma Entrada associada a ele.
-        // Se não houver, desabilita o botão de edição.
-        if(data.source === null || data.source.isEmpty()){
-            editButton.classList.add('disabled');
-        }
-
-        editButton.addEventListener('click', (event) => { this._onEditEventClick(event); });
-
-        const deleteButton = document.createElement('button');
-        deleteButton.className = 'btn btn-danger btn-xs confirmation';
-        deleteButton.setAttribute('href', '#');
-        const deleteIcon = document.createElement('i');
-        deleteIcon.className = 'fas fa-trash';
-        deleteIcon.setAttribute('aria-hidden', 'true');
-        deleteButton.appendChild(deleteIcon);
-
-        deleteButton.addEventListener('click', (event) => { this._onDeleteEventClick(event); });
-
-        btnGroup.appendChild(editButton);
-        btnGroup.appendChild(deleteButton);
-
         // Criação da seção tl-section
         const tlSection = document.createElement('div');
         tlSection.className = 'tl-section';
@@ -459,29 +432,24 @@ export class TimelineManager extends BaseManager {
         tlBody.appendChild(rowDiv);
         tlBody.appendChild(historyTimelines);
 
-        // Link externo
-        const externalLink = document.createElement('div');
-        externalLink.className = 'external-link';
-
-        const externalAnchor = document.createElement('a');
-        externalAnchor.className = 'anchor';
-        externalAnchor.setAttribute('data-tooltip', 'Artigo Completo');
-        externalAnchor.dataset.id = data.source;
-        const externalIcon = document.createElement('i');
-        externalIcon.className = 'fa-solid fa-arrow-up-right-from-square';
-        externalAnchor.appendChild(externalIcon);
-        externalLink.appendChild(externalAnchor);
-
-        // Listener para abrir artigo completo da entrada.
-        externalAnchor.addEventListener('click', (event) => { this._onEntryAnchorClick(event); });
-
         // Montando tl-section
         tlSection.appendChild(tlHeading);
         tlSection.appendChild(tlBody);
-        tlSection.appendChild(externalLink);
 
-        // Montando timeline-panel
-        timelinePanel.appendChild(btnGroup);
+        // Verifica se o evento possui uma Entrada associada a ele.
+        // Se não houver, desabilita o botão de edição.
+        if (data.source !== null && !data.source.isEmpty()) {
+            const externalLink = this.#createExternalLink(data);
+            tlSection.appendChild(externalLink);
+        }
+
+        // Somente cria seção de botões se não for uma Entrada de Artigo.
+        if (!this.formIsArticle) {
+            const btnGroup = this.#createButtonGroup(data);
+            timelinePanel.appendChild(btnGroup);
+        }
+
+        // Montando timeline-panel        
         timelinePanel.appendChild(tlSection);
 
         // Montando o elemento principal
@@ -508,29 +476,6 @@ export class TimelineManager extends BaseManager {
         // Criação do elemento <div> com classe "timeline-panel"
         const timelinePanel = document.createElement('div');
         timelinePanel.className = 'timeline-panel';
-
-        // Criação da seção de botões
-        const btnGroup = document.createElement('div');
-        btnGroup.className = 'btn-group-hover';
-
-        const editButton = document.createElement('button');
-        editButton.className = 'btn btn-primary btn-xs';
-        editButton.setAttribute('href', '#');
-        const editIcon = document.createElement('i');
-        editIcon.className = 'fas fa-pencil';
-        editIcon.setAttribute('aria-hidden', 'true');
-        editButton.appendChild(editIcon);
-
-        const deleteButton = document.createElement('button');
-        deleteButton.className = 'btn btn-danger btn-xs confirmation';
-        deleteButton.setAttribute('href', '#');
-        const deleteIcon = document.createElement('i');
-        deleteIcon.className = 'fas fa-trash';
-        deleteIcon.setAttribute('aria-hidden', 'true');
-        deleteButton.appendChild(deleteIcon);
-
-        btnGroup.appendChild(editButton);
-        btnGroup.appendChild(deleteButton);
 
         // Criação da seção tl-section
         const tlSection = document.createElement('div');
@@ -606,33 +551,103 @@ export class TimelineManager extends BaseManager {
         tlBody.appendChild(rowDiv);
         tlBody.appendChild(historyTimelines);
 
-        // Link externo
-        const externalLink = document.createElement('div');
-        externalLink.className = 'external-link';
-
-        const externalAnchor = document.createElement('a');
-        externalAnchor.className = 'anchor';
-        externalAnchor.setAttribute('data-tooltip', 'Timeline Externa');
-        externalAnchor.dataset.id = data.source;
-        const externalIcon = document.createElement('i');
-        externalIcon.className = 'fa-solid fa-timeline';
-        externalAnchor.appendChild(externalIcon);
-
-        externalLink.appendChild(externalAnchor);
-
         // Montando tl-section
         tlSection.appendChild(tlHeading);
         tlSection.appendChild(tlBody);
-        tlSection.appendChild(externalLink);
 
-        // Montando timeline-panel
-        timelinePanel.appendChild(btnGroup);
+        // Verifica se o evento possui uma Entrada associada a ele.
+        // Se não houver, desabilita o botão de edição.
+        if (data.source !== null && !data.source.isEmpty()) {
+            const externalLink = this.#createExternalLink(data, 'timeline');
+            tlSection.appendChild(externalLink);
+        }
+
+
+        // Somente cria seção de botões se não for uma Entrada de Artigo.
+        if (!this.formIsArticle) {
+            const btnGroup = this.#createButtonGroup(data);
+            timelinePanel.appendChild(btnGroup);
+        }
+
+        // Montando timeline-panel        
         timelinePanel.appendChild(tlSection);
 
         // Montando o elemento principal
         li.appendChild(timelinePanel);
 
         return li;
+    }
+
+    #createExternalLink(data, type = 'entry') {
+        // Link externo
+        const externalLink = document.createElement('div');
+        externalLink.className = 'external-link';
+
+        if (type === 'entry') {           
+            
+
+            const externalAnchor = document.createElement('a');
+            externalAnchor.className = 'anchor';
+            externalAnchor.setAttribute('data-tooltip', 'Artigo Completo');
+            externalAnchor.dataset.id = data.source;
+            const externalIcon = document.createElement('i');
+            externalIcon.className = 'fa-solid fa-arrow-up-right-from-square';
+            externalAnchor.appendChild(externalIcon);
+            externalLink.appendChild(externalAnchor);
+
+            // Listener para abrir artigo completo da entrada.
+            externalAnchor.addEventListener('click', (event) => { this._onEntryAnchorClick(event); });
+
+        } else {
+            const externalAnchor = document.createElement('a');
+            externalAnchor.className = 'anchor';
+            externalAnchor.setAttribute('data-tooltip', 'Timeline Externa');
+            externalAnchor.dataset.id = data.source;
+            const externalIcon = document.createElement('i');
+            externalIcon.className = 'fa-solid fa-timeline';
+            externalAnchor.appendChild(externalIcon);
+
+            externalLink.appendChild(externalAnchor);
+        }
+
+        return externalLink;
+    }
+
+    #createButtonGroup(data) {
+        // Criação da seção de botões
+        const btnGroup = document.createElement('div');
+        btnGroup.className = 'btn-group-hover';
+
+        const editButton = document.createElement('button');
+        editButton.className = 'btn btn-primary btn-xs';
+        editButton.setAttribute('href', '#');
+        const editIcon = document.createElement('i');
+        editIcon.className = 'fas fa-pencil';
+        editIcon.setAttribute('aria-hidden', 'true');
+        editButton.appendChild(editIcon);
+
+        editButton.addEventListener('click', (event) => { this._onEditEventClick(event); });
+
+        const deleteButton = document.createElement('button');
+        deleteButton.className = 'btn btn-danger btn-xs confirmation';
+        deleteButton.setAttribute('href', '#');
+        const deleteIcon = document.createElement('i');
+        deleteIcon.className = 'fas fa-trash';
+        deleteIcon.setAttribute('aria-hidden', 'true');
+        deleteButton.appendChild(deleteIcon);
+
+        deleteButton.addEventListener('click', (event) => { this._onDeleteEventClick(event); });
+
+        // Verifica se o evento possui uma Entrada associada a ele.
+        // Se não houver, desabilita o botão de edição.
+        if (data.source === null || data.source.isEmpty()) {
+            editButton.classList.add('disabled');
+        }
+
+        btnGroup.appendChild(editButton);
+        btnGroup.appendChild(deleteButton);
+
+        return btnGroup;
     }
 
     _onEntryAnchorClick(event) {
@@ -643,10 +658,7 @@ export class TimelineManager extends BaseManager {
 
         uniforge.navQueue.push(this);
 
-        document.body.style.cursor = 'wait';
-        const overlay = document.getElementById('entryFormOverlay');
-        const form = new BaseForm(overlay);
-        this.anchorManager = new CodexManager(form);
+        document.body.style.cursor = 'wait';        
     }
 
     _onTimeContentScroll() {
@@ -679,7 +691,7 @@ export class TimelineManager extends BaseManager {
         const evid = item.dataset.id;
         const event = uniforge.doc.events.get(evid);
         // Verifica se o evento existe.
-        if(!event){
+        if (!event) {
             uniforge.msgBox.showError('Evento não encontrado.', new Error('Evento não encontrado.'));
             return;
         }

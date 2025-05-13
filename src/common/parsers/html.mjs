@@ -20,7 +20,7 @@ export function parseHTML(html, data) {
     // Substitui as tags <foldertree>
     html = _parseFoldertreeTags(html, data);
 
-    // Substitui as tags <foldertree>
+    // Substitui as tags <sidetabs>
     html = _parseSidetabsTags(html);
 
     // Substitui as tags <switch>
@@ -254,7 +254,8 @@ function _parseSidetabsTags(html) {
 
         let body = '';
         data[source].forEach(tab => {
-            body += `<div class="tab${tab.title === 'entity' ? ' disabled' : ''}" data-target="${tab.title}">
+            //body += `<div class="tab${tab.title === 'entity' ? ' disabled' : ''}" data-target="${tab.title}">
+            body += `<div class="tab" data-target="${tab.title}">
                         <span class="tab-text"><i class="${tab.icon}"></i> ${tab.label}</span>
                         <span class="tab-icon"><i class="${tab.icon}"></i></span>
                     </div>`

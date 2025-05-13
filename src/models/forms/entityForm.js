@@ -1,5 +1,5 @@
 import EntryForm from "./entryForm.js";
-import LineageManager from "../../scripts/managers/lineageManger.js";
+import EntityManager from "../../scripts/managers/entityManger.js";
 import DatePicker from "../datePicker.js";
 import EntrySearchDialog from "../dialogs/entrySearchDialog.js";
 import Dialogs from "../dialogs/dialog.js";
@@ -19,7 +19,7 @@ export default class EntityForm extends EntryForm {
     this.type = 'entity'; // Define o tipo do formulário. 
 
     // Inicializa o Gerenciador de Linhagens, enviando o container que conterá a árvore.
-    this.manager = new LineageManager();
+    this.manager = new EntityManager(this);    
 
     /**
     * @property {object} datePickers - Um objeto que gerencia os seletores de data para registro de entradas.
@@ -208,6 +208,10 @@ export default class EntityForm extends EntryForm {
   onNewLineageClick(event) {
     event.stopPropagation();
 
+    this.manager.fromFamilyScript(this.manager.testScript);
+
+    this.manager.buildTree();
+
     // Exibe o controle da Árvore de Linhagem.
     this._toggleLineageTree(true);
   }
@@ -225,7 +229,7 @@ export default class EntityForm extends EntryForm {
   * @param {Event} event - Evento de clique no botão de Nova Entrada.
   */
   async onNewClick(event) {
-    this.clearContent(false);
+    super.onNewClick(event);
 
     const headerInfo = this.querySelector('.header-info');
     headerInfo.dataset.ltid = uniforge.db.generateID();

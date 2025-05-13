@@ -140,6 +140,15 @@ export default class BaseForm extends Application {
     form.appendChild(main);
   }
 
+  /**
+  * Cria a estrutura específica do formulário.
+  * @interface
+  */
+  async refreshDerivedTemplate() {            
+    const mainContent = await uniforge.utils.loadTemplate(this.template);
+    return mainContent.outerHTML;
+  }
+
   /* ---------------------------------------------------------------------------------------------------------------- */
   // INTERFACE DE USUÁRIO  
   /**

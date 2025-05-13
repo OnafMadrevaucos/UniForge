@@ -1,3 +1,4 @@
+import CustomDate from "../common/primitives/date.mjs";
 export class LinkTooltip {
   forgeLink(link, text, callback) {
 
@@ -40,17 +41,28 @@ export class LinkTooltip {
     // Verifica se a entrada foi encontrada. Se não, não exibe o tooltip.
     if (!data) return;
 
-    if (link.type !== 'timeline') {
-      const section = uniforge.doc.sections.get(data.sid);
-      const chapter = uniforge.doc.chapters.get(section.cid);
+    // Obtém o ícone do link a partir do capítulo.
+    switch (link.type) {
+      case 'entry': {
+        const section = uniforge.doc.sections.get(data.sid);
+        const chapter = uniforge.doc.chapters.get(section.cid);
 
-      // Verifica se o capítulo foi encontrado. Se não, não exibe o tooltip.
-      if (!chapter) return;
+        // Verifica se o capítulo foi encontrado. Se não, não exibe o tooltip.
+        if (!chapter) return;
 
-      // Obtém o ícone do link a partir do capítulo.
-      data.icon = chapter.icon;
-    } else {
-      data.icon = 'fa-timeline';
+        // Obtém o ícone do link a partir do capítulo.
+        data.icon = chapter.icon;
+      }
+        break;
+      case 'event':
+        data.icon = 'fa-calendar';
+        break;
+      case 'lineage':
+        data.icon = 'fa-people-group';
+        break;
+      case 'timeline':
+        data.icon = 'fa-timeline';
+        break;
     }
 
     let tooltip = document.querySelector('.link-tooltip');
@@ -86,6 +98,28 @@ export class LinkTooltip {
       tooltip.appendChild(headerDiv);
       tooltip.appendChild(entryIdParagraph);
       tooltip.appendChild(entryDescription);
+
+      if (link.type === 'event') {
+        const dateDiv = document.createElement('div');
+        dateDiv.classList.add('date', 'flexrow');
+
+        const calendar = uniforge.doc.calendars.get(data.clid);
+
+        const startDate = new CustomDate(calendar, { day: data.s_day, month: data.s_month, year: data.s_year });
+        const endDate = new CustomDate(calendar, { day: data.e_day, month: data.e_month, year: data.e_year });
+
+        const startDateSpan = document.createElement('span');
+        startDateSpan.innerHTML = `<i class="fa-solid fa-hourglass-start"></i> ${startDate.toString('MMn DD, YYYYs')}`;
+        dateDiv.appendChild(startDateSpan);
+
+        if (!endDate.isEmpty) {
+          const endDateSpan = document.createElement('span');
+          endDateSpan.innerHTML = `<i class="fa-solid fa-hourglass-end"></i> ${endDate.toString('MMn DD, YYYYs')}`;
+          dateDiv.appendChild(endDateSpan);
+        }
+
+        tooltip.appendChild(dateDiv);
+      }
 
       document.body.appendChild(tooltip);
     } else {
