@@ -1,7 +1,7 @@
 import EntrySearchDialog from "../../models/dialogs/entrySearchDialog.js";
 import { BaseManager } from "./baseManager.js";
 
-export default class LineageManager extends BaseManager {    
+export default class LineageManager extends BaseManager {
     testScript = 'iR3QK8\tpLucas\tTking\tlRodrigues Macedo\tgm\tmOLP90\tfA334F\tb19921222\n' +
         'iDKP41\tpJéssica Cristina\tTqueen\tlCarvalho Silva\tgf\tb19910725\n' +
         'iST78B\tpAlisson José\tTcivilian\tlLima\tgm\tb19920206\n' +
@@ -79,38 +79,31 @@ export default class LineageManager extends BaseManager {
      * @param {HTMLElement} container - O elemento HTML que irá conter o diagram de fluxograma.
      */
     buildTree() {
-        // Certifique-se de que a biblioteca GoJS foi carregada
-        if (typeof go === 'undefined') {
-            console.error('A biblioteca GoJS não foi carregada.');
-            return null;
-        }
+        const seed = this._growSeed();
 
-        const nodes = this._getNodeData();
-        const links = this._getLinkData();
-        
-        this.diagram = uniforge.diagrams.build('treeContainer', this.editorConfig, nodes, links);
+        this.diagram = null;
         return this.diagram;
     }
 
     refreshTree() {
         // Verifica se o diagrama foi inicializado.
-        if(this.diagram) {
+        if (this.diagram) {
             // Limpa o diagrama atual.
             this.clearTree();
 
             // Cria um novo diagrama.
             this.buildTree();
-        }   
+        }
     }
 
-    clearTree(cleardata = false) { 
+    clearTree(cleardata = false) {
         // Limpa o diagrama atual, caso haja um inicializado.
-        if (this.diagram){
-            this.diagram.clear();  
+        if (this.diagram) {
+            this.diagram.clear();
             this.diagram.div = null; // Limpa a referência ao diagrama.          
         }
 
-        if(cleardata) {
+        if (cleardata) {
             this.#tree = {
                 root: null,
                 nodes: {},
@@ -122,43 +115,45 @@ export default class LineageManager extends BaseManager {
     addNode(entry, isRoot = false) {
         const tree = this.#tree;
 
-        const node = {
+        const node = new TreeNode({
             id: entry.id ?? entry.eid,
-            givenName: entry.givenName,
-            birthDate: entry.birthDate ?? '00010101',
-            deathDate: entry.deathDate ?? '00010101',            
-            gender: entry.gender ?? 'n',
-            title: entry.title ?? '',
-            group: entry.group ?? '',
-            groupOrder: entry.groupOrder ?? 0,
-            genitors: entry.genitors ?? {},
-            deceased: entry.deceased ?? false,
-            isRoot: isRoot,
-            hasImg: (entry.img ? true : false)
-        }
+            name: entry.givenName,
+            extra: {
+                title: entry.title ?? null,
+                gender: entry.gender ?? 'm',
+                genitors: {
+                    a: null,
+                    b: null
+                },
+                group: entry.group ?? null,
+                groupOrder: entry.groupOrder ?? 0,
+                born: entry.birthDate ?? null,
+                death: entry.deathDate ?? null,
+                deceased: entry.deceased ?? false
+            }
+        });
 
         let line = `i${node.id}`;
 
-        if (!node.givenName?.isEmpty()) line += `\tp${node.givenName}`;
+        if (!node.name?.isEmpty()) line += `\tp${node.name}`;
         if (!node.title?.isEmpty()) line += `\tT${node.title}`;
-        if (!node.birthDate?.isEmpty()) line += `\tb${node.birthDate}`;
-        if (!node.deathDate?.isEmpty()) line += `\td${node.deathDate}`;
+        if (!node.born?.isEmpty()) line += `\tb${node.born}`;
+        if (!node.death?.isEmpty()) line += `\td${node.death}`;
         if (!node.gender?.isEmpty()) line += `\tg${node.gender}`;
         if (!node.group?.isEmpty()) line += `\tq${node.group}`;
         if (!node.groupOrder?.toString().isEmpty()) line += `\tO${node.groupOrder}`;
 
         // A raiz da árvore não tem genitores.
-        if(!isRoot){  
+        if (!isRoot) {
             if (!node.genitors.a?.isEmpty()) line += `\tm${node.genitors.a}`;
-            if (!node.genitors.b?.isEmpty()) line += `\tf${node.genitors.b}`; 
+            if (!node.genitors.b?.isEmpty()) line += `\tf${node.genitors.b}`;
         }
 
-        if (node.deceased) line += `\tz1`;  
-        if (node.hasImg) line += `\tr1`;   
-        
+        if (node.deceased) line += `\tz1`;
+
         tree.nodes[node.id] = node;
 
-        this.refreshTree();        
+        this.refreshTree();
         return line;
     }
 
@@ -218,7 +213,7 @@ export default class LineageManager extends BaseManager {
                 // Linha que representa um indivíduo
                 const [idPart, ...facts] = line.split('\t');
                 const id = idPart.substring(1);
-                const node = { id, genitors: {}, hasImg: false };
+                const node = new TreeNode({ id: id });
 
                 facts.forEach(fact => {
                     const tag = fact[0];
@@ -226,11 +221,11 @@ export default class LineageManager extends BaseManager {
 
                     switch (tag) {
                         case 'p':
-                            node.givenName = data;
-                            break;                        
+                            node.name = data;
+                            break;
                         case 'T':
                             node.title = data;
-                            break;                        
+                            break;
                         case 'q':
                             node.group = data;
                             break;
@@ -238,13 +233,11 @@ export default class LineageManager extends BaseManager {
                             node.gender = data;
                             break;
                         case 'b':
-                            node.birthDate = this._formatDate(data);
-                            break;
-                        case 'z':
-                            node.deceased = (data === '1');
+                            node.born = this._formatDate(data);
                             break;
                         case 'd':
-                            node.deathDate = this._formatDate(data);
+                            node.death = this._formatDate(data);
+                            node.deceased = true;
                             break;
                         case 'm': {
                             node.genitors.a = data;
@@ -254,12 +247,6 @@ export default class LineageManager extends BaseManager {
                             node.genitors.b = data;
                             tree.branches.push({ id1: data, id2: id, type: 'genitor' });
                         } break;
-                        case 's':
-                            node.partner = data;
-                            break;
-                        case 'r':
-                            node.hasImg = true;
-                            break;
                         case 'O':
                             node.groupOrder = data;
                             break;
@@ -282,10 +269,10 @@ export default class LineageManager extends BaseManager {
 
                     switch (tag) {
                         case 'e':
-                            branch.partners = data;
+                            branch.status = data;
                             break;
                         case 'g':
-                            branch.status = data;
+                            branch.type = data;
                             break;
                         case 'b':
                             branch.startDate = data;
@@ -303,6 +290,16 @@ export default class LineageManager extends BaseManager {
             }
         });
 
+        tree.branches.sort((a, b) => {
+            if (a.type !== 'genitor' && b.type === 'genitor') {
+                return -1;
+            } else if (a.type === 'genitor' && b.type !== 'genitor') {
+                return 1;
+            } else {
+                return 0;
+            }
+        });
+
         this.#tree = tree;
     }
 
@@ -313,7 +310,7 @@ export default class LineageManager extends BaseManager {
      * @returns {string} - O string em FamilyScript.
     */
     toFamilyScript() {
-        let scriptLines = [];       
+        let scriptLines = [];
 
         // Processar indivíduos.
         Object.values(this.#tree.nodes).forEach(node => {
@@ -327,8 +324,8 @@ export default class LineageManager extends BaseManager {
 
             if (branch.type === 'mate') {
 
-                if (branch.partners?.isEmpty()) line += `\te${branch.partners}`;
-                if (branch.status?.isEmpty()) line += `\tg${branch.status}`;
+                if (branch.status?.isEmpty()) line += `\te${branch.status}`;
+                if (branch.type?.isEmpty()) line += `\tg${branch.type}`;
                 if (branch.startDate?.isEmpty()) line += `\tb${branch.startDate}`;
                 if (branch.endDate?.isEmpty()) line += `\tz${branch.endDate}`;
 
@@ -337,16 +334,6 @@ export default class LineageManager extends BaseManager {
         });
 
         return scriptLines.join("\n");
-    }
-
-    /**
-     * Gera um identificador único aleatório de 5 caracteres para uma entrada na árvore.
-     * 
-     * @returns {string} O identificador único gerado.
-     * @private 
-     */
-    _generateID() {
-        return uniforge.utils.generateRandomString(5, false, true);
     }
 
     _formatDate(dateStr) {
@@ -358,85 +345,170 @@ export default class LineageManager extends BaseManager {
         }
     }
 
-    _getNodeData() {
-        // Obtém a árvore de linhagem atual.
-        const tree = this.#tree;
-        // Obtém o node raiz da árvore.
-        const root = tree.root;
-        // Verifica se a árvore de linhagem está vazia.
-        if (!tree || Object.keys(tree.nodes).length === 0) return [];
+    _growSeed() {
+        const seed = this.#tree.nodes;
+        const branches = this.#tree.branches;
 
-        this._setNodeTiers(tree.nodes[root]);
-        const nodes = Object.values(tree.nodes);
+        branches.forEach((branch) => {
+            const type = branch.type;
 
-        let data = [];
-        nodes.forEach(node => {
-            const n = {
-                id: node.id,
-                key: node.id,
-                name: node.givenName,
-                status: node.title,
-                gender: node.gender,
-                born: node.birthDate,
-                death: node.deathDate,
-                tier: node.tier ?? this.MAX_TIER
-            };
-            data.push(n);
-        });
+            if (type === 'genitor') {
+                const genitor = seed[branch.id1];
+                const child = seed[branch.id2];
 
-        return data;
-    }
+                // Busca o outro genitor da Criança.
+                const otherBranch = branches.find((b) => b.type === 'genitor' && b.id2 === child.id && b.id1 !== genitor.id);
+                const otherGenitor = otherBranch ? seed[otherBranch.id1] : null;
 
-    _getLinkData() {
-        // Obtém a árvore de linhagem atual.
-        const tree = this.#tree;
-        // Verifica se a árvore de linhagem está vazia.
-        if (!tree || tree.branches.length === 0) return [];
+                // Se houver, adiciona a criança ao casamento do genitor.
+                if (otherGenitor) {
+                    let marriageAdded = false;
+                    genitor.marriages.forEach((marriage) => {
+                        if (marriage.spouse.id === otherGenitor.id) {
+                            marriage.children.push(child);
+                            marriageAdded = true;
+                        }
+                    });
 
-        const branches = tree.branches;
+                    if (!marriageAdded) {
+                        otherGenitor.marriages.forEach((marriage) => {
+                            if (marriage.spouse.id === otherGenitor.id) {
+                                marriage.children.push(child);
+                            }
+                        });
+                    }
+                } else { // Se não houver, cria um casamento inativo para adicionar a criança.
+                    const marriage = {
+                        spouse: null,
+                        children: [child],
+                        active: false
+                    };
+                    genitor.marriages.push(marriage);
+                }
 
-        let data = [];
-        branches.forEach(branch => {
-            const status = branch.status;
-            const b = {
-                from: branch.id1,
-                to: branch.id2,
-                type: (branch.type === 'mate' ? ((status === 'm' || status === 'e' || status === 'r') ? 'actual' : 'ended') : 'child'),
-            };
+            } else {
+                const node1 = seed[branch.id1];
+                const node2 = seed[branch.id2];
 
-            data.push(b);
-        });
+                let spouseDuplicated = false;
+                node2.marriages.forEach((marriage) => {
+                    if (marriage.spouse.id === node1.id) {
+                        spouseDuplicated = true;
+                    }
+                });
 
-        return data;
-    }
+                if (!spouseDuplicated) {
+                    const marriage = {
+                        spouse: node2,
+                        children: [],
+                        active: (branch.status === '2')
+                    };
 
-    _setNodeTiers(node, tier = this.MAX_TIER, visited = new Set()) {
-        // Evita loops infinitos verificando se o nó já foi visitado.
-        if (!node || visited.has(node.id)) {
-            return;
-        }
-        // Avisa do limite máximo (9999) de níveis de uma árvore.
-        if (tier < 0) {
-            this.msgBox.showWarning('Limite máximo dos níveis da árvore atingido. Nós subsequentes serão truncados.');
-            tier = 0;
-        }
-
-        visited.add(node.id);
-        node.tier = tier;
-
-        console.log(`Visitando nó: ${node.id} - ${node.givenName} ${node.surnameNow}`);
-
-        // Encontra todos os branches que começam com o nodeId atual
-        const connectedBranches = this.#tree.branches.filter(branch => branch.id1 === node.id);
-
-        for (const branch of connectedBranches) {
-            const { id2, type } = branch;
-
-            if (type === 'mate') {
-                this._setNodeTiers(this.#tree.nodes[id2], tier, visited);
-            } else if (type === 'genitor') {
-                this._setNodeTiers(this.#tree.nodes[id2], tier - 1, visited);
+                    node1.marriages.push(marriage);
+                }
             }
+        });
+
+        this._getNodesDepth(seed[this.#tree.root]);
+
+        return seed;
+    }
+
+    _getNodesDepth(node, depthOffset = 0) {
+        node.depthOffset = depthOffset;
+
+        if (node.marriages) {
+            node.marriages.forEach((marriage) => {
+                if (marriage.spouse) {
+                    marriage.spouse.depthOffset = depthOffset;
+                    this._getNodesDepth(marriage.spouse, depthOffset);
+                }
+
+                if (marriage.children) {
+                    marriage.children.forEach((child) => {
+                        child.depthOffset = depthOffset + 1;
+                        this._getNodesDepth(child, depthOffset + 1);
+                    });
+                }
+            });
         }
     }
 }
+
+class TreeNode {
+    constructor(data) {
+        this.#id = data.id ?? null;
+        this.#name = data.name ?? null;
+        this.#depthOffset = data.depthOffset ?? 0;
+        this.#marriages = data.marriages ?? [];
+        this.#extra = data.extra ?? this.#extra;
+    }
+    #id = null;
+    #name = null;
+    #depthOffset = 0;
+    #marriages = [];
+    #extra = {
+        title: null,
+        gender: null,
+        genitors: {
+            a: null,
+            b: null
+        },
+        group: null,
+        groupOrder: 0,
+        born: null,
+        death: null,
+        deceased: false
+    };
+
+    get id() { return this.#id; }
+    get name() { return this.#name; }
+    get depthOffset() { return this.#depthOffset; }
+    get marriages() { return this.#marriages; }
+    get extra() { return this.#extra; }
+    get title() { return this.#extra.title; }
+    get gender() { return this.#extra.gender; }
+    get genitors() { return this.#extra.genitors; }
+    get group() { return this.#extra.group; }
+    get groupOrder() { return this.#extra.groupOrder; }
+    get born() { return this.#extra.born; }
+    get death() { return this.#extra.death; }
+    get deceased() { return this.#extra.deceased; }
+
+    set id(value) { this.#id = value; }
+    set name(value) { this.#name = value; }
+    set depthOffset(value) { this.#depthOffset = value; }
+    set marriages(value) { this.#marriages = value; }
+    set extra(value) { this.#extra = value; }
+    set title(value) { this.#extra.title = value; }
+    set gender(value) { this.#extra.gender = value; }
+    set genitors(value) { this.#extra.genitors = value; }
+    set group(value) { this.#extra.group = value; }
+    set groupOrder(value) { this.#extra.groupOrder = value; }
+    set born(value) { this.#extra.born = value; }
+    set death(value) { this.#extra.death = value; }
+    set deceased(value) { this.#extra.deceased = value; }
+}
+
+/**
+ * [
+{
+    "name": "Father", // The name of the node
+    "class": "node", // The CSS class of the node
+    "textClass": "nodeText", // The CSS class of the text in the node
+    "depthOffset": 1, // Generational height offset
+    "marriages": [
+    { // Marriages is a list of nodes
+        "spouse":
+        { // Each marriage has one spouse
+            "name": "Mother",
+        },
+        "children": [
+        { // List of children nodes
+            "name": "Child",
+        }]
+    }],
+    "extra":
+    {} // Custom data passed to renderers
+}]
+ */
