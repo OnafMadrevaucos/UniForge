@@ -104,13 +104,25 @@ class TreeBuilder {
         .enter();
   
       this._linkSiblings();
+
+      const activeSiblings = this.siblings.filter((s) => {return s.active === true;});
   
-      // Draw siblings (marriage)
+      // Draw siblings (active marriage)
       this.g.selectAll('.sibling')
-        .data(this.siblings)
+        .data(activeSiblings)
         .enter()
         .append('path')
         .attr('class', opts.styles.marriage)
+        .attr('d', _.bind(this._siblingLine, this));
+
+      const inactiveSiblings = this.siblings.filter((s) => {return s.active === false;});
+
+      // Draw siblings (inactive marriage)
+      this.g.selectAll('.sibling')
+        .data(inactiveSiblings)
+        .enter()
+        .append('path')
+        .attr('class', `${opts.styles.marriage} inactive`)
         .attr('d', _.bind(this._siblingLine, this));
   
       // Create the node rectangles.

@@ -1887,6 +1887,7 @@ input:checked+.slider::before {
     height: var(--fill-height);
 }
 
+.lineage-tree,
 .timeline .main-viewer,
 .article .main-viewer {
     background: url(../ui/texture1.webp) no-repeat top center / auto 770px, var(--lib-background) url(../ui/texture2.webp) no-repeat bottom center / auto 704px;
@@ -3596,7 +3597,6 @@ folder-list .folder.created.selected .folder-header .fa-trash {
 
 .lineage-tree {
     flex: 1;
-    background-color: var(--light-background-color);
     border-radius: var(--default-border-radius);
     box-shadow: var(--small-shadow);
 }
@@ -3614,6 +3614,9 @@ folder-list .folder.created.selected .folder-header .fa-trash {
     height: var(--fill-height);
     gap: var(--default-gap-size);
     padding: 5px;
+}
+.lineage-tree .node.deceased {
+    background-color: var(--blue);
 }
 .lineage-tree .node .node-text {
     flex: 1;
@@ -3711,6 +3714,9 @@ folder-list .folder.created.selected .folder-header .fa-trash {
     text-align: center;
     align-content: center;
 }
+.lineage-tree .node.deceased .node-icon {
+    color: var(--disabled-text-color);
+}
 
 .lineage-tree .linage {
     fill: none;
@@ -3719,6 +3725,9 @@ folder-list .folder.created.selected .folder-header .fa-trash {
 .lineage-tree .marriage {
     fill: none;
     stroke: var(--stroke-color);
+}
+.lineage-tree .marriage.inactive {
+    stroke-dasharray: 2,2;
 }
 .lineage-tree .man {
     background-color: lightblue;

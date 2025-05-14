@@ -4,13 +4,14 @@ import dTree from "../../common/d3-tree/dtree.mjs";
 import CustomDate from "../../common/primitives/date.mjs";
 
 export default class EntityManager extends BaseManager {
-    testScript = 'iR3QK8\tpLucas\tTking\tlRodrigues Macedo\tgm\tmOLP90\tfA334F\tb19921222\n' +
+    testScript = 'iR3QK8\tpLucas\tTking\tlRodrigues Macedo\tgm\tmOLP90\tfA334F\tb19921222\td21921222\n' +
         'iDKP41\tpJéssica Cristina\tTqueen\tlCarvalho Silva\tgf\tb19910725\n' +
         'iST78B\tpAlisson José\tTcivilian\tlLima\tgm\tb19920206\n' +
         'iPWAN7\tpEmilly Suzane\tlSilva Lima\tTprincess\tgf\tb20100428\tmDKP41\tfST78B\tO1\n' +
         'iQS44D\tpAmanda\tlRodrigues Macedo\tTprincess\tgf\tmOLP90\tfA334F\tb19941004\n' +
         'iA334F\tpRodrigo\tlde Oliveira Macedo\tTcivilian\tgm\tb19650404\n' +
-        'iOLP90\tpMaryleila\tlde Moura Rodrigues Macedo\tTqueen\tgf\tb19630907\n' +
+        'iOLP90\tpMaryleila\tlde Moura Rodrigues Macedo\tTqueen\tgf\tmE4FT6\tb19630907\n' +
+        'iE4FT6\tpHerminia da Glória\tlMoura Rodrigues\tTqueen\tgf\tb19390828\n' +
         'pR3QK8 DKP41\te2\tgm\tb20250510\n' +
         'pDKP41 ST78B\te1\tgs\tb20090428\tz20130614\n' +
         'pA334F OLP90\te2\tgm\tb19910629\n';
@@ -29,7 +30,7 @@ export default class EntityManager extends BaseManager {
      * Objeto privado que gerencia os indivíduos (nós) e relacionamentos (galhos) de uma família.
     */
     #tree = {
-        root: 'R3QK8',
+        root: 'E4FT6',
         nodes: {},
         branches: []
     };
@@ -79,7 +80,7 @@ export default class EntityManager extends BaseManager {
                 marriage: 'marriage',
                 text: 'node-text'
             }
-        };        
+        };
     }
 
     get Root() {
@@ -111,7 +112,7 @@ export default class EntityManager extends BaseManager {
      * Constroe a Árvore de Linhagem no diagram de fluxograma.
      * @param {HTMLElement} container - O elemento HTML que irá conter o diagram de fluxograma.
     */
-    async buildTree() {        
+    async buildTree() {
         const seed = this._growSeed();
         const root = this.#tree.nodes[this.#tree.root];
         const container = this.treeContainer;
@@ -382,7 +383,7 @@ export default class EntityManager extends BaseManager {
     }
 
     _growSeed() {
-        if(!this.#tree.root) throw new Error('Não é possível gerar a árvore sem uma raiz.');
+        if (!this.#tree.root) throw new Error('Não é possível gerar a árvore sem uma raiz.');
 
         const seed = this.#tree.nodes;
         const branches = this.#tree.branches;
@@ -470,7 +471,7 @@ export default class EntityManager extends BaseManager {
                 }
             });
         }
-    }  
+    }
 
 
     _formatDate(dateStr) {
@@ -480,7 +481,7 @@ export default class EntityManager extends BaseManager {
         } else {
             return dateStr; // ou throw new Error("Formato de data inválido")
         }
-    }    
+    }
 
     _renderText(name, extra, textClass) {
         if (name.isEmpty() || !extra) return '';
@@ -506,7 +507,7 @@ export default class EntityManager extends BaseManager {
 
         const genderSpan = document.createElement('span');
         genderSpan.classList.add('node-gender', extra.gender === 'm' ? 'male' : 'female');
-        genderSpan.innerHTML = extra.gender === 'm' ? 'Masc.' : 'Fem.';
+        genderSpan.innerHTML = extra.gender === 'm' ? 'Masc.' : 'Fem.';        
 
         const infoFooter = document.createElement('div');
         infoFooter.classList.add('info-footer', 'flexrow');
@@ -544,19 +545,22 @@ export default class EntityManager extends BaseManager {
 
     _renderNode(name, x, y, width, height, extra, id, nodeClass, textClass, textRenderer) {
         const node = document.createElement('div');
-        node.classList.add(nodeClass, 'flexrow');
+        node.classList.add(nodeClass, 'flexrow');        
         node.id = 'node' + id;
+
+        // Sinalize que o Node é um node de uma entidade morta.
+        if(extra.deceased) node.classList.add('deceased');
 
         const iconMap = {
             'king': 'fa-chess-king',
             'queen': 'fa-chess-queen',
             'civilian': 'fa-user',
-            'princess': 'fa-crown'
+            'princess': 'fa-crown',
         }
 
         const icon = document.createElement('div');
         icon.classList.add('node-icon');
-        icon.innerHTML = `<i class="fas ${iconMap[extra.title]}"></i>`;;
+        icon.innerHTML = `<i class="fas ${extra.deceased ? 'fa-skull' : iconMap[extra.title]}"></i>`;;
         node.appendChild(icon);
 
         const text = textRenderer(name, extra, textClass);
