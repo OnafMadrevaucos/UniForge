@@ -31,7 +31,7 @@
           <div id="entryTypeGroup" class="data-group combo">
             <span class="data-label">Tipo </span>
             <combo id="entryType" value="entryTypes" />
-          </div>                    
+          </div>
           <div class="data-complex flexrow">
             <div class="data-group check">
               <span class="data-label">Rascunho </span>
@@ -46,9 +46,12 @@
 
     <div id="sections" class="tabs-control flexcol">
       <div class="tabs-options flex-0 flexrow">
-        <button id="descriptionTabButton" class="flexcol" data-tab="descriptionTab" disabled><i class="fas fa-align-left"></i> Descrição</button>
-        <button id="eventTabButton" class="flexcol" data-tab="eventTab" disabled><i class="fas fa-calendar"></i> Eventos</button>
-        <button id="lineageTabButton" class="flexcol" data-tab="lineageTab" disabled><i class="fas fa-people-group"></i> Linhagem</button>  
+        <button id="descriptionTabButton" class="flexcol" data-tab="descriptionTab" disabled><i
+            class="fas fa-align-left"></i> Descrição</button>
+        <button id="eventTabButton" class="flexcol" data-tab="eventTab" disabled><i class="fas fa-calendar"></i>
+          Eventos</button>
+        <button id="lineageTabButton" class="flexcol" data-tab="lineageTab" disabled><i class="fas fa-people-group"></i>
+          Linhagem</button>
       </div>
       <div id="descriptionTab" class="tab-content flex-1 flexcol active">
         <div id="flavorEditor" class="simple-tmce">
@@ -60,19 +63,19 @@
       </div>
       <div id="eventTab" class="tab-content flex-1 flexrow">
         <div class="data-group list flexcol">
-          <h4 class="flex-0">Eventos Vinculados</h4>          
+          <h4 class="flex-0">Eventos Vinculados</h4>
           <ul id="entryEvents" class="list flex-1"></ul>
         </div>
         <div class="event-info flex-2">
           <fieldset class="info-set flexcol">
             <div class="data-group text">
               <span class="data-label">Nome Evento </span>
-              <input id="eventTitle" type="text" class="data" placeholder="Nome do Evento"/>
-            </div> 
+              <input id="eventTitle" type="text" class="data" placeholder="Nome do Evento" />
+            </div>
             <div id="eventEntryTypeGroup" class="data-group combo">
               <span class="data-label">Tipo </span>
               <combo id="eventEntryType" value="entryTypes" />
-            </div>           
+            </div>
             <div id="dateTypeGroup" class="data-group combo">
               <span class="data-label">Calendário </span>
               <combo id="calendarType" value="calendars" />
@@ -98,11 +101,13 @@
               <div class="text-content editable"></div>
             </div>
             <button id="addEventButton"><i class="fas fa-square-plus"></i> Adicionar Evento</button>
-          </fieldset>          
+          </fieldset>
         </div>
       </div>
       <div id="lineageTab" class="tab-content flex-1 flexcol">
         <div id="lineageGroup" class="flexcol">
+          <span>Não foi encontrada uma linhagem vinculada a esta Entidade. Deseja criar uma nova linhagem ou vincular a
+            uma existente?</span>
           <div class="lineage-buttons flexrow">
             <button id="newLineageButton"><i class="fas fa-person-circle-plus"></i> Nova Linhagem</button>
             <button id="linkLineageButton"><i class="fas fa-link"></i> Vincular a uma Linhagem</button>
@@ -111,8 +116,18 @@
         <div id="lineageContainer" class="lineage-container flexcol flex-1 hidden">
           <div id="lineageFlavorEditor" class="simple-tmce">
             <div class="text-content editable"></div>
-          </div>          
-          <div id="treeContainer" class="lineage-tree viewer"></div>       
+          </div>
+          <div class="tree-editor">
+            <div id="treeContainer" class="lineage-tree viewer"></div>
+            <div class="action-buttons floating flexcol">
+              <button id="addMateButton" data-tooltip="Adicionar Parceiro" data-tooltip-left="" disabled>
+                <i class="fas fa-ring"></i>
+              </button>
+              <button id="addChildrenButton" data-tooltip="Adicionar Descendente" data-tooltip-left="" disabled>
+                <i class="fas fa-baby-carriage"></i>
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>

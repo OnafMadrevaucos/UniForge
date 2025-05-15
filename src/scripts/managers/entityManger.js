@@ -509,36 +509,9 @@ export default class EntityManager extends BaseManager {
         genderSpan.classList.add('node-gender', extra.gender === 'm' ? 'male' : 'female');
         genderSpan.innerHTML = extra.gender === 'm' ? 'Masc.' : 'Fem.';        
 
-        const infoFooter = document.createElement('div');
-        infoFooter.classList.add('info-footer', 'flexrow');
-
-        const otherMates = document.createElement('div');
-        otherMates.classList.add('others');
-        otherMates.innerHTML = '<i class="fas fa-ring"></i>';
-
-        const otherChildren = document.createElement('div');
-        otherChildren.classList.add('others');
-        otherChildren.innerHTML = '<i class="fas fa-baby-carriage"></i>';
-
-        infoFooter.appendChild(otherMates);
-        infoFooter.appendChild(otherChildren);
-
         text.appendChild(nameSpan);
         text.appendChild(dateDiv);
         text.appendChild(genderSpan);
-        text.appendChild(infoFooter);
-
-        if (extra.others) {
-            let coord = { X: 0, Y: 0 };
-
-            if (extra.others.mates.length > 0) {
-                otherMates.setAttribute('data-count', extra.others.mates.length);
-            }
-
-            if (extra.others.children.length > 0) {
-                otherChildren.setAttribute('data-count', extra.others.children.length);
-            }
-        }
 
         return text;
     }
@@ -547,6 +520,8 @@ export default class EntityManager extends BaseManager {
         const node = document.createElement('div');
         node.classList.add(nodeClass, 'flexrow');        
         node.id = 'node' + id;
+        node.dataset.id = id;
+        node.tabIndex = 0;
 
         // Sinalize que o Node é um node de uma entidade morta.
         if(extra.deceased) node.classList.add('deceased');
@@ -569,8 +544,31 @@ export default class EntityManager extends BaseManager {
         return node.outerHTML;
     }
 
-    _onNodeClick(name, extra) {
-        console.log(name);
+    _onNodeClick(name, extra, id) {
+        const selectedNode = document.getElementById('node' + id);
+        const alreadeSelected = selectedNode.classList.contains('selected');
+        
+        const nodes = document.querySelectorAll('.node');
+        nodes.forEach(node => node.classList.remove('selected'));               
+
+        if(!alreadeSelected) selectedNode.classList.add('selected');
+
+        const actionButtons = document.querySelectorAll('.tree-editor .action-buttons button');
+        actionButtons.forEach(button => button.disabled = alreadeSelected);         
+    }
+
+    _onAddMateClick(event) {
+        event.stopPropagation();
+        const node = event.target.closest('.node');
+        
+        console.log('Adicionar Parceiro');
+    }
+
+    _onAddChildrenClick(event) {
+        event.stopPropagation();
+        const node = event.target.closest('.node');
+        
+        console.log('Adicionar Filhos');
     }
 }
 

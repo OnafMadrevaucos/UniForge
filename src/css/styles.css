@@ -136,7 +136,7 @@
     --default-size: 12px;
     --small-size: 11px;
     --smaller-size: 10.5px;
-    --tiny-size: 7px;
+    --tiny-size: 8px;
 
     /* Borders */
     --filled-border: 1px solid var(--border-yellow);
@@ -148,6 +148,7 @@
     --img-border: 2px groove var(--blue);
     --data-group-border: 1px solid var(--light-blue);
     --focused-data-group-border: 1px solid var(--dark-redT87);
+    --focused-div-border: 1px solid var(--light-text-color);
     --blockquote-border: 5px solid var(--red);
 
     /* Borders Radius */
@@ -230,6 +231,12 @@ body.uniforge {
 
 *:focus-visible {
     outline: var(--focus-border);
+}
+
+*.floating
+{
+    position: relative;
+    z-index: 99999;
 }
 
 h1 {
@@ -3595,6 +3602,20 @@ folder-list .folder.created.selected .folder-header .fa-trash {
     overflow: hidden;
 }
 
+.tree-editor .action-buttons {
+    width: fit-content;
+    bottom: 50vh;
+    left: calc(100% - 5vh);
+    gap: var(--default-gap-size);
+}
+.tree-editor .action-buttons button {
+    height: 16px;
+    width: 16px;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+}
+
 .lineage-tree {
     flex: 1;
     border-radius: var(--default-border-radius);
@@ -3618,12 +3639,19 @@ folder-list .folder.created.selected .folder-header .fa-trash {
 .lineage-tree .node.deceased {
     background-color: var(--blue);
 }
+.lineage-tree .node.selected {
+    border: 2px solid var(--light-text-color);
+}
+.lineage-tree .node:hover {
+    cursor: pointer;
+}
+
 .lineage-tree .node .node-text {
     flex: 1;
     font-size: var(--default-size);
     gap: var(--small-gap-size);
     height: var(--fill-height);
-    padding-top: 0.5vh;
+    justify-content: center;
 }
 .lineage-tree .node-text .node-dates {
     width: var(--fill-width);
@@ -3664,43 +3692,6 @@ folder-list .folder.created.selected .folder-header .fa-trash {
     background-color: pink;
     color: var(--dark-red);
     border-color: var(--dark-red);
-}
-.lineage-tree .node-text .info-footer {
-    border-top: 1px solid var(--dark-red);
-    margin-top: auto;
-    padding-top: 2px;
-    height: 20%;
-}
-.lineage-tree .node-text .info-footer .others {
-    flex: 1;
-    color: var(--light-blue);
-    font-size: var(--smaller-size);
-    align-content: center;    
-}
-.lineage-tree .node-text .info-footer .others:first-of-type {
-    border-right: 1px groove var(--blue);
-}
-.lineage-tree .node-text .info-footer .others[data-count]:hover {
-    color: var(--dark-red);
-    cursor: pointer;
-}
-.lineage-tree .node-text .info-footer .others::after {
-    display: none;
-}
-.lineage-tree .node-text .info-footer .others[data-count]::after {
-    position: relative;
-    top: -0.6vh;
-    left: 0.5vw;
-    display: block;
-    content: attr(data-count);
-    background-color: var(--dark-redT87);
-    color: var(--light-text-color);
-    font-size: var(--tiny-size);
-    border-radius: 50%;
-    height: 1em;
-    width: 1em;
-    line-height: 0.8em;
-    z-index: 9999;
 }
 
 .lineage-tree .node .node-icon {   
