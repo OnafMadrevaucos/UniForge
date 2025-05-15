@@ -424,7 +424,7 @@ export default class EntrySearchDialog extends BaseDialog {
         },
         abort: () => resolve(null)
       }, options);
-      dialog.render(true);
+      dialog.show(true);
     });
   }
 }

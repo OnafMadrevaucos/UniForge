@@ -220,7 +220,7 @@ export default class DBManager {
         let query = 'INSERT INTO chapter (cid, tome, title, icon, type) VALUES (?,?,?,?,?);';
         let params = [];
 
-        const cid = !data.cid?.isEmpty() ? data.cid : this.generateID();
+        const cid = (!data.cid || data.cid.isEmpty()) ? this.generateID() : data.cid;
 
         params.push(cid);
         params.push(data.tome);
@@ -248,7 +248,7 @@ export default class DBManager {
         let query = 'INSERT INTO section (sid, cid, title, htmlString, isDraft) VALUES (?,?,?,?,?);';
         const params = [];
 
-        const sid = !data.sid?.isEmpty() ? data.sid : this.generateID();
+        const sid = (!data.sid || data.sid.isEmpty()) ? this.generateID() : data.sid;
 
         params.push(sid);
         params.push(data.cid);
@@ -280,7 +280,7 @@ export default class DBManager {
         let query = 'INSERT INTO entry (eid, sid, etid, title, flavor, htmlString, img, ext, isDraft) VALUES (?,?,?,?,?,?,?,?,?);';
         let params = [];
 
-        const eid = !data.eid?.isEmpty() ? data.eid : this.generateID();
+        const eid = (!data.eid || data.eid.isEmpty()) ? this.generateID() : data.eid;
 
         params.push(eid);
         params.push(data.sid);
@@ -323,7 +323,7 @@ export default class DBManager {
         query += 'VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);';
         const params = [];
 
-        const evid = !data.evid?.isEmpty() ? data.evid : this.generateID();
+        const evid = (!data.evid || data.evid.isEmpty()) ? this.generateID() : data.evid;
 
         params.push(evid);
         params.push(data.sid);
@@ -361,7 +361,7 @@ export default class DBManager {
         query += 'VALUES (?,?,?,?,?,?);';
         const params = [];
 
-        const ltid = !data.ltid?.isEmpty() ? data.ltid : this.generateID();
+        const ltid = (!data.ltid || data.ltid.isEmpty()) ? this.generateID() : data.ltid;
 
         params.push(ltid);
         params.push(data.sid);
@@ -401,7 +401,7 @@ export default class DBManager {
         let query = 'INSERT INTO timeline (tid, title, flavor) VALUES (?,?,?);';
         let params = [];
 
-        const tid = !data.tid?.isEmpty() ? data.tid : this.generateID();
+        const tid = (!data.tid || data.tid.isEmpty()) ? this.generateID() : data.tid;
 
         params.push(tid);
         params.push(data.title);
@@ -1905,10 +1905,22 @@ export default class DBManager {
         // Verifica se a transação é única, nesse caso, limpa o estado atual.
         if (!this.transactionStarted) this.clear();
 
-        if (params.length > 0)
-            return await uniforge.sql.exec(query, params);
-        else
-            return await uniforge.sql.exec(query);
+        let result = null;
+        // É uma consulta com parâmetros.
+        if (params.length > 0) {
+            result = await uniforge.sql.exec(query, params);
+        } else {
+            result = await uniforge.sql.exec(query);
+        }
+
+        // Se é uma transação única com o Banco de Dados, atualiza a base de dados.
+        if(!this.transactionStarted) {
+            // Independente do resultado se deve atualizar a base de dados.
+            await this.rebuildDocs();
+        }
+
+        // Retorna o resultado da consulta.
+        return result;
     }
 
     /**

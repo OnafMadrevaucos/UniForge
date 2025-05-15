@@ -3,7 +3,6 @@ import * as primitives from './primitives/module.mjs';
 
 import * as utilsEsm from './utils/module.mjs';
 import * as parserEsm from './parsers/module.mjs';
-import * as gojs from './gojs/module.mjs';
 import * as leafletEsm from './leaflet/module.mjs';
 
 import ArticleForm from '../models/forms/articleForm.js';
@@ -58,10 +57,6 @@ const parser = {
     generateItemList: utilsEsm.html.generateListItemHTML,
     generateFolderItem: utilsEsm.html.generateFolderItemHTML,
     parseCssToJson: parserEsm.css.parseCssToJson
-}
-
-const diagrams = {
-    build: gojs.diagram.buildDiagram
 }
 
 const leaflet = {
@@ -166,13 +161,6 @@ globalThis.uniforge = {
     * @type {Parser}
     */
     parser: parser,
-
-    /**
-    * Instância de funções auxiliares de manipulação de diagramas da ferramenta GoJS.
-    * 
-    * @type {GoJS Utils}
-    */
-    diagrams: diagrams,
 
     /**
     * Instância de funções auxiliares de manipulação de mapas da ferramenta Leaflet.

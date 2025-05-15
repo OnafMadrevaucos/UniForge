@@ -1,24 +1,38 @@
-/**
- * Instância do grupo de elementos desenhados no mapa.
- * 
- * @type {L.FeatureGroup}
- */
-export const mapElements = new L.FeatureGroup();
 
-/**
- * Controle de desenho no mapa.
- * 
- * @extends {L.Control.Draw}
- */
-export const CustomDrawControlConfig = {
-    options: {
-        position: 'topright'
-    },
-    edit: {
-        mapElements: mapElements
-    },
-
+const listeners = {
     onAdd: function (map) {
+        const container = L.DomUtil.create('div', 'leaflet-bar flexcol');
+
+        const zoomInButton = L.DomUtil.create('button', 'leaflet-control-zoomIn');
+        zoomInButton.innerHTML = '<i class="fa-solid fa-plus"></i>';
+        L.DomEvent.on(zoomInButton, 'click', function () {        
+            map.zoomIn();
+            console.log('Zoom In');
+        });
+
+        const zoomOutButton = L.DomUtil.create('button', 'leaflet-control-zoomOut');
+        zoomOutButton.innerHTML = '<i class="fa-solid fa-minus"></i>';
+        L.DomEvent.on(zoomOutButton, 'click', function () {
+            map.zoomOut();
+            console.log('Zoom Out');
+        });
+
+        // Cria o botão para o controle
+        const layerOptionsButton = L.DomUtil.create('button', 'leaflet-control-color');
+        layerOptionsButton.innerHTML = '<i class="fa-solid fa-palette"></i>';
+        // Adiciona o evento de clique para alterar a cor do mapa
+        L.DomEvent.on(layerOptionsButton, 'click', function () {
+            console.log('*CLICK*');
+        });
+
+        container.appendChild(zoomInButton);
+        container.appendChild(zoomOutButton);
+        container.appendChild(layerOptionsButton);
+
+        return container;
+    },
+
+    onAddDraw: function (map) {
         const container = L.DomUtil.create('div', 'leaflet-bar flexcol');
 
         // Cria um botão de Polígono
@@ -84,5 +98,37 @@ export const CustomDrawControlConfig = {
         });
 
         return container;
+    },
+
+    onCreateTile: function (coords) {
+        // Create a tile with transparency
+        const tile = document.createElement('canvas');
+
+        var tileSize = this.getTileSize();
+        tile.setAttribute('width', tileSize.x);
+        tile.setAttribute('height', tileSize.y);
+
+        const ctx = tile.getContext('2d');
+
+        // Draw grid lines
+        ctx.strokeStyle = 'rgba(212, 198, 148, 0.5)'; // Grid line color
+        ctx.lineWidth = 1;
+
+        // Draw horizontal and vertical grid lines
+        for (let i = 0; i <= tileSize; i += 36) { // Adjust the grid cell size (36px here)
+            ctx.beginPath();
+            ctx.moveTo(i, 0);
+            ctx.lineTo(i, tileSize);
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.moveTo(0, i);
+            ctx.lineTo(tileSize, i);
+            ctx.stroke();
+        }
+
+        return tile;
     }
-};
+}
+
+export default listeners;

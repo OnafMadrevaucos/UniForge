@@ -169,7 +169,10 @@ export default class Dialogs extends BaseDialog {
           cancel: {
             label: "Cancelar",
             icon: "fas fa-xmark",
-            callback: () => resolve(false)
+            callback: () => {
+              resolve(false);
+              return true;
+            }
           },
           confirm: {
             label: "Confirmar",
@@ -207,7 +210,13 @@ export default class Dialogs extends BaseDialog {
         title: title,
         abort: () => resolve()
       };
-      const dialog = new this(dialogData, { hasTemplate: false, imageUrl, width: '75%', type: Dialogs.Type.IMAGE });
+      const dialog = new this(dialogData, { 
+        hasTemplate: false,
+        imageUrl, 
+        width: '75%',
+        type: Dialogs.Type.IMAGE,
+        alwaysClose: true 
+      });
       dialog.show(true);
     });
   }

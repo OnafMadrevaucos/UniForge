@@ -12,7 +12,7 @@ export function capitalize() {
    * @returns {string}
    */
 export function isEmpty() {
-    return (!this || this === '');;
+    return (this.trim() === '' || this === null);
 }
 
 /**

@@ -7,6 +7,7 @@ import DBManager from "./db/dbManager.js";
 import DBDocuments from "./db/dbDocuments.js";
 
 import * as esm from "./common/uniforge-esm.mjs";
+import lControl from "./common/leaflet/core.mjs";
 
 // Adiciona as propriedades restantes ao objeto uniforge.
 uniforge.utils.mergeObjects(uniforge, {
@@ -14,7 +15,7 @@ uniforge.utils.mergeObjects(uniforge, {
      * Constantes usadas pela aplicação.
     */
     constants: {
-        leaflet: uniforge.leaflet.core.constants
+        leaflet: lControl.constants
     },
 
     /**
@@ -90,22 +91,7 @@ uniforge.utils.mergeObjects(uniforge, {
             skin: 'oxide-dark',
             content_css: './css/styles.css'
         }
-    },
-
-    /**
-    * Instância do mapa usando o Leaflet com configurações específicas.
-    * 
-    * @type {L.Map}
-    */
-    map: uniforge.leaflet.core.map,    
-
-    /**
-    * Grupo de elementos desenhados no mapa.
-    * 
-    * @type {L.FeatureGroup}
-    * 
-    */
-    mapElements: uniforge.leaflet.draw.mapElements,
+    },    
 
     /**
      * Controles relacionados à interface do usuário.
@@ -118,11 +104,7 @@ uniforge.utils.mergeObjects(uniforge, {
      * @property {LinkTooltip} tooltip - Instância do gerenciador de tooltips.
      */
     ctrls: {
-        leaflet: {
-            main: null,
-            draw: null,
-            grid: null
-        },
+        leaflet: null,
         msgBox: new MsgBox(6),
         tooltip: new LinkTooltip()
     }, 
@@ -179,9 +161,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     uniforge.html.classList.add('uniforge');
 
-    await configureData();  
-    
-    configureLeaflet();
+    await configureData(); 
 
     configureTopBar();
 
@@ -190,6 +170,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     configureHooks();
 
     checkState();
+
+    configureLeaflet();
 });
 
 // Limpa o armazenamento local ao fechar a janela.
@@ -222,51 +204,7 @@ async function configureData() {
 
 // Configura a ferramenta de mapas Leaflet 
 function configureLeaflet() {
-
-    // Inicializa o Mapa, ajustando a visualização com base nas coordenadas de imagem
-    const map = uniforge.map;
-
-    // Cria a camada de armazenagem das Layers do Mapa
-    const mapElements = uniforge.mapElements;
-
-    // Calcula os limites de imagem com base na largura/altura
-    const bounds = [[0, 0], [uniforge.constants.leaflet.VIEW_HEIGHT, uniforge.constants.leaflet.VIEW_WIDTH]];
-
-    map.setMaxBounds(uniforge.constants.leaflet.IMG_HEIGHT, uniforge.constants.leaflet.IMG_WIDTH);
-    // Ajusta a visualização inicial para se ajustar aos limites da imagem
-    map.fitBounds(bounds);
-
-    // Adiciona a imagem personalizada como uma camada de tile
-    uniforge.mapOverlay = L.imageOverlay('./ui/map.jpg', bounds, { zIndex: 1 /* Garantir que fique atrás do Layer do Grid */ });
-    uniforge.mapOverlay.addTo(map);
-
-    // Adicionar evento de mousedown ou mousemove para capturar o clique e mover o mapa
-    map.on('mousedown', function (e) {
-        uniforge.clickLatLang = e.latlng;  // Ponto de clique do usuário
-    });
-
-    const scale = L.control.scale({
-        imperial: false
-    });
-    scale.addTo(map);
-
-    // Adicione um evento para atualizar os limites ao redimensionar ou fazer zoom no mapa
-    map.on('moveend', _checkMapVisibility);
-    // Grupo para armazenar as camadas desenhadas  
-    map.addLayer(mapElements);
-
-    // Cria os Menus de Controle do Mapa.
-    _createControls();
-
-    // Evento para capturar o desenho de polígonos
-    map.on('draw:created', function (e) {
-        const layer = e.layer;
-        const type = e.layerType;
-
-        layer.bindPopup(type);
-
-        mapElements.addLayer(layer);
-    });
+    uniforge.ctrls.leaflet = lControl.init();
 }
 // Configura os elementos da Topbar de Ferramentas
 function configureTopBar() {
@@ -379,42 +317,6 @@ function onChangeTimeInput(event) {
  * FUNÇÕES DE CONTROLE INTERNO DA PÁGINA 
  * ------------------------------------------------------------------
  * */
-// Cria os controles customizados do Leaflet
-function _createControls() {
-    // Inicializa o Mapa, ajustando a visualização com base nas coordenadas de imagem
-    const map = uniforge.map;
-
-    // Cria a camada de armazenagem das Layers do Mapa
-    const mapElements = uniforge.mapElements;
-
-    // Cria o Menu de Controle para manipulação do mapa.
-    const MainControl = L.Control.extend(uniforge.leaflet.core.MainControlConfig);
-
-    uniforge.ctrls.main = new MainControl();
-
-    // Cria o Menu de Desenho para manipulação dos Layers no mapa.
-    const CustomDrawControl = L.Control.Draw.extend(uniforge.leaflet.draw.CustomDrawControlConfig);
-    CustomDrawControl.edit = {
-        featureGroup: uniforge.mapElements
-    };
-
-    uniforge.ctrls.draw = new CustomDrawControl();
-
-    const TransparentGridLayer = L.GridLayer.extend(uniforge.leaflet.grid.GridLayerConfig);
-
-    uniforge.ctrls.grid = new TransparentGridLayer({
-        tileSize: uniforge.constants.leaflet.TILE_SIZE,
-        opacity: 0.8, // Adjust transparency
-        zIndex: 1000, // Ensure the grid is above other layers
-    });
-
-    uniforge.ctrls.grid.addTo(map);
-    uniforge.ctrls.grid.bringToFront();
-
-    // Adiciona o Menu de Controle ao Mapa.
-    map.addControl(uniforge.ctrls.main);
-    map.addControl(uniforge.ctrls.draw);
-}
 /**
  * Renderiza um formulário baseado em um ID de template
  * e o exibe na tela.
@@ -482,88 +384,6 @@ function _setTime(year) {
 
     currentYearInput.value = uniforge.time.y.label;
     timeEraSpan.textContent = uniforge.time.era;
-}
-
-// Calcular os limites baseados na posição e zoom atual
-function _checkMapVisibility() {
-    // Inicializa o Mapa, ajustando a visualização com base nas coordenadas de imagem
-    const map = uniforge.map;
-
-    var mapBounds = map.getBounds(); // Obtém os limites da área visível do mapa
-    var imageBounds = uniforge.mapOverlay.getBounds(); // Obtém os limites da uniforge.mapOverlay
-
-    // Calculando os 8 pontos ao redor da uniforge.mapOverlay
-    var points = _getWatcherPoints(imageBounds, 0.85); // 25% de padding  
-    var isVisible = mapBounds.intersects(points);
-
-    // Se nenhum ponto da uniforge.mapOverlay estiver visível, ajustar a posição do mapa
-    if (!isVisible) {
-        // Encontrar o ponto mais próximo do centro da tela
-        var closestPoint = points[0];
-        var closestDistance = map.distance(uniforge.clickLatLang, points[0]);
-
-        points.forEach(function (point) {
-            var distance = map.distance(uniforge.clickLatLang, point);
-            if (distance < closestDistance) {
-                closestPoint = point;
-                closestDistance = distance;
-            }
-        });
-
-        // Ajusta o mapa para garantir que pelo menos um ponto da uniforge.mapOverlay esteja visível
-        map.setView(closestPoint, map.getZoom(), {
-            animate: true
-        });
-    }
-}
-
-// Função para calcular os pontos ao redor da uniforge.mapOverlay com um padding (0.0 a 1.0)
-function _getWatcherPoints(bounds, paddingRatio) {
-    const southWest = bounds.getSouthWest();
-    const northEast = bounds.getNorthEast();
-
-    // Calculando o número de pontos baseado na precisão
-    const { latPoints, lngPoints } = _calculatePrecision(bounds);
-
-    // Calculando a diferença de latitude e longitude
-    const latDiff = northEast.lat - southWest.lat;
-    const lngDiff = northEast.lng - southWest.lng;
-
-    // Calculando os limites com o padding de 25%
-    const paddingLat = latDiff * paddingRatio;
-    const paddingLng = lngDiff * paddingRatio;
-
-    const points = [];
-
-    // Gerando os pontos ao longo das bordas, considerando o padding e a precisão
-    for (let i = 0; i < latPoints; i++) {
-        for (let j = 0; j < lngPoints; j++) {
-            const lat = southWest.lat + paddingLat + (i * latDiff / (latPoints - 1)) - paddingLat;
-            const lng = southWest.lng + paddingLng + (j * lngDiff / (lngPoints - 1)) - paddingLng;
-            points.push(L.latLng(lat, lng));
-        }
-    }
-
-    return points;
-}
-// Função para calcular a quantidade de pontos com base na precisão e no tamanho da uniforge.mapOverlay
-function _calculatePrecision(bounds) {
-    const southWest = bounds.getSouthWest();
-    const northEast = bounds.getNorthEast();
-
-    // Calculando a diferença de latitude e longitude
-    const latDiff = northEast.lat - southWest.lat;
-    const lngDiff = northEast.lng - southWest.lng;
-
-    // Calculando a quantidade mínima de pontos para cobrir a uniforge.mapOverlay
-    const totalArea = latDiff * lngDiff;  // Área da uniforge.mapOverlay
-    const desiredPoints = Math.max(uniforge.constants.leaflet.MIN_POINTS, Math.sqrt(totalArea) * 100); // Ajuste para gerar pelo menos 1000 pontos
-
-    // Determinando o número de pontos para latitude e longitude
-    const latPoints = Math.ceil(Math.sqrt(desiredPoints * (latDiff / totalArea)));
-    const lngPoints = Math.ceil(Math.sqrt(desiredPoints * (lngDiff / totalArea)));
-
-    return { latPoints, lngPoints };
 }
 
 // Função para criar um elemento com classes e atributos

@@ -145,7 +145,7 @@ export default class TimelineDialog extends BaseDialog {
             };
 
             const dialog = new this(dialogData);
-            dialog.render();
+            dialog.show(true);
         });
     }
 

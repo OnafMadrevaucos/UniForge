@@ -106,7 +106,7 @@ export default class FamilyDialog extends BaseDialog {
             };
 
             const dialog = new this(dialogData);
-            dialog.render();
+            dialog.show(true);
         });
     }
 }

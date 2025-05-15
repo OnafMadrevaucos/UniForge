@@ -31,8 +31,8 @@ export default class ChapterDialog extends BaseDialog {
     * Configura ouvintes de eventos básicos para o dialog.
     * @protected
     */
-  _activateListeners() {
-    super._activateListeners();
+  activateListeners() {
+    super.activateListeners();
 
     const titleInput = this.querySelector('#titleInput');
     const searchInput = this.querySelector('#iconSearch');
@@ -152,7 +152,7 @@ export default class ChapterDialog extends BaseDialog {
       };
 
       const dialog = new this(dialogData);
-      dialog.render();
+      dialog.show(true);
     });
   }
 }
