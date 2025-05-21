@@ -41,11 +41,26 @@ export function titleCase() {
     }, []).join(' ');
 }
 
+/**
+   * Concatena esta string com outra, separando-as por um caractere ou string.
+   * Se a string atual estiver vazia, retorna a outra string.
+   * Se a outra string estiver vazia, retorna a string atual.
+   * @param {string} other        A outra string a concatenar.
+   * @param {string} separator    O caractere ou string a ser usada como separador ('' por padrão).
+   * @returns {string}            A string concatenada.
+*/
+export function join(other, separator='') {
+    if (this.isEmpty()) return other;
+    if (other.isEmpty()) return this;
+    return `${this}${separator}${other}`;    
+}
+
 console.log('UniForge | Atribuindo primitivos ao protótipo das Strings...');
 // Atribui primitivos ao protótipo das Strings
 Object.defineProperties(String.prototype, {
     capitalize: { value: capitalize, configurable: true },
     compare: { value: compare, configurable: true },
     isEmpty: { value: isEmpty, configurable: true },
-    titleCase: { value: titleCase, configurable: true }
+    titleCase: { value: titleCase, configurable: true },
+    join: { value: join, configurable: true }
 });

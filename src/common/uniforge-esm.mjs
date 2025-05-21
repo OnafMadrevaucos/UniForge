@@ -87,18 +87,6 @@ const state = {
 console.log('UniForge | Gerando variável global \'uniforge\'...');
 globalThis.uniforge = { 
     /**
-    * Urls de Imagens padrões usadas pelo sistema.
-    * 
-    * @type {Object}
-    * @property {string} background - Imagem utilizada como fundo das entradas da Biblioteca e das Timelines.
-    * @property {string} blankImg   - Imagem padrão usada para campos de imagem vazios.
-    */
-    urls: {
-        background: './ui/lib-background.png',
-        blankImg: './ui/blank-image.svg'
-    },
-
-    /**
     * Referência ao corpo do documento HTML.
     * 
     * @type {HTMLElement}
@@ -110,6 +98,12 @@ globalThis.uniforge = {
     * @type {Object}
     */
     app: window.app,
+
+    /**
+    * Ferramentas da controle universal de Diretórios.
+    * @type {Object}
+    */
+    path: window.path,
 
     /**
     * Instância de SQL usada pela aplicação.

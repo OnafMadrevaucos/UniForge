@@ -1,5 +1,5 @@
 const { contextBridge, ipcRenderer } = require('electron');
-console.log('============================= UNIFORGE ============================');  
+console.log('============================= UNIFORGE ============================');
 
 contextBridge.exposeInMainWorld('versions', {
   node: () => process.versions.node,
@@ -19,9 +19,12 @@ contextBridge.exposeInMainWorld('app', {
 });
 console.log('UniForge | Configurando pré-carregamentos de Aplicação.');
 
-/*
-contextBridge.exposeInMainWorld('templates', {
-  get: async (fileName, id) => ipcRenderer.invoke('get-template', fileName, id)
+contextBridge.exposeInMainWorld('path', {
+  join: async (...args) => { 
+    const result = await ipcRenderer.invoke('path-join', args);
+    console.log(args);
+    return result;
+  },
+  resolve: async (protoPath) => await ipcRenderer.invoke('path-resolve', protoPath)
 });
 console.log('UniForge | Configurando pré-carregamentos de Templates.');
-*/

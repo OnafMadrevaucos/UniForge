@@ -1,5 +1,6 @@
 import listeners from "./listeners.mjs";
 
+
 const lControl = {
     /**
     * Constantes configuráveis, como dimensões de imagem e tamanho do tile.
@@ -49,9 +50,9 @@ const lControl = {
     */
     MainControl: L.Control.extend({
         options: {
-            position: 'topright' // Posição no canto superior esquerdo
+            position: 'topright' // Posição no canto superior esquerdo.            
         },
-        onAdd: listeners.onAdd
+        onAdd: listeners.onAddMain
     }),
 
     /**
@@ -61,7 +62,7 @@ const lControl = {
     */
     CustomDrawControl: L.Control.Draw.extend({
         options: {
-            position: 'topright'
+            position: 'topright' // Posição no canto superior esquerdo.            
         },
         onAdd: listeners.onAddDraw
     }),
@@ -72,18 +73,18 @@ const lControl = {
 
     init: function () {
         const map = lControl.map = L.map('map', {
-            crs: L.CRS.Simple, // Usando o sistema de coordenadas simples do Leaflet para imagens personalizadas
+            crs: L.CRS.Simple, // Usando o sistema de coordenadas simples do Leaflet para imagens personalizadas.
             center: [0.0, 0.0],
             maxZoom: 3,
             minZoom: -2,
             zoomSnap: 0.1,
-            zoomControl: false, // Desativa o controle de zoom padrão para personalizá-lo
+            zoomControl: false, // Desativa o controle de zoom padrão para personalizá-lo.
             maxBoundsViscosity: 1.0
         });
 
         const mapElements = lControl.mapElements = new L.FeatureGroup();
 
-        // Calcula os limites de imagem com base na largura/altura
+        // Calcula os limites de imagem com base na largura/altura.
         const bounds = [[0, 0], [lControl.constants.VIEW_HEIGHT, lControl.constants.VIEW_WIDTH]];
 
         map.setMaxBounds(lControl.constants.IMG_HEIGHT, lControl.constants.IMG_WIDTH);
@@ -112,7 +113,33 @@ const lControl = {
 
         lControl.CustomDrawControl.edit = {
             featureGroup: mapElements
-        }
+        };      
+        
+        uniforge.utils.mergeObjects(L.drawLocal.draw.handlers,{
+            circle: {
+				tooltip: {
+					start: 'Clique e arraste para desenhar um círculo.'
+				},
+				radius: 'Raio'
+			},
+			marker: {
+				tooltip: {
+					start: 'Clique no mapa para adicionar um marcador.'
+				}
+			},
+			polygon: {
+				tooltip: {
+					start: 'Clique para comecar a desenhar uma forma.',
+					cont: 'Clique para continuar desenhando.',
+					end: 'Clique no primeiro ponto para fechar esta forma.'
+				}
+			},
+			rectangle: {
+				tooltip: {
+					start: 'Clique e arraste para desenhar um retângulo.'
+				}
+			},
+        });
 
         const draw = new lControl.CustomDrawControl();
 
@@ -140,15 +167,15 @@ const lControl = {
                 const southWest = bounds.getSouthWest();
                 const northEast = bounds.getNorthEast();
 
-                // Calculando a diferença de latitude e longitude
+                // Calculando a diferença de latitude e longitude.
                 const latDiff = northEast.lat - southWest.lat;
                 const lngDiff = northEast.lng - southWest.lng;
 
-                // Calculando a quantidade mínima de pontos para cobrir a uniforge.mapOverlay
-                const totalArea = latDiff * lngDiff;  // Área da uniforge.mapOverlay
-                const desiredPoints = Math.max(lControl.constants.MIN_POINTS, Math.sqrt(totalArea) * 100); // Ajuste para gerar pelo menos 1000 pontos
+                // Calculando a quantidade mínima de pontos para cobrir a uniforge.mapOverlay.
+                const totalArea = latDiff * lngDiff;  // Área da uniforge.mapOverlay.
+                const desiredPoints = Math.max(lControl.constants.MIN_POINTS, Math.sqrt(totalArea) * 100); // Ajuste para gerar pelo menos 1000 pontos.
 
-                // Determinando o número de pontos para latitude e longitude
+                // Determinando o número de pontos para latitude e longitude.
                 const latPoints = Math.ceil(Math.sqrt(desiredPoints * (latDiff / totalArea)));
                 const lngPoints = Math.ceil(Math.sqrt(desiredPoints * (lngDiff / totalArea)));
 
@@ -159,20 +186,20 @@ const lControl = {
                 const southWest = bounds.getSouthWest();
                 const northEast = bounds.getNorthEast();
 
-                // Calculando o número de pontos baseado na precisão
+                // Calculando o número de pontos baseado na precisão.
                 const { latPoints, lngPoints } = _calculatePrecision(bounds);
 
-                // Calculando a diferença de latitude e longitude
+                // Calculando a diferença de latitude e longitude.
                 const latDiff = northEast.lat - southWest.lat;
                 const lngDiff = northEast.lng - southWest.lng;
 
-                // Calculando os limites com o padding de 25%
+                // Calculando os limites com o padding de 25%.
                 const paddingLat = latDiff * paddingRatio;
                 const paddingLng = lngDiff * paddingRatio;
 
                 const points = [];
 
-                // Gerando os pontos ao longo das bordas, considerando o padding e a precisão
+                // Gerando os pontos ao longo das bordas, considerando o padding e a precisão.
                 for (let i = 0; i < latPoints; i++) {
                     for (let j = 0; j < lngPoints; j++) {
                         const lat = southWest.lat + paddingLat + (i * latDiff / (latPoints - 1)) - paddingLat;
@@ -184,16 +211,16 @@ const lControl = {
                 return points;
             }
 
-            var mapBounds = map.getBounds(); // Obtém os limites da área visível do mapa
-            var imageBounds = overlay.getBounds(); // Obtém os limites da uniforge.mapOverlay
+            var mapBounds = map.getBounds(); // Obtém os limites da área visível do mapa.
+            var imageBounds = overlay.getBounds(); // Obtém os limites da uniforge.mapOverlay.
 
-            // Calculando os 8 pontos ao redor da uniforge.mapOverlay
-            var points = _getWatcherPoints(imageBounds, 0.85); // 25% de padding  
+            // Calculando os 8 pontos ao redor da uniforge.mapOverlay.
+            var points = _getWatcherPoints(imageBounds, 0.85); // 25% de padding  .
             var isVisible = mapBounds.intersects(points);
 
-            // Se nenhum ponto da uniforge.mapOverlay estiver visível, ajustar a posição do mapa
+            // Se nenhum ponto da uniforge.mapOverlay estiver visível, ajustar a posição do mapa.
             if (!isVisible) {
-                // Encontrar o ponto mais próximo do centro da tela
+                // Encontrar o ponto mais próximo do centro da tela.
                 var closestPoint = points[0];
                 var closestDistance = map.distance(lControl.clickLatLang, points[0]);
 
@@ -205,7 +232,7 @@ const lControl = {
                     }
                 });
 
-                // Ajusta o mapa para garantir que pelo menos um ponto da uniforge.mapOverlay esteja visível
+                // Ajusta o mapa para garantir que pelo menos um ponto da uniforge.mapOverlay esteja visível.
                 map.setView(closestPoint, map.getZoom(), {
                     animate: true
                 });
@@ -218,9 +245,10 @@ const lControl = {
 
         function _onDrawCreated(e) {
             const layer = e.layer;
-            const type = e.layerType;
+            const content = document.createElement('div');
+            content.innerHTML = `<strong>Tipo:</strong> ${e.layerType}`;
 
-            layer.bindPopup(type);
+            layer.bindPopup(content.innerHTML);
 
             lControl.mapElements.addLayer(layer);
         }

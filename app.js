@@ -3,6 +3,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
 import Database from 'better-sqlite3';
+import { result } from 'lodash-es';
 
 // Para resolver o `__dirname` no modo ESM
 const __filename = fileURLToPath(import.meta.url);
@@ -52,6 +53,8 @@ app.whenReady().then(() => {
   });
   console.log('UniForge | Registrando Atalhos.');
 
+  ipcMain.handle('get-dir', (event) => { return __dirname; });
+
   /**
    * Manipulador para consultas ao banco de dados.
    * @param {Electron.IpcMainEvent} event - O evento IPC recebido.
@@ -70,14 +73,17 @@ app.whenReady().then(() => {
    */
   ipcMain.handle('db-exec', (event, query, params = []) => dbExec(query, params));
 
-   /**
-   * Manipulador para recarregar a Janela Principal.
-   * @param {Electron.IpcMainEvent} event - O evento IPC recebido.
-   * @param {string} query - O comando SQL.
-   * @param {Array} [params=[]] - Parâmetros opcionais para o comando.
-   * @returns {Object} - Resultado da execução.
-   */
-   ipcMain.handle('window-refresh', (event) => refreshWindow());  
+  /**
+  * Manipulador para recarregar a Janela Principal.
+  * @param {Electron.IpcMainEvent} event - O evento IPC recebido.
+  * @param {string} query - O comando SQL.
+  * @param {Array} [params=[]] - Parâmetros opcionais para o comando.
+  * @returns {Object} - Resultado da execução.
+  */
+  ipcMain.handle('window-refresh', (event) => refreshWindow());
+
+  ipcMain.handle('path-join', (event, args = []) => pathJoin(args));
+  ipcMain.handle('path-resolve', (event, protoPath) => pathResolve(protoPath));
 
   /**
    * Manipulador para buscar templates de arquivos.
@@ -88,7 +94,7 @@ app.whenReady().then(() => {
   console.log('UniForge | Criando requisição de Renders.');
 });
 
-app.on('will-quit', () => {  
+app.on('will-quit', () => {
   globalShortcut.unregisterAll(); // Limpa os atalhos ao fechar o app
 });
 
@@ -104,17 +110,18 @@ app.on('window-all-closed', () => {
 function CreateWindow() {
   mainWindow = new BrowserWindow({
     webPreferences: {
-      preload: path.join(__dirname, './src/scripts/preload.js'),
+      preload: path.join(__dirname, '/src/scripts/preload.js'),
+      worldSafeExecuteJavaScript: true,
       contextIsolation: true,
       nodeIntegration: false
     },
-    icon: './src/ui/icons/icone.png',
+    icon: path.join(__dirname, '/src/ui/icons/icone.png'),
     show: false,
   });
 
   // Inicia o aplicativo maximizado
   mainWindow.maximize();
-  mainWindow.loadFile('./src/uniforge.html');
+  mainWindow.loadFile(path.join(__srcname, '/uniforge.html'));
 
   mainWindow.once('ready-to-show', () => {
     mainWindow.show();
@@ -130,7 +137,7 @@ function CreateWindow() {
     })
   })
 
-  mainWindow.on('closed', () => {    
+  mainWindow.on('closed', () => {
     mainWindow = null;
   });
 }
@@ -175,11 +182,34 @@ function dbExec(query, params = []) {
   }
 }
 
-function refreshWindow() {  
-  if (mainWindow) {    
-    console.log('UniForge | Recarregando a Janela Principal.');    
+function refreshWindow() {
+  if (mainWindow) {
+    console.log('UniForge | Recarregando a Janela Principal.');
     mainWindow.reload();
-  } 
+  }
+}
+
+/**
+ * Junta um ou mais caminhos relativos dentro da pasta `src` em um caminho absoluto.
+ * @param {string[]} paths - Os caminhos relativos a serem unidos.
+ * @returns {string} - O caminho absoluto resultante.
+ */
+function pathJoin(paths) {
+  const result = path.join(__srcname, ...paths);
+  return result;
+}
+
+/**
+ * Resolve um caminho relativo de um arquivo dentro da pasta `src`.
+ * 
+ * @param {string} protoPath - O caminho relativo do arquivo a ser resolvido.
+ * @returns {string} - O caminho absoluto do arquivo.
+ */
+function pathResolve(protoPath) {
+  const fullPath = path.join(__srcname, protoPath);
+  const result = path.resolve(fullPath);
+  console.log(result);
+  return result;
 }
 
 /**
@@ -205,7 +235,7 @@ async function getTemplate(fileName, id) {
     Handlebars.registerPartial(id ?? filePath, compiled);
     console.log(`UniForge | Template '${filePath}' obtido e compilado com sucesso.`);
     console.log(compiled);
-    return compiled;    
+    return compiled;
   } catch (err) {
     console.error('UniForge | Erro ao carregar template: ', err.message);
     throw err;

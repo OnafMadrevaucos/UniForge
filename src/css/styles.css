@@ -170,6 +170,7 @@
     --sidebar-shadow: 4px 0 8px rgba(0, 0, 0, 0.2);
     --dialog-shadow: 5px 0 10px var(--shadow-color);
     --calendar-shadow: 0 2px 6px rgba(0, 0, 0, 1);
+    --leaflet-popup-shadow: inset 0px 2px 0px 0px var(--dark-grey);
 
     /* Dimensions */
     --fill-width: -webkit-fill-available;
@@ -653,14 +654,10 @@ input:checked+.slider::before {
     margin: 0;
     padding: 0;
     background-image: url('../ui/world-background.jpeg');
+    background-repeat: round;
     box-shadow: var(--default-shadow);
 }
 
-.leaflet-container path {
-    stroke: var(--redT87);
-    stroke-width: 2;
-    fill: var(--red)
-}
 
 .leaflet-container .leaflet-div-icon {
     background: var(--grey);
@@ -683,9 +680,62 @@ input:checked+.slider::before {
     color: var(--light-text-color);
     font-weight: bold;
 }
+.uniforge .leaflet-container a.leaflet-popup-close-button {
+    width: 18px;
+    height: 18px;
+    display: flex;
+    flex-direction: column;
+    font: var(--default-font);
+    font-size: 16px;
+    font-weight: bold;
+    align-self: flex-start;
+    background-color: var(--light-text-color);
+    color: var(--dark-red);
+    border: none;
+    cursor: pointer;
+    z-index: 2100;
+    border-radius: 50% 50%;
+    margin-right: 5px;
+    margin-top: 5px;
+    justify-content: center;
+}
+.uniforge .leaflet-container a.leaflet-popup-close-button:hover {
+    box-shadow: var(--small-shadow);
+    color: var(--dark-red);
+    text-shadow: none;
+}
 
 .leaflet-pane .leaflet-overlay-pane {
     z-index: 150 !important;
+}
+
+.leaflet-popup {
+
+}
+.leaflet-popup .leaflet-popup-tip,
+.leaflet-popup .leaflet-popup-content-wrapper {
+    background-color: var(--dark-red);    
+    color: var(--light-text-color);
+}
+.leaflet-popup .leaflet-popup-content-wrapper {
+    border: var(--filled-border);
+    border-radius: var(--default-border-radius);
+}
+
+.leaflet-popup .leaflet-popup-content-wrapper .leaflet-popup-content {
+    width: 250px;
+    height: 125px;
+    background-color: var(--light-blue);
+    background-image: url('../ui/denim065.png');
+    background-blend-mode: multiply;
+    margin-inline: 0;
+    margin-bottom: 0.3vw;
+    margin-top: 1.75vh;
+    padding: 5px;
+    box-shadow: var(--leaflet-popup-shadow);
+}
+.leaflet-popup .leaflet-popup-content-wrapper .leaflet-popup-content div {
+    
 }
 
 /* ------ Tools Topbar ------*/
@@ -834,7 +884,6 @@ input:checked+.slider::before {
     top: 0;
     height: var(--fill-height);
     width: 50px;
-    background-color: var(--dark-blue);
     display: flex;
     flex-direction: column;
     transition: width 0.3s ease-in-out;

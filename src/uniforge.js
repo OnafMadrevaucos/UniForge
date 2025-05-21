@@ -9,148 +9,180 @@ import DBDocuments from "./db/dbDocuments.js";
 import * as esm from "./common/uniforge-esm.mjs";
 import lControl from "./common/leaflet/core.mjs";
 
-// Adiciona as propriedades restantes ao objeto uniforge.
-uniforge.utils.mergeObjects(uniforge, {
-    /**
-     * Constantes usadas pela aplicação.
-    */
-    constants: {
-        leaflet: lControl.constants
-    },
-
-    /**
-     * Instância do gerenciador de banco de dados.
-     * @type {DBManager}
-     */
-    db: new DBManager(),
-
-    /**
-     * Opções para editores Tiny MCE. 
-     * Qualquer função customizada ou callbacks deve ser mesclado a essas opções.
-     * 
-     * @type {Object}
-     * @property {Object|null} default  - Opção padrão.
-     * @property {Object|null} simple   - Opção simplificada.
-     */
-    tinymceOptions: {
-        default: {
-            editable_class: 'editable',
-            license_key: 'gpl',
-            plugins: ['anchor', 'autolink', 'codesample', 'link', 'lists', 'searchreplace', 'table', 'visualblocks', 'image'],
-            toolbar: 'undo redo | blocks | bold italic backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | entryLink blockquote sendImage | addLoremIpsum',
-            toolbar_mode: 'wrap',
-            placeholder: 'Descrição do registro...',
-            block_formats: 'Heading 1=h1; Heading 2=h2; Heading 3=h3; Paragraph=p;',
-            images_file_types: 'jpg,jpeg,png,svg,webp',
-            image_caption: true,
-            block_unsupported_drop: false,
-            height: '100%',
-            browser_spellcheck: true,
-            menubar: false,
-            resize: false,
-            statusbar: false,
-            skin: 'oxide-dark',
-            content_css: './css/styles.css'
-        },
-        readonly: {
-            editable_class: 'editable',
-            noneditable_class: 'non-editable',
-            body_class: 'non-editable',
-            license_key: 'gpl',
-            plugins: ['anchor', 'autolink', 'codesample', 'link', 'lists', 'searchreplace', 'table', 'visualblocks', 'image'],
-            toolbar: false,
-            block_formats: 'Heading 1=h1; Heading 2=h2; Heading 3=h3; Paragraph=p;',
-            images_file_types: 'jpg,jpeg,png,svg,webp',
-            image_caption: true,
-            block_unsupported_drop: false,
-            height: '100%',
-            menubar: false,
-            resize: false,
-            statusbar: false,
-            skin: 'oxide-dark',
-            content_css: './css/styles.css',
-            readonly: true,
-            disable_focus: true
-        },
-        simple: {
-            license_key: 'gpl',
-            plugins: 'quickbars',
-            quickbars_selection_toolbar: 'undo redo | bold italic',
-            quickbars_insert_toolbar: false,
-            browser_spellcheck: true,
-            menubar: false,
-            inline: true,
-            skin: 'oxide-dark',
-            content_css: './css/styles.css'
-        },
-        lite: {
-            license_key: 'gpl',
-            browser_spellcheck: true,
-            menubar: false,
-            inline: true,
-            skin: 'oxide-dark',
-            content_css: './css/styles.css'
-        }
-    },    
-
-    /**
-     * Controles relacionados à interface do usuário.
-     * 
-     * @type {Object}
-     * @property {Object|null} main - Controle principal.
-     * @property {Object|null} draw - Controle de desenho no mapa.
-     * @property {Object|null} grid - Controle de grid.
-     * @property {MsgBox} msgBox - Instância do gerenciador de caixas de mensagem.
-     * @property {LinkTooltip} tooltip - Instância do gerenciador de tooltips.
-     */
-    ctrls: {
-        leaflet: null,
-        msgBox: new MsgBox(6),
-        tooltip: new LinkTooltip()
-    }, 
-
-    lineageEditor: {
-        props: {
-            nameProperty: 'name',
-            genderProperty: 'gender',
-            statusProperty: 'status',
-            countProperty: 'count'
-        },
-        theme: {
-            colors: {
-                femaleBadgeBackground: '#FFCBEA',
-                maleBadgeBackground: '#A2DAFF',
-                femaleBadgeText: '#7A005E',
-                maleBadgeText: '#001C76',
-                kingQueenBorder: '#FEBA00',
-                princePrincessBorder: '#679DDA',
-                civilianBorder: '#58ADA7',
-                personText: '#383838',
-                personNodeBackground: '#FFFFFF',
-                selectionStroke: '#485670',
-                counterBackground: '#485670',
-                counterBorder: '#FFFFFF',
-                counterText: '#FFFFFF',
-                link: '#686E76'
-            },
-            fonts: {
-                badgeFont: 'bold 12px Poppins',
-                birthDeathFont: '14px Poppins',
-                nameFont: '500 18px Poppins',
-                counterFont: '14px Poppins'
-            }
-        },
-        constants: {
-            STROKE_WIDTH: 3,
-            CORNER_ROUNDNESS: 12,
-            IMAGE_TOP_MARGIN: 20,
-            IMAGE_DIAMETER: 40
-        }
-    }
-});
-
 // Realiza as configurações iniciais da aplicação ao carregar o conteúdo do DOM.
 document.addEventListener('DOMContentLoaded', async () => {
+    const cssname = await uniforge.path.join('css/styles.css');
+
+    const urls = {
+        // Urls de Imagens padrão usadas pelo sistema.
+        background: await uniforge.path.join('/ui/lib-background.png'),
+        blankImg: await uniforge.path.join('/ui/blank-image.svg'),
+
+        // Urls de Diretórios usados pelo sistema.
+        models: await uniforge.path.join('/models/'),
+        templates: await uniforge.path.join('/templates/'),
+        scripts: await uniforge.path.join('/scripts/'),
+        ui: await uniforge.path.join('/ui/'),
+        icons: await uniforge.path.join('/ui/icons/'),
+    }
+
+    // Adiciona as propriedades restantes ao objeto uniforge.
+    uniforge.utils.mergeObjects(uniforge, {
+        /**
+         * Constantes usadas pela aplicação.
+        */
+        constants: {
+            APP_NAME: 'UniForge',
+            APP_VERSION: '0.7.9',
+            CSS_NAME: cssname,
+            leaflet: lControl.constants
+        },
+
+        /**
+         * Instância do gerenciador de banco de dados.
+         * @type {DBManager}
+         */
+        db: new DBManager(),
+
+        /**
+        * Urls de Imagens padrões usadas pelo sistema.
+        * 
+        * @type {Object}
+        * @property {string} background - Imagem utilizada como fundo das entradas da Biblioteca e das Timelines.
+        * @property {string} blankImg   - Imagem padrão usada para campos de imagem vazios.
+        * 
+        * @property {string} models - Diretório dos Forms e Dialogs usados pelo sistema.
+        * @property {string} templates - Diretório dos modelos HTML usados pelo sistema.
+        * @property {string} scripts - Diretório de scripts usados pelo sistema.
+        * @property {string} ui - Diretório de Imagens utilizadas pelo ui do sistema.
+        * @property {string} icons - Diretório de Ícones utilizadas pelo ui do sistema.
+        */
+        urls: urls,
+
+        /**
+         * Opções para editores Tiny MCE. 
+         * Qualquer função customizada ou callbacks deve ser mesclado a essas opções.
+         * 
+         * @type {Object}
+         * @property {Object|null} default  - Opção padrão.
+         * @property {Object|null} simple   - Opção simplificada.
+         */
+        tinymceOptions: {
+            default: {
+                editable_class: 'editable',
+                license_key: 'gpl',
+                plugins: ['anchor', 'autolink', 'codesample', 'link', 'lists', 'searchreplace', 'table', 'visualblocks', 'image'],
+                toolbar: 'undo redo | blocks | bold italic backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | entryLink blockquote sendImage | addLoremIpsum',
+                toolbar_mode: 'wrap',
+                placeholder: 'Descrição do registro...',
+                block_formats: 'Heading 1=h1; Heading 2=h2; Heading 3=h3; Paragraph=p;',
+                images_file_types: 'jpg,jpeg,png,svg,webp',
+                image_caption: true,
+                block_unsupported_drop: false,
+                height: '100%',
+                browser_spellcheck: true,
+                menubar: false,
+                resize: false,
+                statusbar: false,
+                skin: 'oxide-dark',
+                content_css: cssname,
+            },
+            readonly: {
+                editable_class: 'editable',
+                noneditable_class: 'non-editable',
+                body_class: 'non-editable',
+                license_key: 'gpl',
+                plugins: ['anchor', 'autolink', 'codesample', 'link', 'lists', 'searchreplace', 'table', 'visualblocks', 'image'],
+                toolbar: false,
+                block_formats: 'Heading 1=h1; Heading 2=h2; Heading 3=h3; Paragraph=p;',
+                images_file_types: 'jpg,jpeg,png,svg,webp',
+                image_caption: true,
+                block_unsupported_drop: false,
+                height: '100%',
+                menubar: false,
+                resize: false,
+                statusbar: false,
+                skin: 'oxide-dark',
+                content_css: cssname,
+                readonly: true,
+                disable_focus: true
+            },
+            simple: {
+                license_key: 'gpl',
+                plugins: 'quickbars',
+                quickbars_selection_toolbar: 'undo redo | bold italic',
+                quickbars_insert_toolbar: false,
+                browser_spellcheck: true,
+                menubar: false,
+                inline: true,
+                skin: 'oxide-dark',
+                content_css: cssname,
+            },
+            lite: {
+                license_key: 'gpl',
+                browser_spellcheck: true,
+                menubar: false,
+                inline: true,
+                skin: 'oxide-dark',
+                content_css: cssname,
+            }
+        },
+
+        /**
+         * Controles relacionados à interface do usuário.
+         * 
+         * @type {Object}
+         * @property {Object|null} main - Controle principal.
+         * @property {Object|null} draw - Controle de desenho no mapa.
+         * @property {Object|null} grid - Controle de grid.
+         * @property {MsgBox} msgBox - Instância do gerenciador de caixas de mensagem.
+         * @property {LinkTooltip} tooltip - Instância do gerenciador de tooltips.
+         */
+        ctrls: {
+            leaflet: null,
+            msgBox: new MsgBox(6),
+            tooltip: new LinkTooltip()
+        },
+
+        lineageEditor: {
+            props: {
+                nameProperty: 'name',
+                genderProperty: 'gender',
+                statusProperty: 'status',
+                countProperty: 'count'
+            },
+            theme: {
+                colors: {
+                    femaleBadgeBackground: '#FFCBEA',
+                    maleBadgeBackground: '#A2DAFF',
+                    femaleBadgeText: '#7A005E',
+                    maleBadgeText: '#001C76',
+                    kingQueenBorder: '#FEBA00',
+                    princePrincessBorder: '#679DDA',
+                    civilianBorder: '#58ADA7',
+                    personText: '#383838',
+                    personNodeBackground: '#FFFFFF',
+                    selectionStroke: '#485670',
+                    counterBackground: '#485670',
+                    counterBorder: '#FFFFFF',
+                    counterText: '#FFFFFF',
+                    link: '#686E76'
+                },
+                fonts: {
+                    badgeFont: 'bold 12px Poppins',
+                    birthDeathFont: '14px Poppins',
+                    nameFont: '500 18px Poppins',
+                    counterFont: '14px Poppins'
+                }
+            },
+            constants: {
+                STROKE_WIDTH: 3,
+                CORNER_ROUNDNESS: 12,
+                IMAGE_TOP_MARGIN: 20,
+                IMAGE_DIAMETER: 40
+            }
+        }
+    });
     // Configura o estado inicial da aplicação, se ele ainda não foi criado.
     uniforge.state.init();
 
@@ -161,7 +193,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     uniforge.html.classList.add('uniforge');
 
-    await configureData(); 
+    await configureData();
 
     configureTopBar();
 
@@ -226,7 +258,7 @@ function calculateZoomForTileScaleSimple(desiredTileScale) {
 function configureForms() {
     configureBody();
 
-    activateMainListeners();    
+    activateMainListeners();
 }
 function configureBody() {
     const body = uniforge.html;
@@ -285,10 +317,10 @@ function activateMainListeners() {
  * */
 function onTopbarButtonClick(event) {
     // Impedir que o clique no item desencadeie o clique fora do sidebar
-    event.stopPropagation();    
+    event.stopPropagation();
     const button = event.target.closest('.topbarBtn');
     button.classList.add('disabled');
-    
+
     renderForm(button.getAttribute('data-target'));
 }
 
