@@ -106,6 +106,29 @@ export default class EntryForm extends SidebarForm {
 
   /**
    * @overload
+  * Retorna um objeto com seletores para elementos da aplicação.
+  * 
+  * @returns {Object} - Um objeto com as seguintes propriedades:
+  *  - overlay: Seletor para o elemento overlay da aplicação.
+  *  - app: Seletor para o elemento container da aplicação.
+  *  - header: Seletor para o elemento header da aplicação.
+  *  - main: Seletor para o elemento main da aplicação.
+  *  - close_btn: Seletor para o elemento de fechar a aplicação.
+  *  - main_editor: Seletor para o principal editor Tiny MCE da aplicação.
+  *  - flavor_editor: Seletor para o editor Tiny MCE de floreio da aplicação.
+  *  - event_editor: Seletor para o editor Tiny MCE de eventos da aplicação.
+  */
+  get query() {
+    const query = {
+      main_editor: `MainEditor-${this.uuid}`,
+      flavor_editor: `FlavorEditor-${this.uuid}`,
+      event_editor: `EventEditor-${this.uuid}`,
+    }
+    return uniforge.utils.mergeObjects(super.query, query);
+  }
+
+  /**
+   * @overload
    * Retorna um objeto com referências para elementos do formulário.
    * 
    * @returns {Object}  - Um objeto com as seguintes propriedades:
@@ -167,6 +190,60 @@ export default class EntryForm extends SidebarForm {
     return Object.keys(this.#events).length > 0;
   };
 
+  get mainEditor() {
+    const editor = tinymce.get(this.query.main_editor);
+    return editor ? editor : null;
+  }
+
+  get flavorEditor() {
+    const editor = tinymce.get(this.query.flavor_editor);
+    return editor ? editor : null;
+  }
+
+  get eventEditor() {
+    const editor = tinymce.get(this.query.event_editor);
+    return editor ? editor : null;
+  }
+
+  /**
+   * Define o conteúdo do editor principal.
+   * @param {string} content - O conteúdo a ser definido.
+   */
+  set mainEditor(content) {
+    if (this.mainEditor && content !== undefined) {
+      if (content !== null && !(typeof content === 'string')) throw new TypeError('O conteúdo deve ser uma string.');
+
+      content = content ?? ''; // Se o conteúdo for nulo, faça o conteúdo vazio.
+      this.mainEditor.setContent(content);
+    }
+  }
+
+  /**
+   * Define o conteúdo do editor de floreio.
+   * @param {string} content - O conteúdo a ser definido.
+   */
+  set flavorEditor(content) {
+    if (this.flavorEditor && content !== undefined) {
+      if (content !== null && !(typeof content === 'string')) throw new TypeError('O conteúdo deve ser uma string.');
+
+      content = content ?? ''; // Se o conteúdo for nulo, faça o conteúdo vazio.
+      this.flavorEditor.setContent(content);
+    }
+  }
+
+  /**
+   * Define o conteúdo do editor de eventos.
+   * @param {string} content - O conteúdo a ser definido.
+   */
+  set eventEditor(content) {
+    if (this.eventEditor && content !== undefined) {
+      if (content !== null && !(typeof content === 'string')) throw new TypeError('O conteúdo deve ser uma string.');
+
+      content = content ?? ''; // Se o conteúdo for nulo, faça o conteúdo vazio.
+      this.eventEditor.setContent(content);
+    }
+  }
+
   /**
     * Obtém os dados unificados necessários para o funcionamento do formulário.
     * @implements Implemente um método filho para as especificidades de cada formulário.
@@ -217,11 +294,11 @@ export default class EntryForm extends SidebarForm {
     const titleInput = this.querySelector('#titleInput');
     const imageContainer = this.querySelector('#imageContainer');
     const infoSet = this.querySelector('.info-set:not(.not-disable)');
-    const mainEditor = tinymce.get('mainEditor');
+    const mainEditor = this.mainEditor;
     const deleteSwitch = this.querySelector('#deleteSwitch');
     const deleteCheckbox = deleteSwitch.querySelector('#checkbox');
 
-    const flavorEditor = tinymce.get('flavorEditor');
+    const flavorEditor = this.flavorEditor;
 
     const ignoreEditor = options.ignoreEditor ?? false;
 
@@ -422,11 +499,17 @@ export default class EntryForm extends SidebarForm {
     // Configura o editor Tiny MCE principal .
     await this.configureTinyMCE();
 
-    // Configura o editor TinyMCE de floreio associado ao formulário.
-    await this.configureFlavorTinyMCE();
+    // Se o formulário for de Configurações, não configure os editores de floreio.
+    if (!this.isSettings) {
+      // Configura o editor TinyMCE de floreio associado ao formulário.
+      await this.configureFlavorTinyMCE();
 
-    // Configura o editor TinyMCE de floreio dos eventos associados à entrada do formulário.
-    await this.configureEventFlavorTinyMCE();
+      // Se o formulário for de Eventos, configura o editor TinyMCE de floreio dos eventos.
+      if (this.isEventForm) {
+        // Configura o editor TinyMCE de floreio dos eventos associados à entrada do formulário.
+        await this.configureEventFlavorTinyMCE();
+      }
+    }
   }
 
   /**
@@ -445,9 +528,9 @@ export default class EntryForm extends SidebarForm {
     isDraftSwitch.checked = false;
 
     // Limpa todos os editores Tiny MCE inicializados.
-    tinymce.get().forEach(editor => {
-      editor.setContent('');
-    });
+    this.mainEditor = '';
+    this.flavorEditor = '';
+    this.eventEditor = '';
 
     if (this.isEventForm && this.hasEvent) {
       this.eid = null;
@@ -485,8 +568,7 @@ export default class EntryForm extends SidebarForm {
     const calendarTypeSelect = this.querySelector('#calendarType');
     calendarTypeSelect.value = 1;
 
-    const eventFlavorEditor = tinymce.get('eventFlavorEditor');
-    eventFlavorEditor.setContent('');
+    this.eventEditor = '';
 
     this.datePickers.startDate.clearDate();
 
@@ -503,12 +585,16 @@ export default class EntryForm extends SidebarForm {
    * @private
    */
   async configureTinyMCE() {
-    if (tinymce.get('mainEditor')) {
-      tinymce.remove('#mainEditor');
+    if (this.mainEditor) {
+      tinymce.remove(this.query.main_editor);
+    } else {
+      // Trata o id do container do editor, inserindo o uuid do formulário.
+      const textarea = this.querySelector('#mainEditor');
+      textarea.id = this.query.main_editor;
     }
 
     const options = uniforge.utils.mergeObjects(uniforge.tinymceOptions.default, {
-      selector: 'textarea#mainEditor',
+      selector: `textarea#${this.query.main_editor}`,
       init_instance_callback: (editor) => {
         editor.setContent(""); // Garante que o editor seja iniciado vazio.
       },
@@ -527,12 +613,16 @@ export default class EntryForm extends SidebarForm {
     * Configura o editor TinyMCE para o texto de floreio da Entrada.
     */
   async configureFlavorTinyMCE() {
-    if (tinymce.get('flavorEditor')) {
-      tinymce.remove('#flavorEditor');
+    if (this.flavorEditor) {
+      tinymce.remove(this.query.flavor_editor);
+    } else {
+      // Trata o id do container do editor, inserindo o uuid do formulário.
+      const div = this.querySelector('#flavorEditor');
+      div.id = this.query.flavor_editor;
     }
 
     const options = uniforge.utils.mergeObjects(uniforge.tinymceOptions.simple, {
-      selector: 'div#flavorEditor',
+      selector: `div#${this.query.flavor_editor}`,
       placeholder: "Texto de floreio...",
       init_instance_callback: (editor) => {
         editor.setContent(""); // Garante que o editor seja iniciado vazio.
@@ -547,12 +637,16 @@ export default class EntryForm extends SidebarForm {
   * Configura o editor TinyMCE para o texto de floreio dos eventos da Entrada.
   */
   async configureEventFlavorTinyMCE() {
-    if (tinymce.get('eventFlavorEditor')) {
-      tinymce.remove('#eventFlavorEditor');
+    if (this.eventEditor) {
+      tinymce.remove(this.query.event_editor);
+    } else {
+      // Trata o id do container do editor, inserindo o uuid do formulário.
+      const div = this.querySelector('#eventFlavorEditor');
+      div.id = this.query.event_editor;
     }
 
     const options = uniforge.utils.mergeObjects(uniforge.tinymceOptions.simple, {
-      selector: 'div#eventFlavorEditor',
+      selector: `div#${this.query.event_editor}`,
       placeholder: "Descrição do evento...",
       init_instance_callback: (editor) => {
         editor.setContent(""); // Garante que o editor seja iniciado vazio.
@@ -578,13 +672,13 @@ export default class EntryForm extends SidebarForm {
       // Se houver uma data de fim, carregue o DatePicker com a data do evento.
       if (event.e_day)
         this.datePickers.endDate.selectFullDate(event.e_day, event.e_month, event.e_year);
-    } 
+    }
   }
 
   clearDatePickers() {
     Object.values(this.datePickers).forEach(datePicker => {
       datePicker.clearDate();
-      
+
       delete datePicker.minDate;
       delete datePicker.maxDate;
     });
@@ -631,8 +725,8 @@ export default class EntryForm extends SidebarForm {
 
     entriesList.forEach(item => {
       const deleteIcon = item.querySelector('.remove-button');
-      
-      if(deleteIcon)
+
+      if (deleteIcon)
         deleteIcon.addEventListener('click', (event) => { this.onOpenDialogClick(event, item); });
     });
 
@@ -814,8 +908,8 @@ export default class EntryForm extends SidebarForm {
       }
       if (picker.id === endDate.id) {
         // Define a data de inicio no DatePicker de fim.
-        startDate.setMaxDate(picker.date);        
-      } 
+        startDate.setMaxDate(picker.date);
+      }
     }
   }
 
@@ -853,7 +947,7 @@ export default class EntryForm extends SidebarForm {
 
     this.configureDatePickers(event);
 
-    tinymce.get('eventFlavorEditor').setContent(event.flavor);
+    this.eventEditor = event.flavor;
 
     const addEventButton = this.querySelector('#addEventButton');
     addEventButton.innerHTML = '<i class="fas fa-pen-to-square"></i> Editar Evento';
@@ -884,7 +978,7 @@ export default class EntryForm extends SidebarForm {
       etid: eventEntryType.value,
       relevance: relevance.value,
       clid: calendarType.value,
-      flavor: tinymce.get('eventFlavorEditor').getContent() ?? '',
+      flavor: this.eventEditor.getContent() ?? '',
       s_day: this.datePickers.startDate.date.day,
       s_month: this.datePickers.startDate.date.month,
       s_year: this.datePickers.startDate.date.year,
@@ -987,7 +1081,7 @@ export default class EntryForm extends SidebarForm {
 
         // Inicia a transação de salvamento.
         await uniforge.db.beginTransaction();
-        
+
         const headerInfo = this.querySelector('.header-info');
         const entryType = this.querySelector('#entryType');
 
@@ -995,8 +1089,8 @@ export default class EntryForm extends SidebarForm {
           eid: this.eid ?? null,
           etid: entryType.value,
           sid: headerInfo.dataset.sid,
-          flavor: tinymce.get('flavorEditor').getContent() ?? '',
-          htmlString: tinymce.get('mainEditor').getContent() ?? ''
+          flavor: this.flavorEditor.getContent() ?? '',
+          htmlString: this.mainEditor.getContent() ?? ''
         });
 
         let validation = uniforge.db.validateEntry(data);
@@ -1087,8 +1181,8 @@ export default class EntryForm extends SidebarForm {
 
       entryType.value = Number(entry.etid);
 
-      tinymce.get('flavorEditor').setContent(entry.flavor);
-      tinymce.get('mainEditor').setContent(entry.htmlString);
+      this.flavorEditor = entry.flavor;
+      this.mainEditor = entry.htmlString;
 
       this.#events = {};
       const events = uniforge.doc.events.filter(e => {

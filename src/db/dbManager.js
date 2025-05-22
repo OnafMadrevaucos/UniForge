@@ -34,10 +34,7 @@ export default class DBManager {
     }
     get result() {
         const results = this.#state.results;
-        if (results.length > 0) {
-            return results[results.length - 1];
-        } else
-            return null;
+        return results.last();       
     }
     get results() {
         const results = this.#state.results;
@@ -55,7 +52,7 @@ export default class DBManager {
     }
     set results(value) {
         // Verifica se o valor passado é nulo ou indefinido.
-        if (!value) throw new Error('O valor passado não pode ser nulo ou indefinido.');
+        if (value === undefined || value === null) throw new Error('O valor passado não pode ser nulo ou indefinido.');
 
         // O valor é oriundo de uma query que realiza uma alteração no banco de dados (INSERT, UPDATE ou DELETE).
         if (!Array.isArray(value)) {
@@ -66,7 +63,8 @@ export default class DBManager {
                 value['addedId'] = value['lastInsertRowid'];
                 this.#state.changes += value.changes;
             }
-        }
+        } 
+
         this.#state.results.push(value);
     }
 
@@ -745,7 +743,7 @@ export default class DBManager {
         const params = [cid];
 
         this.results = await uniforge.sql.query(query, params);
-        return this.result;
+        return this.result.first();
     }
     /**
      * Obtém o Tomo a que o capítulo pertence.
@@ -761,7 +759,7 @@ export default class DBManager {
         const params = [cid];
 
         this.results = await uniforge.sql.query(query, params);
-        return this.result;
+        return this.result.first();
     }
 
     /**
@@ -781,7 +779,7 @@ export default class DBManager {
         const params = [sid];
 
         this.results = await uniforge.sql.query(query, params);
-        return this.result;
+        return this.result.first();
     }
 
     /**
@@ -798,7 +796,7 @@ export default class DBManager {
         const params = [tome];
 
         this.results = await uniforge.sql.query(query, params);
-        return this.result;
+        return this.result.first();
     }
 
     /**
@@ -813,7 +811,7 @@ export default class DBManager {
         const params = [cid];
 
         this.results = await uniforge.sql.query(query, params);
-        return this.result;
+        return this.result.first();
     }
 
     /**
@@ -827,7 +825,7 @@ export default class DBManager {
         const params = [eid];
 
         this.results = await uniforge.sql.query(query, params);
-        return this.result;
+        return this.resultv;
     }
 
     /**
@@ -843,7 +841,7 @@ export default class DBManager {
         const params = [eid];
 
         this.results = await uniforge.sql.query(query, params);
-        return this.result;
+        return this.result.first();
     }
 
     /**
@@ -857,7 +855,7 @@ export default class DBManager {
         const params = [sid];
 
         this.results = await uniforge.sql.query(query, params);
-        return this.result;
+        return this.result.first();
     }
 
     /**
@@ -876,7 +874,7 @@ export default class DBManager {
         const params = [ltid];
 
         this.results = await uniforge.sql.query(query, params);
-        return this.result;
+        return this.result.first();
     }
 
     /**
@@ -891,7 +889,7 @@ export default class DBManager {
         const params = [data.ltid, data.tag];
 
         this.results = await uniforge.sql.query(query, params);
-        return this.result;
+        return this.result.first();
     }
 
     /**
@@ -904,7 +902,7 @@ export default class DBManager {
         const params = [tid];
 
         this.results = await uniforge.sql.query(query, params);
-        return this.result;
+        return this.result.first();
     }
 
     /**
@@ -919,7 +917,7 @@ export default class DBManager {
         const params = [uuid];
 
         this.results = await uniforge.sql.query(query, params);
-        return this.result;
+        return this.result.first();
     }
 
     /**
@@ -1914,7 +1912,7 @@ export default class DBManager {
         }
 
         // Se é uma transação única com o Banco de Dados, atualiza a base de dados.
-        if(!this.transactionStarted) {
+        if(!this.transactionStarted && false) {
             // Independente do resultado se deve atualizar a base de dados.
             await this.rebuildDocs();
         }

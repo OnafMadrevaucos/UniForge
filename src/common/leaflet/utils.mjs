@@ -1,3 +1,10 @@
+const iconMap =  {
+    polygon: 'fas fa-border-top-left',
+    rectangle: 'fas fa-square',
+    circle: 'fas fa-circle',
+    marker: 'fas fa-location-pin'
+}
+
 function _zoomIn(map) {
     map.zoomIn();
     console.log('Zoom In');
@@ -50,9 +57,15 @@ function _onPolygonDraw(map) {
     });
 }
 
-function _onRetanguleDraw(map) {
+function _onRetangleDraw(map) {
     // Ativar o desenho de retângulo.
-    const retangleDrawer = new L.Draw.Rectangle(map);
+    const retangleDrawer = new L.Draw.Rectangle(map, {
+        shapeOptions: { 
+            color: 'var(--red)', // Cor do polígono.           
+            weight: 5,
+            dashArray: '5, 10',
+        }
+    });
 
     // Evento para desativar após o clique inicial (impedindo início imediato).
     map.on('click', function startDrawing() {
@@ -63,7 +76,13 @@ function _onRetanguleDraw(map) {
 
 function _onCircleDraw(map) {
     // Ativar o desenho de círculo.
-    const circleDrawer = new L.Draw.Circle(map);
+    const circleDrawer = new L.Draw.Circle(map, {
+        shapeOptions: { 
+            color: 'var(--red)', // Cor do polígono.           
+            weight: 5,
+            dashArray: '5, 10',
+        }
+    });
     // Evento para desativar após o clique inicial (impedindo início imediato).
     map.on('click', function startDrawing() {
         circleDrawer.enable();
@@ -80,7 +99,7 @@ async function _onMarkerDraw(map) {
             iconSize: [32, 32],
             iconAnchor: [2, 32],
             popupAnchor: [0, -32]
-        }),
+        })
     });
     // Evento para desativar após o clique inicial (impedindo início imediato).
     map.on('click', function startDrawing() {
@@ -94,25 +113,25 @@ function onAddDraw(map) {
 
     // Cria um botão de Polígono.
     const polygonButton = L.DomUtil.create('button', 'leaflet-draw-button', container);
-    polygonButton.innerHTML = '<i class="fa-solid fa-border-top-left"></i>'; // Emoji de atualização ou seu ícone customizado.
+    polygonButton.innerHTML = `<i class="${iconMap.polygon}"></i>`; // Emoji de atualização ou seu ícone customizado.
     // Adiciona um evento de clique ao botão.
     L.DomEvent.on(polygonButton, 'click', _onPolygonDraw.bind(this, map));
 
     // Cria um botão de Retângulo.
     const retangleButton = L.DomUtil.create('button', 'leaflet-draw-button', container);
-    retangleButton.innerHTML = '<i class="fa-solid fa-square"></i>'; // Emoji de atualização ou seu ícone customizado.
+    retangleButton.innerHTML = `<i class="${iconMap.rectangle}"></i>`; // Emoji de atualização ou seu ícone customizado.
     // Adiciona um evento de clique ao botão.
-    L.DomEvent.on(retangleButton, 'click', _onRetanguleDraw.bind(this, map));
+    L.DomEvent.on(retangleButton, 'click', _onRetangleDraw.bind(this, map));
 
     // Cria um botão de Círculo.
     const circleButton = L.DomUtil.create('button', 'leaflet-draw-button', container);
-    circleButton.innerHTML = '<i class="fa-solid fa-circle"></i>'; // Emoji de atualização ou seu ícone customizado.
+    circleButton.innerHTML = `<i class="${iconMap.circle}"></i>`; // Emoji de atualização ou seu ícone customizado.
     // Adiciona um evento de clique ao botão.
     L.DomEvent.on(circleButton, 'click', _onCircleDraw.bind(this, map));
 
     // Cria um botão de Marcador.
     const markerButton = L.DomUtil.create('button', 'leaflet-draw-button', container);
-    markerButton.innerHTML = '<i class="fa-solid fa-location-pin"></i>'; // Emoji de atualização ou seu ícone customizado.
+    markerButton.innerHTML = `<i class="${iconMap.marker}"></i>`; // Emoji de atualização ou seu ícone customizado.
     // Adiciona um evento de clique ao botão
     L.DomEvent.on(markerButton, 'click', _onMarkerDraw.bind(this, map));
     return container;
@@ -120,36 +139,7 @@ function onAddDraw(map) {
 
 function _onExpandLayer(map) {
     const layerControl = document.querySelector('#layerControl');
-    layerControl.classList.toggle('active');
-
-    const items = [
-        {name: 'Teste 1', icon: 'fa-solid fa-location-pin'},
-        {name: 'Teste 2', icon: 'fa-border-top-left'},
-        {name: 'Teste 3', icon: 'fa-solid fa-location-pin'},
-    ];
-
-    const mapElements = layerControl.querySelector('.map-elements');
-
-    items.forEach(item => {
-        const li = document.createElement('li');
-        li.classList.add('layer-item', 'flexrow');
-
-        const content = document.createElement('div');
-        content.classList.add('layer-item-content', 'flexrow');
-
-        const span = document.createElement('span');
-        span.innerText = item.name;
-
-        const icon = document.createElement('a');
-        icon.innerHTML = `<i class="${item.icon}"></i>`;
-
-        content.appendChild(span);
-        content.appendChild(icon);
-
-        li.appendChild(content);
-
-        mapElements.appendChild(li);
-    });
+    layerControl.classList.toggle('active');  
 }
 
 function onAddLayer(map) {
@@ -192,10 +182,11 @@ function onCreateTile(coords) {
     return tile;
 }
 
-const listeners = {
+const utils = {
     onAddMain: onAddMain,
     onAddDraw: onAddDraw,
     onAddLayer: onAddLayer,
-    onCreateTile: onCreateTile
+    onCreateTile: onCreateTile,
+    iconMap: iconMap,
 }
-export default listeners;
+export default utils;

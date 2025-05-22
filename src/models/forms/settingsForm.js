@@ -239,7 +239,7 @@ export default class SettingsForm extends EntryForm {
                     sid: this.sid ?? null,
                     title: titleInput.value,
                     cid: headerInfo.dataset.cid,
-                    htmlString: tinymce.activeEditor?.getContent() ?? '',
+                    htmlString: this.mainEditor.getContent() ?? '',
                     isDraft: Number(draftCheckbox.checked),
                 };
 
@@ -356,7 +356,7 @@ export default class SettingsForm extends EntryForm {
             titleInput.value = section.title;
             draftCheckbox.checked = section.isDraft;
 
-            tinymce.get('mainEditor').setContent(section.htmlString);
+            this.mainEditor = section.htmlString;
             if (isSelected) {
                 this._loadTomeIcon(clickedFolder);
             }

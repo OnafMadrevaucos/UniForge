@@ -768,8 +768,18 @@ input:checked+.slider::before {
     z-index: 2002;
 }
 
+.layer-control-wrapper .layer-control-title {
+    text-align: center;
+    font-size: var(--heading-2-size);
+    font-weight: 700;
+    color: var(--dark-red);  
+    margin-block: 0.5vh;
+}
+
 .layer-control-wrapper .layer-control-content {
+    flex: 1;
     width: var(--fill-width);
+    overflow-y: auto;
 }
 
 .layer-control-wrapper .layer-control-content ul {
@@ -777,18 +787,31 @@ input:checked+.slider::before {
     list-style: none;
     padding: 0 5px;
     overflow: auto;
+    gap: var(--default-gap-size);
 }
 
 .layer-control-wrapper .layer-control-content ul .layer-item {
+    color: var(--light-text-color);
+    background-color: var(--dark-red);
+    padding: 5px;
+    border-radius: var(--default-border-radius);
+    box-shadow: var(--small-shadow);
+    user-select: none;
+}
+
+.layer-control-content ul .layer-item .layer-item-content {
+    flex: 1;
+    gap: var(--default-gap-size);
+}
+
+.layer-control-content ul .layer-item .layer-item-content span {
     flex: 1;
 }
 
-.layer-control-content ul .layer-item .layer-item-content{
-    flex: 1;
-}
-
-.layer-control-content ul .layer-item span {
-    flex: 1;
+.layer-control-content ul .layer-item .layer-item-content a:hover {
+    cursor: default;
+    color: inherit;
+    text-shadow: none;
 }
 
 /* ------ Tools Topbar ------*/
@@ -2657,7 +2680,7 @@ input:checked+.slider::before {
     text-align: end;
 }
 
-folder-list .folder.created.selected .folder-header .fa-trash {
+.folder-list .folder.created.selected .folder-header .fa-trash {
     z-index: 1100;
 }
 

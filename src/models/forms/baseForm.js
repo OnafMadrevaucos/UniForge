@@ -1,5 +1,6 @@
 
 import Application from "../application.js";
+import { triggerHook } from "../../scripts/hooks.js";
 /**
  * Classe BaseForm
  * Gerencia a exibição, ocultação, e interações de um formulário sobre um overlay.
@@ -120,6 +121,30 @@ export default class BaseForm extends Application {
     data.core.blankImgUrl = this.blankImgUrl;
 
     return data;
+  }
+
+  /**@inheritdoc */
+  async render() {
+    // Executa todos os hooks registrados para antes da renderização do formulário.
+    await triggerHook('beforeRender');
+
+    // Renderiza o formulário.
+    await super.render();
+
+    // Executa todos os hooks registrados para depois da renderização do formulário.
+    await triggerHook('afterRender');
+  }
+
+  /**@inheritdoc */
+  async renderContent() {
+    // Executa todos os hooks registrados para antes da renderização do conteúdo do formulário.
+    await triggerHook('beforeRender');
+
+    // Renderiza o conteúdo do formulário.
+    await super.renderContent();
+
+    // Executa todos os hooks registrados para depois da renderização do conteúdo do formulário.
+    await triggerHook('afterRender');
   }
 
   /**

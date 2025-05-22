@@ -10,9 +10,9 @@ function registerHook(hookName, callback) {
 
 async function triggerHook(hookName, ...args) {
   if (hooks[hookName]) {
-    await Promise.all(hooks[hookName].map(callback => {
+    await Promise.all(hooks[hookName].map(async callback => {
         if (typeof callback === 'function') {
-          return callback(...args);
+          return await callback(...args);
         } else {
           return Promise.resolve();
         }

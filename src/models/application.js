@@ -1,5 +1,3 @@
-import { triggerHook } from "../scripts/hooks.js";
-
 export default class Application {
 
     static Styles = { FORM: 'form', DIALOG: 'dialog' };
@@ -82,6 +80,16 @@ export default class Application {
         };
     }
 
+    /**
+     * Retorna um objeto com seletores para elementos da aplicação.
+     * 
+     * @returns {Object} - Um objeto com as seguintes propriedades:
+     *  - overlay: Seletor para o elemento overlay da aplicação.
+     *  - app: Seletor para o elemento container da aplicação.
+     *  - header: Seletor para o elemento header da aplicação.
+     *  - main: Seletor para o elemento main da aplicação.
+     *  - close_btn: Seletor para o elemento de fechar a aplicação.
+     */
     get query() {
         return {
             overlay: this._buildSelector('Overlay'),
@@ -91,8 +99,6 @@ export default class Application {
             close_btn: this._buildSelector('Close')
         };
     }
-
-
 
     /**
     * Propriedade que retorna um objeto com referências para elementos do formulário.
@@ -281,9 +287,7 @@ export default class Application {
     * @returns {Boolean} - Uma flag indicando se o form foi renderizado (true) ou não (false).
     */
     async render() {
-        try {
-            await triggerHook('beforeRender');
-
+        try {  
             // Função para obter os dados comuns à toda aplicação.
             this.data = this.prepareBaseData();
 
@@ -296,8 +300,7 @@ export default class Application {
             // Prepara o HTML da aplicação para renderização (Substitui pseudo-elements).
             this.html.app = this.parseTemplate(this.html.app);
 
-            this.rendered = true;
-            await triggerHook('afterRender');
+            this.rendered = true;           
 
             return this.rendered;
         } catch (error) {
@@ -305,6 +308,14 @@ export default class Application {
         }
     }
 
+    /**
+     * Renderiza o conteúdo da aplicação.
+     * 
+     * Esta função é responsável por renderizar apenas o conteúdo da aplicação, nada mais.
+     * 
+     * @async
+     * @returns {Boolean} - Uma flag indicando se o conteúdo foi renderizado (true) ou não (false).
+     */
     async renderContent() {
         // Função para obter os dados comuns à toda aplicação.
         this.data = this.prepareBaseData();
@@ -327,7 +338,6 @@ export default class Application {
         await this.initialize();
 
         this.rendered = true;
-        await triggerHook('afterRender');
 
         return this.rendered;
     }

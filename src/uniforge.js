@@ -193,7 +193,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     uniforge.html.classList.add('uniforge');
 
-    await configureData();
+    await refreshDocuments();
 
     configureTopBar();
 
@@ -228,7 +228,7 @@ function checkState() {
  * ------------------------------------------------------------------
  * */
 // Configura a ferramenta de mapas Leaflet 
-async function configureData() {
+async function refreshDocuments() {
     const data = await DBDocuments.UniForgeData();
     uniforge.doc = new DBDocuments(data);
     return uniforge.doc;
@@ -267,7 +267,7 @@ function configureBody() {
 }
 
 function configureHooks() {
-    registerHook('beforeRenderForm', async () => { await configureData(); });
+    registerHook('beforeRender', async () => { await refreshDocuments(); });    
 }
 // Configura o listeners que tratam os eventos dos tabs do Menu Lateral e as rotinas de fechamento do Form
 function activateMainListeners() {
@@ -344,6 +344,10 @@ function onChangeTimeInput(event) {
     }
 }
 
+function onNewMapElement() {
+
+}
+
 /** 
  * ------------------------------------------------------------------
  * FUNÇÕES DE CONTROLE INTERNO DA PÁGINA 
@@ -361,8 +365,6 @@ function onChangeTimeInput(event) {
 
 async function renderForm(targetId, showAfter = true) {
     try {
-        await triggerHook('beforeRender');
-
         const form = new uniforge.forms[targetId]();
         if (!form)
             throw new Error(`O template para o formulário '${targetId}' não foi encontrado.`);
@@ -383,8 +385,7 @@ async function renderForm(targetId, showAfter = true) {
  */
 
 async function recoverForm(form) {
-    try {
-        await triggerHook('beforeRender');
+    try {        
         if (!form) throw new Error(`O formulário '${form}' não foi encontrado.`);
 
         await form.show(true);

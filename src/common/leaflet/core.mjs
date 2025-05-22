@@ -1,5 +1,4 @@
-import listeners from "./listeners.mjs";
-
+import utils from "./utils.mjs";
 
 const lControl = {
     /**
@@ -52,7 +51,7 @@ const lControl = {
         options: {
             position: 'topright' // Posição no canto superior esquerdo.            
         },
-        onAdd: listeners.onAddMain
+        onAdd: utils.onAddMain
     }),
 
     /**
@@ -64,7 +63,7 @@ const lControl = {
         options: {
             position: 'bottomright' // Posição no canto superior esquerdo.            
         },
-        onAdd: listeners.onAddLayer
+        onAdd: utils.onAddLayer
     }),
 
     /**
@@ -76,11 +75,11 @@ const lControl = {
         options: {
             position: 'topright' // Posição no canto superior esquerdo.            
         },
-        onAdd: listeners.onAddDraw
+        onAdd: utils.onAddDraw
     }),
 
     TransparentGridLayer: L.GridLayer.extend({
-        createTile: listeners.onCreateTile
+        createTile: utils.onCreateTile
     }),
 
     init: function () {
@@ -126,34 +125,33 @@ const lControl = {
         lControl.CustomDrawControl.edit = {
             featureGroup: mapElements
         };
-        
+
         const layerControl = new lControl.LayerControl();
 
-        
-        uniforge.utils.mergeObjects(L.drawLocal.draw.handlers,{
+        uniforge.utils.mergeObjects(L.drawLocal.draw.handlers, {
             circle: {
-				tooltip: {
-					start: 'Clique e arraste para desenhar um círculo.'
-				},
-				radius: 'Raio'
-			},
-			marker: {
-				tooltip: {
-					start: 'Clique no mapa para adicionar um marcador.'
-				}
-			},
-			polygon: {
-				tooltip: {
-					start: 'Clique para comecar a desenhar uma forma.',
-					cont: 'Clique para continuar desenhando.',
-					end: 'Clique no primeiro ponto para fechar esta forma.'
-				}
-			},
-			rectangle: {
-				tooltip: {
-					start: 'Clique e arraste para desenhar um retângulo.'
-				}
-			},
+                tooltip: {
+                    start: 'Clique e arraste para desenhar um círculo.'
+                },
+                radius: 'Raio'
+            },
+            marker: {
+                tooltip: {
+                    start: 'Clique no mapa para adicionar um marcador.'
+                }
+            },
+            polygon: {
+                tooltip: {
+                    start: 'Clique para comecar a desenhar uma forma.',
+                    cont: 'Clique para continuar desenhando.',
+                    end: 'Clique no primeiro ponto para fechar esta forma.'
+                }
+            },
+            rectangle: {
+                tooltip: {
+                    start: 'Clique e arraste para desenhar um retângulo.'
+                }
+            },
         });
 
         const draw = new lControl.CustomDrawControl();
@@ -261,12 +259,48 @@ const lControl = {
 
         function _onDrawCreated(e) {
             const layer = e.layer;
+            layer.type = e.layerType; // Tipo de camada desenhada (círculo, retângulo, polígono, etc.).
             const content = document.createElement('div');
             content.innerHTML = `<strong>Tipo:</strong> ${e.layerType}`;
 
             layer.bindPopup(content.innerHTML);
 
             lControl.mapElements.addLayer(layer);
+            // Adiciona a camada desenhada ao grupo de elementos do mapa.
+            _updateLayerControl();
+        }
+
+        function _updateLayerControl() {
+            const iconMap = utils.iconMap;
+            const mapElementsList = document.querySelector('#mapElementsList');
+            mapElementsList.innerHTML = ''; // Limpa a lista atual.
+
+            var idx = 0;
+            lControl.mapElements.eachLayer(function (layer) {
+                const li = document.createElement('li');
+                li.classList.add('layer-item', 'flexrow');
+
+                const content = document.createElement('div');
+                content.classList.add('layer-item-content', 'flexrow');
+
+                const icon = document.createElement('a');
+                icon.innerHTML = `<i class="${iconMap[layer.type]}"></i>`;
+
+                const span = document.createElement('span');
+                span.innerText = `Item ${++idx}`;
+
+                content.appendChild(icon);
+                content.appendChild(span); 
+                
+                const deleteButton = document.createElement('a');
+                deleteButton.classList.add('layer-item-delete');
+                deleteButton.innerHTML = '<i class="fa-solid fa-trash"></i>';
+
+                li.appendChild(content);
+                li.appendChild(deleteButton);
+
+                mapElementsList.appendChild(li);                
+            })
         }
 
         return {
