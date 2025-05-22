@@ -12,6 +12,7 @@
     .form.container.active {
         max-height: 600px;
     }
+
     .entries .minimize-button {
         left: 14vw;
     }
@@ -83,8 +84,9 @@
     --dark-grey: #0b0a13;
 
     --blue: #2c2b33;
-    --light-blue: #4c4a5f;       
-    --dark-blue : #1e1e27;
+    --light-blue: #4c4a5f;
+    --dark-blue: #1e1e27;
+    --dark-blueT87: #1e1e27e0;
     --dark-blueT50: #1e1e2780;
     --info-blue: #345fba;
     --male-blue: #5279ad;
@@ -224,8 +226,7 @@ body.uniforge {
 }
 
 /* ------ Primitives ------- */
-*.disabled,
-*:disabled {
+*.disabled {
     cursor: default !important;
     pointer-events: none !important;
 }
@@ -234,8 +235,7 @@ body.uniforge {
     outline: var(--focus-border);
 }
 
-*.floating
-{
+*.floating {
     position: relative;
     z-index: 99999;
 }
@@ -356,7 +356,7 @@ a#manageTypeButton {
     padding: 5px;
 }
 
-div.denim{
+div.denim {
     background-image: url('../ui/denim065.png');
 }
 
@@ -534,7 +534,7 @@ input:checked+.slider::before {
     align-self: center;
 }
 
-.footer .buttons button.disabled {    
+.footer .buttons button.disabled {
     background-color: var(--background-color);
     color: var(--light-text-color);
     border: var(--filled-border);
@@ -658,6 +658,21 @@ input:checked+.slider::before {
     box-shadow: var(--default-shadow);
 }
 
+.leaflet-bar{
+    border: none !important;
+}
+
+.leaflet-bar button {
+    width: 3em;
+    font-size: 16px;
+    margin: 5px 0;
+    padding: 5px;
+}
+
+.leaflet-top, 
+.leaflet-bottom {
+    z-index: 2000 !important;
+}
 
 .leaflet-container .leaflet-div-icon {
     background: var(--grey);
@@ -680,6 +695,7 @@ input:checked+.slider::before {
     color: var(--light-text-color);
     font-weight: bold;
 }
+
 .uniforge .leaflet-container a.leaflet-popup-close-button {
     width: 18px;
     height: 18px;
@@ -699,6 +715,7 @@ input:checked+.slider::before {
     margin-top: 5px;
     justify-content: center;
 }
+
 .uniforge .leaflet-container a.leaflet-popup-close-button:hover {
     box-shadow: var(--small-shadow);
     color: var(--dark-red);
@@ -709,15 +726,10 @@ input:checked+.slider::before {
     z-index: 150 !important;
 }
 
-.leaflet-popup {
 
-}
-.leaflet-popup .leaflet-popup-tip,
 .leaflet-popup .leaflet-popup-content-wrapper {
-    background-color: var(--dark-red);    
+    background-color: var(--dark-red);
     color: var(--light-text-color);
-}
-.leaflet-popup .leaflet-popup-content-wrapper {
     border: var(--filled-border);
     border-radius: var(--default-border-radius);
 }
@@ -729,13 +741,54 @@ input:checked+.slider::before {
     background-image: url('../ui/denim065.png');
     background-blend-mode: multiply;
     margin-inline: 0;
-    margin-bottom: 0.3vw;
-    margin-top: 1.75vh;
+    margin-bottom: 3%;
+    margin-top: 9%;
     padding: 5px;
     box-shadow: var(--leaflet-popup-shadow);
 }
-.leaflet-popup .leaflet-popup-content-wrapper .leaflet-popup-content div {
-    
+
+/* ------ Leaflet Layer Controls ------*/
+.layer-control-wrapper {
+    position: absolute;
+    opacity: 0;
+    bottom: 2vh;
+    right: -30vw;
+    height: 20vh;
+    width: 35vw;
+    background-color: var(--dark-blueT87);
+    border-radius: var(--default-border-radius);
+    padding: 5px;
+    box-shadow: var(--small-shadow);
+    transition: all 0.3s ease-in-out;  
+    z-index: 1999;  
+}
+.layer-control-wrapper.active {
+    opacity: 1;
+    right: 8.5vw;
+    z-index: 2002;
+}
+
+.layer-control-wrapper .layer-control-content {
+    width: var(--fill-width);
+}
+
+.layer-control-wrapper .layer-control-content ul {
+    height: var(--fill-height);
+    list-style: none;
+    padding: 0 5px;
+    overflow: auto;
+}
+
+.layer-control-wrapper .layer-control-content ul .layer-item {
+    flex: 1;
+}
+
+.layer-control-content ul .layer-item .layer-item-content{
+    flex: 1;
+}
+
+.layer-control-content ul .layer-item span {
+    flex: 1;
 }
 
 /* ------ Tools Topbar ------*/
@@ -754,8 +807,8 @@ input:checked+.slider::before {
     width: 35%;
     height: 64px;
     gap: var(--big-gap-size);
-    background-color: var(--dark-blue); 
-    background-image: url('../ui/denim065.png');   
+    background-color: var(--dark-blue);
+    background-image: url('../ui/denim065.png');
     padding: 4px 8px;
     border-radius: 0 0 8px 8px;
     align-self: center;
@@ -791,10 +844,12 @@ input:checked+.slider::before {
     box-shadow: var(--small-shadow);
     padding: 0;
 }
+
 #toolsTopbar .tools-container button.disabled {
     background-color: var(--dark-blue);
     color: var(--disabled-text-color);
-} 
+}
+
 #toolsTopbar .tools-container button:hover {
     color: var(--light-text-color);
     background-color: var(--dark-red);
@@ -966,7 +1021,8 @@ input:checked+.slider::before {
     font-weight: bold;
     transition: background 0.2s;
 }
-.tab.disabled {    
+
+.tab.disabled {
     color: var(--disabled-text-color);
 }
 
@@ -1039,7 +1095,7 @@ input:checked+.slider::before {
     top: 0;
     left: 0;
     width: 100vw;
-    height: 100vh;    
+    height: 100vh;
     display: none;
     justify-content: center;
     align-items: center;
@@ -1048,6 +1104,7 @@ input:checked+.slider::before {
     transform: scale(0.5);
     transition: opacity 0.5s ease, transform 0.5s ease;
 }
+
 .overlay:not(.hidden) {
     display: flex;
     opacity: 1;
@@ -1057,7 +1114,8 @@ input:checked+.slider::before {
 .overlay.form-overlay {
     background: transparent;
 }
-.overlay.dialog-overlay {    
+
+.overlay.dialog-overlay {
     background: rgba(0, 0, 0, 0.5);
     z-index: 1100;
 }
@@ -1065,18 +1123,20 @@ input:checked+.slider::before {
 /* ------ Container ------*/
 .container {
     position: absolute;
-        
+
 }
+
 .container .header-bar:hover {
     cursor: grab;
 }
+
 .container .header-bar .close-button:hover {
     cursor: pointer;
     text-shadow: 1px 1px 3px var(--dark-grey);
 }
 
 /* --- Forms --- */
-.form.container {    
+.form.container {
     background: var(--background-color);
     height: 85vh;
     width: 85vw;
@@ -1088,6 +1148,7 @@ input:checked+.slider::before {
     z-index: 1002;
     transition: height 0.5s ease, width 0.25s linear;
 }
+
 .form.container.active {
     z-index: 1003;
 }
@@ -1130,10 +1191,12 @@ input:checked+.slider::before {
     font-weight: bold;
     user-select: none;
 }
+
 .form .header-bar .switch {
     margin-right: 5px;
     z-index: 1004;
 }
+
 .form .header-bar .switch .slider {
     background-color: transparent;
 }
@@ -1182,9 +1245,10 @@ input:checked+.slider::before {
     transition: height 0.5s ease;
 }
 
-.form .main > div {
+.form .main>div {
     height: var(--fill-height);
 }
+
 .form.container:not(.maximized) .main {
     display: none;
 }
@@ -1216,7 +1280,7 @@ input:checked+.slider::before {
 }
 
 .dialog .header-bar {
-    gap: var(--default-gap-size);    
+    gap: var(--default-gap-size);
     background-color: var(--header-red);
     background-image: url(../ui/denim065.png);
     border-radius: var(--title-header-radius);
@@ -1479,21 +1543,26 @@ input:checked+.slider::before {
 .link-dialog.entries {
     background-image: none;
 }
+
 .link-dialog .sidebar {
     border-radius: 0;
     border: none;
 }
+
 .link-dialog .sidebar .folder-list {
     flex: none;
 }
+
 .link-dialog .sidebar .folder-list li:not(.entry-item) {
     margin-bottom: 0;
     padding-block: 0;
 }
+
 .link-dialog div.content {
     padding-block: 5px;
     padding-inline: 10px;
 }
+
 .link-dialog .content .title {
     font-size: var(--heading-2-size);
 }
@@ -1718,37 +1787,44 @@ input:checked+.slider::before {
     z-index: 0;
     transition: all 0.3s ease-in-out;
 }
+
 #viewer .content::before {
     content: none;
 }
 
 .sidebar.minimized+.content::before {
-    inset: 0 0 0 0em !important; 
+    inset: 0 0 0 0em !important;
 }
 
-#atlas .content::before {    
-    background: url('../ui/maps.jpg') no-repeat top center / cover; 
+#atlas .content::before {
+    background: url('../ui/maps.jpg') no-repeat top center / cover;
 }
-#history .content::before {    
-    background: url('../ui/history.jpg') no-repeat top center / cover;     
+
+#history .content::before {
+    background: url('../ui/history.jpg') no-repeat top center / cover;
 }
+
 #politics .content::before {
     background: url('../ui/politics.jpeg') no-repeat top center / cover;
 }
+
 #economy .content::before {
-    background: url('../ui/economy.jpeg') no-repeat top center / cover;    
+    background: url('../ui/economy.jpeg') no-repeat top center / cover;
 }
+
 #military .content::before {
     background: url('../ui/military.jpeg') no-repeat top center / cover;
 }
+
 #ideologies .content::before {
     background: url('../ui/ideologies.jpeg') no-repeat top center / cover;
 }
-#codex .content::before{
+
+#codex .content::before {
     background: url('../ui/grand-library.jpg') no-repeat top center / cover;
 }
 
-#timeline .content:has(.time-container):before{    
+#timeline .content:has(.time-container):before {
     background: url('../ui/timeline.jpg') no-repeat top center / cover;
 }
 
@@ -1947,7 +2023,7 @@ input:checked+.slider::before {
 .timeline .main-viewer,
 .article .main-viewer {
     background: url(../ui/texture1.webp) no-repeat top center / auto 770px, var(--lib-background) url(../ui/texture2.webp) no-repeat bottom center / auto 704px;
-    border-radius: var(--default-border-radius);    
+    border-radius: var(--default-border-radius);
     box-shadow: var(--small-shadow);
     overflow-y: scroll;
 }
@@ -1962,6 +2038,7 @@ input:checked+.slider::before {
 .timeline .content .main-viewer {
     padding: 0;
 }
+
 .article:not(.timeline) .content .main-viewer,
 .article:not(.timeline) .content.main-viewer {
     padding: 15px;
@@ -2076,6 +2153,7 @@ input:checked+.slider::before {
     font-style: italic;
     margin-bottom: 0.75em;
 }
+
 .article .text-content figure .img-caption {
     color: var(--dark-red)
 }
@@ -2104,10 +2182,12 @@ input:checked+.slider::before {
     transition: all 0.5s ease;
     z-index: 1000;
 }
+
 .timeline .content .time-manager:has(.active),
 .timeline .content .time-manager:hover {
     opacity: 1;
 }
+
 .timeline .content .time-manager button {
     flex: 1;
     border-radius: 50%;
@@ -2127,6 +2207,7 @@ input:checked+.slider::before {
     background-color: var(--dark-green) !important;
     color: var(--light-text-color) !important;
 }
+
 .timeline .content .time-manager button.active:hover {
     background-color: var(--green) !important;
 }
@@ -2135,37 +2216,42 @@ input:checked+.slider::before {
     background-color: var(--dark-red) !important;
     color: var(--light-text-color) !important;
 }
+
 .timeline .content .time-manager button.cancel:hover {
     background-color: var(--red) !important;
 }
 
-.timeline .content .time-manager button.new {    
+.timeline .content .time-manager button.new {
     height: 16px;
-    width: 16px;    
-    padding: 16px;    
+    width: 16px;
+    padding: 16px;
     font-size: 14px;
     color: var(--dark-red);
-    background-color: var(--light-text-color);    
+    background-color: var(--light-text-color);
     align-self: flex-end;
     margin-bottom: 5px;
 }
-.timeline .content .time-manager button.manage {    
+
+.timeline .content .time-manager button.manage {
     flex: 1;
     height: 32px;
-    width: 32px;    
-    padding: 32px;    
+    width: 32px;
+    padding: 32px;
     font-size: 32px;
-    color: var(--light-text-color);    
+    color: var(--light-text-color);
     align-self: center;
 }
+
 .timeline .content .time-manager button.manage.disabled {
     color: var(--disabled-text-color);
     background-color: var(--blue);
 }
+
 .timeline .content .time-manager button.new:not(.active):hover {
     background-color: var(--dark-red);
     color: var(--light-text-color);
 }
+
 .timeline .content .time-manager button.manage:not(.active):hover {
     background-color: var(--light-text-color);
     color: var(--dark-red);
@@ -2311,6 +2397,7 @@ input:checked+.slider::before {
     z-index: 1;
     transition: left 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
+
 .timeline.article .timeline-content .timeline-list li .tl-circ {
     left: 23.45vw;
 }
@@ -2448,10 +2535,11 @@ input:checked+.slider::before {
     background-color: var(--dark-red);
     box-shadow: var(--small-shadow);
 }
+
 .timeline-list .timeline-panel .btn-group-hover button.disabled {
     background-color: var(--dark-blue);
     color: var(--disabled-text-color);
-} 
+}
 
 .timeline-list .timeline-entry .tl-heading {
     text-align: center;
@@ -2641,12 +2729,12 @@ folder-list .folder.created.selected .folder-header .fa-trash {
 /* ------ Time Forge ------*/
 .time-forge {
     position: absolute;
-    top: 12vh;    
+    top: 12vh;
     height: 700px;
-    width: 770px;    
+    width: 770px;
     opacity: 0;
     right: 0;
-    pointer-events: none; 
+    pointer-events: none;
     background-color: var(--blueT50);
     padding: var(--default-gap-size);
     box-shadow: var(--small-shadow);
@@ -2679,17 +2767,20 @@ folder-list .folder.created.selected .folder-header .fa-trash {
     border-bottom-left-radius: inherit;
     border-top-left-radius: inherit;
 }
+
 .time-forge .event-selector h4 {
     margin-top: 5px;
 }
+
 .time-forge .event-selector .event-list {
     flex: 1;
     /* Permite rolagem se necessário */
     overflow-y: scroll;
     /* Garante que não ultrapasse a altura do contêiner */
-    max-height: 100%;  
-    padding: 5px;  
+    max-height: 100%;
+    padding: 5px;
 }
+
 .time-forge .event-list li {
     cursor: pointer;
     padding: 5px 10px;
@@ -2699,7 +2790,7 @@ folder-list .folder.created.selected .folder-header .fa-trash {
 }
 
 .time-forge .event-list li.checked .item-content,
-.time-forge .event-list li:hover .item-content{
+.time-forge .event-list li:hover .item-content {
     color: var(--red);
 }
 
@@ -2709,6 +2800,7 @@ folder-list .folder.created.selected .folder-header .fa-trash {
     margin: 5px;
     margin-left: 10px;
 }
+
 .time-forge .timeline-data .footer {
     width: var(--fill-width);
     margin-top: 10px;
@@ -2719,8 +2811,8 @@ folder-list .folder.created.selected .folder-header .fa-trash {
     flex: 1;
     margin: 0;
     font-family: 'Georgia', serif;
-    color: var(--light-text-color);    
-    background-image: url(../ui/denim065.png);   
+    color: var(--light-text-color);
+    background-image: url(../ui/denim065.png);
     border-bottom-left-radius: var(--default-border-radius);
     border-bottom-right-radius: var(--default-border-radius);
     user-select: none;
@@ -3007,7 +3099,7 @@ folder-list .folder.created.selected .folder-header .fa-trash {
     flex: 1;
 }
 
-.panel .content .info-set, 
+.panel .content .info-set,
 .entries .content .info-set {
     background: var(--dark-blue);
 }
@@ -3406,19 +3498,6 @@ folder-list .folder.created.selected .folder-header .fa-trash {
     color: var(--light-text-color);
 }
 
-/* ------ Leaflet Controls ------ */
-
-.leaflet-bar {
-    border: none !important;
-}
-
-.leaflet-bar button {
-    width: 3em;
-    font-size: 16px;
-    margin: 5px 0;
-    padding: 5px;
-}
-
 /* ------ TinyMCE Editor ------*/
 #mainEditor {
     flex: 1;
@@ -3447,8 +3526,9 @@ folder-list .folder.created.selected .folder-header .fa-trash {
     box-shadow: var(--small-shadow);
     padding: 5px 10px;
     min-height: var(--flavor-height);
-    max-height: var(--flavor-height);  
+    max-height: var(--flavor-height);
 }
+
 .simple-tmce:focus-visible {
     outline: 1px solid;
 }
@@ -3462,11 +3542,13 @@ folder-list .folder.created.selected .folder-header .fa-trash {
 
 #eventFlavorEditor.simple-tmce {
     height: var(--fill-height);
-    max-height: var(--fill-height);   
+    max-height: var(--fill-height);
 }
+
 #captionEditor.simple-tmce {
     height: 5vh;
 }
+
 #tinymce {
     font-family: 'Georgia', serif;
     font-size: var(--tmce-size);
@@ -3657,6 +3739,7 @@ folder-list .folder.created.selected .folder-header .fa-trash {
     left: calc(100% - 5vh);
     gap: var(--default-gap-size);
 }
+
 .tree-editor .action-buttons button {
     height: 16px;
     width: 16px;
@@ -3673,7 +3756,7 @@ folder-list .folder.created.selected .folder-header .fa-trash {
 
 .lineage-tree foreignObject {
     box-shadow: var(--small-shadow);
-    border-radius: var(--default-border-radius);    
+    border-radius: var(--default-border-radius);
 }
 
 .lineage-tree .node {
@@ -3685,12 +3768,15 @@ folder-list .folder.created.selected .folder-header .fa-trash {
     gap: var(--default-gap-size);
     padding: 5px;
 }
+
 .lineage-tree .node.deceased {
     background-color: var(--blue);
 }
+
 .lineage-tree .node.selected {
     border: 2px solid var(--light-text-color);
 }
+
 .lineage-tree .node:hover {
     cursor: pointer;
 }
@@ -3702,13 +3788,16 @@ folder-list .folder.created.selected .folder-header .fa-trash {
     height: var(--fill-height);
     justify-content: center;
 }
+
 .lineage-tree .node-text .node-dates {
     width: var(--fill-width);
 }
+
 .lineage-tree .node-text .node-dates span {
     flex: 1;
     font-size: var(--tiny-size);
 }
+
 .lineage-tree .node-text .node-gender {
     position: absolute;
     top: 0;
@@ -3731,6 +3820,7 @@ folder-list .folder.created.selected .folder-header .fa-trash {
     color: var(--dark-blue);
     border-color: var(--info-blue);
 }
+
 .lineage-tree .node-text .node-gender.female {
     background-color: rgb(179, 107, 109);
     color: var(--dark-text-color);
@@ -3743,7 +3833,7 @@ folder-list .folder.created.selected .folder-header .fa-trash {
     border-color: var(--dark-red);
 }
 
-.lineage-tree .node .node-icon {   
+.lineage-tree .node .node-icon {
     height: 25px;
     width: 25px;
     border-radius: 50%;
@@ -3754,6 +3844,7 @@ folder-list .folder.created.selected .folder-header .fa-trash {
     text-align: center;
     align-content: center;
 }
+
 .lineage-tree .node.deceased .node-icon {
     color: var(--disabled-text-color);
 }
@@ -3762,31 +3853,37 @@ folder-list .folder.created.selected .folder-header .fa-trash {
     fill: none;
     stroke: var(--stroke-color);
 }
+
 .lineage-tree .marriage {
     fill: none;
     stroke: var(--stroke-color);
 }
+
 .lineage-tree .marriage.inactive {
-    stroke-dasharray: 2,2;
+    stroke-dasharray: 2, 2;
 }
+
 .lineage-tree .man {
     background-color: lightblue;
-        border-style: solid;
-        border-width: 1px;
-        box-sizing: border-box;
+    border-style: solid;
+    border-width: 1px;
+    box-sizing: border-box;
 }
+
 .lineage-tree .woman {
-        background-color: pink;
-        border-style: solid;
-        border-width: 1px;
-        box-sizing: border-box;
+    background-color: pink;
+    border-style: solid;
+    border-width: 1px;
+    box-sizing: border-box;
 }
-.lineage-tree .emphasis{
-        font-style: italic;
+
+.lineage-tree .emphasis {
+    font-style: italic;
 }
+
 .lineage-tree p {
-    padding:0;
-    margin:0;
+    padding: 0;
+    margin: 0;
 }
 
 /* ------ Link Tooltip ------ */
@@ -3844,9 +3941,11 @@ folder-list .folder.created.selected .folder-header .fa-trash {
     justify-content: center;
     gap: var(--default-gap-size);
 }
+
 .link-tooltip .date span {
     font-style: normal;
-    color: var(--dark-red);}
+    color: var(--dark-red);
+}
 
 /* ------ Text Link ------ */
 #tinymce span.linked-text,

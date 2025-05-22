@@ -58,29 +58,15 @@
     <!-- Mensagem de comunicação com o Usuário -->
     <div id="msgContainer" class="msg-container"></div>        
 
-    <div id="map"></div>
+    <!-- Controle do Mapa Leaflet -->
+    <div id="map"></div> 
 
-    <template id="layerOptions">
-        <div>
-            <h4>Opções de Layers</h4>
-            <div class="data-group check">
-                <span class="data-label">Checkbox: </span>
-                <label class="switch">
-                    <input type="checkbox" id="checkbox">
-                    <div class="slider"></div>
-                </label>
-            </div>
-            <label for="layerColor">Cor da Camada:</label>
-            <input type="color" id="layerColor" /><br /><br />
-            <label for="layerType">Tipo de Layer:</label>
-            <select id="layerType">
-                <option value="polygon">Polígono</option>
-                <option value="rectangle">Retângulo</option>
-                <option value="circle">Círculo</option>
-            </select><br /><br />
-            <button id="applySettings">Aplicar</button>
-        </div>
-    </template>    
+    <div id="layerControl" class="layer-control-wrapper flexrow">
+        <div class="layer-control-content flexcol">
+            <ul class="map-elements flexcol"></ul>
+        </div>  
+    </div>   
+    
     <script type="module" src="uniforge.js"></script>
 </body>
 </html>

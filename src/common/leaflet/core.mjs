@@ -56,6 +56,18 @@ const lControl = {
     }),
 
     /**
+    * Controle de camada no mapa.
+    * 
+    * @extends {L.Control}
+    */
+    LayerControl: L.Control.extend({
+        options: {
+            position: 'bottomright' // Posição no canto superior esquerdo.            
+        },
+        onAdd: listeners.onAddLayer
+    }),
+
+    /**
     * Controle de desenho no mapa.
     * 
     * @extends {L.Control.Draw}
@@ -113,7 +125,10 @@ const lControl = {
 
         lControl.CustomDrawControl.edit = {
             featureGroup: mapElements
-        };      
+        };
+        
+        const layerControl = new lControl.LayerControl();
+
         
         uniforge.utils.mergeObjects(L.drawLocal.draw.handlers,{
             circle: {
@@ -153,6 +168,7 @@ const lControl = {
         grid.bringToFront();
 
         map.addControl(main);
+        map.addControl(layerControl);
         map.addControl(draw);
 
         map.on('moveend', _checkMapVisibility);

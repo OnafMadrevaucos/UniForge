@@ -22,7 +22,6 @@ console.log('UniForge | Configurando pré-carregamentos de Aplicação.');
 contextBridge.exposeInMainWorld('path', {
   join: async (...args) => { 
     const result = await ipcRenderer.invoke('path-join', args);
-    console.log(args);
     return result;
   },
   resolve: async (protoPath) => await ipcRenderer.invoke('path-resolve', protoPath)

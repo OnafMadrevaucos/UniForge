@@ -33,8 +33,8 @@ function _onPolygonDraw(map) {
         allowIntersection: false, // Restringe a interseção de polígonos.
         icon: L.icon({
             iconUrl: iconUrl, // URL do ícone do marcador.
-            iconSize: [0, 0],
-            iconAnchor: [0, 0],
+            iconSize: [16, 16],
+            iconAnchor: [8, 8],
             popupAnchor: [0, -32]
         }),
         shapeOptions: { 
@@ -118,6 +118,50 @@ function onAddDraw(map) {
     return container;
 }
 
+function _onExpandLayer(map) {
+    const layerControl = document.querySelector('#layerControl');
+    layerControl.classList.toggle('active');
+
+    const items = [
+        {name: 'Teste 1', icon: 'fa-solid fa-location-pin'},
+        {name: 'Teste 2', icon: 'fa-border-top-left'},
+        {name: 'Teste 3', icon: 'fa-solid fa-location-pin'},
+    ];
+
+    const mapElements = layerControl.querySelector('.map-elements');
+
+    items.forEach(item => {
+        const li = document.createElement('li');
+        li.classList.add('layer-item', 'flexrow');
+
+        const content = document.createElement('div');
+        content.classList.add('layer-item-content', 'flexrow');
+
+        const span = document.createElement('span');
+        span.innerText = item.name;
+
+        const icon = document.createElement('a');
+        icon.innerHTML = `<i class="${item.icon}"></i>`;
+
+        content.appendChild(span);
+        content.appendChild(icon);
+
+        li.appendChild(content);
+
+        mapElements.appendChild(li);
+    });
+}
+
+function onAddLayer(map) {
+    const container = L.DomUtil.create('div', 'leaflet-bar flexcol');
+
+    const expandButton = L.DomUtil.create('button', 'leaflet-control-expand', container);
+    expandButton.innerHTML = '<i class="fas fa-expand"></i>';
+    L.DomEvent.on(expandButton, 'click', _onExpandLayer.bind(this, map));
+
+    return container;
+}
+
 function onCreateTile(coords) {
     // Create a tile with transparency
     const tile = document.createElement('canvas');
@@ -151,6 +195,7 @@ function onCreateTile(coords) {
 const listeners = {
     onAddMain: onAddMain,
     onAddDraw: onAddDraw,
+    onAddLayer: onAddLayer,
     onCreateTile: onCreateTile
 }
 export default listeners;
