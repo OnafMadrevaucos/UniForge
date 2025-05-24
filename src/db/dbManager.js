@@ -16,6 +16,8 @@ export default class DBManager {
             createEventTable: () => this.createEventTable(),
             createLineageTreeTable: () => this.createLineageTreeTable(),
             createLineageTypeTable: () => this.createLineageTypeTable(),
+            createMapTable: () => this.createMapTable(),
+            createMapElementsTable: () => this.createMapElementsTable(),
             createTimelineTable: () => this.createTimelineTable(),
             createTimelineEventsTable: () => this.createTimelineEventsTable(),
             createTextImagesTable: () => this.createTextImagesTable(),
@@ -34,7 +36,7 @@ export default class DBManager {
     }
     get result() {
         const results = this.#state.results;
-        return results.last();       
+        return results.last();
     }
     get results() {
         const results = this.#state.results;
@@ -63,7 +65,7 @@ export default class DBManager {
                 value['addedId'] = value['lastInsertRowid'];
                 this.#state.changes += value.changes;
             }
-        } 
+        }
 
         this.#state.results.push(value);
     }
@@ -141,6 +143,7 @@ export default class DBManager {
             'DROP TABLE IF EXISTS event',
             'DROP TABLE IF EXISTS lineageTree',
             'DROP TABLE IF EXISTS lineageType',
+            'DROP TABLE IF EXISTS mapElements',
             'DROP TABLE IF EXISTS timeline',
             'DROP TABLE IF EXISTS relevance',
             'DROP TABLE IF EXISTS entryType',
@@ -340,7 +343,6 @@ export default class DBManager {
         params.push(Number(data.isDraft ?? false));
 
         this.results = await this.#execQuery(query, params);
-        result.addedId = evid;
 
         return this.result;
     }
@@ -369,7 +371,6 @@ export default class DBManager {
         params.push(data.isDraft);
 
         this.results = await this.#execQuery(query, params);
-        result.addedId = ltid;
 
         return this.result;
     }
@@ -395,6 +396,46 @@ export default class DBManager {
         return this.result;
     }
 
+    async addMap(data) {
+        let query = 'INSERT INTO map (mid, sid, title, flavor, img, ext, isDraft) ';
+        query += 'VALUES (?,?,?,?,?,?,?);';
+        const params = [];
+
+        const mid = (!data.mid || data.mid.isEmpty()) ? this.generateID() : data.mid;
+
+        params.push(mid);
+        params.push(data.sid);
+        params.push(data.title);
+        params.push(data.flavor);
+        params.push(data.img);
+        params.push(data.ext);
+        params.push(data.isDraft);
+
+        this.results = await this.#execQuery(query, params);
+
+        return this.result;
+    }
+
+    async addMapElement(data) {
+        let query = 'INSERT INTO mapElements (meid, mid, epoch, type, icon, source, points) ';
+        query += 'VALUES (?,?,?,?,?,?,?);';
+        const params = [];
+
+        const meid = (!data.meid || data.meid.isEmpty()) ? this.generateID() : data.meid;
+
+        params.push(meid);
+        params.push(data.mid);
+        params.push(data.epoch);
+        params.push(data.type);
+        params.push(data.icon);
+        params.push(data.source);
+        params.push(data.points);
+
+        this.results = await this.#execQuery(query, params);
+
+        return this.result;
+    }
+
     async addTimeline(data) {
         let query = 'INSERT INTO timeline (tid, title, flavor) VALUES (?,?,?);';
         let params = [];
@@ -405,9 +446,7 @@ export default class DBManager {
         params.push(data.title);
         params.push(data.flavor);
 
-        let result = await this.#execQuery(query, params);
-        result.addedId = tid;
-
+        this.results = await this.#execQuery(query, params);
         return this.result;
     }
 
@@ -418,7 +457,8 @@ export default class DBManager {
         params.push(data.tid);
         params.push(data.evid);
 
-        let result = await this.#execQuery(query, params);
+        this.results = await this.#execQuery(query, params);
+
         return this.result;
     }
 
@@ -596,6 +636,55 @@ export default class DBManager {
     }
 
     /**
+     * Atualiza um mapa no banco de dados com base nos dados fornecidos.
+     * 
+     * @param {Object} data                 - Dados do mapa a serem atualizados.
+     * @param {string} data.mid             - ID do mapa a ser atualizado.
+     * @param {string} data.title           - Título do mapa.
+     * @param {string} data.flavor          - Texto de descrição ou sabor.
+     * @param {string|Buffer} [data.img]    - Dados binários da imagem associada, opcional.
+     * @param {string} [data.ext='jpeg']    - Extensão da imagem, padrão é 'jpeg'.
+     * @param {boolean} data.isDraft        - Indica se o mapa é um rascunho.     
+     * @returns {Promise<Object>}           - Resposta do banco de dados.
+     */
+    async updateMap(data) {
+        const updateSet = this.buildUpdateSet([
+            ['title', data.title],
+            ['flavor', data.flavor],
+            ['img', data.img],
+            ['ext', data.ext],
+            ['isDraft', Number(data.isDraft)]
+        ]);
+
+        let query = `UPDATE map SET ${updateSet} WHERE mid = ?`;
+        let params = [data.mid];
+        this.results = await this.#execQuery(query, params);
+
+        return this.result;
+    }
+
+    /**
+     * Atualiza um elemento do mapa no banco de dados com base nos dados fornecidos.    
+     * @param {Object} data         - Os dados do elemento do mapa a serem atualizados.
+     * @param {string} data.meid    - ID do elemento do mapa a ser atualizado.
+     * @param {string} data.source  - Fonte do elemento do mapa.
+     * @param {string} data.points  - Coordenadas do elemento do mapa.    
+     * @returns {Promise<Object>}   - Resposta do banco de dados.
+     */
+    async updateMapElement(data) {
+        const updateSet = this.buildUpdateSet([
+            ['source', data.source],
+            ['points', data.points]
+        ]);
+
+        let query = `UPDATE mapElements SET ${updateSet} WHERE meid = ?`;
+        let params = [data.meid];
+        this.results = await this.#execQuery(query, params);
+
+        return this.result;
+    }
+
+    /**
      * Atualiza a Linha do Tempo com o ID especificado.
      * @param {Object} data             - Os dados a serem atualizados.
      * @param {string} data.title       - A estrutura da Árvore de Linhagem em FamilyScript.
@@ -705,6 +794,43 @@ export default class DBManager {
     async deleteLineageType(ltid) {
         let query = 'DELETE FROM lineageType WHERE ltid = ?;';
         let params = [ltid];
+        this.results = await this.#execQuery(query, params);
+
+        return this.result;
+    }
+
+    /**
+     * Deleta o Mapa com o ID especificado e todos os seus Elementos.
+     * @param {string} mid - O ID do Mapa a ser deletado.
+     * @returns {Promise<Object>} A resposta do banco de dados.
+     */
+    async deleteMap(mid) {
+        try {
+            this.beginTransaction();
+            let query = 'DELETE FROM map WHERE mid = ?;';
+            let params = [mid];
+
+            this.results = await this.#execQuery(query, params);
+
+            query = 'DELETE FROM mapElements WHERE mid = ?;';
+            this.results = await this.#execQuery(query, params);
+
+            this.commitTransaction();
+        } catch (error) {
+            this.rollbackTransaction(error);
+        }
+
+        return this.results;
+    }
+
+    /**
+     * Deleta o Elemento do Mapa com o ID especificado.
+     * @param {string} meid         - O ID do Elemento do Mapa a ser deletado.
+     * @returns {Promise<Object>} A resposta do banco de dados.
+     */
+    async deleteMapElement(meid) {
+        let query = 'DELETE FROM mapElements WHERE meid = ?;';
+        let params = [meid];
         this.results = await this.#execQuery(query, params);
 
         return this.result;
@@ -887,6 +1013,32 @@ export default class DBManager {
     async getLineageType(data) {
         let query = 'SELECT * FROM lineageType WHERE ltid = ? AND tag = ?;';
         const params = [data.ltid, data.tag];
+
+        this.results = await uniforge.sql.query(query, params);
+        return this.result.first();
+    }
+
+    /**
+     * Recupera um Mapa com base no ID especificado.
+     * @param {string} mid - O ID do Mapa.
+     * @returns {Promise<Object|null>} Retorna um objeto com as informações do Mapa ou null se não encontrado.
+     */
+    async getMap(mid) {
+        let query = 'SELECT * FROM map WHERE mid = ?;';
+        const params = [mid];
+
+        this.results = await uniforge.sql.query(query, params);
+        return this.result.first();
+    }
+
+    /**
+     * Recupera um Elemento do Mapa com base no ID especificado.
+     * @param {string} meid - O ID do Elemento do Mapa.
+     * @returns {Promise<Object|null>} Retorna um objeto com as informações do Elemento do Mapa ou null se não encontrado.
+    */
+    async getMapElement(meid) {
+        let query = 'SELECT * FROM mapElement WHERE meid = ?;';
+        const params = [meid];
 
         this.results = await uniforge.sql.query(query, params);
         return this.result.first();
@@ -1217,6 +1369,78 @@ export default class DBManager {
         }));
     }
 
+    /**
+     * Recupera todos os mapas.
+     * @return {Promise<Array<Object>>} Retorna um array de objetos com as informações de cada mapa.
+     * @property {string} _id           - ID do mapa.
+     * @property {string} _label        - Título do mapa.
+     * @property {string} mid           - ID do mapa.
+     * @property {string} sid           - ID da Seção a qual o mapa pertence.
+     * @property {string} title         - Título do mapa.
+     * @property {string} flavor        - Texto de descri o ou sabor do mapa.
+     * @property {string|Buffer} img    - Dados bin rios da imagem associada.
+     * @property {string} ext           - Extens o da imagem.
+     * @property {boolean} isDraft      - O mapa é um rascunho? (false por padrão).
+    */
+    async getAllMaps() {
+        const query = 'SELECT * FROM map';
+        this.results = await uniforge.sql.query(query);
+        return this.result.map(row => ({
+            _id: row.mid,
+            _label: row.title,
+            ...row
+        }));
+    }
+
+    /**
+     * Recupera todos os Elementos do Mapa.
+     * @return {Promise<Array<Object>>} Retorna um array de objetos com as informações de cada Elemento do Mapa.
+     * @property {string} _id           - ID do Elemento do Mapa.
+     * @property {string} _label        - Rótulo do Elemento do Mapa.
+     * @property {string} meid          - ID do Elemento do Mapa.
+     * @property {string} mid           - ID do Mapa a qual o Elemento faz parte.
+     * @property {number} epoch         - Época do Elemento do Mapa.
+     * @property {string} type          - Tipo do Elemento do Mapa.
+     * @property {string} icon          - Ícone do Elemento do Mapa.
+     * @property {string} source        - Entrada de Origem do Elemento do Mapa, se houver (sourceType.uuid).
+     * @property {string} points         - Coordenadas do Elemento do Mapa.
+     */
+    async getAllMapElements() {
+        const query = 'SELECT * FROM mapElements';
+        this.results = await uniforge.sql.query(query);
+        return this.result.map(row => ({
+            _id: row.meid,
+            _label: row.label,
+            ...row
+        }));
+    }
+
+    /**
+     * Recupera todos os Elementos do Mapa pertencentes a um Mapa específico.
+     * 
+     * @async
+     * @param {string} mid - Identificador do Mapa.
+     * @returns {Promise<Array<Object>>} - Uma promessa que resolve para um array de objetos com as informações de cada Elemento do Mapa.
+     * @property {string} _id       - ID do Elemento do Mapa.
+     * @property {string} _label    - Rótulo do Elemento do Mapa.
+     * @property {string} meid      - ID do Elemento do Mapa.
+     * @property {string} mid       - ID do Mapa a qual o Elemento faz parte.
+     * @property {number} epoch     - Época do Elemento do Mapa.
+     * @property {string} type      - Tipo do Elemento do Mapa.
+     * @property {string} icon      - Ícone do Elemento do Mapa.
+     * @property {string} source    - Entrada de Origem do Elemento do Mapa, se houver (sourceType.uuid).
+     * @property {string} points    - Coordenadas do Elemento do Mapa.
+    */
+    async getAllMapElementsFromMap(mid) {
+        const query = 'SELECT * FROM mapElements WHERE mid = ?';
+        const params = [mid];
+        this.results = await uniforge.sql.query(query, params);
+        return this.result.map(row => ({
+            _id: row.meid,
+            _label: row.label,
+            ...row
+        }));
+    }
 
     /**
      * Recupera todas as Linhas do Tempo.
@@ -1518,6 +1742,40 @@ export default class DBManager {
         console.log('Tabela \'lineageType\' criada....OK.');
 
         return this.result;
+    }
+
+    async createMapTable() {
+        const query = 'CREATE TABLE IF NOT EXISTS `map` (' +
+            '`mid` VARCHAR(16) NOT NULL,' +             // Identificador do mapa.
+            '`sid` VARCHAR(16) NOT NULL,' +             // Identificador da Seção a que o mapa pertence.
+            '`title` TEXT NOT NULL,' +                  // Título do mapa.
+            '`flavor` TEXT NULL,' +                     // Texto de descrição do mapa.
+            '`img` BLOB NULL,' +                        // BLOB da imagem do mapa.
+            '`ext` VARCHAR(5) NULL,' +                  // Extensão original do arquivo do mapa.
+            '`isDraft` BOOLEAN NOT NULL DEFAULT 0,' +   // O mapa é um rascunho (falso por padrão).
+            'PRIMARY KEY (`mid`))';
+
+        this.results = await this.#execQuery(query);
+        console.log('Tabela \'map\' criada....OK.');
+
+        return this.result;
+    }
+
+    async createMapElementsTable() {
+        const query = 'CREATE TABLE IF NOT EXISTS `mapElements` (' +
+            '`meid` VARCHAR(16) NOT NULL,' +             // Identificador do elemento do mapa.
+            '`mid` VARCHAR(16) NOT NULL,' +              // Identificador do mapa ao qual o elemento pertence.
+            '`epoch` INT NOT NULL,' +                    // Época do elemento do mapa.
+            '`type` varchar(16) NOT NULL,' +             // Tipo do elemento do mapa.
+            '`icon` varchar(16) NOT NULL,' +             // Ícone do elemento do mapa.
+            '`source` VARCHAR(100) NULL,' +              // Fonte do elemento do mapa, se houver ('sourceType.uuid').
+            '`points` TEXT NOT NULL,' +                  // Pontos do elemento do mapa.
+            'PRIMARY KEY (`meid`))';
+
+        this.results = await this.#execQuery(query);
+        console.log('Tabela \'mapElements\' criada....OK.');
+
+        return this.result;        
     }
 
     /**
@@ -1912,7 +2170,7 @@ export default class DBManager {
         }
 
         // Se é uma transação única com o Banco de Dados, atualiza a base de dados.
-        if(!this.transactionStarted && false) {
+        if (!this.transactionStarted && false) {
             // Independente do resultado se deve atualizar a base de dados.
             await this.rebuildDocs();
         }
