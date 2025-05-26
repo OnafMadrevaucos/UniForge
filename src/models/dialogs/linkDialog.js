@@ -16,6 +16,48 @@ export default class LinkDialog extends BaseDialog {
     }
 
     /**
+     * Retorna um objeto com seletores para elementos da aplicação.
+     * 
+     * @returns {Object} - Um objeto com as seguintes propriedades:
+     *  - overlay: Seletor para o elemento overlay da aplicação.
+     *  - app: Seletor para o elemento container da aplicação.
+     *  - header: Seletor para o elemento header da aplicação.
+     *  - main: Seletor para o elemento main da aplicação.
+     *  - close_btn: Seletor para o elemento de fechar a aplicação.
+     *  - main_editor: Seletor para o principal editor Tiny MCE da aplicação.
+     *  - flavor_editor: Seletor para o editor Tiny MCE de floreio da aplicação.
+     *  - event_editor: Seletor para o editor Tiny MCE de eventos da aplicação.
+    */
+    get query() {
+        const query = {
+            flavor_editor: `FlavorEditor-${this.uuid}`
+        }
+        return uniforge.utils.mergeObjects(super.query, query);
+    }
+
+    /**
+     * Retorna o editor Tiny MCE de floreio da Entrada.
+     * @returns {tinymce.Editor|null} - O editor de floreio ou nulo, se ele não existir.
+     */
+    get flavorEditor() {
+        const editor = tinymce.get(this.query.flavor_editor);
+        return editor ? editor : null;
+    }
+
+    /**
+     * Define o conteúdo do editor de floreio.
+     * @param {string} content - O conteúdo a ser definido.
+     */
+    set flavorEditor(content) {
+        if (this.flavorEditor && content !== undefined) {
+            if (content !== null && !(typeof content === 'string')) throw new TypeError('O conteúdo deve ser uma string.');
+
+            content = content ?? ''; // Se o conteúdo for nulo, faça o conteúdo vazio.
+            this.flavorEditor.setContent(content);
+        }
+    }
+
+    /**
     * Prepara os dados do diálogo e configura o diálogo com os dados preparados.
     * @inheritdoc
     */
@@ -122,7 +164,8 @@ export default class LinkDialog extends BaseDialog {
         startDateInput.value = '';
         endDateInput.value = '';
 
-        tinymce.get('linkflavorEditor').setContent('');
+        // Limpa o editor de floreio.
+        this.flavorEditor = '';
 
         this._clearEntryList();
         this._clearFolderList();
@@ -132,19 +175,21 @@ export default class LinkDialog extends BaseDialog {
     * Configura o editor TinyMCE para o texto de floreio da Entrada.
     */
     async configureFlavorTinyMCE() {
-        if (tinymce.get('linkflavorEditor')) {
-            tinymce.remove('#linkflavorEditor');
+        if (this.flavorEditor) {
+            tinymce.remove(this.query.flavor_editor);
+        } else {
+            // Trata o id do container do editor, inserindo o uuid do formulário.
+            const div = this.querySelector('#linkFlavorEditor');
+            div.id = this.query.flavor_editor;
         }
 
-        const options = uniforge.utils.mergeObjects(uniforge.tinymceOptions.lite, {
-            selector: 'div#linkflavorEditor',
-            placeholder: "Descrição do link...",
-            readonly: true,
+        const options = uniforge.utils.mergeObjects(uniforge.tinymceOptions.simple, {
+            selector: `div#${this.query.flavor_editor}`,
+            placeholder: "Descrição da Entrada...",
             init_instance_callback: (editor) => {
                 editor.setContent(""); // Garante que o editor seja iniciado vazio.
             },
-            setup: (editor) => { this._setupInlineTinyMCE(editor); },
-            content_style: "body { text-align: justify; }"
+            setup: (editor) => { this._setupInlineTinyMCE(editor); }
         });
 
         await tinymce.init(options);
@@ -282,7 +327,8 @@ export default class LinkDialog extends BaseDialog {
 
         titleInput.value = data.title;
         entryType.value = data.etid;
-        tinymce.get('linkflavorEditor').setContent(data.flavor);
+
+        this.flavorEditor = data.flavor; // Define o conteúdo do editor de floreio.
 
         if (data.type === 'event') {
             relevance.value = data.relevance;

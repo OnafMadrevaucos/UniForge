@@ -13,6 +13,7 @@ export default class DBDocuments {
      * @param {Array<Object>} data.entries - Dados da tabela entry.
      * @param {Array<Object>} data.events - Dados da tabela event.
      * @param {Array<Object>} data.timelines - Dados da tabela timeline.
+     * @param {Array<Object>} data.maps - Dados da tabela map.
      * @param {Array<Object>} data.lineages - Dados da tabela lineageTree.
      * @param {Array<Object>} data.lineageTypes - Dados da tabela lineageType.
      * @param {Array<Object>} data.calendars - Dados da tabela calendars.
@@ -30,16 +31,23 @@ export default class DBDocuments {
         this.tomes = this.createSimpleSet(data.tomes);
         this.chapters = this.createChapterSet(data.chapters, data.sections);
         this.sections = this.createSectionSet(data.sections, data.entries, data.events, data.lineages); 
-        this.entries = this.createEntrySet(data.entries, data.events, data.lineages);
+        this.entries = this.createEntrySet(data.entries, data.events, data.lineages);        
         this.lineages = this.createLineageSet(data.lineages, data.lineageTypes);        
         this.events = this.createEventSet(data.events);
         this.timelines = this.createTimelineSet(data.timelines, data.events, data._timelineEvents);
+        this.maps = this.createMapSet(data.maps, data.mapElements);
         this.calendars = this.createCalendarsMergedSet(data.calendars, data.calendarsMonths, data.calendarsDays, data.calendarsDaysInMonths); 
         this.textImages = this.createSimpleSet(data._textImages);        
         this.chapterTypes = this.createSimpleSet(data.chapterTypes);
         this.entryTypes = this.createSimpleSet(data.entryTypes);
         this.relevances = this.createSimpleSet(data.relevances);   
         this.settings = this.createSimpleSet(data.settings);             
+
+        // Adiciona umas propriedades utilitárias para facilitar o acesso.
+        this.entry = this.entries;
+        this.event = this.events;
+        this.lineage = this.lineages;
+        this.timeline = this.timelines;
     }
 
     static async UniForgeData() {
@@ -53,6 +61,8 @@ export default class DBDocuments {
         data.events = await uniforge.db.getAllEvents();
         data.lineages = await uniforge.db.getAllLineageTrees();
         data.lineageTypes = await uniforge.db.getAllLineageTypes();
+        data.maps = await uniforge.db.getAllMaps();
+        data.mapElements = await uniforge.db.getAllMapElements();
         data.timelines = await uniforge.db.getAllTimelines();
         data._timelineEvents = await uniforge.db.getAllTimelineEvents();
         data.calendars = await uniforge.db.getAllCalendars();
@@ -146,6 +156,34 @@ export default class DBDocuments {
         });
 
         return lineageSet;
+    }
+
+    /**
+     * Cria um conjunto de Mapas, contendo os Elementos relacionados.
+     *
+     * @param {Array<Object>} maps          - Dados da tabela Map.
+     * @param {Array<Object>} mapElements   - Dados da tabela Map Elements.
+     * @returns {Set} Conjunto de Maps.
+     */
+    createMapSet(maps, mapElements) {
+        const mapSet = new Set();
+
+        maps.forEach((map) => {
+            const mapElementsSet = new Array();
+
+            // Filtra os Elementos que possuem o mesmo ID do Mapa atual.
+            mapElements
+                .filter((mapElement) => mapElement.mid === map.mid)
+                .forEach((mapElement) => {
+                    // Adiciona o Elemento ao conjunto.
+                    mapElementsSet.push({ _id: mapElement.meid });
+                });
+
+            // Adiciona o Map ao conjunto, incluindo seus Elementos.
+            mapSet.add({ ...map, elements: mapElementsSet });
+        });
+
+        return mapSet;
     }
 
     /**

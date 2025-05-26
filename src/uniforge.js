@@ -18,6 +18,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         background: await uniforge.path.join('/ui/lib-background.png'),
         blankImg: await uniforge.path.join('/ui/blank-image.svg'),
 
+        defaultMap: await uniforge.path.join('/ui/map/default.jpg'),
+
         // Urls de Diretórios usados pelo sistema.
         models: await uniforge.path.join('/models/'),
         templates: await uniforge.path.join('/templates/'),
@@ -236,7 +238,7 @@ async function refreshDocuments() {
 
 // Configura a ferramenta de mapas Leaflet 
 function configureLeaflet() {
-    uniforge.ctrls.leaflet = lControl.init();
+    uniforge.ctrls.leaflet = lControl.init(uniforge.urls.defaultMap);
 }
 // Configura os elementos da Topbar de Ferramentas
 function configureTopBar() {

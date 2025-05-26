@@ -143,6 +143,7 @@ export default class DBManager {
             'DROP TABLE IF EXISTS event',
             'DROP TABLE IF EXISTS lineageTree',
             'DROP TABLE IF EXISTS lineageType',
+            'DROP TABLE IF EXISTS map',
             'DROP TABLE IF EXISTS mapElements',
             'DROP TABLE IF EXISTS timeline',
             'DROP TABLE IF EXISTS relevance',
@@ -175,6 +176,8 @@ export default class DBManager {
             await this.createEventTable();
             await this.createLineageTreeTable();
             await this.createLineageTypeTable();
+            await this.createMapTable();
+            await this.createMapElementsTable();
             await this.createTimelineTable();
             await this.createTimelineEventsTable();
             await this.createSettingsTable();
@@ -195,6 +198,8 @@ export default class DBManager {
             await this.populateTomeTable();
             await this.populateEntryTypeTable();
             await this.populateRelevanceTable();
+            
+            await this.populateMapTable();
 
             // Comita a transação.
             await this.commitTransaction();
@@ -1768,7 +1773,7 @@ export default class DBManager {
             '`epoch` INT NOT NULL,' +                    // Época do elemento do mapa.
             '`type` varchar(16) NOT NULL,' +             // Tipo do elemento do mapa.
             '`icon` varchar(16) NOT NULL,' +             // Ícone do elemento do mapa.
-            '`source` VARCHAR(100) NULL,' +              // Fonte do elemento do mapa, se houver ('sourceType.uuid').
+            '`source` VARCHAR(100) NULL,' +              // Fonte do elemento do mapa, se houver ('sourceType{uuid}').
             '`points` TEXT NOT NULL,' +                  // Pontos do elemento do mapa.
             'PRIMARY KEY (`meid`))';
 
@@ -1887,6 +1892,30 @@ export default class DBManager {
 
         this.results = await this.#execQuery(query);
         console.log('Tabela \'relevance\' criada....OK.');
+
+        return this.result;
+    }
+
+    async populateMapTable() {
+        console.log('Populando tabela \'map\'....');
+
+        const imageData = await uniforge.utils.imageToBlob('image/' + uniforge.urls.defaultMap);
+
+        const map = {
+            mid: 'De#m@Pgl0ba1Unfg',
+            sid: '-',
+            title: 'Mapa Global',
+            flavor: 'Mapa Padrão.',
+            img: imageData.raw,
+            ext: imageData.ext,
+            isDraft: false
+        }
+
+        let query = 'INSERT INTO tome (mid, sid, title, flavor, img, ext, isDraft) ';
+        query += 'VALUES (?,?,?,?,?,?,?);';
+        this.results = await this.#execQuery(query, params);
+
+        console.log('Tabela \'map\' populada....OK.');
 
         return this.result;
     }

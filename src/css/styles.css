@@ -658,7 +658,7 @@ input:checked+.slider::before {
     box-shadow: var(--default-shadow);
 }
 
-.leaflet-bar{
+.leaflet-bar {
     border: none !important;
 }
 
@@ -669,7 +669,7 @@ input:checked+.slider::before {
     padding: 5px;
 }
 
-.leaflet-top, 
+.leaflet-top,
 .leaflet-bottom {
     z-index: 2000 !important;
 }
@@ -734,6 +734,10 @@ input:checked+.slider::before {
     border-radius: var(--default-border-radius);
 }
 
+.leaflet-popup .leaflet-popup-content-wrapper, .leaflet-popup-tip {
+    background: var(--dark-red);
+}
+
 .leaflet-popup .leaflet-popup-content-wrapper .leaflet-popup-content {
     width: 250px;
     height: 125px;
@@ -745,6 +749,41 @@ input:checked+.slider::before {
     margin-top: 9%;
     padding: 5px;
     box-shadow: var(--leaflet-popup-shadow);
+}
+
+.leaflet-popup .leaflet-popup-content .layer-popup-title {
+    position: absolute;
+    top: 5px;
+    font-weight: 800;
+}
+.leaflet-popup .leaflet-popup-content .layer-popup-body {
+    height: var(--fill-height);
+    overflow-y: auto;
+}
+.leaflet-popup .leaflet-popup-content .layer-popup-body p {
+    margin: 0;
+}
+.leaflet-popup .leaflet-popup-content .layer-popup-footer {
+    position: absolute;
+    bottom: 1vh;
+    height: fit-content;
+    width: var(--fill-width);
+    padding-right: 5px;
+}
+.leaflet-popup .leaflet-popup-content .layer-popup-footer span {
+    flex: 1;
+    text-align: end;
+    font-style: italic;
+    font-size: var(--small-size);
+    color: var(--light-blue);
+    user-select: none;
+}
+.leaflet-popup .leaflet-popup-content .layer-popup-footer a {
+    color: var(--light-text-color);
+}
+.leaflet-popup .leaflet-popup-content .layer-popup-footer a:hover {
+    cursor: default;
+    text-shadow: none;
 }
 
 /* ------ Leaflet Layer Controls ------*/
@@ -759,9 +798,10 @@ input:checked+.slider::before {
     border-radius: var(--default-border-radius);
     padding: 5px;
     box-shadow: var(--small-shadow);
-    transition: all 0.3s ease-in-out;  
-    z-index: 1999;  
+    transition: all 0.3s ease-in-out;
+    z-index: 1999;
 }
+
 .layer-control-wrapper.active {
     opacity: 1;
     right: 8.5vw;
@@ -772,7 +812,7 @@ input:checked+.slider::before {
     text-align: center;
     font-size: var(--heading-2-size);
     font-weight: 700;
-    color: var(--dark-red);  
+    color: var(--dark-red);
     margin-block: 0.5vh;
 }
 
