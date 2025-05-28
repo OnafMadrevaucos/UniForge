@@ -22,7 +22,7 @@ export function associateData(element, data) {
     const store = globalThis.store;
 
     // Inicializa o WeakMap se ainda não foi criado.
-    if(!store) globalThis.store = new WeakMap();
+    if (!store) globalThis.store = new WeakMap();
 
     const uniqueId = randomID(); // Generate a unique ID
     element.dataset.uuid = uniqueId;    // Store the ID in the element's dataset
@@ -77,6 +77,33 @@ export async function imageToBlob(file) {
 
         // Obtém a extensão do arquivo de imagem.
         const fileExt = file?.name.split('.').pop().toLowerCase();
+
+        data.raw = base64;
+        data.ext = fileExt;
+    } else {
+        data.raw = null;
+        data.ext = null;
+    }
+
+    return data;
+}
+
+/**
+* Converte uma imagem para Blob.
+* @async
+* @param {Uint8Array} buffer              - Os dados binários da imagem.
+* @param {string} fileExt                 - A extensão do arquivo da imagem.
+* @returns {{img:Blob, ext:string}}       - Objeto com o fluxo de dados da imagem em Blob e a extensão do arquivo.
+*/
+export async function bufferToBlob(buffer, fileExt) {
+    const data = {};
+    if (buffer) {    // Se uma imagem foi informada, prepare-a para o banco de dados. 
+        // Converte Uint8Array para base64 antes de salvar.
+        let binaryString = '';
+        for (let i = 0; i < buffer.length; i++) {
+            binaryString += String.fromCharCode(buffer[i]);
+        }
+        const base64 = btoa(binaryString);        
 
         data.raw = base64;
         data.ext = fileExt;

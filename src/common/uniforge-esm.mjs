@@ -30,6 +30,7 @@ const utils = {
     getAsociatedData: utilsEsm.images.getAsociatedData,
     blobToImage: utilsEsm.images.blobToImage,
     imageToBlob: utilsEsm.images.imageToBlob,
+    bufferToBlob: utilsEsm.images.bufferToBlob,
     deepClone: utilsEsm.collection.deepClone,
     duplicate: utilsEsm.collection.duplicate,
     diffObject: utilsEsm.collection.diffObject,
@@ -100,10 +101,16 @@ globalThis.uniforge = {
     app: window.app,
 
     /**
-    * Ferramentas da controle universal de Diretórios.
+    * Ferramentas de controle universal de Diretórios.
     * @type {Object}
     */
     path: window.path,
+
+    /**
+    * Ferramentas de manipulação de Arquivos.
+    * @type {Object}
+    */
+    fs: window.fs,
 
     /**
     * Instância de SQL usada pela aplicação.

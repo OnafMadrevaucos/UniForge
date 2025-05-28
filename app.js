@@ -82,8 +82,37 @@ app.whenReady().then(() => {
   */
   ipcMain.handle('window-refresh', (event) => refreshWindow());
 
+  /**
+   * Manipulador para unir caminhos relativos dentro da pasta `src`.
+   * @param {Electron.IpcMainEvent} event - O evento IPC recebido.
+   * @param {Array} [args=[]] - Parâmetros opcionais para o comando.
+   * @returns {string} - Caminho unido.
+   */
   ipcMain.handle('path-join', (event, args = []) => pathJoin(args));
+
+  /**
+   * Manipulador para resolver caminhos relativos dentro da pasta `src`.
+   * @param {Electron.IpcMainEvent} event - O evento IPC recebido.
+   * @param {string} protoPath - O caminho relativo do arquivo a ser resolvido.
+   * @returns {string} - Caminho resolvido.
+   */
   ipcMain.handle('path-resolve', (event, protoPath) => pathResolve(protoPath));
+
+  /**
+   * Manipulador para obter a extensão do arquivo a partir do caminho fornecido.
+   * @param {Electron.IpcMainEvent} event - O evento IPC recebido.
+   * @param {string} filePath - O caminho do arquivo.
+   * @returns {string} - Extensão do arquivo informado.
+   */
+  ipcMain.handle('path-extname', (event, filePath) => pathExtname(filePath));
+
+  /**
+   * Manipulador para ler o conteúdo de um arquivo.
+   * @param {Electron.IpcMainEvent} event - O evento IPC recebido.
+   * @param {string} filePath - O caminho do arquivo a ser lido.
+   * @returns {Buffer} - O conteúdo do arquivo lido.
+   */
+  ipcMain.handle('read-file', (event, filePath) => readFile(filePath));
 
   /**
    * Manipulador para buscar templates de arquivos.
@@ -208,7 +237,28 @@ function pathJoin(paths) {
 function pathResolve(protoPath) {
   const fullPath = path.join(__srcname, protoPath);
   const result = path.resolve(fullPath);
-  console.log(result);
+  return result;
+}
+
+/**
+ * Obtém a extensão do arquivo a partir do caminho fornecido.
+ * 
+ * @param {string} filePath - O caminho completo do arquivo.
+ * @returns {string} - A extensão do arquivo.
+ */
+function pathExtname(filePath) {
+  var result = path.extname(filePath);
+  result = result.replace('.', ''); // Remove o ponto inicial da extensão.
+  return result;
+}
+
+/**
+ * Lê o conteúdo de um arquivo em sincronia.
+ * @param {string} path - O caminho absoluto do arquivo a ser lido.
+ * @returns {Buffer} - O conteúdo do arquivo lido.
+ */
+function readFile(path) {  
+  const result = fs.readFileSync(path);  
   return result;
 }
 

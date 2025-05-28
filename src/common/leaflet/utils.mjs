@@ -1,8 +1,80 @@
-const iconMap =  {
+const iconMap = {
     polygon: 'fas fa-border-top-left',
     rectangle: 'fas fa-square',
     circle: 'fas fa-circle',
     marker: 'fas fa-location-pin'
+}
+
+const options = {
+    marker: function (iconUrl) {
+        return {
+            icon: L.icon({
+                iconUrl: iconUrl, // URL do ícone do marcador.
+                iconSize: [32, 32],
+                iconAnchor: [2, 32],
+                popupAnchor: [0, -32]
+            })
+        }
+    },
+    polygon: function (withIntersection = false, isDrawer = true) {
+        const iconUrl = uniforge.urls.icons.join('polygon.png'); // URL do ícone do marcador.
+
+        if (isDrawer) {
+            return {
+                allowIntersection: withIntersection, // Restringe a interseção de polígonos.
+                showArea: true,
+                icon: L.icon({
+                    iconUrl: iconUrl, // URL do ícone do marcador.
+                    iconSize: [16, 16],
+                    iconAnchor: [8, 8],
+                    popupAnchor: [0, -32]
+                }),
+                shapeOptions: {
+                    color: 'var(--red)', // Cor do polígono.           
+                    weight: 5,
+                    dashArray: '5, 10',
+                }
+            }
+        } else {
+            return {
+                color: 'var(--red)', // Cor do polígono.           
+                weight: 5,
+                dashArray: '5, 10',
+            }
+        }
+    },
+    regularShape: function (isDrawer = true) {
+        if (isDrawer) {
+            return {
+                shapeOptions: {
+                    color: 'var(--red)', // Cor do polígono.           
+                    weight: 5,
+                    dashArray: '5, 10',
+                }
+            }
+        } else {
+            return {
+                color: 'var(--red)', // Cor do polígono.           
+                weight: 5,
+                dashArray: '5, 10',
+            }
+        }
+    }
+}
+
+const drawer = {
+    marker: function (map, iconUrl) {
+        return new L.Draw.Marker(map, options.marker(iconUrl));
+    },
+    polygon: function (map, withIntersection = false) {
+        return new L.Draw.Polygon(map, options.polygon(withIntersection));
+    },
+    circle: function (map) {
+        return new L.Draw.Circle(map, options.regularShape());
+    },
+    rectangle: function (map) {
+        return new L.Draw.Rectangle(map, options.regularShape());
+    }
 }
 
 function _zoomIn(map) {
@@ -36,20 +108,8 @@ function _onPolygonDraw(map) {
     const iconUrl = uniforge.urls.icons.join('polygon.png'); // URL do ícone do marcador.
 
     // Ativar o desenho de polígono.
-    const polygonDrawer = new L.Draw.Polygon(map, {
-        allowIntersection: false, // Restringe a interseção de polígonos.
-        icon: L.icon({
-            iconUrl: iconUrl, // URL do ícone do marcador.
-            iconSize: [16, 16],
-            iconAnchor: [8, 8],
-            popupAnchor: [0, -32]
-        }),
-        shapeOptions: { 
-            color: 'var(--red)', // Cor do polígono.           
-            weight: 5,
-            dashArray: '5, 10',
-        }
-    });
+    const polygonDrawer = drawer.polygon(map);
+
     // Evento para desativar após o clique inicial (impedindo início imediato).
     map.on('click', function startDrawing() {
         polygonDrawer.enable();
@@ -59,13 +119,7 @@ function _onPolygonDraw(map) {
 
 function _onRetangleDraw(map) {
     // Ativar o desenho de retângulo.
-    const retangleDrawer = new L.Draw.Rectangle(map, {
-        shapeOptions: { 
-            color: 'var(--red)', // Cor do polígono.           
-            weight: 5,
-            dashArray: '5, 10',
-        }
-    });
+    const retangleDrawer = drawer.rectangle(map);
 
     // Evento para desativar após o clique inicial (impedindo início imediato).
     map.on('click', function startDrawing() {
@@ -76,13 +130,8 @@ function _onRetangleDraw(map) {
 
 function _onCircleDraw(map) {
     // Ativar o desenho de círculo.
-    const circleDrawer = new L.Draw.Circle(map, {
-        shapeOptions: { 
-            color: 'var(--red)', // Cor do polígono.           
-            weight: 5,
-            dashArray: '5, 10',
-        }
-    });
+    const circleDrawer = drawer.circle(map);
+
     // Evento para desativar após o clique inicial (impedindo início imediato).
     map.on('click', function startDrawing() {
         circleDrawer.enable();
@@ -93,14 +142,8 @@ function _onCircleDraw(map) {
 async function _onMarkerDraw(map) {
     const iconUrl = uniforge.urls.icons.join('marker.png'); // URL do ícone do marcador.
     // Ativar o desenho de marcador.
-    const markerDrawer = new L.Draw.Marker(map, {
-        icon: L.icon({
-            iconUrl: iconUrl, // URL do ícone do marcador.
-            iconSize: [32, 32],
-            iconAnchor: [2, 32],
-            popupAnchor: [0, -32]
-        })
-    });
+    const markerDrawer = drawer.marker(map, iconUrl);
+
     // Evento para desativar após o clique inicial (impedindo início imediato).
     map.on('click', function startDrawing() {
         markerDrawer.enable();
@@ -137,9 +180,9 @@ function onAddDraw(map) {
     return container;
 }
 
-function _onExpandLayer(map) {
+function _onExpandLayer() {
     const layerControl = document.querySelector('#layerControl');
-    layerControl.classList.toggle('active');  
+    layerControl.classList.toggle('active');
 }
 
 function onAddLayer(map) {
@@ -147,7 +190,7 @@ function onAddLayer(map) {
 
     const expandButton = L.DomUtil.create('button', 'leaflet-control-expand', container);
     expandButton.innerHTML = '<i class="fas fa-expand"></i>';
-    L.DomEvent.on(expandButton, 'click', _onExpandLayer.bind(this, map));
+    L.DomEvent.on(expandButton, 'click', _onExpandLayer.bind(this));
 
     return container;
 }
@@ -188,5 +231,7 @@ const utils = {
     onAddLayer: onAddLayer,
     onCreateTile: onCreateTile,
     iconMap: iconMap,
+    options: options,
+    drawer: drawer
 }
 export default utils;

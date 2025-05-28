@@ -652,7 +652,7 @@ export default class EntryForm extends SidebarForm {
         editor.setContent(""); // Garante que o editor seja iniciado vazio.
       },
       setup: (editor) => { this._setupInlineTinyMCE(editor); }
-    });
+    });   
 
     await tinymce.init(options);
   }

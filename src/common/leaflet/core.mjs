@@ -1,5 +1,6 @@
 import utils from "./utils.mjs";
 import LinkDialog from "../../models/dialogs/linkDialog.js";
+import Dialogs from "../../models/dialogs/dialog.js";
 
 const lControl = {
     /**
@@ -87,7 +88,12 @@ const lControl = {
         createTile: utils.onCreateTile
     }),
 
-    init: function (mapPath) {
+    /**
+    * Inicializa o controle do Mapa com a imagem fornecida.
+    * 
+    * @param {String} overlayURL - URL da imagem do Mapa.
+    */
+    init: function (overlayURL) {
         const map = lControl.map = L.map('map', {
             crs: L.CRS.Simple, // Usando o sistema de coordenadas simples do Leaflet para imagens personalizadas.
             center: [0.0, 0.0],
@@ -114,7 +120,7 @@ const lControl = {
         * Instância da camada de armazenagem a imagem do Mapa.
         * @type {L.ImageOverlay}
         */
-        const overlay = lControl.overlay = L.imageOverlay(mapPath, bounds, {
+        const overlay = lControl.overlay = L.imageOverlay(overlayURL, bounds, {
             zIndex: 1 /* Garantir que fique atrás do Layer do Grid */
         });
         overlay.addTo(map);
@@ -176,53 +182,23 @@ const lControl = {
         map.addControl(layerControl);
         map.addControl(draw);
 
-        _loadMapElements(); // Carrega os elementos do mapa do banco de dados.
+        lControl.loadElements(map.mid, uniforge.time.y.value); // Carrega os elementos do mapa do banco de dados.
 
         map.on('moveend', _checkMapVisibility);
         map.on('mousedown', _onUserMapClick);
         map.on('draw:created', _onDrawCreated);
 
-        function _loadMapElements() {
-            const elements = uniforge.doc.maps.get(map.mid).elements || [];
-            elements.forEach((elementData) => {
-                let element;
-                switch (elementData.type) {
-                    case 'circle': {
-                        element = L.circle(
-                            L.latLng(elementData.points.split(',').map(Number)),
-                            {}
-                        );
-                    } break;
-                    case 'marker': {
-                        element = L.marker(
-                            L.latLng(elementData.points.split(',').map(Number)),
-                            {}
-                        );
-                    } break;
-                    case 'polygon': {
-                        element = L.polygon(
-                            elementData.points.split(';').map(point => {
-                                const coords = point.split(',').map(Number);
-                                return L.latLng(coords[0], coords[1]);
-                            }),
-                            {}
-                        );
-                    } break;
-                    case 'rectangle': {
-                        element = L.rectangle(
-                            L.latLng(elementData.points.split(',').map(Number)),
-                            {}
-                        );
-                    } break;
-                    default: {
-                        console.warn(`Tipo de elemento desconhecido: ${elementData.type}`);
-                        return; // Ignora elementos com tipo desconhecido.
-                    }
-                }
-                element = _createMapElement(element); // Cria o elemento com o popup configurado.
-                lControl.mapElements.addLayer(element);
-            });
-        }
+        // Adicione um listener para o evento 'draw:started' para desabilitar o arrastre do mapa quando estiver desenhando um polígono.
+        map.on('draw:drawstart', function (e) {
+            if (e.layerType === 'polygon') {
+                map.dragging.disable();
+            }
+        });
+
+        // Adicione um listener para o evento 'draw:stopped' para habilitar o arrastre do mapa.
+        map.on('draw:drawstop', function (e) {
+            map.dragging.enable();
+        });
 
         // Função para calcular os pontos ao redor da uniforge.mapOverlay com um padding (0.0 a 1.0).
         function _checkMapVisibility() {
@@ -321,7 +297,7 @@ const lControl = {
                         layer.source = item; // Atribui o item como fonte da camada desenhada.
                         layer.type = e.layerType; // Tipo de camada desenhada (círculo, retângulo, polígono, etc.).
 
-                        layer = _createMapElement(layer); // Cria o elemento para a camada desenhada.
+                        layer = lControl.createPopup(layer); // Cria o elemento para a camada desenhada.
 
                         // Abre uma transação no banco de dados para adicionar o elemento.
                         await uniforge.db.beginTransaction();
@@ -342,7 +318,8 @@ const lControl = {
                         }
 
                         // Adiciona o elemento ao banco de dados.
-                        await uniforge.db.addMapElement(data);
+                        const result = await uniforge.db.addMapElement(data);
+                        layer._id = result.addedId;
 
                         lControl.mapElements.addLayer(layer);
                         // Adiciona a camada desenhada ao grupo de elementos do mapa.
@@ -358,84 +335,230 @@ const lControl = {
                 }
             }
         }
+    },
 
-        function _createMapElement(layer) {
-            const popupContent = document.createElement('div');
+    createPopup: function (layer) {
+        const source = layer.source;
+        const popupContent = document.createElement('div');
 
-            const title = document.createElement('strong');
-            title.innerText = item.title || 'Camada Desenhada';
-            title.classList.add('layer-popup-title');
+        const title = document.createElement('strong');
+        title.innerText = source.title || 'Camada Desenhada';
+        title.classList.add('layer-popup-title');
 
-            const popupBody = document.createElement('div');
-            popupBody.classList.add('layer-popup-body');
+        const popupBody = document.createElement('div');
+        popupBody.classList.add('layer-popup-body');
 
-            popupBody.innerHTML = layer.source.flavor || 'Nenhuma descrição disponível.';
+        popupBody.innerHTML = source.flavor || 'Nenhuma descrição disponível.';
 
-            const footer = document.createElement('div');
-            footer.classList.add('layer-popup-footer', 'flexrow');
+        const footer = document.createElement('div');
+        footer.classList.add('layer-popup-footer', 'flexrow');
 
-            const typeIcon = document.createElement('a');
-            typeIcon.innerHTML = `<i class="${utils.iconMap[layer.type]}"></i>`;
+        const typeIcon = document.createElement('a');
+        typeIcon.innerHTML = `<i class="${utils.iconMap[layer.type]}"></i>`;
 
-            footer.appendChild(typeIcon);
+        footer.appendChild(typeIcon);
 
-            if (layer.type === 'marker') {
-                const coordsSpan = document.createElement('span');
-                coordsSpan.classList.add('layer-popup-coords');
-                coordsSpan.innerText = `Y: ${layer._latlng.lat.toFixed(2)}, X: ${layer._latlng.lng.toFixed(2)}`;
+        if (layer.type === 'marker') {
+            const coordsSpan = document.createElement('span');
+            coordsSpan.classList.add('layer-popup-coords');
+            coordsSpan.innerText = `Y: ${layer._latlng.lat.toFixed(2)}, X: ${layer._latlng.lng.toFixed(2)}`;
 
-                footer.appendChild(coordsSpan);
+            footer.appendChild(coordsSpan);
+        }
+
+        popupContent.appendChild(title);
+        popupContent.appendChild(popupBody);
+        popupContent.appendChild(footer);
+
+        layer.bindPopup(popupContent.innerHTML);
+
+        return layer; // Retorna a camada desenhada com o popup configurado.
+    },
+
+
+    loadElements: function (mid, epoch = 1) {
+        lControl.mapElements.clearLayers();
+        const elements = uniforge.doc.maps.get(mid).elements || [];
+        const elementsOfEpoch = elements.filter(element => element.epoch === epoch);
+        elementsOfEpoch.forEach((elementData) => {
+            let element;
+            switch (elementData.type) {
+                case 'circle': {
+                    const points = elementData.points.split(';').map(point => {
+                        const coords = point.split(',').map(Number);
+                        return L.latLng(coords[0], coords[1]);
+                    });
+
+                    element = L.circle(points, utils.options.regularShape(false));
+                } break;
+                case 'marker': {
+                    const iconUrl = uniforge.urls.icons.join('marker.png'); // URL do ícone do marcador.
+                    const point = L.latLng(elementData.points.split(',').map(Number));
+
+                    element = L.marker(point, utils.options.marker(iconUrl));
+                } break;
+                case 'polygon': {
+                    const points = elementData.points.split(';').map(point => {
+                        const coords = point.split(',').map(Number);
+                        return L.latLng(coords[0], coords[1]);
+                    });
+
+                    element = L.polygon(points, utils.options.polygon(false, false));
+                } break;
+                case 'rectangle': {
+                    const points = elementData.points.split(';').map(point => {
+                        const coords = point.split(',').map(Number);
+                        return L.latLng(coords[0], coords[1]);
+                    });
+
+                    element = L.rectangle(points, utils.options.regularShape(false));
+                } break;
+                default: {
+                    console.warn(`Tipo de elemento desconhecido: ${elementData.type}`);
+                    return; // Ignora elementos com tipo desconhecido.
+                }
             }
 
-            popupContent.appendChild(title);
-            popupContent.appendChild(popupBody);
-            popupContent.appendChild(footer);
+            element.type = elementData.type; // Armazena o tipo do elemento.
+            element.source = _getSource(elementData.source); // Obtém a fonte do elemento.
 
-            layer.bindPopup(popupContent.innerHTML);
+            element = lControl.createPopup(element); // Cria o elemento com o popup configurado.
+            lControl.mapElements.addLayer(element);
 
-            return layer; // Retorna a camada desenhada com o popup configurado.
+            element._id = elementData._id;
+            element._leaflet_id = element._leaflet_id; // Armazena o ID do elemento.
+
+            _updateLayerControl();
+        });
+
+        function _getSource(source) {
+            const pattern = /^(entry|event|lineage|timeline)\{([a-zA-Z0-9]{16})\}$/;
+            const match = source.match(pattern);
+            if (match) {
+                const type = match[1];
+                const id = match[2];
+
+                return uniforge.doc[type].get(id);
+            } else {
+                return null;
+            }
+        }
+    }
+}
+
+function _updateLayerControl() {
+    const iconMap = utils.iconMap;
+    const mapElementsList = document.querySelector('#mapElementsList');
+    mapElementsList.innerHTML = ''; // Limpa a lista atual.
+
+    lControl.mapElements.eachLayer(function (layer) {
+        const li = document.createElement('li');
+        li.id = layer._id;
+        li.dataset.leafletId = layer._leaflet_id;
+        li.classList.add('layer-item', 'flexrow');
+
+        const content = document.createElement('div');
+        content.classList.add('layer-item-content', 'flexrow');
+
+        const icon = document.createElement('a');
+        icon.innerHTML = `<i class="${iconMap[layer.type]}"></i>`;
+
+        const span = document.createElement('span');
+        span.innerText = layer.source.title;
+
+        content.appendChild(icon);
+        content.appendChild(span);
+
+        const deleteButton = document.createElement('a');
+        deleteButton.classList.add('layer-item-delete');
+        deleteButton.innerHTML = '<i class="fa-solid fa-trash"></i>';
+
+        deleteButton.addEventListener('click', _onDeleteLayerItem);
+
+        li.appendChild(content);
+        li.appendChild(deleteButton);
+
+        li.addEventListener('mouseover', _onLayerItemMouseOver);
+        li.addEventListener('mouseleave', _onLayerItemMouseLeave)
+
+        mapElementsList.appendChild(li);
+    })
+
+    async function _onDeleteLayerItem(event) {
+        event.stopPropagation();
+        if (await Dialogs.confirm('Apagar Elemento', 'Deseja remover o elemento?')) {
+            const layerItem = event.target.closest('.layer-item');
+            const meid = layerItem.id;
+            const layerId = Number(layerItem.dataset.leafletId);
+
+            uniforge.db.deleteMapElement(meid);
+            lControl.mapElements.removeLayer(layerId);
+
+            await uniforge.db.rebuildDocs();
+            _updateLayerControl();
+        }
+    }
+
+    function _onLayerItemMouseLeave(event) {
+        event.stopPropagation();
+
+        const layerItem = event.target.closest('.layer-item');
+        const layerId = layerItem.dataset.leafletId;
+        const layer = lControl.mapElements.getLayer(layerId);
+
+        let element;
+        switch (layer.type) {
+            case 'marker': {
+                element = layer._icon;
+            } break;
+            case 'circle': {
+                element = layer._path;
+            } break;
+            case 'polygon': {
+                element = layer._path;
+            } break;
+            case 'rectangle': {
+                element = layer._path;
+            } break;
+            default: {
+                console.warn(`Tipo de elemento desconhecido: ${layer.type}`);
+                return; // Ignora elementos com tipo desconhecido.
+            }
         }
 
-        function _updateLayerControl() {
-            const iconMap = utils.iconMap;
-            const mapElementsList = document.querySelector('#mapElementsList');
-            mapElementsList.innerHTML = ''; // Limpa a lista atual.
+        element.style.outline = '';
+        element.style.outlineOffset = '';
+    }
 
-            var idx = 0;
-            lControl.mapElements.eachLayer(function (layer) {
-                const li = document.createElement('li');
-                li.classList.add('layer-item', 'flexrow');
+    function _onLayerItemMouseOver(event) {
+        event.stopPropagation();
+        const layerItem = event.target.closest('.layer-item');
+        const layerId = layerItem.dataset.leafletId;
+        const layer = lControl.mapElements.getLayer(layerId);
 
-                const content = document.createElement('div');
-                content.classList.add('layer-item-content', 'flexrow');
-
-                const icon = document.createElement('a');
-                icon.innerHTML = `<i class="${iconMap[layer.type]}"></i>`;
-
-                const span = document.createElement('span');
-                span.innerText = layer.source.title;
-
-                content.appendChild(icon);
-                content.appendChild(span);
-
-                const deleteButton = document.createElement('a');
-                deleteButton.classList.add('layer-item-delete');
-                deleteButton.innerHTML = '<i class="fa-solid fa-trash"></i>';
-
-                li.appendChild(content);
-                li.appendChild(deleteButton);
-
-                mapElementsList.appendChild(li);
-            })
+        let element;
+        switch (layer.type) {
+            case 'marker': {
+                element = layer._icon;
+            } break;
+            case 'circle': {
+                element = layer._path;
+            } break;
+            case 'polygon': {
+                element = layer._path;
+            } break;
+            case 'rectangle': {
+                element = layer._path;
+            } break;
+            default: {
+                console.warn(`Tipo de elemento desconhecido: ${layer.type}`);
+                return; // Ignora elementos com tipo desconhecido.
+            }
         }
 
-        return {
-            map: map,
-            draw: draw,
-            overlay: lControl.overlay,
-            grid: grid
-        }
-    },
+        element.style.outline = "5px ridge var(--light-text-color)";
+        element.style.outlineOffset = "5px";
+    }
 }
 
 export default lControl;

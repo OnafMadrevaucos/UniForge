@@ -80,32 +80,44 @@ export default class DBManager {
 
 
     async beginTransaction() {
-        if (!this.transactionStarted) {
-            console.log('UniForge | Abrindo transação....');
-            // Limpa o estado atual do gerenciador do banco de dados.
+        try {
+            if (!this.transactionStarted) {
+                console.log('UniForge | Abrindo transação....');
+                // Limpa o estado atual do gerenciador do banco de dados.
+                this.clear();
+                // Inicia uma nova transação.
+                await uniforge.sql.exec('BEGIN TRANSACTION');
+                // Registra o início da transação.
+                this.transactionStarted = true;
+            } else console.warn('UniForge | Há outra transação ainda aberta, finalize-a primeiro.');
+        } catch (error) {
+            console.error('UniForge | Erro ao iniciar a transação:', error);
+            // Se ocorrer um erro ao iniciar a transação, limpa o estado do gerenciador do banco de dados.
             this.clear();
-            // Inicia uma nova transação.
-            await uniforge.sql.exec('BEGIN TRANSACTION');
-            // Registra o início da transação.
-            this.transactionStarted = true;
-        } else console.warn('UniForge | Há outra transação ainda aberta, finalize-a primeiro.');
+        }
     }
 
     async commitTransaction() {
-        if (this.transactionStarted) {
-            console.log('UniForge | Confirmando transação....');
-            await uniforge.sql.exec('COMMIT');
+        try {
+            if (this.transactionStarted) {
+                console.log('UniForge | Confirmando transação....');
+                await uniforge.sql.exec('COMMIT');
 
-            // Se a operação afetou alguma linha, atualiza base de dados.
-            if (this.totalCanges > 0) this.rebuildDocs();
+                // Se a operação afetou alguma linha, atualiza base de dados.
+                if (this.totalCanges > 0) this.rebuildDocs();
 
-            this.transactionStarted = false;
-        } else console.warn('UniForge | Nenhuma transação aberta encontrada.');
+                this.transactionStarted = false;
+            } else console.warn('UniForge | Nenhuma transação aberta encontrada.');
+        } catch (error) {
+            console.error('UniForge | Erro ao confirmar a transação:', error);
+            // Se ocorrer um erro ao confirmar a transação, limpa o estado do gerenciador do banco de dados.
+            this.clear();
+        }
     }
 
     async rollbackTransaction(motive = '') {
         if (this.transactionStarted) {
-            console.log(`UniForge | A transação teve de ser revertida.${!motive.isEmpty() ? ` Motivo: ${motive}` : ''}.`);
+            console.log(`UniForge | A transação teve de ser revertida.${motive ? ` Motivo: ${motive}` : ''}.`);
             // Reverte a transação.
             await uniforge.sql.exec('ROLLBACK');
             // Reverte o estado do gerenciador do banco de dados para o padrão.
@@ -182,23 +194,9 @@ export default class DBManager {
             await this.createTimelineEventsTable();
             await this.createSettingsTable();
 
-
-            // Comita a transação principal.
-            await this.commitTransaction();
-        } catch (error) {
-            // Faz rollback em caso de erro ao criar as tabelas do banco de dados.
-            await this.rollbackTransaction(error);
-            return false;
-        }
-
-        try {
-            // Inicia a transação para popular o Banco de Dados com informações padrão.
-            await this.beginTransaction();
-
             await this.populateTomeTable();
             await this.populateEntryTypeTable();
             await this.populateRelevanceTable();
-            
             await this.populateMapTable();
 
             // Comita a transação.
@@ -234,7 +232,9 @@ export default class DBManager {
         params.push(data.icon);
         params.push(Number(data.type) ?? 0);
 
-        this.results = await this.#execQuery(query, params);
+        const result = await this.#execQuery(query, params);
+        result.lastInsertRowid = cid;
+        this.results = result;
 
         return this.result;
     }
@@ -262,7 +262,9 @@ export default class DBManager {
         params.push(data.htmlString);
         params.push(Number(data.isDraft));
 
-        this.results = await this.#execQuery(query, params);
+        const result = await this.#execQuery(query, params);
+        result.lastInsertRowid = sid;
+        this.results = result;
 
         return this.result;
     }
@@ -298,7 +300,9 @@ export default class DBManager {
         params.push(data.ext ?? 'jpeg');
         params.push(Number(data.isDraft));
 
-        this.results = await this.#execQuery(query, params);
+        const result = await this.#execQuery(query, params);
+        result.lastInsertRowid = eid;
+        this.results = result;
 
         return this.result;
     }
@@ -347,7 +351,9 @@ export default class DBManager {
         params.push(data.e_day);
         params.push(Number(data.isDraft ?? false));
 
-        this.results = await this.#execQuery(query, params);
+        const result = await this.#execQuery(query, params);
+        result.lastInsertRowid = evid;
+        this.results = result;
 
         return this.result;
     }
@@ -375,7 +381,9 @@ export default class DBManager {
         params.push(data.tree);
         params.push(data.isDraft);
 
-        this.results = await this.#execQuery(query, params);
+        const result = await this.#execQuery(query, params);
+        result.lastInsertRowid = ltid;
+        this.results = result;
 
         return this.result;
     }
@@ -396,7 +404,8 @@ export default class DBManager {
         params.push(data.tag);
         params.push(data.label);
 
-        this.results = await this.#execQuery(query, params);
+        const result = await this.#execQuery(query, params);
+        this.results = result;
 
         return this.result;
     }
@@ -416,7 +425,9 @@ export default class DBManager {
         params.push(data.ext);
         params.push(data.isDraft);
 
-        this.results = await this.#execQuery(query, params);
+        const result = await this.#execQuery(query, params);
+        result.lastInsertRowid = mid;
+        this.results = result;
 
         return this.result;
     }
@@ -436,7 +447,9 @@ export default class DBManager {
         params.push(data.source);
         params.push(data.points);
 
-        this.results = await this.#execQuery(query, params);
+        const result = await this.#execQuery(query, params);
+        result.lastInsertRowid = meid;
+        this.results = result;
 
         return this.result;
     }
@@ -1780,7 +1793,7 @@ export default class DBManager {
         this.results = await this.#execQuery(query);
         console.log('Tabela \'mapElements\' criada....OK.');
 
-        return this.result;        
+        return this.result;
     }
 
     /**
@@ -1896,10 +1909,20 @@ export default class DBManager {
         return this.result;
     }
 
+    /**
+     * Popula a tabela 'map' com um mapa padrão.
+     * 
+     * O mapa padrão é lido do arquivo 'defaultMap' na pasta raiz do projeto, e seus dados
+     * são inseridos na tabela 'map' com o título 'Mapa Global' e o sabor 'Mapa Padrão.'.
+     * 
+     * @returns {Promise<Object>} Uma promessa que informa as alterações realizadas no banco de dados.
+     */
     async populateMapTable() {
         console.log('Populando tabela \'map\'....');
 
-        const imageData = await uniforge.utils.imageToBlob('image/' + uniforge.urls.defaultMap);
+        const imageBuffer = await uniforge.fs.readFile(uniforge.urls.defaultMap);
+        const imageExt = await uniforge.path.extname(uniforge.urls.defaultMap);
+        const imageData = await uniforge.utils.bufferToBlob(imageBuffer, imageExt);
 
         const map = {
             mid: 'De#m@Pgl0ba1Unfg',
@@ -1911,8 +1934,19 @@ export default class DBManager {
             isDraft: false
         }
 
-        let query = 'INSERT INTO tome (mid, sid, title, flavor, img, ext, isDraft) ';
+        let query = 'INSERT INTO map (mid, sid, title, flavor, img, ext, isDraft) ';
         query += 'VALUES (?,?,?,?,?,?,?);';
+
+        const params = [
+            map.mid,
+            map.sid,
+            map.title,
+            map.flavor,
+            map.img,
+            map.ext,
+            Number(map.isDraft)
+        ];
+
         this.results = await this.#execQuery(query, params);
 
         console.log('Tabela \'map\' populada....OK.');
@@ -2196,12 +2230,6 @@ export default class DBManager {
             result = await uniforge.sql.exec(query, params);
         } else {
             result = await uniforge.sql.exec(query);
-        }
-
-        // Se é uma transação única com o Banco de Dados, atualiza a base de dados.
-        if (!this.transactionStarted && false) {
-            // Independente do resultado se deve atualizar a base de dados.
-            await this.rebuildDocs();
         }
 
         // Retorna o resultado da consulta.

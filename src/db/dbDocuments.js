@@ -176,7 +176,7 @@ export default class DBDocuments {
                 .filter((mapElement) => mapElement.mid === map.mid)
                 .forEach((mapElement) => {
                     // Adiciona o Elemento ao conjunto.
-                    mapElementsSet.push({ _id: mapElement.meid });
+                    mapElementsSet.push({ _id: mapElement.meid, ...mapElement });
                 });
 
             // Adiciona o Map ao conjunto, incluindo seus Elementos.

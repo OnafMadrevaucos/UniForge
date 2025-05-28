@@ -24,6 +24,15 @@ contextBridge.exposeInMainWorld('path', {
     const result = await ipcRenderer.invoke('path-join', args);
     return result;
   },
-  resolve: async (protoPath) => await ipcRenderer.invoke('path-resolve', protoPath)
+  resolve: async (protoPath) => await ipcRenderer.invoke('path-resolve', protoPath),
+  extname: async (filePath) =>  await ipcRenderer.invoke('path-extname', filePath)
 });
-console.log('UniForge | Configurando pré-carregamentos de Templates.');
+console.log('UniForge | Configurando pré-carregamentos de Diretórios.');
+
+contextBridge.exposeInMainWorld('fs', {
+  readFile: (path) => { 
+    const result = ipcRenderer.invoke('read-file', path);
+    return result;
+  }
+});
+console.log('UniForge | Configurando pré-carregamentos de Manipulador de Arquivos.');

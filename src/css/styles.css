@@ -794,6 +794,7 @@ input:checked+.slider::before {
     right: -30vw;
     height: 20vh;
     width: 35vw;
+    pointer-events: none;
     background-color: var(--dark-blueT87);
     border-radius: var(--default-border-radius);
     padding: 5px;
@@ -804,7 +805,8 @@ input:checked+.slider::before {
 
 .layer-control-wrapper.active {
     opacity: 1;
-    right: 8.5vw;
+    right: 64px;
+    pointer-events: all;
     z-index: 2002;
 }
 
@@ -837,6 +839,12 @@ input:checked+.slider::before {
     border-radius: var(--default-border-radius);
     box-shadow: var(--small-shadow);
     user-select: none;
+    transition: transform 0.3s ease-in-out;
+}
+
+.layer-control-wrapper .layer-control-content ul .layer-item:hover {
+    cursor: pointer;
+    transform: scale(1.01);
 }
 
 .layer-control-content ul .layer-item .layer-item-content {
@@ -1005,7 +1013,7 @@ input:checked+.slider::before {
     display: flex;
     flex-direction: column;
     transition: width 0.3s ease-in-out;
-    z-index: 1001;
+    z-index: 10000;
 }
 
 #menuSidebar:hover {
@@ -3562,83 +3570,6 @@ input:checked+.slider::before {
 }
 
 /* ------ TinyMCE Editor ------*/
-#mainEditor {
-    flex: 1;
-    width: var(--fill-width);
-    /*height: 300px;*/
-    border: var(--filled-border);
-    border-radius: 5px;
-    padding: 10px;
-    background: var(--light-background-color);
-    color: var(--light-text-color);
-}
-
-.non-editable {
-    pointer-events: none;
-    cursor: default;
-}
-
-.non-editable * {
-    caret-color: transparent;
-}
-
-.simple-tmce {
-    margin-block: 5px;
-    background-color: var(--light-background-color);
-    border-radius: var(--default-border-radius);
-    box-shadow: var(--small-shadow);
-    padding: 5px 10px;
-    min-height: var(--flavor-height);
-    max-height: var(--flavor-height);
-}
-
-.simple-tmce:focus-visible {
-    outline: 1px solid;
-}
-
-.simple-tmce * {
-    font-size: var(--tmce-size);
-    line-height: 1.35em;
-    margin: 0;
-}
-
-
-#eventFlavorEditor.simple-tmce {
-    height: var(--fill-height);
-    max-height: var(--fill-height);
-}
-
-#captionEditor.simple-tmce {
-    height: 5vh;
-}
-
-#tinymce {
-    font-family: 'Georgia', serif;
-    font-size: var(--tmce-size);
-    line-height: 1.25em;
-    color: var(--light-text-color);
-    background: none;
-    background-color: var(--light-background-color);
-    padding: 5px;
-    height: 100%;
-    margin: 0;
-    outline: none;
-}
-
-.simple-tmce::before,
-#tinymce::before {
-    font-size: var(--tmce-size);
-    font-style: italic;
-    color: var(--light-text-color) !important;
-    line-height: 1.35em;
-    padding-left: 5px;
-    cursor: text;
-}
-
-.text-content {
-    align-self: stretch;
-}
-
 .tox.tox-tinymce {
     box-shadow: var(--small-shadow);
     border: none;
@@ -3664,14 +3595,15 @@ input:checked+.slider::before {
 }
 
 .tox-edit-area iframe {
-    min-height: 100%;
-    height: 100%;
+    min-height: var(--fill-height);
+    height: var(--fill-height);
 }
 
 .tox-edit-area iframe body {
     display: flex;
     flex-direction: column;
     justify-content: flex-start;
+    height: var(--fill-height);
     /* Garante que o conteúdo vá para o topo */
 }
 
@@ -3683,6 +3615,80 @@ input:checked+.slider::before {
 .tox-collection__item .tox-collection__item-label * {
     background-color: transparent !important;
     margin-block: 5px;
+}
+
+#tinymce {
+    font-family: 'Georgia', serif;
+    font-size: var(--tmce-size);
+    line-height: 1.25em;
+    color: var(--light-text-color);
+    background: none;
+    background-color: var(--light-background-color);
+    padding: 5px;
+    height: 100%;
+    margin: 0;
+    outline: none;
+}
+
+.non-editable {
+    pointer-events: none;
+    cursor: default;
+}
+
+.non-editable * {
+    caret-color: transparent;
+}
+
+.main-editor {
+    display: flex;
+    flex-direction: column;
+    width: var(--fill-width);   
+    border-radius: var(--default-border-radius);
+    padding: 10px;
+    background: var(--light-background-color);
+    color: var(--light-text-color);
+}
+
+.simple-tmce {
+    margin-block: 5px;
+    background-color: var(--light-background-color);
+    border-radius: var(--default-border-radius);
+    box-shadow: var(--small-shadow);
+    padding: 5px 10px;
+    min-height: var(--flavor-height);
+    max-height: var(--flavor-height);
+}
+
+.simple-tmce:focus-visible {
+    outline: 1px solid;
+}
+
+.simple-tmce * {
+    font-size: var(--tmce-size);
+    line-height: 1.35em;
+    margin: 0;
+}
+
+.event-info .simple-tmce {
+    height: var(--fill-height);
+    max-height: var(--fill-height);
+}
+
+#captionEditor.simple-tmce {
+    height: 5vh;
+}
+.simple-tmce::before,
+#tinymce::before {
+    font-size: var(--tmce-size);
+    font-style: italic;
+    color: var(--light-text-color) !important;
+    line-height: 1.35em;
+    padding-left: 5px;
+    cursor: text;
+}
+
+.text-content {
+    align-self: stretch;
 }
 
 #tinymce p,
@@ -3706,6 +3712,34 @@ input:checked+.slider::before {
     box-shadow: none !important;
 }
 
+/* ------ Text Link ------ */
+#tinymce span.linked-text,
+.text-content span.linked-text {
+    border-bottom: 1px dashed var(--red);
+    cursor: alias;
+}
+
+.text-content span.linked-text[data-type="event"] {
+    cursor: help;
+}
+
+.text-content span.linked-text::after {
+    content: "\f56b";
+    /* Unicode do ícone de link (Font Awesome) */
+    font-family: "Font Awesome 5\ Free";
+    font-weight: 900;
+    margin-inline: 2px;
+}
+
+.text-content span.linked-text:hover,
+.text-content span.linked-text:hover::after {
+    text-shadow: var(--text-highlight);
+}
+
+#tinymce span.linked-text:hover,
+#tinymce span.linked-text:hover::after {
+    text-shadow: var(--dark-text-highlight);
+}
 
 /* ------ Messages ------ */
 .msg-container {
@@ -4009,36 +4043,6 @@ input:checked+.slider::before {
     font-style: normal;
     color: var(--dark-red);
 }
-
-/* ------ Text Link ------ */
-#tinymce span.linked-text,
-.text-content span.linked-text {
-    border-bottom: 1px dashed var(--red);
-    cursor: alias;
-}
-
-.text-content span.linked-text[data-type="event"] {
-    cursor: help;
-}
-
-.text-content span.linked-text::after {
-    content: "\f56b";
-    /* Unicode do ícone de link (Font Awesome) */
-    font-family: "Font Awesome 5\ Free";
-    font-weight: 900;
-    margin-inline: 2px;
-}
-
-.text-content span.linked-text:hover,
-.text-content span.linked-text:hover::after {
-    text-shadow: var(--text-highlight);
-}
-
-#tinymce span.linked-text:hover,
-#tinymce span.linked-text:hover::after {
-    text-shadow: var(--dark-text-highlight);
-}
-
 /* ------ Native Tooltip ------ */
 [data-tooltip] {
     position: relative;

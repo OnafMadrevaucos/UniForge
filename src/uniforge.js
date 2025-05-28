@@ -72,6 +72,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         tinymceOptions: {
             default: {
                 editable_class: 'editable',
+                body_class: 'main-editor',
                 license_key: 'gpl',
                 plugins: ['anchor', 'autolink', 'codesample', 'link', 'lists', 'searchreplace', 'table', 'visualblocks', 'image'],
                 toolbar: 'undo redo | blocks | bold italic backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | entryLink blockquote sendImage | addLoremIpsum',
@@ -110,6 +111,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 disable_focus: true
             },
             simple: {
+                body_class: 'simple-editor',
                 license_key: 'gpl',
                 plugins: 'quickbars',
                 quickbars_selection_toolbar: 'undo redo | bold italic',
@@ -121,6 +123,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 content_css: cssname,
             },
             lite: {
+                body_class: 'lite-editor',
                 license_key: 'gpl',
                 browser_spellcheck: true,
                 menubar: false,
@@ -205,7 +208,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     checkState();
 
-    configureLeaflet();
+    await configureLeaflet();
 });
 
 // Limpa o armazenamento local ao fechar a janela.
@@ -236,9 +239,21 @@ async function refreshDocuments() {
     return uniforge.doc;
 }
 
-// Configura a ferramenta de mapas Leaflet 
-function configureLeaflet() {
-    uniforge.ctrls.leaflet = lControl.init(uniforge.urls.defaultMap);
+// Configura a ferramenta de mapas Leaflet.
+async function configureLeaflet() {
+    /* 
+        TODO: Verificar se o usuário informou um mapa padrão alternativo no painel de configuração.
+    */
+    const mid = lControl.constants.DEFAULT_OVERLAY; // Define o ID do mapa como o mapa padrão.
+
+    const defaultMap = uniforge.doc.maps.get(mid);
+    let overlayURL = null;
+    if (defaultMap) {
+        overlayURL = await uniforge.utils.blobToImage(defaultMap.img, defaultMap.ext);        
+    }
+
+    // Inicializa o controle de mapas Leaflet.
+    lControl.init(overlayURL);
 }
 // Configura os elementos da Topbar de Ferramentas
 function configureTopBar() {
@@ -269,7 +284,7 @@ function configureBody() {
 }
 
 function configureHooks() {
-    registerHook('beforeRender', async () => { await refreshDocuments(); });    
+    registerHook('beforeRender', async () => { await refreshDocuments(); });
 }
 // Configura o listeners que tratam os eventos dos tabs do Menu Lateral e as rotinas de fechamento do Form
 function activateMainListeners() {
@@ -387,7 +402,7 @@ async function renderForm(targetId, showAfter = true) {
  */
 
 async function recoverForm(form) {
-    try {        
+    try {
         if (!form) throw new Error(`O formulário '${form}' não foi encontrado.`);
 
         await form.show(true);
@@ -419,6 +434,10 @@ function _setTime(year) {
 
     currentYearInput.value = uniforge.time.y.label;
     timeEraSpan.textContent = uniforge.time.era;
+
+    const mid = lControl.constants.DEFAULT_OVERLAY; // Define o ID do mapa como o mapa padrão.
+
+    lControl.loadElements(mid, uniforge.time.y.value);
 }
 
 // Função para criar um elemento com classes e atributos
