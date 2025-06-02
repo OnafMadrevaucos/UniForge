@@ -1,15 +1,17 @@
 <div id="settings" class="tabs-control flexcol">
     <div class="tabs-options flex-1 flexrow">
         <button id="main" class="flexcol selected" data-panel="mainPanel"><i class="fas fa-sliders"></i> Geral</button>
-        <button id="encyclopedia" class="flexcol" data-panel="chapterPanel"><i class="fa-solid fa-bookmark"></i> Capítulos</button>
-        <button id="database" class="flexcol" data-panel="databasePanel"><i class="fas fa-database"></i> Banco de Dados</button>        
+        <button id="encyclopedia" class="flexcol" data-panel="chapterPanel"><i class="fa-solid fa-bookmark"></i>
+            Capítulos</button>
+        <button id="database" class="flexcol" data-panel="databasePanel"><i class="fas fa-database"></i> Banco de
+            Dados</button>
         <button id="leaflet" class="flexcol" data-panel="leafletPanel"><i class="fas fa-map"></i> Leaflet ®</button>
     </div>
     <div class="settings-container flexrow">
         <div id="mainPanel" class="panel flexrow">
-            <div id="sideBar" class="sidebar">                            
+            <div id="sideBar" class="sidebar">
                 <foldertree id="subjects" item="settings"></foldertree>
-                <div class="footer">                    
+                <div class="footer">
                     <div id="searchEntry" class="input-container search-bar flexrow">
                         <input type="text" id="searchInput" class="search-data" placeholder="Pesquisar opção...">
                         <button id="searchBtn" class="search-button"><i class="fas fa-magnifying-glass"></i></button>
@@ -20,21 +22,21 @@
                 <fieldset class="info-set core flexcol not-disable">
                     <div class="data-group check">
                         <span class="data-label">Switch: </span>
-                        <switch id="exampleSwitch"/>
-                    </div>                    
+                        <switch id="exampleSwitch" />
+                    </div>
                     <div class="data-group text">
                         <span class="data-label">Text Edit: </span>
-                        <input type="text" class="data"/>
+                        <input type="text" class="data" />
                     </div>
                 </fieldset>
                 <fieldset class="info-set misc flexcol not-disable">
                     <div class="data-group text">
                         <span class="data-label">Text Edit: </span>
-                        <input type="text" class="data"/>
+                        <input type="text" class="data" />
                     </div>
                     <div class="data-group check">
                         <span class="data-label">Checkbox: </span>
-                        <combo id="exampleCombo" value="options" blank="0"/>
+                        <combo id="exampleCombo" value="options" blank="0" />
                     </div>
                 </fieldset>
             </div>
@@ -88,7 +90,7 @@
                 </div>
             </div>
             <div class="content flexcol">
-                <div class="header flexrow">                    
+                <div class="header flexrow">
                     <div class="header-info flexcol">
                         <input id="titleInput" type="text" class="title" name="title" placeholder="Título da Entrada"
                             disabled />
@@ -135,8 +137,54 @@
                 </div>
             </div>
         </div>
-        <div id="leafletPanel" class="panel hidden">
-            Leaflet Panel
+        <div id="leafletPanel" class="panel flexcol hidden">
+            <div class="content flexcol">
+                <fieldset class="info-set flexcol">
+                    <div>
+                        <h3>Mapas</h3>
+                        <div class="data-group text">
+                            <span class="data-label">Mapa Padrão </span>
+                            <input id="defaultMapInput" type="file" class="data" accept="image/*"/>
+                            <a class="layer-item-delete" data-tooltip="Excluir Padrão" data-tooltip-left="true"><i class="fa-solid fa-trash"></i></a>
+                        </div>
+                        <h4>Camadas</h4>
+                        <div class="data-group text">
+                            <span class="data-label">Rótulos </span>
+                            <input id="defaultLabelInput" type="file" class="data" accept="image/*"/>
+                            <a class="layer-item-delete" data-tooltip="Excluir Padrão" data-tooltip-left="true"><i class="fa-solid fa-trash"></i></a>
+                        </div>
+                        <div class="data-group text">
+                            <span class="data-label">Caminhos </span>
+                            <input id="defaultPathInput" type="file" class="data" accept="image/*"/>
+                            <a class="layer-item-delete" data-tooltip="Excluir Padrão" data-tooltip-left="true"><i class="fa-solid fa-trash"></i></a>
+                        </div><div class="data-group text">
+                            <span class="data-label">Cidades </span>
+                            <input id="defaultCitiesInput" type="file" class="data" accept="image/*"/>
+                            <a class="layer-item-delete" data-tooltip="Excluir Padrão" data-tooltip-left="true"><i class="fa-solid fa-trash"></i></a>
+                        </div>
+                    </div>
+                </fieldset>
+                <fieldset class="info-set flexcol">
+                    <div>
+                        <h3>Elementos do Mapa</h3>                        
+                    </div>
+                </fieldset>
+                <fieldset class="info-set flexcol">
+                    <div>
+                        <h3>Grid</h3>                        
+                    </div>
+                </fieldset>
+                <div class="footer flexrow">
+                    <div class="fixed buttons flexrow">
+                        <button id="cancelButton" class="cancel-entry disabled">
+                            <i class="fas fa-square-xmark"></i> Cancelar
+                        </button>
+                        <button id="saveButton" class="disabled">
+                            <i class="fa-regular fa-floppy-disk"></i> Salvar
+                        </button>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>

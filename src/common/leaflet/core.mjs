@@ -19,12 +19,21 @@ const lControl = {
     constants: {
         DEFAULT_OVERLAY: 'De#m@Pgl0ba1Unfg',
 
+        EXTENT:[0.00000000, -4054.00000000, 6000.00000000, 0.00000000],
+
+        TILE_EXTENT:[0.00000000, -4054.00000000, 6000.00000000, 0.00000000],
+        TILE_SIZE: 256,
+
+        MIN_ZOOM: 3,
+        MAX_ZOOM: 5,
+
+        MAX_RESOLUTION: 1.00000000,
+
         MIN_POINTS: 2000,
-        IMG_WIDTH: 5850,
-        IMG_HEIGHT: 4550,
+        IMG_WIDTH: 6000,
+        IMG_HEIGHT: 4054,
         VIEW_WIDTH: 3840,
-        VIEW_HEIGHT: 2160,
-        TILE_SIZE: 200
+        VIEW_HEIGHT: 2160,       
     },
 
     /**
@@ -91,44 +100,116 @@ const lControl = {
     /**
     * Inicializa o controle do Mapa com a imagem fornecida.
     * 
-    * @param {String} overlayURL - URL da imagem do Mapa.
+    * @param {String} worldMapURL - URL da imagem do Mapa Mundi.
     */
-    init: function (overlayURL) {
+    init: function (worldMapURL) {
+        if (!worldMapURL) {
+            uniforge.ctrls.msgBox.showWarning('Nenhuma imagem de mapa foi informada. Informe um mapa padrão no painel de Configuração.');
+            return null;
+        }
+
+        let mapExtent = lControl.constants.EXTENT;
+        var mapMinZoom = lControl.constants.MIN_ZOOM;
+        var mapMaxZoom = lControl.constants.MAX_ZOOM;
+        var mapMaxResolution = lControl.constants.MAX_RESOLUTION;
+        var mapMinResolution = Math.pow(2, mapMaxZoom) * mapMaxResolution;
+
+        var tileExtent = lControl.constants.TILE_EXTENT;
+        var tileSize = lControl.constants.TILE_SIZE;
+
+        var crs = L.CRS.Simple;
+        crs.transformation = new L.Transformation(1, -tileExtent[0], -1, tileExtent[3]);
+        crs.scale = function (zoom) {
+            return Math.pow(2, zoom) / mapMinResolution;
+        };
+        crs.zoom = function (scale) {
+            return Math.log(scale * mapMinResolution) / Math.LN2;
+        };
+
+        let worldMap;
         const map = lControl.map = L.map('map', {
-            crs: L.CRS.Simple, // Usando o sistema de coordenadas simples do Leaflet para imagens personalizadas.
-            center: [0.0, 0.0],
-            maxZoom: 3,
-            minZoom: -2,
-            zoomSnap: 0.1,
+            crs: crs, // Usando o sistema de coordenadas simples do Leaflet para imagens personalizadas.            
+            maxZoom: mapMaxZoom,
+            minZoom: mapMinZoom,
+            //zoomSnap: 0.1,
             zoomControl: false, // Desativa o controle de zoom padrão para personalizá-lo.
-            maxBoundsViscosity: 1.0
+            //maxBoundsViscosity: 1.0
         });
 
-        map.mid = lControl.constants.DEFAULT_OVERLAY; // Define o ID do mapa como o mapa padrão.
-
-        const mapElements = lControl.mapElements = new L.FeatureGroup();
-
         // Calcula os limites de imagem com base na largura/altura.
-        const bounds = [[0, 0], [lControl.constants.VIEW_HEIGHT, lControl.constants.VIEW_WIDTH]];
+        const bounds = [[
+            crs.unproject(L.point(mapExtent[2], mapExtent[3])),
+            crs.unproject(L.point(mapExtent[0], mapExtent[1]))
+        ]];
 
-        map.setMaxBounds(lControl.constants.IMG_HEIGHT, lControl.constants.IMG_WIDTH);
+        map.setView(L.latLng(2160, 3840), mapMinZoom);
+
+        worldMap = L.tileLayer(`file://${worldMapURL}/{z}/{x}/{y}.png`, {
+            minZoom: mapMinZoom, maxZoom: mapMaxZoom,
+            tileSize: L.point(tileSize, tileSize),
+            noWrap: true,
+            maxZoom: mapMaxZoom,
+            attribution: '&copy; <a href="https://www.maptiler.com/engine/">Rendered with MapTiler Engine</a>',
+            tms: false
+        });
+
+        // Adiciona a camada do mapa mundi ao mapa.
+        map.addLayer(worldMap);
 
         // Ajusta a visualização inicial para se ajustar aos limites da imagem.
         map.fitBounds(bounds);
 
-        /**
-        * Instância da camada de armazenagem a imagem do Mapa.
-        * @type {L.ImageOverlay}
-        */
-        const overlay = lControl.overlay = L.imageOverlay(overlayURL, bounds, {
-            zIndex: 1 /* Garantir que fique atrás do Layer do Grid */
-        });
-        overlay.addTo(map);
+        map.mid = lControl.constants.DEFAULT_OVERLAY; // Define o ID do mapa como o mapa padrão.
 
+        const mapElements = lControl.mapElements = new L.FeatureGroup();    
+        
+         /**
+        * Instância da camada de armazenagem a imagem que representa os caminhos do Mapa.
+        * @type {L.ImageOverlay}
+        *        
+        */
+        const paths = lControl.overlay = L.imageOverlay(`${uniforge.urls.mapOverlays}/paths.png`, bounds, {
+            zIndex: 1,
+            interactive: false
+        }); 
+        paths.addTo(map);   
+        paths.bringToFront(); 
+
+        /**
+        * Instância da camada de armazenagem a imagem que representa as cidades do Mapa.
+        * @type {L.ImageOverlay}
+        *        
+        */
+        const cities = lControl.overlay = L.imageOverlay(`${uniforge.urls.mapOverlays}/cities.png`, bounds, {
+            zIndex: 2,
+            interactive: false
+        });  
+        cities.addTo(map); 
+        cities.bringToFront();         
+
+        /**
+        * Instância da camada de armazenagem a imagem que representa os nomes do Mapa.
+        * @type {L.ImageOverlay}
+        *        
+        */
+        const labels = lControl.overlay = L.imageOverlay(`${uniforge.urls.mapOverlays}/labels.png`, bounds, {
+            zIndex: 3,
+            interactive: false
+        });    
+        labels.addTo(map);
+        labels.bringToFront();
+
+        const overlayLayerControl = L.control.layers(null, {
+            "Caminhos": paths,
+            "Cidades": cities,            
+            "Nomes": labels
+        }).addTo(map);
+                
         const scale = L.control.scale({
             imperial: false
         });
         scale.addTo(map);
+        
 
         // Grupo para armazenar as camadas desenhadas.
         map.addLayer(mapElements);
@@ -169,6 +250,7 @@ const lControl = {
 
         const draw = new lControl.CustomDrawControl();
 
+        
         const grid = new lControl.TransparentGridLayer({
             tileSize: lControl.constants.TILE_SIZE,
             opacity: 0.8, // Adjust transparency.
@@ -177,6 +259,7 @@ const lControl = {
 
         grid.addTo(map);
         grid.bringToFront();
+        
 
         map.addControl(main);
         map.addControl(layerControl);
@@ -184,7 +267,7 @@ const lControl = {
 
         lControl.loadElements(map.mid, uniforge.time.y.value); // Carrega os elementos do mapa do banco de dados.
 
-        map.on('moveend', _checkMapVisibility);
+        //map.on('moveend', _checkMapVisibility);
         map.on('mousedown', _onUserMapClick);
         map.on('draw:created', _onDrawCreated);
 
@@ -335,6 +418,8 @@ const lControl = {
                 }
             }
         }
+
+        return lControl;
     },
 
     createPopup: function (layer) {

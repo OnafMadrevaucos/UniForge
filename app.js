@@ -2,6 +2,7 @@ import { app, BrowserWindow, Menu, globalShortcut, ipcMain } from 'electron';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
+import express from 'express'; 
 import Database from 'better-sqlite3';
 import { result } from 'lodash-es';
 
@@ -20,6 +21,15 @@ const db = new Database(path.join(__dirname, './src/db/database.db'));
 
 // Remove o menu padrão
 Menu.setApplicationMenu(null);
+
+// Servidor Express para tiles
+/*
+const server = express();
+server.use('/tiles', express.static(path.join(__srcname, '/ui/maps/default')));
+server.listen(3000, () => {
+  console.log('Tile server rodando em http://localhost:3000/tiles/');
+});
+*/
 
 app.whenReady().then(() => {
   console.log('============================= UNIFORGE ============================');
@@ -170,7 +180,6 @@ function CreateWindow() {
     mainWindow = null;
   });
 }
-
 // ------------------ FUNÇÕES RENDERER ------------------
 
 /**
@@ -257,8 +266,8 @@ function pathExtname(filePath) {
  * @param {string} path - O caminho absoluto do arquivo a ser lido.
  * @returns {Buffer} - O conteúdo do arquivo lido.
  */
-function readFile(path) {  
-  const result = fs.readFileSync(path);  
+function readFile(path) {
+  const result = fs.readFileSync(path);
   return result;
 }
 

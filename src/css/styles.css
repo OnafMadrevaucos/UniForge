@@ -722,11 +722,6 @@ input:checked+.slider::before {
     text-shadow: none;
 }
 
-.leaflet-pane .leaflet-overlay-pane {
-    z-index: 150 !important;
-}
-
-
 .leaflet-popup .leaflet-popup-content-wrapper {
     background-color: var(--dark-red);
     color: var(--light-text-color);
@@ -2017,6 +2012,17 @@ input:checked+.slider::before {
     flex: 1;
 }
 
+#settings .content {
+    gap: var(--big-gap-size);
+}
+#settings .content::before {
+    content: none;
+    display: none;
+}
+#settings .content .info-set {
+    height: auto;
+}
+
 #settings #mainPanel.panel,
 #settings #chapterPanel.panel {
     padding-left: 0;
@@ -2024,14 +2030,6 @@ input:checked+.slider::before {
 
 #settings #mainPanel .sidebar {
     box-shadow: none;
-}
-
-#settings #mainPanel .content {
-    gap: var(--big-gap-size);
-}
-
-#settings #mainPanel .content .info-set {
-    height: auto;
 }
 
 #settings #databasePanel .data-group {
@@ -2082,6 +2080,19 @@ input:checked+.slider::before {
     color: var(--light-text-color);
     overflow-y: auto;
     height: 200px;
+}
+
+#settings #leafletPanel .info-set .data-group.text {
+    gap: var(--default-gap-size);
+}
+
+
+#settings .footer {
+    margin-top: auto;
+}
+
+#settings #leafletPanel .footer .fixed.buttons {
+    flex: 0;
 }
 
 /* ------ Article Type Form ------ */
@@ -3098,6 +3109,7 @@ input:checked+.slider::before {
     color: var(--light-text-color);
 }
 
+.panel .info-set h3,
 .sidebar h3 {
     font-size: var(--heading-2-size);
     font-variant: small-caps;

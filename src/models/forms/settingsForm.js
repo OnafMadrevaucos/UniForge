@@ -36,6 +36,11 @@ export default class SettingsForm extends EntryForm {
         this.isEventForm = false;
     }
 
+    /**@inheritdoc */
+    prepareData() {
+        return super.prepareData();
+    }
+
     /** @override */
     prepareFolders(data) {
         data.folders = uniforge.doc.chapters.sort();
@@ -81,7 +86,7 @@ export default class SettingsForm extends EntryForm {
 
         this.configureDatabasePanel();
         this.configureEncycloPanel();
-        this.configureLeafletPanel();
+        await this.configureLeafletPanel();
     }
 
     /* ---------------------------------------------------------------------------------------------------------------- */
@@ -163,17 +168,31 @@ export default class SettingsForm extends EntryForm {
         });
     }
     /**
-   * Configura o conteúdo do panel da Enciclopédia de Dados.
-   * @param {HTMLElement} panel - O elemento que representa o panel carregado.
-   */
-    async configureEncycloPanel(panel) {
+     * Configura o conteúdo do panel da Enciclopédia de Dados.
+     */
+    async configureEncycloPanel() {
     }
     /**
-   * Configura o conteúdo do panel do módulo do Leaflet®.
-   * @param {HTMLElement} panel - O elemento que representa o panel carregado.
-   */
-    configureLeafletPanel(panel) {
-        console.log('Leaflet');
+     * Configura o conteúdo do panel do módulo do Leaflet®.
+     */
+    async configureLeafletPanel() {
+        const defaultMapInput = this.querySelector('#defaultMapInput');
+        const mid = uniforge.constants.leaflet.DEFAULT_OVERLAY; // Define o ID do mapa como o mapa padrão.
+        const defaultMap = uniforge.doc.maps.get(mid);
+
+        if (!defaultMap) {            
+            const mapBuffer = await uniforge.fs.readFile(uniforge.urls.defaultMap);
+            const mapExt = await uniforge.path.extname(uniforge.urls.defaultMap);
+            
+            const mapFile = new File([mapBuffer], `default.${mapExt}`, { type: mapExt });           
+
+            // Criar um DataTransfer e adicionar o arquivo
+            const dataTransfer = new DataTransfer();
+            dataTransfer.items.add(mapFile);
+
+            // Atribuir os arquivos ao input
+            defaultMapInput.files = dataTransfer.files;
+        }
     }
 
     /**

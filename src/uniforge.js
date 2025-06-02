@@ -18,7 +18,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         background: await uniforge.path.join('/ui/lib-background.png'),
         blankImg: await uniforge.path.join('/ui/blank-image.svg'),
 
-        defaultMap: await uniforge.path.join('/ui/map/default.jpg'),
+        worldMap: await uniforge.path.join('/ui/maps/world'),
+
+        mapOverlays: await uniforge.path.join('/ui/maps/world/overlays'),
 
         // Urls de Diretórios usados pelo sistema.
         models: await uniforge.path.join('/models/'),
@@ -243,17 +245,10 @@ async function refreshDocuments() {
 async function configureLeaflet() {
     /* 
         TODO: Verificar se o usuário informou um mapa padrão alternativo no painel de configuração.
-    */
-    const mid = lControl.constants.DEFAULT_OVERLAY; // Define o ID do mapa como o mapa padrão.
-
-    const defaultMap = uniforge.doc.maps.get(mid);
-    let overlayURL = null;
-    if (defaultMap) {
-        overlayURL = await uniforge.utils.blobToImage(defaultMap.img, defaultMap.ext);        
-    }
+    */   
 
     // Inicializa o controle de mapas Leaflet.
-    lControl.init(overlayURL);
+    uniforge.ctrls.leaflet = lControl.init(uniforge.urls.worldMap);
 }
 // Configura os elementos da Topbar de Ferramentas
 function configureTopBar() {
@@ -435,9 +430,9 @@ function _setTime(year) {
     currentYearInput.value = uniforge.time.y.label;
     timeEraSpan.textContent = uniforge.time.era;
 
-    const mid = lControl.constants.DEFAULT_OVERLAY; // Define o ID do mapa como o mapa padrão.
+    const mid = uniforge.constants.leaflet.DEFAULT_OVERLAY; // Define o ID do mapa como o mapa padrão.
 
-    lControl.loadElements(mid, uniforge.time.y.value);
+    uniforge.ctrls.leaflet.loadElements(mid, uniforge.time.y.value);
 }
 
 // Função para criar um elemento com classes e atributos
