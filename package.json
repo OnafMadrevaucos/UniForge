@@ -1,6 +1,6 @@
 {
   "name": "uniforge",
-  "version": "0.8.1",
+  "version": "0.8.2",
   "main": "app.js",
   "type": "module",
   "scripts": {
@@ -26,6 +26,7 @@
     "express": "^5.1.0",
     "fs": "^0.0.1-security",
     "handlebars": "^4.7.8",
+    "html2canvas": "^1.4.1",
     "jspdf": "^3.0.1",
     "leaflet": "^1.9.4",
     "leaflet-draw": "^1.0.4",

@@ -234,7 +234,7 @@ async function testPDF() {
     uniforge.pdf.init();
 
     const html = document.createElement('div');
-    html.innerHTML = '<h1>Teste de PDF</h1><p>Este é um Teste de PDF</p>';
+    html.innerHTML = '<h1>Teste de PDF</h1>Este é um Teste de PDF';
     uniforge.pdf.fromHTML(html);
 }   
 

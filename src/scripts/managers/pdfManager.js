@@ -1,9 +1,15 @@
 import { jsPDF } from '../../common/jspdf/jspdf.mjs';
+import FilePickerDialog from '../../models/dialogs/filePickerDialog.js';
 export default class PDFManager {
     #doc = null;
 
     init(html=null) {
-        this.#doc = new jsPDF();
+        this.#doc = new jsPDF({
+            orientation: 'p',
+            unit: 'mm',
+            format: 'a4',
+            putOnlyUsedFonts: true
+        });
 
         if(html) {
             this.fromHTML(html);
@@ -13,9 +19,16 @@ export default class PDFManager {
     fromHTML(html) {
         
         this.#doc.html(html, {
-            callback: async function (doc) { await doc.save(); },
-            margin: [3, 2, 3, 2],
+            callback: this._onCreatePDF.bind(this),
+            margin: [30, 20, 30, 20],
             autoPaging: 'text'
         });
+    }
+
+    async _onCreatePDF() {
+        const result = await FilePickerDialog.configDialog();
+        if(!result) return;
+
+        await this.#doc.save('');
     }
 }

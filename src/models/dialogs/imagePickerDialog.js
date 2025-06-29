@@ -7,7 +7,7 @@ export default class FilePickerDialog extends BaseDialog {
             width: '475px'
         }));
 
-        this.template = 'filePickerDialog'; // Define o template do diálogo.
+        this.template = 'imgPickerDialog'; // Define o template do diálogo.
     }
 
     /**

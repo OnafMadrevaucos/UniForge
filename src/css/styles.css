@@ -680,9 +680,11 @@ input:checked+.slider::before {
     border: none !important;
     background-color: transparent !important;
 }
-.leaflet-touch .leaflet-control-layers a {    
+
+.leaflet-touch .leaflet-control-layers a {
     padding: 0;
 }
+
 .leaflet-touch .leaflet-control-layers .leaflet-control-layers-list {
     background-color: var(--dark-blueT87) !important;
     border-radius: var(--default-border-radius);
@@ -751,7 +753,8 @@ input:checked+.slider::before {
     border-radius: var(--default-border-radius);
 }
 
-.leaflet-popup .leaflet-popup-content-wrapper, .leaflet-popup-tip {
+.leaflet-popup .leaflet-popup-content-wrapper,
+.leaflet-popup-tip {
     background: var(--dark-red);
 }
 
@@ -773,13 +776,16 @@ input:checked+.slider::before {
     top: 5px;
     font-weight: 800;
 }
+
 .leaflet-popup .leaflet-popup-content .layer-popup-body {
     height: var(--fill-height);
     overflow-y: auto;
 }
+
 .leaflet-popup .leaflet-popup-content .layer-popup-body p {
     margin: 0;
 }
+
 .leaflet-popup .leaflet-popup-content .layer-popup-footer {
     position: absolute;
     bottom: 1vh;
@@ -787,6 +793,7 @@ input:checked+.slider::before {
     width: var(--fill-width);
     padding-right: 5px;
 }
+
 .leaflet-popup .leaflet-popup-content .layer-popup-footer span {
     flex: 1;
     text-align: end;
@@ -795,9 +802,11 @@ input:checked+.slider::before {
     color: var(--light-blue);
     user-select: none;
 }
+
 .leaflet-popup .leaflet-popup-content .layer-popup-footer a {
     color: var(--light-text-color);
 }
+
 .leaflet-popup .leaflet-popup-content .layer-popup-footer a:hover {
     cursor: default;
     text-shadow: none;
@@ -1421,6 +1430,7 @@ input:checked+.slider::before {
     ;
 }
 
+.dialog .main .file-dialgo,
 .dialog .main .image-dialog,
 .dialog .main .chapter-dialog {
     overflow: hidden;
@@ -1510,6 +1520,113 @@ input:checked+.slider::before {
     align-self: center;
     max-width: 650px;
     max-height: 600px;
+}
+
+.dialog .main .file-dialog {
+    height: var(--fill-height);
+}
+
+.dialog .main .file-dialog .current-dir {
+    gap: 5px;
+}
+
+.dialog .main .file-dialog .current-dir button {
+    flex: 0 0 30px;
+}
+
+.dialog .main .file-dialog .current-dir .data-fields {
+    align-content: center;
+    flex: 1;
+}
+
+.dialog .main .file-dialog .current-dir .data-fields input {
+    width: var(--fill-width);
+}
+
+.dialog .main .file-dialog .set-favorite {
+    gap: var(--small-gap-size);
+    padding-block: 5px;
+}
+
+.dialog .main .file-dialog .set-favorite span {
+    font-weight: 700;
+}
+
+.dialog .main .file-dialog .set-favorite .tag-list {
+    flex: 1;
+    margin-left: 5px;
+}
+
+.dialog .main .file-dialog .upload-file {
+    margin-top: auto;
+}
+.dialog .main .file-dialog .upload-file input[type="file"] {
+    color: var(--light-text-color);
+    background-color: var(--light-blue);
+    padding: 5px;
+    border-radius: var(--default-border-radius);
+}
+
+.dialog .split-buttons {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    width: fit-content;
+    gap: 0;
+}
+
+.dialog .split-buttons button {
+    border-radius: 0;
+    flex: 0;
+    margin: 0;
+    color: var(--light-text-color);
+    width: auto;
+    padding: 7px;
+}
+
+.dialog .split-buttons button:first-of-type {
+    border-top-left-radius: var(--default-border-radius);
+    border-bottom-left-radius: var(--default-border-radius);
+}
+
+.dialog .split-buttons button:last-of-type {
+    border-top-right-radius: var(--default-border-radius);
+    border-bottom-right-radius: var(--default-border-radius);
+}
+
+.dialog .split-buttons button:not(.active) {
+    background-color: transparent;
+}
+
+.dialog .directory {
+    flex: 0 2;
+}
+
+.dialog .directory ul {
+    list-style: none;
+    gap: var(--default-gap-size);
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 0;
+}
+
+.dialog .directory ul li {
+    padding: 10px;
+}
+.dialog .directory .folders-list li {
+    background-color: var(--blueT50);    
+    border-radius: var(--default-border-radius);
+}
+.dialog .directory .files-list li {
+    border: var(--filled-border);  
+}
+.dialog .directory .files-list li:first-of-type {
+    border-top-left-radius: var(--default-border-radius);
+    border-top-right-radius: var(--default-border-radius);
+}
+.dialog .directory .files-list li:last-of-type {
+    border-bottom-left-radius: var(--default-border-radius);
+    border-bottom-right-radius: var(--default-border-radius);
 }
 
 .dialog .sidebar {
@@ -2037,10 +2154,12 @@ input:checked+.slider::before {
 #settings .content {
     gap: var(--big-gap-size);
 }
+
 #settings .content::before {
     content: none;
     display: none;
 }
+
 #settings .content .info-set {
     height: auto;
 }
@@ -3676,7 +3795,7 @@ input:checked+.slider::before {
 .main-editor {
     display: flex;
     flex-direction: column;
-    width: var(--fill-width);   
+    width: var(--fill-width);
     border-radius: var(--default-border-radius);
     padding: 10px;
     background: var(--light-background-color);
@@ -3711,6 +3830,7 @@ input:checked+.slider::before {
 #captionEditor.simple-tmce {
     height: 5vh;
 }
+
 .simple-tmce::before,
 #tinymce::before {
     font-size: var(--tmce-size);
@@ -4077,6 +4197,7 @@ input:checked+.slider::before {
     font-style: normal;
     color: var(--dark-red);
 }
+
 /* ------ Native Tooltip ------ */
 [data-tooltip] {
     position: relative;
@@ -4091,7 +4212,7 @@ input:checked+.slider::before {
     box-shadow: var(--default-shadow);
     background-color: var(--grey);
     color: var(--text-color);
-    z-index: 9999;
+    z-index: 99999;
     padding: 8px;
     width: 150px;
     line-height: normal;

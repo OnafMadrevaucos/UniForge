@@ -1,14 +1,66 @@
-<div class="image-dialog flexcol">
-    <div class="data-group text file">
-        <div id="fileContainer" class="file-container flexrow">
-            <span class="data-label">Escolha uma imagem: </span>
-            <input type="text" id="chosenFilePath" class="file-path" disabled>
-            <a id="chooseFileButton"><i class="fas fa-upload"></i></a>
-            <input type="file" id="hiddenImageInput" class="hidden" accept="image/*">
+<div class="file-dialog flexcol">
+    <div class="data-group current-dir">
+        <button type="button" class="fas fa-arrow-turn-up" data-action="goBack" data-tooltip="Voltar"
+            aria-label="Voltar"></button>
+        <div class="data-fields">
+            <input type="text" name="target" value="">
+        </div>
+        <button type="button" class="fas fa-folder-plus" data-action="makeDir" data-tooltip="Criar Pasta"
+            data-tooltip-left="true"></button>
+    </div>
+    <div class="set-favorite flexrow">
+        <span>Favoritos</span>
+        <a data-action="setFavorite" data-tooltip="Adicionar Pasta Atual aos Favoritos">
+            <i class="fas fa-plus"></i>
+        </a>
+        <div class="tag-list"></div>
+    </div>
+    <div class="data-group filter-dir text">
+        <span class="data-label">Filtrar Resultado </span>
+        <input type="text" id="filterDir">
+    </div>
+    <div class="data-group view-modes text">
+        <span class="data-label">Modo de Exibição </span>
+        <div class="modes-list split-buttons">
+            <button type="button" class="fas fa-bars active" data-mode="list" data-tooltip="Exibição de Lista"
+                data-tooltip-left="true"></button>
+            <button type="button" class="fas fa-table-list" data-mode="thumbs" data-tooltip="Exibição de Miniaturas"
+                data-tooltip-left="true"></button>
+            <button type="button" class="fas fa-table-cells-large" data-mode="tiles" data-tooltip="Exibição de Quadros"
+                data-tooltip-left="true"></button>
+            <button type="button" class="fas fa-image" data-mode="images" data-tooltip="Exibição de Imagens"
+                data-tooltip-left="true"></button>
         </div>
     </div>
-    <div class="data-group text">
-        <span class="data-label">Legenda: </span>
-        <input type="text" id="captionInput" placeholder="Digite a legenda...">
+
+    <div class="directory">
+        <ul class="folders-list flexcol">
+            <li class="dir" data-directory="" data-action="pickDirectory" data-path="assets" data-name="assets">
+                <i class="fas fa-folder fa-fw" inert=""></i> assets
+            </li>
+            <li class="dir" data-directory="" data-action="pickDirectory" data-path="modules" data-name="modules">
+                <i class="fas fa-folder fa-fw" inert=""></i> modules
+            </li>
+        </ul>
+    </div>
+
+    <div class="directory">
+        <ul class="files-list details">
+            <li class="file" data-file="" data-action="pickFile" data-path="Curse-of-Strahd.jpg"
+                data-name="Curse-of-Strahd.jpg">
+                <img src="Curse-of-Strahd.jpg" loading="lazy">
+                <i class="fas fa-file fa-fw" inert=""></i> Curse-of-Strahd.jpg
+            </li>
+        </ul>
+    </div>
+
+    <div class="data-group upload-file">
+        <span class="data-label"><i class="fas fa-upload fa-fw" inert=""></i> Enviar</span>
+        <input type="file" name="upload" disabled="" title="">
+    </div>
+
+    <div class="data-group selected-file">
+        <span class="data-label">Selecionado </span>
+        <input type="text" id="file-picker-file" name="file" value="">
     </div>
 </div>
