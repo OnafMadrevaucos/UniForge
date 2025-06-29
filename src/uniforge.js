@@ -8,6 +8,7 @@ import DBDocuments from "./db/dbDocuments.js";
 
 import * as esm from "./common/uniforge-esm.mjs";
 import lControl from "./common/leaflet/core.mjs";
+import PDFManager from "./scripts/managers/pdfManager.js";
 
 // Realiza as configurações iniciais da aplicação ao carregar o conteúdo do DOM.
 document.addEventListener('DOMContentLoaded', async () => {
@@ -136,6 +137,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         },
 
         /**
+         * Instância do gerenciador de PDFs.
+         * 
+         * @type {PDFManager}
+        */
+        pdf: new PDFManager(),
+
+        /**
          * Controles relacionados à interface do usuário.
          * 
          * @type {Object}
@@ -211,6 +219,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     checkState();
 
     await configureLeaflet();
+
+    testPDF();
 });
 
 // Limpa o armazenamento local ao fechar a janela.
@@ -219,6 +229,14 @@ window.addEventListener("beforeunload", () => {
     const state = JSON.parse(json);
     if (!state.keep) uniforge.state.clear();
 });
+
+async function testPDF() {
+    uniforge.pdf.init();
+
+    const html = document.createElement('div');
+    html.innerHTML = '<h1>Teste de PDF</h1><p>Este é um Teste de PDF</p>';
+    uniforge.pdf.fromHTML(html);
+}   
 
 
 /** 

@@ -56,10 +56,10 @@ const _loremIpsum = [
 ];
 
 /**
-       * Testa se um valor é "vazio"; seja undefined ou um objeto sem conteúdo.
-       * @param {*} value       - O valor a ser testado
-       * @returns {boolean}     - O valor é vazio?
-    */
+* Testa se um valor é "vazio"; seja undefined ou um objeto sem conteúdo.
+* @param {*} value       - O valor a ser testado
+* @returns {boolean}     - O valor é vazio?
+*/
 export function isEmpty(value) {
     const t = getType(value);
     switch (t) {

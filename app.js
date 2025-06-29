@@ -2,7 +2,6 @@ import { app, BrowserWindow, Menu, globalShortcut, ipcMain } from 'electron';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
-import express from 'express'; 
 import Database from 'better-sqlite3';
 import { result } from 'lodash-es';
 
@@ -13,23 +12,17 @@ const __srcname = path.join(__dirname, 'src');
 
 let mainWindow;
 
+console.log(__filename);
+
 /**
  * Instância do banco de dados SQLite.
  * @type {Database}
  */
-const db = new Database(path.join(__dirname, './src/db/database.db'));
+const db = new Database(path.join(__dirname, '/db/database.db'));
 
 // Remove o menu padrão
 Menu.setApplicationMenu(null);
 
-// Servidor Express para tiles
-/*
-const server = express();
-server.use('/tiles', express.static(path.join(__srcname, '/ui/maps/default')));
-server.listen(3000, () => {
-  console.log('Tile server rodando em http://localhost:3000/tiles/');
-});
-*/
 
 app.whenReady().then(() => {
   console.log('============================= UNIFORGE ============================');
@@ -149,12 +142,12 @@ app.on('window-all-closed', () => {
 function CreateWindow() {
   mainWindow = new BrowserWindow({
     webPreferences: {
-      preload: path.join(__dirname, '/src/scripts/preload.js'),
+      preload: path.join(__dirname, '/preload.js'),
       worldSafeExecuteJavaScript: true,
       contextIsolation: true,
       nodeIntegration: false
     },
-    icon: path.join(__dirname, '/src/ui/icons/icone.png'),
+    icon: path.join(__srcname, '/ui/icons/icone.png'),
     show: false,
   });
 

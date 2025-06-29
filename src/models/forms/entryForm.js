@@ -467,6 +467,26 @@ export default class EntryForm extends SidebarForm {
     this.controlStates(state);
   }
 
+  /** @inheritdoc */
+  close() {
+    // Limpa o conteúdo do editor principal, se houver.
+    if (this.mainEditor) {
+      this.mainEditor.remove();
+    }
+
+    // Limpa o conteúdo do editor de floreio, se houver.
+    if (this.flavorEditor) {
+      this.flavorEditor.remove();
+    }
+
+    // Limpa o conteúdo do editor de eventos, se houver.
+    if (this.eventEditor) {
+      this.eventEditor.remove();
+    }
+
+    super.close();
+  }
+
   /**
   * Fecha dialog aberto, se houver um.
   */
@@ -496,18 +516,22 @@ export default class EntryForm extends SidebarForm {
   async configureContent() {
     await super.configureContent();
 
-    // Configura o editor Tiny MCE principal .
-    await this.configureTinyMCE();
+    // Se o formulário for do tipo 'atlas', não configure os editores Tiny MCE.
+    if (this.type !== 'atlas') {
 
-    // Se o formulário for de Configurações, não configure os editores de floreio.
-    if (!this.isSettings) {
-      // Configura o editor TinyMCE de floreio associado ao formulário.
-      await this.configureFlavorTinyMCE();
+      // Configura o editor Tiny MCE principal .
+      await this.configureTinyMCE();
 
-      // Se o formulário for de Eventos, configura o editor TinyMCE de floreio dos eventos.
-      if (this.isEventForm) {
-        // Configura o editor TinyMCE de floreio dos eventos associados à entrada do formulário.
-        await this.configureEventFlavorTinyMCE();
+      // Se o formulário for de Configurações, não configure os editores de floreio.
+      if (!this.isSettings) {
+        // Configura o editor TinyMCE de floreio associado ao formulário.
+        await this.configureFlavorTinyMCE();
+
+        // Se o formulário for de Eventos, configura o editor TinyMCE de floreio dos eventos.
+        if (this.isEventForm) {
+          // Configura o editor TinyMCE de floreio dos eventos associados à entrada do formulário.
+          await this.configureEventFlavorTinyMCE();
+        }
       }
     }
   }
@@ -652,7 +676,7 @@ export default class EntryForm extends SidebarForm {
         editor.setContent(""); // Garante que o editor seja iniciado vazio.
       },
       setup: (editor) => { this._setupInlineTinyMCE(editor); }
-    });   
+    });
 
     await tinymce.init(options);
   }

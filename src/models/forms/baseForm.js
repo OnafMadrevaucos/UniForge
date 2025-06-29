@@ -195,9 +195,7 @@ export default class BaseForm extends Application {
     this._activateForm();
   }
 
-  /**
-   * @inheritdoc
-   */
+  /** @inheritdoc */
   close() {  
     const tabs = document.querySelectorAll('.tab');
     let sourceFinded = false;

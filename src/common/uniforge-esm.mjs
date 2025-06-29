@@ -77,6 +77,7 @@ const state = {
     clear: utilsEsm.state.clearState
 }
 
+console.log('UniForge | Gerando variável global \'uniforge\'...');
 // Constante Global
 /**
 * Objeto global `uniforge` que armazena configurações e instâncias relacionadas à aplicação,
@@ -85,7 +86,6 @@ const state = {
 * @namespace uniforge
 */
 
-console.log('UniForge | Gerando variável global \'uniforge\'...');
 globalThis.uniforge = { 
     /**
     * Referência ao corpo do documento HTML.
@@ -110,7 +110,7 @@ globalThis.uniforge = {
     * Ferramentas de manipulação de Arquivos.
     * @type {Object}
     */
-    fs: window.fs,
+    fs: window.fs,    
 
     /**
     * Instância de SQL usada pela aplicação.
