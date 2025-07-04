@@ -1,9 +1,9 @@
 <div class="file-dialog flexcol">
     <div class="data-group current-dir">
-        <button type="button" class="fas fa-arrow-turn-up" data-action="goBack" data-tooltip="Voltar"
+        <button  id="goBackButton" type="button" class="fas fa-arrow-turn-up" data-tooltip="Voltar"
             aria-label="Voltar"></button>
         <div class="data-fields">
-            <input type="text" name="target" value="">
+            <input id="targetDir" type="text" name="target" value="">
         </div>
         <button type="button" class="fas fa-folder-plus" data-action="makeDir" data-tooltip="Criar Pasta"
             data-tooltip-left="true"></button>
@@ -34,23 +34,12 @@
     </div>
 
     <div class="directory">
-        <ul class="folders-list flexcol">
-            <li class="dir" data-directory="" data-action="pickDirectory" data-path="assets" data-name="assets">
-                <i class="fas fa-folder fa-fw" inert=""></i> assets
-            </li>
-            <li class="dir" data-directory="" data-action="pickDirectory" data-path="modules" data-name="modules">
-                <i class="fas fa-folder fa-fw" inert=""></i> modules
-            </li>
+        <ul class="folders-list flexcol">            
         </ul>
     </div>
 
     <div class="directory">
-        <ul class="files-list details">
-            <li class="file" data-file="" data-action="pickFile" data-path="Curse-of-Strahd.jpg"
-                data-name="Curse-of-Strahd.jpg">
-                <img src="Curse-of-Strahd.jpg" loading="lazy">
-                <i class="fas fa-file fa-fw" inert=""></i> Curse-of-Strahd.jpg
-            </li>
+        <ul class="files-list details">            
         </ul>
     </div>
 

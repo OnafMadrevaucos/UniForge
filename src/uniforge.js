@@ -19,14 +19,16 @@ document.addEventListener('DOMContentLoaded', async () => {
         background: await uniforge.path.join('/ui/lib-background.png'),
         blankImg: await uniforge.path.join('/ui/blank-image.svg'),
 
-        worldMap: await uniforge.path.join('/ui/maps/world'),
+        worldMap: await uniforge.path.join('/data/maps/world'),
 
-        mapOverlays: await uniforge.path.join('/ui/maps/world/overlays'),
+        mapOverlays: await uniforge.path.join('/data/maps/world/overlays'),
 
         // Urls de Diretórios usados pelo sistema.
+        common: await uniforge.path.join('/common/'),
         models: await uniforge.path.join('/models/'),
         templates: await uniforge.path.join('/templates/'),
         scripts: await uniforge.path.join('/scripts/'),
+        data: await uniforge.path.join('/data/'),
         ui: await uniforge.path.join('/ui/'),
         icons: await uniforge.path.join('/ui/icons/'),
     }

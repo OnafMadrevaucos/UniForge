@@ -33,6 +33,10 @@ contextBridge.exposeInMainWorld('fs', {
   readFile: (path) => { 
     const result = ipcRenderer.invoke('read-file', path);
     return result;
+  },
+  readDir: (path) => { 
+    const result = ipcRenderer.invoke('read-dir', path);
+    return result;
   }
 });
 console.log('UniForge | Configurando pré-carregamentos de Manipulador de Arquivos.');

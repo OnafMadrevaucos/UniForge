@@ -118,6 +118,14 @@ app.whenReady().then(() => {
   ipcMain.handle('read-file', (event, filePath) => readFile(filePath));
 
   /**
+   * Manipulador para ler o conteúdo de um diretório.
+   * @param {Electron.IpcMainEvent} event - O evento IPC recebido.
+   * @param {string} filePath - O caminho do diretório a ser lido.
+   * @returns {Buffer} - O conteúdo do diretório lido.
+   */
+  ipcMain.handle('read-dir', (event, filePath) => readDir(filePath));
+
+  /**
    * Manipulador para buscar templates de arquivos.
    * @param {string} fileName - Nome do arquivo do template.
    */
@@ -262,6 +270,42 @@ function pathExtname(filePath) {
 function readFile(path) {
   const result = fs.readFileSync(path);
   return result;
+}
+
+/**
+ * Lê o conteúdo de um diretório em sincronia.
+ * @param {string} dir   - O caminho absoluto do diretório a ser lido.
+ * @returns {Buffer}      - O conteúdo do diretório lido.
+ */
+function readDir(dir) {
+  const fullDir = path.join(__srcname, dir);
+  const dirData = fs.readdirSync(fullDir);
+
+  const folders = [];
+  const files = [];
+
+  dirData.forEach((item) => {
+    const filePath = path.join(fullDir, item);
+    const stats = fs.statSync(filePath);
+
+    if (stats.isDirectory()) {
+      const folder = {
+        name: item,
+        path: path.join(dir, item),
+      };
+
+      folders.push(folder);
+    } else {
+      const file = {
+        name: item,
+        path: path.join(dir, item),
+      };
+
+      files.push(file);
+    }
+  });
+
+  return { folders: folders, files: files };
 }
 
 /**
