@@ -115,6 +115,14 @@ app.whenReady().then(() => {
    * @param {string} filePath - O caminho do arquivo a ser lido.
    * @returns {Buffer} - O conteúdo do arquivo lido.
    */
+  ipcMain.handle('save-pdf', (event, path, name, buffer) => savePDF(path, name, buffer));
+
+  /**
+   * Manipulador para ler o conteúdo de um arquivo.
+   * @param {Electron.IpcMainEvent} event - O evento IPC recebido.
+   * @param {string} filePath - O caminho do arquivo a ser lido.
+   * @returns {Buffer} - O conteúdo do arquivo lido.
+   */
   ipcMain.handle('read-file', (event, filePath) => readFile(filePath));
 
   /**
@@ -260,6 +268,25 @@ function pathExtname(filePath) {
   var result = path.extname(filePath);
   result = result.replace('.', ''); // Remove o ponto inicial da extensão.
   return result;
+}
+
+/**
+ * Salva um buffer de dados em um arquivo PDF.
+ *
+ * @param {string} path - O caminho completo do arquivo a ser salvo.
+ * @param {string} name - O nome do arquivo sem a extens o.
+ * @param {Buffer} buffer - O buffer de dados do PDF.
+ */
+function savePDF(target, name, buffer) {
+  console.log(target);
+  const fullPath = path.join(__srcname, target);
+  fs.writeFile(fullPath, buffer, (error) => {
+    if (error) {
+      console.error('Erro ao salvar o PDF:', error);
+    } else {
+      console.log('PDF salvo com sucesso em:', path);
+    }
+  });
 }
 
 /**

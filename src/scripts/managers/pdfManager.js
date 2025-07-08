@@ -26,9 +26,10 @@ export default class PDFManager {
     }
 
     async _onCreatePDF() {
-        const result = await FilePickerDialog.configDialog();
+        const result = await FilePickerDialog.configDialog(null, {onlyFolders: true, type: 'pdf'});
         if(!result) return;
 
-        await this.#doc.save('');
+        const pdfBuffer = this.#doc.output("arraybuffer");
+        uniforge.pdfCtrl.save(result.path, result.name || 'document.pdf', pdfBuffer);
     }
 }

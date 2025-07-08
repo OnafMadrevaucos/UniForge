@@ -34,6 +34,24 @@ export default class FilePickerDialog extends BaseDialog {
         this.field = options.field ?? null;
 
         /**
+        * Uma flag que indica se o diálogo deve exibir apenas pastas.
+        * @type {boolean}
+        */
+        this.onlyFolders = options.onlyFolders ?? false;
+
+        /**
+        * Uma flag que indica se o diálogo deve exibir o campo de legenda de texto.
+        * @type {boolean}
+        */
+        this.hasCaption = options.hasCaption ?? false;
+
+        /**
+        * Uma expressão regular usada para filtrar os arquivos exibidos.
+        * @type {string}
+        */
+        this.filter = '';
+
+        /**
         * O modo de exibição do diálogo.
         * @type {string}
         */
@@ -46,13 +64,23 @@ export default class FilePickerDialog extends BaseDialog {
         this.source = {
             target: this.#getFileDir(this.request)
         };
+
+        /**
+        * O caminho do arquivo selecionado.
+        * @type {string}
+        */
+        this.selectedData = {
+            path: null,
+            name: null,
+            ext: null
+        };
     }
 
     /**
     * Os tipos de arquivos aceitos pelo diálogo.
     * @type {string[]}
     */
-    static FILE_TYPES = ["any", "folder", "font", "image", "text"];
+    static FILE_TYPES = ["any", "folder", "font", "image", "text", "pdf"];
 
     /**
      * Registro da última pasta explorada pelo diálogo.
@@ -159,10 +187,51 @@ export default class FilePickerDialog extends BaseDialog {
     * @inheritdoc
     */
     async configureElements() {
+        const uploadFileDiv = this.querySelector(".upload-file");
+        const imageCaptionDiv = this.querySelector(".image-caption");
+
+        const fileExtensionDiv = this.querySelector(".file-extension");
+        const fileExtensionSelect = this.querySelector("#fileExtension");
+
+        if (this.hasCaption) imageCaptionDiv.classList.remove("hidden");
+        else imageCaptionDiv.classList.add("hidden");
+
+        if (this.onlyFolders) {
+            
+            const selectedFileSpan = this.querySelector(".selected-file span");
+
+            uploadFileDiv.classList.add("hidden");
+            fileExtensionDiv.classList.remove("hidden");
+
+            selectedFileSpan.textContent = "Nome do Arquivo";
+
+            this.extensions.forEach((ext) => {
+                const option = document.createElement("option");
+                option.value = ext;
+                option.textContent = ext.replace(".", "").toUpperCase();
+                fileExtensionSelect.appendChild(option);
+            });
+
+            // Se o tipo do diálogo for PDF, desabilita a opção de extensão de arquivo (que é única).
+            fileExtensionSelect.disabled = (this.type === 'pdf');
+
+            this.selectedData.ext = fileExtensionSelect.value;
+        } else {
+            uploadFileDiv.classList.remove("hidden");
+            fileExtensionDiv.classList.add("hidden");
+
+            fileExtensionSelect.innerHTML = "";
+            fileExtensionSelect.value = null;
+        }
+
+        const filePickerFile = this.querySelector('#filePickerFile');
+        filePickerFile.readOnly = !this.onlyFolders;
+
         await this.browse(this.target);
     }
 
-    async browse(target) {
+    async browse(target = this.target) {
+        this.#loaded = false;
         this.source.target = target;
 
         const targetDir = this.querySelector("#targetDir");
@@ -174,18 +243,38 @@ export default class FilePickerDialog extends BaseDialog {
         const filesList = this.querySelector('.directory ul.files-list');
         filesList.innerHTML = "";
 
+        // Define o modo de exibição dos arquivos no diálogo.
+        filesList.classList.remove(this.constructor.LAST_DISPLAY_MODE);
+        filesList.classList.add(this.displayMode);
+
+        // Busca o conteúdo do diretório alvo.
         const dirContent = await uniforge.fs.readDir(this.target);
+
+        // Aplica os filtros aos arquivos e pastas.
+        dirContent.folders = dirContent.folders.filter((folder) => { return this.#applyFilterInFolders(folder); });
 
         // Gera as pastas do diretório alvo, se houver.
         dirContent.folders.forEach((folder) => {
             this.#appendFolderItem(folder);
         });
 
-        // Gera os arquivos do diretório alvo, se houver.
-        dirContent.files.forEach((file) => {
-            this.#appendFileItem(file);
-        });
+        if (!this.onlyFolders) {
+            dirContent.files = dirContent.files.filter((file) => {
+                // Arquivos que não tenham a extensão aceita pelo diálogo, serão ignorados.
+                const ext = `.${file.name.split(".").pop()}`;
+                if (!this.extensions.includes(ext))
+                    return false;
 
+                return this.#applyFilter(file);
+            });
+
+            // Gera os arquivos do diretório alvo, se houver.
+            dirContent.files.forEach((file) => {
+                this.#appendFileItem(file);
+            });
+        }
+
+        // Avisa que o conteúdo foi carregado.
         this.#loaded = true;
     }
 
@@ -194,20 +283,147 @@ export default class FilePickerDialog extends BaseDialog {
 
         const goBackButton = this.querySelector('#goBackButton');
         goBackButton.addEventListener('click', (event) => { this._onGoBackButtonClick(event); });
+
+        const filterDir = this.querySelector('#filterDir');
+        filterDir.addEventListener('input', (event) => { this._onFilterDirInput(event); });
+
+        const modesList = this.querySelectorAll('.modes-list button');
+        modesList.forEach(button => button.addEventListener('click', (event) => { this._onModeButtonClick(event); }));
+
+        if (this.onlyFolders) {
+            const fileExtension = this.querySelector('#fileExtension');
+            fileExtension.addEventListener('change', (event) => { this._onFileExtensionChange(event); });
+
+            const filePickerFile = this.querySelector('#filePickerFile');
+            filePickerFile.addEventListener('input', (event) => { this._onFilePickerInput(event); });
+            filePickerFile.addEventListener('focus', (event) => { this._onFilePickerInputFocus(event); });
+            filePickerFile.addEventListener('blur', (event) => { this._onFilePickerInputBlur(event); });
+        }
     }
 
     _onGoBackButtonClick(event) {
         event.stopPropagation();
-        const lastIndex = this.target.lastIndexOf('\\') + 1;
-        const path = this.target.substring(0, lastIndex);
+        const folders = this.target.trim().replace(/\\/g, '/').split('/').filter((value) => value !== '');
+        folders.pop();
+
+        // Se o array estiver vazio, a pasta raiz foi atingida.
+        if (folders.length === 0) return;
+
+        const path = folders.join('/') + '/';
         this.browse(path);
+    }
+
+    _onFilterDirInput(event) {
+        event.stopPropagation();
+        this.filter = event.target?.value ?? '';
+
+        this.browse();
+    }
+
+    _onModeButtonClick(event) {
+        event.stopPropagation();
+        const buttonActivated = event.target.closest('button');
+        const mode = buttonActivated.dataset.mode;
+
+        const modesList = this.querySelectorAll('.modes-list button');
+        modesList.forEach(button => button.classList.remove('active'));
+        buttonActivated.classList.add('active');
+
+        this.constructor.LAST_DISPLAY_MODE = this.displayMode;
+        this.displayMode = mode;
+
+        this.browse();
+    }
+
+    _onFileExtensionChange(event) {
+        event.stopPropagation();
+        const select = event.target.closest('select');
+        this.selectedData.ext = select.value;
+
+        let path = this.selectedData?.path ?? 'data\\';
+
+        if (!path.endsWith('\\')) path += '\\';
+
+        const filePickerFile = this.querySelector('#filePickerFile');
+
+        if (!uniforge.utils.isEmpty(this.selectedData.name))
+            filePickerFile.value = `${path}${this.selectedData.name}${this.selectedData.ext}`;
+        else
+            filePickerFile.value = path;
+    }
+
+    _onFilePickerInput(event) {
+        event.stopPropagation();
+        const input = event.target.closest('input');
+        this.selectedData.name = input.value;
+    }
+
+    _onFilePickerInputFocus(event) {
+        event.stopPropagation();
+        const input = event.target.closest('input');
+        input.value = this.selectedData?.name ?? '';
+    }
+
+    _onFilePickerInputBlur(event) {
+        event.stopPropagation();
+        const input = event.target.closest('input');
+        let path = this.selectedData?.path ?? 'data\\';
+
+        if (!path.endsWith('\\')) path += '\\';
+
+        // Atualiza o nome do arquivo.
+        this.selectedData.name = input.value;
+
+        // Foi informado o nome do arquivo.
+        if (!uniforge.utils.isEmpty(this.selectedData.name)) {
+            const name = `${this.selectedData.name}${this.selectedData.ext}`;
+            input.value = `${path}${name}`;
+            input.dataset.name = name;
+        }
+        // Não foi informado o nome do arquivo.
+        else {
+            input.value = path;
+            input.dataset.name = '';
+        }
     }
 
     _onFolderClick(event) {
         event.stopPropagation();
         const clickedFolder = event.target.closest('.dir');
 
+        if (this.onlyFolders) {
+            const filePickerFile = this.querySelector('#filePickerFile');
+
+            this.constructor.LAST_BROWSED_DIRECTORY = this.selectedData.path;
+            this.selectedData.path = clickedFolder.dataset.path;
+
+            if (!this.selectedData.name) {
+                filePickerFile.value = this.selectedData.path;
+            } else {
+                filePickerFile.value = `${this.selectedData.path}\\${this.selectedData.name}${this.selectedData.ext}`;
+            }
+        }
+
         this.browse(clickedFolder.dataset.path);
+    }
+
+    _onFileClick(event) {
+        event.stopPropagation();
+        const clickedFile = event.target.closest('.file');
+
+        const filesList = this.querySelector('.directory ul.files-list');
+        filesList.querySelectorAll('li.file').forEach((file) => file.classList.remove('selected'));
+
+        clickedFile.classList.toggle('selected');
+
+        const filePickerFile = this.querySelector('#filePickerFile');
+        filePickerFile.value = clickedFile.dataset.path;
+
+        this.selectedData = {
+            path: clickedFile.dataset.path,
+            name: clickedFile.dataset.name,
+            ext: clickedFile.dataset.ext
+        };
     }
 
     /**
@@ -219,28 +435,37 @@ export default class FilePickerDialog extends BaseDialog {
      * @returns {Promise<boolean>}              - Uma promessa que resolve com true se o usuário selecionou um arquivo e false caso contrário.
      */
     static async configDialog(path, options = {}) {
-        options = uniforge.utils.mergeObjects(options, { current: path, alwaysClose: true });
+        options = uniforge.utils.mergeObjects(options, { current: path});
         return new Promise((resolve, reject) => {
             const dialog = new this({
                 title: 'Explorador de Arquivos',
                 buttons: {
                     select: {
-                        label: "Selecionar Arquivo",
+                        label: (options.onlyFolders ? "Selecionar Pasta" : "Selecionar Arquivo"),
                         icon: "fas fa-check",
                         callback: () => {
-                            /*
-                            const chosenFilePath = document.querySelector('#chosenFilePath');
+                            const filePickerFile = document.querySelector('#filePickerFile');
                             const captionInput = document.querySelector('#captionInput');
 
-                            const data = uniforge.utils.getAsociatedData(chosenFilePath);
-                            data.caption = captionInput.value;
-                            */
-                            console.log('Arquivo selecionado!');
-                            resolve(true);
+                            const name = filePickerFile.dataset.name;
+
+                            // Nenhum arquivo selecionado ou nome do arquivo vazio. Impeça o fechamento do diálogo.
+                            if (uniforge.utils.isEmpty(name)) {
+                                uniforge.ctrls.msgBox.showWarning('Nenhum arquivo selecionado ou nome do arquivo vazio.');
+                                return false;
+                            }
+
+                            const data = {
+                                path: filePickerFile.value,
+                                name: name,
+                                caption: captionInput.value ?? null
+                            };
+                            resolve(data);
+                            return true;
                         }
                     }
                 },
-                abort: () => resolve(null)
+                abort: () => reject(null)
             }, options);
             dialog.show(true);
         });
@@ -274,10 +499,46 @@ export default class FilePickerDialog extends BaseDialog {
                 case "font": return Object.keys(this.FONT_FILE_EXTENSIONS);
                 case "image": return Object.keys(this.IMAGE_FILE_EXTENSIONS);
                 case "text": return Object.keys(this.TEXT_FILE_EXTENSIONS);
+                case "pdf": return ["pdf"];
                 default: return Object.keys(this.VALID_FILE_EXTENSIONS);
             }
         })();
         return types.map(t => `.${t}`);
+    }
+
+    /* -------------------------------------------- */
+
+    /**
+    * Testa se o diretório é contemplado pela string de filtragem.
+    * 
+    * @param {string} folder    - O diretório a ser validado.
+    * @returns {boolean}        - 'true' se o diretório for contemplado pela string de filtragem.
+    */
+    #applyFilterInFolders(folder) {
+        // Expressões especiais se aplicam apenas a arquivos.
+        if (this.filter?.startsWith("*")) return true;
+
+        // Se o diretório for contemplado pela string de filtragem, retorna 'true'.
+        return this.#applyFilter(folder);
+    }
+
+    /* -------------------------------------------- */
+
+    /**
+    * Testa se o arquivo é contemplado pela string de filtragem.
+    * 
+    * @param {string} file  - O arquivo a ser validado.
+    * @returns {boolean}    - 'true' se o arquivo for contemplado pela string de filtragem.
+    */
+    #applyFilter(file) {
+        // Se nenhuma string de filtragem foi fornecida, retorna 'true'.
+        if (!this.filter) return true;
+
+        // Limpa o filtro das expressões especiais.
+        const filter = this.filter.replace('*', '').toLowerCase();
+
+        // Se o arquivo for contemplado pela string de filtragem, retorna 'true'.
+        return file.name.toLowerCase().includes(filter);
     }
 
     /* -------------------------------------------- */
@@ -288,9 +549,9 @@ export default class FilePickerDialog extends BaseDialog {
     * @returns {string}
     */
     #getFileDir(target) {
-        const parts = target.split("/");
+        const parts = target.split('\\');
         if (parts[parts.length - 1].indexOf(".") !== -1) parts.pop();
-        const dir = parts.join("/");
+        const dir = parts.join('\\');
         return dir;
     }
 
@@ -326,16 +587,31 @@ export default class FilePickerDialog extends BaseDialog {
     * @returns {string}
     */
     #appendFileItem(file) {
+        const ext = `${file.name.split(".").pop()}`;
+
         const item = document.createElement('li');
-        item.className = 'file';
+        item.className = 'file flexrow';
         item.dataset.file = '';
         item.dataset.action = 'pickFile';
         item.dataset.path = file.path;
         item.dataset.name = file.name;
-        item.innerHTML = `<i class="fas fa-folder fa-fw" inert=""></i> ${file.name}`;
+        item.dataset.ext = ext;
+
+        if (this.displayMode !== 'list') {
+            item.innerHTML = `<img src="${file.path}"> ${file.name}`;
+        } else {
+            item.innerHTML = `<i class="fas fa-file"></i> ${file.name}`;
+        }
+
+        // O arquivo é o selecionado? Se sim, marque-o.
+        if (file.path === this.selectedData.path) item.classList.add('selected');
 
         const ul = this.querySelector('.directory ul.files-list');
         ul.appendChild(item);
+
+        item.addEventListener('click', (event) => {
+            this._onFileClick(event);
+        });
     }
 
     /* -------------------------------------------- */

@@ -221,8 +221,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     checkState();
 
     await configureLeaflet();
-
-    testPDF();
 });
 
 // Limpa o armazenamento local ao fechar a janela.
@@ -232,6 +230,7 @@ window.addEventListener("beforeunload", () => {
     if (!state.keep) uniforge.state.clear();
 });
 
+/*
 async function testPDF() {
     uniforge.pdf.init();
 
@@ -239,7 +238,7 @@ async function testPDF() {
     html.innerHTML = '<h1>Teste de PDF</h1>Este é um Teste de PDF';
     uniforge.pdf.fromHTML(html);
 }   
-
+*/
 
 /** 
  * ------------------------------------------------------------------

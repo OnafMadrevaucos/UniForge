@@ -107,6 +107,12 @@ globalThis.uniforge = {
     path: window.path,
 
     /**
+    * Ferramentas de controle universal de PDF.
+    * @type {Object}
+    */
+    pdfCtrl: window.pdfCtrl,
+
+    /**
     * Ferramentas de manipulação de Arquivos.
     * @type {Object}
     */

@@ -6,6 +6,7 @@ import LinkDialog from "../dialogs/linkDialog.js";
 import ImagePickerDialog from "../dialogs/imagePickerDialog.js";
 import Dialogs from "../dialogs/dialog.js";
 import DatePicker from "../datePicker.js";
+import FilePickerDialog from "../dialogs/filePickerDialog.js";
 
 /**
  * Classe EntryForm estende a funcionalidade da classe BaseForm para gerenciar formulários que manipulem Entradas.
@@ -1311,7 +1312,8 @@ export default class EntryForm extends SidebarForm {
    */
   async onUploadImage(editor) {
     // Abre o diálogo de seleção de imagem.
-    const image = await ImagePickerDialog.configDialog();
+    //const image = await ImagePickerDialog.configDialog();
+    const image = await FilePickerDialog.configDialog(null, {hasCaption: true, type: 'image' });
 
     // Se uma imagem foi selecionada, insira-a no editor.
     if (image) {

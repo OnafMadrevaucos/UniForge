@@ -1,6 +1,6 @@
 {
   "name": "uniforge",
-  "version": "0.8.3",
+  "version": "0.8.4",
   "main": "app.js",
   "type": "module",
   "scripts": {

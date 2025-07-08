@@ -135,6 +135,8 @@
     --heading-3-size: 14px;
     --big-size: 16px;
     --tmce-size: 14px;
+    --grid-tile-size: 90px;
+    --images-size: 20em;
     --default-size: 12px;
     --small-size: 11px;
     --smaller-size: 10.5px;
@@ -1131,12 +1133,12 @@ input:checked+.slider::before {
     margin-top: auto;
 }
 
-.tab.logout-item {
+.tab.about-item {
     background: var(--dark-redT87);
     border-top: var(--tab-item-border);
 }
 
-.tab:not(.logout-item)::before,
+.tab:not(.about-item)::before,
 .tab:nth-child(2):not(.base-item)::before {
     content: '';
     display: block;
@@ -1160,7 +1162,7 @@ input:checked+.slider::before {
     mask-image: none;
 }
 
-.tab.logout-item:hover {
+.tab.about-item:hover {
     background: var(--border-red);
 }
 
@@ -1530,6 +1532,10 @@ input:checked+.slider::before {
     gap: 5px;
 }
 
+.dialog .main .file-dialog .current-dir button#goBackButton {
+    transform: scaleX(-1);
+}
+
 .dialog .main .file-dialog .current-dir button {
     flex: 0 0 30px;
 }
@@ -1599,7 +1605,8 @@ input:checked+.slider::before {
 }
 
 .dialog .directory {
-    flex: 0 2;
+    flex: 2;
+    overflow-y: scroll;
 }
 
 .dialog .directory ul {
@@ -1618,7 +1625,9 @@ input:checked+.slider::before {
     border-radius: var(--default-border-radius);
 }
 .dialog .directory .files-list li {
+    align-items: center;
     border: var(--filled-border);  
+    gap: var(--default-gap-size);
 }
 .dialog .directory .files-list li:first-of-type {
     border-top-left-radius: var(--default-border-radius);
@@ -1627,6 +1636,60 @@ input:checked+.slider::before {
 .dialog .directory .files-list li:last-of-type {
     border-bottom-left-radius: var(--default-border-radius);
     border-bottom-right-radius: var(--default-border-radius);
+}
+.dialog .directory .files-list.list li {
+    font-size: var(--default-size);
+}
+
+.dialog .directory .files-list.thumbs li {
+    font-size: var(--heading-2-size);
+}
+
+.dialog .directory .files-list.thumbs li img {
+    height: var(--heading-2-size)
+} 
+
+.dialog .directory ul.files-list.tiles {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--default-gap-size);
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 0;
+}
+
+.dialog .directory ul.files-list.images li,
+.dialog .directory ul.files-list.tiles li {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    border-radius: var(--default-border-radius);
+}
+.dialog .directory ul.files-list.images li {
+    gap: var(--big-gap-size);
+    margin-bottom: var(--big-gap-size);
+}
+.dialog .directory ul.files-list.tiles li i {
+    font-size: var(--grid-tile-size);    
+}
+.dialog .directory ul.files-list.tiles li img {
+    height: var(--grid-tile-size);
+}
+.dialog .directory ul.files-list.images li i {
+    font-size: var(--images-size);
+}
+.dialog .directory ul.files-list.images li img {
+    height: var(--images-size);
+}
+
+.dialog .directory .files-list li.selected,
+.dialog .directory ul li:hover {
+    color: var(--focus-red);
+    text-shadow: var(--text-shadow);
+}
+
+.dialog .directory ul li:hover {
+    cursor: pointer;
 }
 
 .dialog .sidebar {

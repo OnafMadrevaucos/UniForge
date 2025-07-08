@@ -1,5 +1,6 @@
 import * as random from './random.mjs';
 import * as parser from '../parsers/module.mjs';
+import { getType } from './collection.mjs';
 
 const _loremIpsum = [
     "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
@@ -73,6 +74,8 @@ export function isEmpty(value) {
             return !Object.keys(value).length;
         case "Set":
             return !value.size;
+        case "string":
+            return value.length === 0;
         default:
             return false;
     }

@@ -19,6 +19,11 @@ contextBridge.exposeInMainWorld('app', {
 });
 console.log('UniForge | Configurando pré-carregamentos de Aplicação.');
 
+contextBridge.exposeInMainWorld('pdfCtrl', {
+  save: async (path, name, buffer) => await ipcRenderer.invoke('save-pdf', path, name, Buffer.from(buffer)),
+});
+console.log('UniForge | Configurando pré-carregamentos de manipulação de PDF.');
+
 contextBridge.exposeInMainWorld('path', {
   join: async (...args) => { 
     const result = await ipcRenderer.invoke('path-join', args);

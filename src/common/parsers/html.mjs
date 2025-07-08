@@ -278,9 +278,9 @@ function _parseSidetabsTags(html) {
                             <span class="tab-text"><i class="fas fa-sliders"></i> Configurações</span>
                             <span class="tab-icon"><i class="fas fa-sliders"></i></span>
                         </div>
-                        <div class="tab base-item logout-item" data-target="close-menu">
-                            <span class="tab-text"><i class="fas fa-right-to-bracket"></i> Sair</span>
-                            <span class="tab-icon"><i class="fas fa-right-to-bracket"></i></span>
+                        <div class="tab base-item about-item" data-target="about">
+                            <span class="tab-text"><i class="fas fa-circle-info"></i> Sobre</span>
+                            <span class="tab-icon"><i class="fas fa-circle-info"></i></span>
                         </div>
             `;
         }

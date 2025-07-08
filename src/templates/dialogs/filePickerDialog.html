@@ -1,16 +1,16 @@
 <div class="file-dialog flexcol">
     <div class="data-group current-dir">
         <button  id="goBackButton" type="button" class="fas fa-arrow-turn-up" data-tooltip="Voltar"
-            aria-label="Voltar"></button>
+            aria-label="Voltar" data-tooltip-right="true"></button>
         <div class="data-fields">
-            <input id="targetDir" type="text" name="target" value="">
+            <input id="targetDir" type="text" name="target" value="" readonly>
         </div>
         <button type="button" class="fas fa-folder-plus" data-action="makeDir" data-tooltip="Criar Pasta"
             data-tooltip-left="true"></button>
     </div>
     <div class="set-favorite flexrow">
         <span>Favoritos</span>
-        <a data-action="setFavorite" data-tooltip="Adicionar Pasta Atual aos Favoritos">
+        <a data-action="setFavorite" data-tooltip="Adicionar aos Favoritos">
             <i class="fas fa-plus"></i>
         </a>
         <div class="tag-list"></div>
@@ -36,9 +36,6 @@
     <div class="directory">
         <ul class="folders-list flexcol">            
         </ul>
-    </div>
-
-    <div class="directory">
         <ul class="files-list details">            
         </ul>
     </div>
@@ -48,8 +45,18 @@
         <input type="file" name="upload" disabled="" title="">
     </div>
 
+    <div class="data-group file-extension hidden">
+        <span class="data-label">Tipo Arquivo </span>
+        <select id="fileExtension"></select>
+    </div>
+
+    <div class="data-group image-caption hidden">
+        <span class="data-label">Legenda </span>
+        <input type="text" id="captionInput" name="file" value="">
+    </div>
+
     <div class="data-group selected-file">
         <span class="data-label">Selecionado </span>
-        <input type="text" id="file-picker-file" name="file" value="">
+        <input type="text" id="filePickerFile" name="file" value="" readonly>
     </div>
 </div>
