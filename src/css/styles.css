@@ -1566,11 +1566,24 @@ input:checked+.slider::before {
 .dialog .main .file-dialog .upload-file {
     margin-top: auto;
 }
-.dialog .main .file-dialog .upload-file input[type="file"] {
+.dialog .main .file-dialog .upload-file .uploader {
+    flex: 2;
     color: var(--light-text-color);
-    background-color: var(--light-blue);
-    padding: 5px;
+    background-color: var(--light-background-color);
+    border: var(--data-group-border);
     border-radius: var(--default-border-radius);
+    padding: 5px;
+    gap: var(--default-gap-size);
+}
+.dialog .main .file-dialog .upload-file .uploader button {
+    margin: 0;
+}
+.dialog .main .file-dialog .upload-file .uploader label {
+    flex: 1;
+    align-content: center;
+}
+.dialog .main .file-dialog .upload-file .uploader a {
+    flex: 0;
 }
 
 .dialog .split-buttons {

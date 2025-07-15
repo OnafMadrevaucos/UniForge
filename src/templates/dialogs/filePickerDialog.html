@@ -42,7 +42,11 @@
 
     <div class="data-group upload-file">
         <span class="data-label"><i class="fas fa-upload fa-fw" inert=""></i> Enviar</span>
-        <input type="file" name="upload" disabled="" title="">
+        <div class="uploader flexrow disabled">
+            <button>Escolher arquivo</button>
+            <label>Nenhum arquivo escolhido</label>
+            <a id="removeFile" class="hidden"><i class="fa-solid fa-trash"></i></a>
+        </div>
     </div>
 
     <div class="data-group file-extension hidden">

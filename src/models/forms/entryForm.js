@@ -1313,11 +1313,18 @@ export default class EntryForm extends SidebarForm {
   async onUploadImage(editor) {
     // Abre o diálogo de seleção de imagem.
     //const image = await ImagePickerDialog.configDialog();
-    const image = await FilePickerDialog.configDialog(null, {hasCaption: true, type: 'image' });
+    const imageData = await FilePickerDialog.configDialog(null, { canUpload: true, hasCaption: true, type: 'image' });
 
     // Se uma imagem foi selecionada, insira-a no editor.
-    if (image) {
-      const data = image.data;
+    if (imageData) {
+      const buffer = await uniforge.fs.readFile(imageData.path);
+      const data = await uniforge.utils.bufferToBlob(buffer, imageData.ext);
+
+      const image = {
+        uuid: imageData.uuid,
+        caption: imageData.caption,
+        data: data
+      }
 
       // Recupera o elemento do editor TinyMCE.
       const editorTexarea = editor.targetElm;
@@ -1334,13 +1341,16 @@ export default class EntryForm extends SidebarForm {
       const imageURL = await uniforge.utils.blobToImage(data.raw, data.ext);
       newImage.src = imageURL;
 
-      const newCaption = document.createElement('figcaption');
-      newCaption.className = 'img-caption';
-      newCaption.textContent = `Imagem ${imgCount + 1} - ${image.caption}`;
-      newCaption.contenteditable = 'true';
-
       imgWrapper.appendChild(newImage);
-      imgWrapper.appendChild(newCaption);
+
+      if (image.caption) {
+        const newCaption = document.createElement('figcaption');
+        newCaption.className = 'img-caption';
+        newCaption.textContent = `Imagem ${imgCount + 1} - ${image.caption}`;
+        newCaption.contenteditable = 'true';
+
+        imgWrapper.appendChild(newCaption);
+      }
 
       // Insira o HTML na posição atual do cursor.
       editor.execCommand('mceInsertContent', false, imgWrapper.outerHTML);

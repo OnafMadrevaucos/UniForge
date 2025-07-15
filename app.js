@@ -1,4 +1,4 @@
-import { app, BrowserWindow, Menu, globalShortcut, ipcMain } from 'electron';
+import { app, BrowserWindow, Menu, globalShortcut, ipcMain, dialog } from 'electron';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
@@ -86,6 +86,14 @@ app.whenReady().then(() => {
   ipcMain.handle('window-refresh', (event) => refreshWindow());
 
   /**
+  * Manipulador para carregar um dialog usando a API do Electron.
+  * @param {Electron.IpcMainEvent} event - O evento IPC recebido.
+  * @param {string} type - O tipo de arquivo a ser selecionado.
+  * @returns {Object} - Resultado da execução.
+  */
+  ipcMain.handle('select-file', (event, type) => selectFile(type));
+
+  /**
    * Manipulador para unir caminhos relativos dentro da pasta `src`.
    * @param {Electron.IpcMainEvent} event - O evento IPC recebido.
    * @param {Array} [args=[]] - Parâmetros opcionais para o comando.
@@ -151,6 +159,17 @@ app.on('window-all-closed', () => {
     app.quit();
   }
 });
+
+/**
+* Os tipos de arquivos aceitos pelo diálogo de arquivos.
+* @type {object}
+*/
+const FILE_FILTERS = {
+  any: [{ name: 'Todos os Arquivos', extensions: ['*'] }],
+  font: [{ name: 'Fontes', extensions: ['ttf', 'otf', 'woff', 'woff2'] }],
+  image: [{ name: 'Imagens', extensions: ['jpg', 'jpeg', 'png', 'gif', 'svg'] }],
+  text: [{ name: 'Texto', extensions: ['csv', 'txt', 'json', 'pdf'] }],
+};
 
 /**
  * Cria a janela principal da aplicação.
@@ -234,6 +253,18 @@ function refreshWindow() {
     console.log('UniForge | Recarregando a Janela Principal.');
     mainWindow.reload();
   }
+}
+
+async function selectFile(type) {
+  // Abre um dialog para selecionar um arquivo.
+  const { canceled, filePaths } = await dialog.showOpenDialog({
+    title: 'Selecionar arquivo',
+    properties: ['openFile'],
+    filters: FILE_FILTERS[type],
+  });
+
+  // Retorna o caminho do arquivo selecionado.
+  return canceled ? null : filePaths[0];
 }
 
 /**
