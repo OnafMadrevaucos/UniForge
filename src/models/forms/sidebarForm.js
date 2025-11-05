@@ -83,7 +83,7 @@ export default class SidebarForm extends BaseForm {
      * Limpa o conteúdo do formulário
      */
     clearContent() {
-        const folders = this.querySelectorAll('#folderList .folder');
+        const folders = this.querySelectorAll('.folder-list .folder');
 
         if (folders.length == 0) return;
 
@@ -364,12 +364,7 @@ export default class SidebarForm extends BaseForm {
      * @private
      */
     onEntryItemClick(event) {
-        event.stopPropagation();
-        const clickedItem = event.target.closest('.entry-item');
-
-        if (clickedItem !== this.selection.entry) {
-            this.#clearEntryList();
-        }
+        event.stopPropagation();        
     }
 
     /**

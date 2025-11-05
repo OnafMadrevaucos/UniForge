@@ -98,7 +98,7 @@ export default class EntryForm extends SidebarForm {
     editing: 3
   }
 
-  /** 
+  /** Eventos temporários, vinculados à Entrada até serem salvos (ou não).
     * @property {Object} events - Objeto que armazena os eventos vinculados à entrada.    
     * @private
     * @default {}
@@ -110,7 +110,6 @@ export default class EntryForm extends SidebarForm {
   * Retorna um objeto com seletores para elementos da aplicação.
   * 
   * @returns {Object} - Um objeto com as seguintes propriedades:
-  *  - overlay: Seletor para o elemento overlay da aplicação.
   *  - app: Seletor para o elemento container da aplicação.
   *  - header: Seletor para o elemento header da aplicação.
   *  - main: Seletor para o elemento main da aplicação.
@@ -133,7 +132,6 @@ export default class EntryForm extends SidebarForm {
    * Retorna um objeto com referências para elementos do formulário.
    * 
    * @returns {Object}  - Um objeto com as seguintes propriedades:
-   *  - overlay: O elemento HTML que contém o formulário.
    *  - form: O elemento HTML que representa o formulário.
    *  - header: O elemento HTML que contém o título do formulário.
    *  - close_btn: O elemento HTML que fecha o formulário.
@@ -772,6 +770,9 @@ export default class EntryForm extends SidebarForm {
         picker.addEventListener('change', (event) => this.onDatePickerChange(event));
       });
 
+      const entryEvents = this.querySelector('#entryEvents');
+      entryEvents.addEventListener('click', (event) => { this.onEventListClick(event); });
+
       const newEventButton = this.querySelector('#addEventButton');
       newEventButton.addEventListener('click', (event) => { this.onAddEventClick(event); });
     }
@@ -952,9 +953,17 @@ export default class EntryForm extends SidebarForm {
     this._activateTab(button.dataset.tab);
   }
 
+  onEventListClick(clkEvent) {
+    clkEvent.stopPropagation();
+    const eventList = clkEvent.target;
+
+    eventList.querySelectorAll('.item').forEach(item => item.classList.remove('selected'));
+    this.clearEventTab();
+  }
+
   onEventItemClick(clkEvent) {
     clkEvent.stopPropagation();
-    const clickedEvent = clkEvent.target.closest('.item');
+    const clickedEvent = clkEvent.target.closest('.item'); 
     const evid = clickedEvent.dataset.value;
     const event = this.#events[evid];
 
@@ -962,6 +971,9 @@ export default class EntryForm extends SidebarForm {
     const eventEntryType = this.querySelector('#eventEntryType');
     const relevance = this.querySelector('#relevance');
     const calendarType = this.querySelector('#calendarType');
+
+    this.querySelectorAll('#entryEvents .item').forEach(item => item.classList.remove('selected'));
+    clickedEvent.classList.add('selected');
 
     eventTitle.value = event.title;
     eventTitle.focus();
@@ -1021,6 +1033,9 @@ export default class EntryForm extends SidebarForm {
 
     this.#events[newEvid] = newEvent;
     this._generateEventListItems();
+
+    // Limpa o evento selecionado.
+    this.selection.event = null;
   }
 
   /**
