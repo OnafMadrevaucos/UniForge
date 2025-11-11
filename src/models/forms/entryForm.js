@@ -1176,7 +1176,7 @@ export default class EntryForm extends SidebarForm {
   async onEntryItemDoubleClick(event, options = {}) {
     await super.onEntryItemDoubleClick(event);
 
-    // Se o formulário for o de Conigurações, ignore.
+    // Se o formulário for o de Configurações, ignore.
     if (this.isSettings) return;
 
     const item = event.target.closest('.entry-item');
@@ -1240,6 +1240,9 @@ export default class EntryForm extends SidebarForm {
 
       // Obtém o identificador do item selecionado.
       this.eid = entry.eid;
+
+      // Armazena os dados da entrada atual.
+      this.data.entry = entry;      
 
       // Atualiza o estado dos elements do formulário.
       this.controlStates(this.states.editing);

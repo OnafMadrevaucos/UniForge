@@ -37,7 +37,7 @@ export default class BaseDialog extends Application {
 
         this.alwaysOnTop = options?.alwaysOnTop ?? false;
 
-        this.alwaysClose = options?.alwaysClose ?? false;      
+        this.alwaysClose = options?.alwaysClose ?? false;
     }
 
     /* ---------------------------------------------------------------------------------------------------------------- */
@@ -46,11 +46,11 @@ export default class BaseDialog extends Application {
      * @overload
      * @inheritdoc
     */
-    get defaultOptions() {   
-        const config = super.defaultOptions;   
-            return uniforge.utils.mergeObjects(config,{
-              style: Application.Styles.DIALOG,
-              classes: [...config.classes,'flexcol']
+    get defaultOptions() {
+        const config = super.defaultOptions;
+        return uniforge.utils.mergeObjects(config, {
+            style: Application.Styles.DIALOG,
+            classes: [...config.classes, 'flexcol']
         });
     }
     /**
@@ -61,7 +61,7 @@ export default class BaseDialog extends Application {
     get dialog() {
         return this.ui.app;
     }
-    
+
     /**
      * Retorna um objeto com seletores para elementos da aplicação.
      * 
@@ -136,10 +136,10 @@ export default class BaseDialog extends Application {
 
         return buttons;
     }
-    
+
     /**@inheritdoc */
     async prepareTemplate() {
-        super.prepareTemplate();
+        await super.prepareTemplate();
 
         const overlay = document.createElement('div');
         overlay.id = `${this.style}Overlay-${this.uuid}`;
@@ -178,7 +178,7 @@ export default class BaseDialog extends Application {
         await super.render();
         return true;
     }
-    
+
     /**
     * Inicia a construção do diálogo.
     * @inheritdoc
@@ -186,12 +186,12 @@ export default class BaseDialog extends Application {
     async initialize() {
         // Se o diálogo implementa 'configureElements', chama o método.
         if (this.configureElements) await this.configureElements();
-        
+
         // Centralizar o diálogo no parentElement
-        this._centerDialog();        
+        this._centerDialog();
 
         this.activateListeners();
-    } 
+    }
 
     submit(button, event) {
         const target = this.dialog;
@@ -206,11 +206,16 @@ export default class BaseDialog extends Application {
         } catch (error) {
             this.msgBox.showError(error.message, error);
         }
-    } 
+    }
+
+    close() {        
+        this.ui.overlay.remove();   
+        super.close();     
+    }
 
     hookToDOM() {
-        this.#hookOverlayToDOM();  
-        super.hookToDOM();    
+        this.#hookOverlayToDOM();
+        super.hookToDOM();
     }
 
     #hookOverlayToDOM() {
@@ -218,12 +223,12 @@ export default class BaseDialog extends Application {
         let doc = null;
 
         // Verifica se o overlay da aplicação foi renderizado corretamente.
-        if(!this.html.overlay || this.html.overlay.isEmpty())
+        if (!this.html.overlay || this.html.overlay.isEmpty())
             throw new Error('O formulário precisa ter um overlay.');
 
-         // Obtém o elemento HTML do overlay da aplicação.
-         doc = parser.parseFromString(this.html.overlay, 'text/html');
-         const overlay = doc.body.firstChild;
+        // Obtém o elemento HTML do overlay da aplicação.
+        doc = parser.parseFromString(this.html.overlay, 'text/html');
+        const overlay = doc.body.firstChild;
 
         // Adiciona o overlay ao DOM.
         document.body.appendChild(overlay);
@@ -236,7 +241,7 @@ export default class BaseDialog extends Application {
     * Configura ouvintes de eventos básicos para o dialog.
     * @protected
     */
-    activateListeners() {  
+    activateListeners() {
         const main = this.ui.main;
         main.addEventListener('submit', (event) => { event.preventDefault(); });
 
@@ -250,7 +255,7 @@ export default class BaseDialog extends Application {
     }
 
     _onOverlayClick(event) {
-        if (!event.target.classList.contains('overlay')) return;            
+        if (!event.target.classList.contains('overlay')) return;
         this.close();
     }
 

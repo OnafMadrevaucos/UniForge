@@ -2228,7 +2228,6 @@ input:checked+.slider::before {
 
 #settings .settings-container {
     flex: 100%;
-    border: var(--data-group-border);
     border-radius: var(--default-border-radius);
     color: var(--light-text-color);
 }
@@ -3828,8 +3827,8 @@ input:checked+.slider::before {
     border: none;
 }
 
-.tox:not(.tox-tinymce-inline) .tox-editor-header,
-.tox:not(.tox-tinymce-inline) .tox-editor-header * {
+.uniforge .tox:not(.tox-tinymce-inline) .tox-editor-header,
+.uniforge .tox:not(.tox-tinymce-inline) .tox-editor-header * {
     background-color: var(--dark-blue);
 }
 

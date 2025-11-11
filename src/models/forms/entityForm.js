@@ -26,8 +26,8 @@ export default class EntityForm extends EntryForm {
     * Contém duas instâncias de `DatePicker` para 'startDate' (data de início) e 'endDate' (data de término).
     */
     this.datePickers = {
-      start: new DatePicker('startDate'),
-      end: new DatePicker('endDate')
+      startDate: new DatePicker('startDate'),
+      endDate: new DatePicker('endDate')
     }
   }
 
@@ -55,10 +55,9 @@ export default class EntityForm extends EntryForm {
   /**
   * Obtém os dados unificados necessários para o funcionamento do formulário.
   * @implements Implemente um método filho para as especificidades de cada formulário.
-  * @async
   * @returns {object} Objeto de dados unificado.
   */
-  async prepareData() {
+  prepareData() {
     super.prepareData();
 
     this.data.labels = {
@@ -75,7 +74,7 @@ export default class EntityForm extends EntryForm {
   prepareFolders(data) {
     const folders = uniforge.doc.sections.filter(s => {
       const c = uniforge.doc.chapters.get(s.cid);
-      return (c && c.type === 3);
+      return (c && c.hasLineage);
     });
     data.folders = folders.sort();
   }
@@ -208,7 +207,7 @@ export default class EntityForm extends EntryForm {
   onNewLineageClick(event) {
     event.stopPropagation();
 
-    this.manager.fromFamilyScript(this.manager.testScript);
+    this.manager.addNode(this.data.entry, true);
 
     this.manager.buildTree();
 
@@ -240,14 +239,13 @@ export default class EntityForm extends EntryForm {
   * @param {MouseEvent} event - O evento de clique duplo.
   */
   async onEntryItemDoubleClick(event) {
-    await super.onEntryItemDoubleClick(event, { dataSource: 'lineages' });
+    await super.onEntryItemDoubleClick(event, { dataSource: 'entries' });
     const entry = this.data.entry;
 
-    if (entry) {
+    // Se a Entrada possui uma Árvore de Linhagem, carregue-a.
+    if (entry.trees.length > 0) {
       this._toggleLineageTree(entry);
-      this._buildDiagram(entry.tree);
-    } else {
-      this.msgBox.showWarning('Erro ao carregar a entrada.');
+      // this._buildDiagram(entry.tree);
     }
   }  
 

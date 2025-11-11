@@ -264,13 +264,13 @@ export default class Application {
         main.classList.add('main', 'flexcol');
 
         await this.prepareDerivedTemplate(container, header, main);
-
-        
+                
         this.html.app = container.outerHTML;
     }
 
     /**
     * Prepara o conteúdo do formulário substituindo seus placeholders e tags customizadas.
+    * TODO: Utilizar a biblioteca Handlebars para renderizar templates.
     */
     parseTemplate(html) {
         return uniforge.parser.parseHTML(html, this.data);
@@ -396,7 +396,6 @@ export default class Application {
 
     close() {
         this.ui.app.remove();
-        this.ui.overlay.remove();
 
         // Limpa o conteúdo do formulário dos metadados da aplicação.
         uniforge.state.update(['currentForm', { name: null, state: null, activeTab: 0 }]);

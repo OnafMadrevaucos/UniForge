@@ -33,16 +33,10 @@ export default class ChapterDialog extends BaseDialog {
     */
   activateListeners() {
     super.activateListeners();
-
-    const titleInput = this.querySelector('#titleInput');
+    
     const searchInput = this.querySelector('#iconSearch');
-    const tomeSelect = this.querySelector('#tomeSelect');
-    const typeSelect = this.querySelector('#typeSelect');
     const iconItems = this.querySelectorAll('.icon-item');
-
-    titleInput.addEventListener('input', (event) => { this._onChangeTitle(event); });
-    tomeSelect.addEventListener('change', (event) => { this._onChangeTome(event); });
-    typeSelect.addEventListener('change', (event) => { this._onChangeType(event); });
+    
     searchInput.addEventListener('input', (event) => { this._onIconSearch(event); });
 
     iconItems.forEach(item => {
@@ -50,36 +44,8 @@ export default class ChapterDialog extends BaseDialog {
     });
   }
 
-  _onChangeTitle(event) {
-    event.stopPropagation();
-
-    const createButton = this.querySelector('#create');
-    const title = event.target.value;
-
-    createButton.dataset.title = title;
-  }
-
-  _onChangeTome(event) {
-    event.stopPropagation();
-
-    const createButton = this.querySelector('#create');
-    const tome = event.target.value;
-
-    createButton.dataset.tome = tome;
-  }
-
-  _onChangeType(event) {
-    event.stopPropagation();
-    const type = event.target.value;
-
-    const createButton = this.querySelector('#create');
-    createButton.dataset.type = type;
-  }
-
   onIconItemClick(event) {
     event.stopPropagation();
-
-    const createButton = this.querySelector('#create');
     const clickedItem = event.target.closest('.icon-item');
     const iconItems = this.querySelectorAll('.icon-item');
 
@@ -88,7 +54,6 @@ export default class ChapterDialog extends BaseDialog {
     });
 
     clickedItem.classList.add('selected');
-    createButton.dataset.icon = clickedItem.dataset.value;
   }
 
   _onIconSearch(event) {
@@ -115,7 +80,7 @@ export default class ChapterDialog extends BaseDialog {
             label: "Cancelar",
             icon: "fas fa-xmark",
             callback: () => {
-              resolve(false); 
+              resolve(false);
               return true;
             }
           },
@@ -123,25 +88,27 @@ export default class ChapterDialog extends BaseDialog {
             label: "Criar",
             icon: "fas fa-link",
             callback: (dialog, event) => {
-              
+
               const titleInput = dialog.querySelector('#titleInput');
-              const tomeSelect = dialog.querySelector('#tomeSelect');              
+              const tomeSelect = dialog.querySelector('#tomeSelect');
               const typeSelect = dialog.querySelector('#typeSelect');
-              const iconItem = dialog.querySelector('.icon-item.selected'); 
+              const lineageSwitch = dialog.querySelector('#hasLineageSwitch');
+              const iconItem = dialog.querySelector('.icon-item.selected');
 
               const data = {
                 tome: tomeSelect.value,
                 title: titleInput.value,
                 icon: iconItem ? iconItem.dataset.value : null,
-                type: typeSelect.value
+                type: typeSelect.value,
+                hasLineage: lineageSwitch.checked
               };
 
               // Validação dos campos do Capítulo.
               const result = uniforge.db.validateChapter(data);
-              if(result !== '') {
+              if (result !== '') {
                 uniforge.msgBox.showWarning(result);
                 return false;
-              }              
+              }
 
               resolve(data); // Retorna os dados do Capítulo criado.
               return true;

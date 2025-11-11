@@ -176,9 +176,7 @@ export default class SidebarForm extends BaseForm {
 
         const span = document.createElement('span');
         span.textContent = data.title;
-        folderHeader.innerHTML = `<i class="fas fa-folder"></i> ${span.outerHTML}`;
-
-        //folderHeader.appendChild(this.createDeleteIcon());
+        folderHeader.innerHTML = `<i class="fas fa-folder"></i> ${span.outerHTML}`;       
 
         const folderContent = document.createElement('div');
         folderContent.className = 'folder-content';
@@ -208,15 +206,25 @@ export default class SidebarForm extends BaseForm {
         entryItem.className = 'entry-item flexrow';
         entryItem.dataset.id = data.eid ?? (data.cid ?? '-1');
 
+        const entryRow = document.createElement('div');
+        entryRow.className = 'entry-row flexrow';
+
         const icon = document.createElement('i');
         icon.className = 'fas fa-file';
 
         const span = document.createElement('span');
         span.textContent = data.title;
 
-        entryItem.appendChild(icon);
-        entryItem.appendChild(span);
+        entryRow.appendChild(icon);
+        entryRow.appendChild(span);
 
+        if(this.canDelete) {
+            const deleteIcon = document.createElement('i');
+            deleteIcon.className = 'fas fa-trash-can';
+            entryRow.appendChild(deleteIcon);
+        }
+
+        entryItem.appendChild(entryRow);
         return entryItem;
     }
 
