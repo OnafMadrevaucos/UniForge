@@ -70,7 +70,10 @@ export default class DBManager {
         this.#state.results.push(value);
     }
 
-    clear() {
+    async clear(doRollback = false) {
+        // Cancela qualquer transação aberta indevidamente.
+        if (doRollback) await uniforge.sql.exec('ROLLBACK');
+
         this.#state = {
             transactionStarted: false,
             results: [],
@@ -84,7 +87,7 @@ export default class DBManager {
             if (!this.transactionStarted) {
                 console.log('UniForge | Abrindo transação....');
                 // Limpa o estado atual do gerenciador do banco de dados.
-                this.clear();
+                await this.clear(true);
                 // Inicia uma nova transação.
                 await uniforge.sql.exec('BEGIN TRANSACTION');
                 // Registra o início da transação.
@@ -93,7 +96,7 @@ export default class DBManager {
         } catch (error) {
             console.error('UniForge | Erro ao iniciar a transação:', error);
             // Se ocorrer um erro ao iniciar a transação, limpa o estado do gerenciador do banco de dados.
-            this.clear();
+            await this.clear();
         }
     }
 
@@ -111,7 +114,7 @@ export default class DBManager {
         } catch (error) {
             console.error('UniForge | Erro ao confirmar a transação:', error);
             // Se ocorrer um erro ao confirmar a transação, limpa o estado do gerenciador do banco de dados.
-            this.clear();
+            await this.clear();
         }
     }
 
@@ -121,7 +124,7 @@ export default class DBManager {
             // Reverte a transação.
             await uniforge.sql.exec('ROLLBACK');
             // Reverte o estado do gerenciador do banco de dados para o padrão.
-            this.clear();
+            await this.clear();
         } else console.warn('UniForge | Nenhuma transação aberta encontrada.');
     }
 
@@ -143,7 +146,7 @@ export default class DBManager {
     */
     async resetDatabase() {
         // Limpa o estado atual do gerenciador do banco de dados.
-        this.clear();
+        await this.clear();
 
         const queires = [
             'DROP TABLE IF EXISTS _textImages',
@@ -2222,7 +2225,7 @@ export default class DBManager {
      */
     async #execQuery(query, params = []) {
         // Verifica se a transação é única, nesse caso, limpa o estado atual.
-        if (!this.transactionStarted) this.clear();
+        if (!this.transactionStarted) await this.clear();
 
         let result = null;
         // É uma consulta com parâmetros.

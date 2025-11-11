@@ -134,6 +134,15 @@ app.whenReady().then(() => {
   ipcMain.handle('read-file', (event, filePath) => readFile(filePath));
 
   /**
+   * Manipulador para copiar o conteúdo de um arquivo.
+   * @param {Electron.IpcMainEvent} event - O evento IPC recebido.
+   * @param {string} src - O caminho do arquivo de origem.
+   * @param {string} dest - O caminho do arquivo de destino.
+   * @returns {Promise<void>} - Uma promessa que é resolvida quando a cópia é concluída.
+   */
+  ipcMain.handle('copy-file', (event, src, dest) => copyFile(src, dest));
+
+  /**
    * Manipulador para ler o conteúdo de um diretório.
    * @param {Electron.IpcMainEvent} event - O evento IPC recebido.
    * @param {string} filePath - O caminho do diretório a ser lido.
@@ -328,6 +337,21 @@ function savePDF(target, name, buffer) {
 function readFile(path) {
   const result = fs.readFileSync(path);
   return result;
+}
+
+/**
+ * Copia um arquivo em sincronia.
+ * @param {string} src - O caminho absoluto do arquivo de origem.
+ * @param {string} dest - O caminho absoluto do arquivo de destino.
+ * @returns {object} - O resultado da cópia do arquivo.
+ */
+function copyFile(src, dest) {
+  try {
+    fs.copyFileSync(src, dest);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 /**

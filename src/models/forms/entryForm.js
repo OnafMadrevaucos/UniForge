@@ -740,7 +740,7 @@ export default class EntryForm extends SidebarForm {
       fileInput.addEventListener('change', (event) => { this.onChangeImage(event, displayedImage); });
 
       // Adiciona um evento de clique no contêiner de imagem para abrir o seletor de arquivos.
-      imageContainer.addEventListener('click', (event) => { this.onImageClick(event, fileInput, displayedImage); });
+      imageContainer.addEventListener('click', (event) => { this.onImageClick(event, displayedImage); });
       imageContainer.addEventListener('contextmenu', (event) => { this.onImageRightClick(event, displayedImage); });
     }
 
@@ -840,21 +840,36 @@ export default class EntryForm extends SidebarForm {
   /**
    * Manipulador de evento para alterar a imagem exibida.
    * @param {Event} event                     - Evento disparado pelo input de arquivo.
-   * @param {HTMLImageElement} fileInput      - Elemento de carga de arquivo de imagem.
    * @param {HTMLImageElement} displayedImage - Elemento de imagem a ser atualizado.
    */
-  async onImageClick(event, fileInput, displayedImage) {
+  async onImageClick(event, displayedImage) {
     if (this.canDelete) {
       const confirm = await Dialogs.confirm('Apagar Imagem', 'Deseja remover a imagem?')
       if (confirm) {
 
-        this.selectedImg.raw = null;
+        this.selectedImg.rawData = null;
 
         displayedImage.src = this.blankImgUrl;
         displayedImage.classList.add('empty');
       }
     } else {
-      fileInput.click();
+      // Abre o diálogo de seleção de imagem.
+      const imageData = await FilePickerDialog.configDialog(null, { canUpload: true, hasCaption: false, type: 'image' });
+
+      if(imageData) {
+        // Obtem o caminho completo da imagem.
+        const fullPath = await uniforge.path.join(imageData.path);
+
+        // Lê o arquivo de imagem como um buffer.
+        const buffer = await uniforge.fs.readFile(fullPath);
+        const imageUrl = await uniforge.utils.bufferToImage(buffer, imageData.ext);
+
+        displayedImage.dataset.ext = imageData.ext;
+        displayedImage.src = imageUrl
+        displayedImage.classList.remove('empty');
+
+        this.selectedImg = await uniforge.utils.bufferToBlob(buffer, imageData.ext);
+      }
     }
   }
   /**
@@ -1312,52 +1327,61 @@ export default class EntryForm extends SidebarForm {
    */
   async onUploadImage(editor) {
     // Abre o diálogo de seleção de imagem.
-    //const image = await ImagePickerDialog.configDialog();
     const imageData = await FilePickerDialog.configDialog(null, { canUpload: true, hasCaption: true, type: 'image' });
 
     // Se uma imagem foi selecionada, insira-a no editor.
     if (imageData) {
-      const buffer = await uniforge.fs.readFile(imageData.path);
-      const data = await uniforge.utils.bufferToBlob(buffer, imageData.ext);
+      try {
+        // Obtem o caminho completo da imagem.
+        const fullPath = await uniforge.path.join(imageData.path);
 
-      const image = {
-        uuid: imageData.uuid,
-        caption: imageData.caption,
-        data: data
+        // Lê o arquivo de imagem como um buffer.
+        const buffer = await uniforge.fs.readFile(fullPath);
+        // Converte o buffer em um Blob com a extensão correta.
+        const data = await uniforge.utils.bufferToBlob(buffer, imageData.ext);
+
+        // Cria um objeto de imagem com os dados necessários.
+        const image = {
+          uuid: imageData.uuid,
+          caption: imageData.caption,
+          data: data
+        }
+
+        // Recupera o elemento do editor TinyMCE.
+        const editorTexarea = editor.targetElm;
+        // Recupera a contagem de imagens no editor.
+        const imgCount = Number(editorTexarea.dataset.imgCounter);
+
+        // Cria o elemento <div> que envolverá a imagem e sua legenda.
+        const imgWrapper = document.createElement('figure');
+        imgWrapper.dataset.uuid = image.uuid;
+        imgWrapper.className = 'img-wrapper image';
+        imgWrapper.contenteditable = 'false';
+
+        const newImage = document.createElement('img');
+        const imageURL = await uniforge.utils.blobToImage(data.raw, data.ext);
+        newImage.src = imageURL;
+
+        imgWrapper.appendChild(newImage);
+
+        if (image.caption) {
+          const newCaption = document.createElement('figcaption');
+          newCaption.className = 'img-caption';
+          newCaption.textContent = `Imagem ${imgCount + 1} - ${image.caption}`;
+          newCaption.contenteditable = 'true';
+
+          imgWrapper.appendChild(newCaption);
+        }
+
+        // Insira o HTML na posição atual do cursor.
+        editor.execCommand('mceInsertContent', false, imgWrapper.outerHTML);
+        // Registra o Blob da imagem no banco de dados.
+        await uniforge.db.addTextImages(image);
+        // Atualiza a contagem de imagens no editor.
+        this._updateImageCount(editor);
+      } catch (error) {
+        this.msgBox.showError('Erro ao carregar a imagem.', error);
       }
-
-      // Recupera o elemento do editor TinyMCE.
-      const editorTexarea = editor.targetElm;
-      // Recupera a contagem de imagens no editor.
-      const imgCount = Number(editorTexarea.dataset.imgCounter);
-
-      // Cria o elemento <div> que envolverá a imagem e sua legenda.
-      const imgWrapper = document.createElement('figure');
-      imgWrapper.dataset.uuid = image.uuid;
-      imgWrapper.className = 'img-wrapper image';
-      imgWrapper.contenteditable = 'false';
-
-      const newImage = document.createElement('img');
-      const imageURL = await uniforge.utils.blobToImage(data.raw, data.ext);
-      newImage.src = imageURL;
-
-      imgWrapper.appendChild(newImage);
-
-      if (image.caption) {
-        const newCaption = document.createElement('figcaption');
-        newCaption.className = 'img-caption';
-        newCaption.textContent = `Imagem ${imgCount + 1} - ${image.caption}`;
-        newCaption.contenteditable = 'true';
-
-        imgWrapper.appendChild(newCaption);
-      }
-
-      // Insira o HTML na posição atual do cursor.
-      editor.execCommand('mceInsertContent', false, imgWrapper.outerHTML);
-      // Registra o Blob da imagem no banco de dados.
-      await uniforge.db.addTextImages(image);
-      // Atualiza a contagem de imagens no editor.
-      this._updateImageCount(editor);
     }
   }
 

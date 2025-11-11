@@ -31,6 +31,7 @@ const utils = {
     blobToImage: utilsEsm.images.blobToImage,
     imageToBlob: utilsEsm.images.imageToBlob,
     bufferToBlob: utilsEsm.images.bufferToBlob,
+    bufferToImage: utilsEsm.images.bufferToImage,
     deepClone: utilsEsm.collection.deepClone,
     duplicate: utilsEsm.collection.duplicate,
     diffObject: utilsEsm.collection.diffObject,

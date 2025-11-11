@@ -15,8 +15,8 @@ contextBridge.exposeInMainWorld('sql', {
 console.log('UniForge | Configurando pré-carregamentos de SQL.');
 
 contextBridge.exposeInMainWorld('app', {
-  refresh: () => ipcRenderer.invoke('window-refresh'),
-  selectFile: (type) => ipcRenderer.invoke('select-file', type)
+  refresh: () => ipcRenderer.invoke('window-refresh'),  
+  fileDialog: (type) => ipcRenderer.invoke('select-file', type),
 });
 console.log('UniForge | Configurando pré-carregamentos de Aplicação.');
 
@@ -35,9 +35,13 @@ contextBridge.exposeInMainWorld('path', {
 });
 console.log('UniForge | Configurando pré-carregamentos de Diretórios.');
 
-contextBridge.exposeInMainWorld('fs', {
+contextBridge.exposeInMainWorld('fs', { 
   readFile: (path) => { 
     const result = ipcRenderer.invoke('read-file', path);
+    return result;
+  },
+  copyFile: (src, dest) => {
+    const result = ipcRenderer.invoke('copy-file', src, dest);
     return result;
   },
   readDir: (path) => { 
