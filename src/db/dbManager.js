@@ -16,6 +16,7 @@ export default class DBManager {
             createEventTable: () => this.createEventTable(),
             createLineageTreeTable: () => this.createLineageTreeTable(),
             createLineageTypeTable: () => this.createLineageTypeTable(),
+            createLineageTreeEntriesTable: () => this.createLineageTreeEntriesTable(),
             createMapTable: () => this.createMapTable(),
             createMapElementsTable: () => this.createMapElementsTable(),
             createTimelineTable: () => this.createTimelineTable(),
@@ -149,6 +150,7 @@ export default class DBManager {
         await this.clear();
 
         const queires = [
+            'DROP TABLE IF EXISTS _lineageTreeEntries',
             'DROP TABLE IF EXISTS _textImages',
             'DROP TABLE IF EXISTS _timelineEvent',
             'DROP TABLE IF EXISTS tome',
@@ -191,6 +193,7 @@ export default class DBManager {
             await this.createEventTable();
             await this.createLineageTreeTable();
             await this.createLineageTypeTable();
+            await this.createLineageTreeEntriesTable();
             await this.createMapTable();
             await this.createMapElementsTable();
             await this.createTimelineTable();
@@ -215,16 +218,17 @@ export default class DBManager {
     /**
      * Adiciona uma nova capítulo na tabela `chapter`.
      * 
-     * @param {Object} data - Dados do capítulo a ser adicionado.
-     * @param {number} data.tome - Número do tomo.
-     * @param {string} data.title - Título do capítulo.
-     * @param {string} data.icon - Ícone do capítulo.
-     * @param {number} [data.type] - Tipo do capítulo, padrão é 0.
+     * @param {Object} data             - Dados do capítulo a ser adicionado.
+     * @param {number} data.tome        - Número do tomo.
+     * @param {string} data.title       - Título do capítulo.
+     * @param {string} data.icon        - Ícone do capítulo.
+     * @param {number} data.type        - Tipo do capítulo, padrão é 0.
+     * @param {number} data.hasLineage  - Capítulo representa linhagem, padrão é 'false'.
      * 
      * @returns {Promise<Object>} - Resultado da execução do comando, incluindo o ID do capítulo adicionado.
     */
     async addChapter(data) {
-        let query = 'INSERT INTO chapter (cid, tome, title, icon, type) VALUES (?,?,?,?,?);';
+        let query = 'INSERT INTO chapter (cid, tome, title, icon, type, hasLineage) VALUES (?,?,?,?,?,?);';
         let params = [];
 
         const cid = (!data.cid || data.cid.isEmpty()) ? this.generateID() : data.cid;
@@ -234,6 +238,7 @@ export default class DBManager {
         params.push(data.title);
         params.push(data.icon);
         params.push(Number(data.type) ?? 0);
+        params.push(Number(data.hasLineage) ?? 0);
 
         const result = await this.#execQuery(query, params);
         result.lastInsertRowid = cid;
@@ -364,23 +369,21 @@ export default class DBManager {
     /**
      * Adiciona uma nova Árvore de Linhagem ao banco de dados.
      * @param {Object} data             - Os dados da Árvore de Linhagem a serem adicionados.
-     * @param {string} data.sid         - O ID da Seção a qual a Árvore de Linhagem pertence.
-     * @param {string} data.founder     - O ID do fundador da Árvore de Linhagem.
+     * @param {string} data.eid         - O ID da entrada fundadora da Linhagem.
      * @param {string} data.tree        - A estrutura da Árvore de Linhagem em FamilyScript.
      * @param {boolean} data.isDraft    - Indica se a Árvore de Linhagem é um rascunho.
      * @returns {Promise<Object>} A resposta do banco de dados.
      */
     async addLineageTree(data) {
-        let query = 'INSERT INTO lineageTree (ltid, sid, title, founder, tree, isDraft) ';
-        query += 'VALUES (?,?,?,?,?,?);';
+        let query = 'INSERT INTO lineageTree (ltid, eid, title, tree, isDraft) ';
+        query += 'VALUES (?,?,?,?,?);';
         const params = [];
 
         const ltid = (!data.ltid || data.ltid.isEmpty()) ? this.generateID() : data.ltid;
 
         params.push(ltid);
-        params.push(data.sid);
+        params.push(data.eid);
         params.push(data.title);
-        params.push(data.founder);
         params.push(data.tree);
         params.push(data.isDraft);
 
@@ -408,6 +411,29 @@ export default class DBManager {
         params.push(data.label);
 
         const result = await this.#execQuery(query, params);
+        this.results = result;
+
+        return this.result;
+    }
+
+    /**
+     * Vincula uma nova Entrada a uma Árvore de Linhagem no banco de dados.
+     * @param {Object} data             - Os dados de vinculação.
+     * @param {string} data.ltid        - O ID da Árvore de Linhagem.
+     * @param {string} data.eid         - O ID da entrada adicionada à Árvore de Linhagem.
+     * @returns {Promise<Object>} A resposta do banco de dados.
+     */
+    async addLineageTreeEntry(data) {
+        let query = 'INSERT INTO _lineageTreeEntries (ltid, eid, code) ';
+        query += 'VALUES (?,?,?);';
+        const params = [];
+
+        params.push(data.ltid);
+        params.push(data.eid);
+        params.push(data.code);
+
+        const result = await this.#execQuery(query, params);
+        result.lastInsertRowid = ltid;
         this.results = result;
 
         return this.result;
@@ -815,6 +841,20 @@ export default class DBManager {
     async deleteLineageType(ltid) {
         let query = 'DELETE FROM lineageType WHERE ltid = ?;';
         let params = [ltid];
+        this.results = await this.#execQuery(query, params);
+
+        return this.result;
+    }
+
+    /**
+     * Desvincula uma Entrada de uma Árvore de Linhagem.
+     * @param {string} ltid         - O ID da Árvore de Linhagem.
+     * @param {string} eid          - O ID da Entrada a ser desvinculada da Árvore de Linhagem.
+     * @returns {Promise<Object>}   - A resposta do banco de dados.
+     */
+    async deleteLineageTreeEntry(ltid, eid) {
+        let query = 'DELETE FROM _lineageTreeEntries WHERE ltid = ? AND eid = ?;';
+        let params = [ltid, eid];
         this.results = await this.#execQuery(query, params);
 
         return this.result;
@@ -1391,6 +1431,20 @@ export default class DBManager {
     }
 
     /**
+     * Recupera todas as entradas de uma árvore de linhagem.
+     * @return {Promise<Array<Object>>} Retorna um array de objetos com as informações de cada Árvore de Linhagem.
+     * @property {string} ltid           - ID da Árvore de Linhagem.
+    */
+    async getAllLineageTreeEntries() {
+        const query = 'SELECT * FROM _lineageTreeEntries';  
+        this.results = await uniforge.sql.query(query);
+        return this.result.map(row => ({
+            _label: row.title,
+            ...row
+        }));
+    }
+
+    /**
      * Recupera todos os mapas.
      * @return {Promise<Array<Object>>} Retorna um array de objetos com as informações de cada mapa.
      * @property {string} _id           - ID do mapa.
@@ -1626,11 +1680,12 @@ export default class DBManager {
      */
     async createChapterTable() {
         const query = 'CREATE TABLE IF NOT EXISTS `chapter` (' +
-            '`cid` VARCHAR(16) NOT NULL,' +         // Identificador do Capítulo.
-            '`tome` VARCHAR(16) NOT NULL,' +        // Identificador do Tomo a que o Capítulo pertence.
-            '`title` TEXT NOT NULL,' +              // Título do Capítulo.
-            '`icon` VARCHAR(255) NOT NULL,' +       // Ícone do Capítulo.
-            '`type` INTEGER NOT NULL,' +            // Tipo do Capítulo (material, imaterial, linhagem).
+            '`cid` VARCHAR(16) NOT NULL,' +                 // Identificador do Capítulo.
+            '`tome` VARCHAR(16) NOT NULL,' +                // Identificador do Tomo a que o Capítulo pertence.
+            '`title` TEXT NOT NULL,' +                      // Título do Capítulo.
+            '`icon` VARCHAR(255) NOT NULL,' +               // Ícone do Capítulo.
+            '`type` INTEGER NOT NULL,' +                    // Tipo do Capítulo (material, imaterial, linhagem).
+            '`hasLineage` BOOLEAN DEFAULT 0 NOT NULL,' +    // Representa uma linhagem (padrão 'false').
             'PRIMARY KEY (`cid`))';
 
         this.results = await this.#execQuery(query);
@@ -1729,12 +1784,11 @@ export default class DBManager {
     async createLineageTreeTable() {
         const query = 'CREATE TABLE IF NOT EXISTS `lineageTree` (' +
             '`ltid` VARCHAR(16) NOT NULL,' +            // Identificador da Linhagem.
-            '`sid` VARCHAR(16) NOT NULL,' +             // Identificador da Seção a que a Linhagem pertence.
+            '`eid` VARCHAR(16) NOT NULL,' +             // Identificador da Entrada Fundadora da Linhagem.
             '`title` TEXT NOT NULL,' +                  // Título da Árvore.
-            '`founder` VARCHAR(16) NOT NULL,' +         // Fundador da Linhagem (Identificador daprimeira Primeira da linhagem).
             '`tree` TEXT NOT NULL,' +                   // Árvore da Linhagem (Utilizado o formato 'FamilyScript').        
             '`isDraft` BOOLEAN NULL DEFAULT 0,' +   // A linhagem é um rascunho (falso por padrão).
-            'PRIMARY KEY (`ltid`,`sid`))';
+            'PRIMARY KEY (`ltid`,`eid`))';
 
         this.results = await this.#execQuery(query);
         console.log('Tabela \'lineageTree\' criada....OK.');
@@ -1761,6 +1815,25 @@ export default class DBManager {
 
         this.results = await this.#execQuery(query);
         console.log('Tabela \'lineageType\' criada....OK.');
+
+        return this.result;
+    }
+
+    /**
+     * Cria a tabela de vínculo '_lineageTreeEntries' no banco de dados.
+     * 
+     * Essa tabela é usada para armazenar as Entradas vinculadas a uma Árvore de Linhagem.
+     * 
+     * @returns {Promise<void>} Uma promessa que informa se a tabela foi criada com sucesso.
+     */
+    async createLineageTreeEntriesTable() {
+        const query = 'CREATE TABLE IF NOT EXISTS `_lineageTreeEntries` (' +
+            '`ltid` VARCHAR(16) NOT NULL,' +            // Identificador da Linhagem.
+            '`eid` VARCHAR(16) NOT NULL,' +             // Identificador da Entrada Fundadora da Linhagem.
+            'PRIMARY KEY (`ltid`,`eid`))';
+
+        this.results = await this.#execQuery(query);
+        console.log('Tabela \'_lineageTreeEntries\' criada....OK.');
 
         return this.result;
     }

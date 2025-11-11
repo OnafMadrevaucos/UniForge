@@ -37,7 +37,7 @@ export default class BaseDialog extends Application {
 
         this.alwaysOnTop = options?.alwaysOnTop ?? false;
 
-        this.alwaysClose = options?.alwaysClose ?? false;      
+        this.alwaysClose = options?.alwaysClose ?? false;
     }
 
     /* ---------------------------------------------------------------------------------------------------------------- */
@@ -46,11 +46,11 @@ export default class BaseDialog extends Application {
      * @overload
      * @inheritdoc
     */
-    get defaultOptions() {   
-        const config = super.defaultOptions;   
-            return uniforge.utils.mergeObjects(config,{
-              style: Application.Styles.DIALOG,
-              classes: [...config.classes,'flexcol']
+    get defaultOptions() {
+        const config = super.defaultOptions;
+        return uniforge.utils.mergeObjects(config, {
+            style: Application.Styles.DIALOG,
+            classes: [...config.classes, 'flexcol']
         });
     }
     /**
@@ -60,7 +60,41 @@ export default class BaseDialog extends Application {
     */
     get dialog() {
         return this.ui.app;
-    }        
+    }
+
+    /**
+     * Retorna um objeto com seletores para elementos da aplicação.
+     * 
+     * @returns {Object} - Um objeto com as seguintes propriedades:
+     *  - overlay: Seletor para o elemento overlay da aplicação.
+     *  - app: Seletor para o elemento container da aplicação.
+     *  - header: Seletor para o elemento header da aplicação.
+     *  - main: Seletor para o elemento main da aplicação.
+     *  - close_btn: Seletor para o elemento de fechar a aplicação.
+     */
+    get query() {
+        return {
+            overlay: this._buildSelector('Overlay'),
+            ...super.query
+        };
+    }
+
+    /**
+    * Propriedade que retorna um objeto com referências para elementos do formulário.
+    * 
+    * @returns {Object}  - Um objeto com as seguintes propriedades:
+    *  - overlay: O elemento HTML que contém o formulário.
+    *  - form: O elemento HTML que representa o formulário.
+    *  - header: O elemento HTML que contém o título do formulário.
+    *  - close_btn: O elemento HTML que fecha o formulário.
+    *  - content: O elemento HTML que contém o conteúdo do formulário.
+   */
+    get ui() {
+        return {
+            overlay: document.querySelector(this.query.overlay),
+            ...super.ui
+        };
+    }
 
     /**
      * Renderiza o corpo do diálogo.
@@ -101,7 +135,18 @@ export default class BaseDialog extends Application {
         });
 
         return buttons;
-    }    
+    }
+
+    /**@inheritdoc */
+    async prepareTemplate() {
+        await super.prepareTemplate();
+
+        const overlay = document.createElement('div');
+        overlay.id = `${this.style}Overlay-${this.uuid}`;
+        overlay.classList.add('overlay', `${this.style}-overlay`, 'flexrow');
+
+        this.html.overlay = overlay.outerHTML;
+    }
 
     /**
      * Cria a estrutura específica do diálogo, incluindo os seus botões.
@@ -133,7 +178,7 @@ export default class BaseDialog extends Application {
         await super.render();
         return true;
     }
-    
+
     /**
     * Inicia a construção do diálogo.
     * @inheritdoc
@@ -141,12 +186,12 @@ export default class BaseDialog extends Application {
     async initialize() {
         // Se o diálogo implementa 'configureElements', chama o método.
         if (this.configureElements) await this.configureElements();
-        
+
         // Centralizar o diálogo no parentElement
-        this._centerDialog();        
+        this._centerDialog();
 
         this.activateListeners();
-    } 
+    }
 
     submit(button, event) {
         const target = this.dialog;
@@ -161,13 +206,42 @@ export default class BaseDialog extends Application {
         } catch (error) {
             this.msgBox.showError(error.message, error);
         }
-    } 
+    }
+
+    close() {        
+        this.ui.overlay.remove();   
+        super.close();     
+    }
+
+    hookToDOM() {
+        this.#hookOverlayToDOM();
+        super.hookToDOM();
+    }
+
+    #hookOverlayToDOM() {
+        const parser = new DOMParser();
+        let doc = null;
+
+        // Verifica se o overlay da aplicação foi renderizado corretamente.
+        if (!this.html.overlay || this.html.overlay.isEmpty())
+            throw new Error('O formulário precisa ter um overlay.');
+
+        // Obtém o elemento HTML do overlay da aplicação.
+        doc = parser.parseFromString(this.html.overlay, 'text/html');
+        const overlay = doc.body.firstChild;
+
+        // Adiciona o overlay ao DOM.
+        document.body.appendChild(overlay);
+    }
+
+    /* ---------------------------------------------------------------------------------------------------------------- */
+    // LISTENERS
 
     /**
     * Configura ouvintes de eventos básicos para o dialog.
     * @protected
     */
-    activateListeners() {  
+    activateListeners() {
         const main = this.ui.main;
         main.addEventListener('submit', (event) => { event.preventDefault(); });
 
@@ -181,7 +255,7 @@ export default class BaseDialog extends Application {
     }
 
     _onOverlayClick(event) {
-        if (!event.target.classList.contains('overlay')) return;            
+        if (!event.target.classList.contains('overlay')) return;
         this.close();
     }
 

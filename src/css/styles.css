@@ -318,7 +318,7 @@ select {
 .leaflet-container a,
 button {
     padding: 10px 15px;
-    margin: 0;
+    margin: 10px auto;
     align-self: flex-end;
     box-shadow: var(--small-shadow);
     font-family: 'Georgia', serif;
@@ -328,8 +328,7 @@ button {
     border-radius: var(--default-border-radius);
     font-size: var(--default-size);
     font-weight: 700;
-    transition: background-color 0.3s;
-    margin: 10px auto;
+    transition: background-color 0.3s;    
     height: fit-content;
     width: 10em;
 }
@@ -665,6 +664,11 @@ input:checked+.slider::before {
     border: none !important;
 }
 
+.leaflet-top,
+.leaflet-bottom {
+    z-index: 1000 !important;
+}
+
 .leaflet-container .leaflet-control-layers a,
 .leaflet-bar button {
     width: 3em;
@@ -673,9 +677,8 @@ input:checked+.slider::before {
     padding: 5px;
 }
 
-.leaflet-top,
-.leaflet-bottom {
-    z-index: 2000 !important;
+.leaflet-container .leaflet-control-layers-expanded a.leaflet-control-layers-toggle {
+    display: inherit;
 }
 
 .leaflet-touch .leaflet-control-layers {
@@ -688,6 +691,10 @@ input:checked+.slider::before {
 }
 
 .leaflet-touch .leaflet-control-layers .leaflet-control-layers-list {
+    position: absolute;
+    top: 10px;
+    right: 5.5em;
+    width: max-content;
     background-color: var(--dark-blueT87) !important;
     border-radius: var(--default-border-radius);
     box-shadow: var(--small-shadow);
@@ -748,19 +755,19 @@ input:checked+.slider::before {
     text-shadow: none;
 }
 
-.leaflet-popup .leaflet-popup-content-wrapper {
+.leaflet-container .leaflet-popup-pane .leaflet-popup .leaflet-popup-content-wrapper {
     background-color: var(--dark-red);
     color: var(--light-text-color);
     border: var(--filled-border);
     border-radius: var(--default-border-radius);
 }
 
-.leaflet-popup .leaflet-popup-content-wrapper,
-.leaflet-popup-tip {
+.leaflet-container .leaflet-popup-pane .leaflet-popup .leaflet-popup-content-wrapper,
+.leaflet-popup-tip-container .leaflet-popup-tip {
     background: var(--dark-red);
 }
 
-.leaflet-popup .leaflet-popup-content-wrapper .leaflet-popup-content {
+.leaflet-container .leaflet-popup-pane .leaflet-popup .leaflet-popup-content-wrapper .leaflet-popup-content {
     width: 250px;
     height: 125px;
     background-color: var(--light-blue);
@@ -773,22 +780,22 @@ input:checked+.slider::before {
     box-shadow: var(--leaflet-popup-shadow);
 }
 
-.leaflet-popup .leaflet-popup-content .layer-popup-title {
+.leaflet-container .leaflet-popup-pane .leaflet-popup .leaflet-popup-content .layer-popup-title {
     position: absolute;
     top: 5px;
     font-weight: 800;
 }
 
-.leaflet-popup .leaflet-popup-content .layer-popup-body {
+.leaflet-container .leaflet-popup-pane .leaflet-popup .leaflet-popup-content .layer-popup-body {
     height: var(--fill-height);
     overflow-y: auto;
 }
 
-.leaflet-popup .leaflet-popup-content .layer-popup-body p {
+.leaflet-container .leaflet-popup-pane .leaflet-popup .leaflet-popup-content .layer-popup-body p {
     margin: 0;
 }
 
-.leaflet-popup .leaflet-popup-content .layer-popup-footer {
+.leaflet-container .leaflet-popup-pane .leaflet-popup .leaflet-popup-content .layer-popup-footer {
     position: absolute;
     bottom: 1vh;
     height: fit-content;
@@ -796,7 +803,7 @@ input:checked+.slider::before {
     padding-right: 5px;
 }
 
-.leaflet-popup .leaflet-popup-content .layer-popup-footer span {
+.leaflet-container .leaflet-popup-pane .leaflet-popup .leaflet-popup-content .layer-popup-footer span {
     flex: 1;
     text-align: end;
     font-style: italic;
@@ -805,13 +812,20 @@ input:checked+.slider::before {
     user-select: none;
 }
 
-.leaflet-popup .leaflet-popup-content .layer-popup-footer a {
+.leaflet-container .leaflet-popup-pane .leaflet-popup .leaflet-popup-content .layer-popup-footer a {
     color: var(--light-text-color);
+    margin: 0;
+    padding: 2px 5px;
 }
 
-.leaflet-popup .leaflet-popup-content .layer-popup-footer a:hover {
+.leaflet-container .leaflet-popup-pane .leaflet-popup .leaflet-popup-content .layer-popup-footer a:hover {
     cursor: default;
     text-shadow: none;
+}
+
+.leaflet-container .leaflet-popup-pane .leaflet-popup a.leaflet-popup-close-button {
+    padding: 0;
+    margin: 4px;
 }
 
 /* ------ Leaflet Layer Controls ------*/
@@ -828,14 +842,14 @@ input:checked+.slider::before {
     padding: 5px;
     box-shadow: var(--small-shadow);
     transition: all 0.3s ease-in-out;
-    z-index: 1999;
+    z-index: 999;
 }
 
 .layer-control-wrapper.active {
     opacity: 1;
     right: 64px;
     pointer-events: all;
-    z-index: 2002;
+    z-index: 1000;
 }
 
 .layer-control-wrapper .layer-control-title {
@@ -2214,7 +2228,6 @@ input:checked+.slider::before {
 
 #settings .settings-container {
     flex: 100%;
-    border: var(--data-group-border);
     border-radius: var(--default-border-radius);
     color: var(--light-text-color);
 }
@@ -3665,6 +3678,7 @@ input:checked+.slider::before {
     height: 310px;
     max-width: 350px;
     max-height: 310px;
+    overflow: hidden;
 }
 
 .calendar-header {
@@ -3694,7 +3708,8 @@ input:checked+.slider::before {
 }
 
 .calendar .calendar-view {
-    transition: transform 0.1s, opacity 0.1s;
+    position: relative;    
+    transition: transform 0.3s;
 }
 
 /* Estilo comum para todas as views */
@@ -3719,7 +3734,7 @@ input:checked+.slider::before {
 }
 
 /* Visualização dos dias */
-.days .calendar-content {
+.days .calendar-content {    
     display: grid;
     grid-template-columns: repeat(7, 1fr);
     text-align: center;
@@ -3783,9 +3798,17 @@ input:checked+.slider::before {
     background-color: var(--light-blue);
 }
 
+.zoom-in {
+    transform: scale(1.2);
+}
 .zoom-out {
     transform: scale(0.8);
-    opacity: 0;
+}
+.slide-left {
+    transform: translateX(-100%);
+}
+.slide-right {
+    transform: translateX(100%);
 }
 
 .entries button {
@@ -3804,8 +3827,8 @@ input:checked+.slider::before {
     border: none;
 }
 
-.tox:not(.tox-tinymce-inline) .tox-editor-header,
-.tox:not(.tox-tinymce-inline) .tox-editor-header * {
+.uniforge .tox:not(.tox-tinymce-inline) .tox-editor-header,
+.uniforge .tox:not(.tox-tinymce-inline) .tox-editor-header * {
     background-color: var(--dark-blue);
 }
 
@@ -3940,6 +3963,10 @@ input:checked+.slider::before {
     color: var(--text-color);
     /* Alterando a cor do texto */
     box-shadow: none !important;
+}
+
+.mce-content-body[data-mce-placeholder]::before {
+    opacity: 0.7;
 }
 
 /* ------ Text Link ------ */

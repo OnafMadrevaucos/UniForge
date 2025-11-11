@@ -257,7 +257,6 @@ export default class BaseForm extends Application {
   _onHeaderDblClick(event) {
     event.stopPropagation();
     this.ui.app.classList.toggle('maximized');
-    this.ui.overlay.classList.toggle('hidden');
 
     if(this.ui.app.classList.contains('maximized')) this._activateForm();
   }

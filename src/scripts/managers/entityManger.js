@@ -30,7 +30,7 @@ export default class EntityManager extends BaseManager {
      * Objeto privado que gerencia os indivíduos (nós) e relacionamentos (galhos) de uma família.
     */
     #tree = {
-        root: 'E4FT6',
+        root: '',
         nodes: {},
         branches: []
     };
@@ -161,11 +161,18 @@ export default class EntityManager extends BaseManager {
     addNode(entry, isRoot = false) {
         const tree = this.#tree;
 
+        const id = uniforge.utils.randomString(5, false, true); 
+
+        if(isRoot) {
+            tree.root = id;
+        }
+
         const node = new TreeNode({
-            id: entry.id ?? entry.eid,
-            name: entry.givenName,
+            id: id,
+            eid: entry.eid,
+            name: entry.title ?? '',
             extra: {
-                title: entry.title ?? null,
+                title: entry.title ?? '',
                 gender: entry.gender ?? 'm',
                 genitors: {
                     a: null,
@@ -173,7 +180,7 @@ export default class EntityManager extends BaseManager {
                 },
                 group: entry.group ?? null,
                 groupOrder: entry.groupOrder ?? 0,
-                born: entry.birthDate ?? null,
+                born: entry.birthDate ?? 'Desc.',
                 death: entry.deathDate ?? null,
                 deceased: entry.deceased ?? false
             }
@@ -247,6 +254,9 @@ export default class EntityManager extends BaseManager {
      * @param {string} data - O script de família em formato de texto.
      */
     fromFamilyScript(data) {
+        // Se nenhuma data foi fornecida, ignora.
+        if (!data) return null;
+
         const lines = data.split(/\r?\n/);
         const tree = {
             root: 'A334F',
@@ -454,6 +464,9 @@ export default class EntityManager extends BaseManager {
     }
 
     _getNodesDepth(node, depthOffset = 0) {
+        // Verifica se o Nó existe.
+        if(!node) return;
+
         node.depthOffset = depthOffset;
 
         if (node.marriages) {
@@ -483,11 +496,12 @@ export default class EntityManager extends BaseManager {
         }
     }
 
-    _renderText(name, extra, textClass) {
-        if (name.isEmpty() || !extra) return '';
-
+    _renderText(name, extra, textClass) { 
         const text = document.createElement('div');
         text.classList.add(textClass, 'flexcol');
+
+        // Se o nome estiver vazio ou não houver extra, retorna o <div> vazio.
+        if (name.isEmpty() || !extra) return text;
 
         const nameSpan = document.createElement('span');
         nameSpan.innerHTML = name;
@@ -575,12 +589,14 @@ export default class EntityManager extends BaseManager {
 class TreeNode {
     constructor(data) {
         this.#id = data.id ?? null;
+        this.#eid = data.eid ?? null;
         this.#name = data.name ?? null;
         this.#depthOffset = data.depthOffset ?? 0;
         this.#marriages = data.marriages ?? [];
         this.#extra = data.extra ?? this.#extra;
     }
     #id = null;
+    #eid = null;
     #name = null;
     #depthOffset = 0;
     #marriages = [];
@@ -599,6 +615,7 @@ class TreeNode {
     };
 
     get id() { return this.#id; }
+    get eid() { return this.#eid; }
     get name() { return this.#name; }
     get depthOffset() { return this.#depthOffset; }
     get marriages() { return this.#marriages; }
@@ -612,7 +629,6 @@ class TreeNode {
     get death() { return this.#extra.death; }
     get deceased() { return this.#extra.deceased; }
 
-    set id(value) { this.#id = value; }
     set name(value) { this.#name = value; }
     set depthOffset(value) { this.#depthOffset = value; }
     set marriages(value) { this.#marriages = value; }

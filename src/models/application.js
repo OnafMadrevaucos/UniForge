@@ -246,11 +246,7 @@ export default class Application {
      * @throws {Error}           - Se ocorrer um erro ao renderizar o formulário.
     */
     async prepareTemplate() {
-        const classes = this.defaultOptions.classes;
-
-        const overlay = document.createElement('div');
-        overlay.id = `${this.style}Overlay-${this.uuid}`;
-        overlay.classList.add('overlay', `${this.style}-overlay`, 'flexrow');
+        const classes = this.defaultOptions.classes;        
 
         const container = document.createElement('div');
         container.id = `${this.style}Container-${this.uuid}`;
@@ -268,13 +264,13 @@ export default class Application {
         main.classList.add('main', 'flexcol');
 
         await this.prepareDerivedTemplate(container, header, main);
-
-        this.html.overlay = overlay.outerHTML;
+                
         this.html.app = container.outerHTML;
     }
 
     /**
     * Prepara o conteúdo do formulário substituindo seus placeholders e tags customizadas.
+    * TODO: Utilizar a biblioteca Handlebars para renderizar templates.
     */
     parseTemplate(html) {
         return uniforge.parser.parseHTML(html, this.data);
@@ -381,7 +377,7 @@ export default class Application {
 
         try {
             // Envia o HTML para o DOM.
-            this.#hookToDOM();
+            this.hookToDOM();
 
             // Configura as funcionalidades de interação da aplicação.
             this.configure();
@@ -400,7 +396,6 @@ export default class Application {
 
     close() {
         this.ui.app.remove();
-        this.ui.overlay.remove();
 
         // Limpa o conteúdo do formulário dos metadados da aplicação.
         uniforge.state.update(['currentForm', { name: null, state: null, activeTab: 0 }]);
@@ -421,25 +416,8 @@ export default class Application {
         this.rendered = false;
     }
 
-    #hookToDOM() {
-        this.#hookOverlayToDOM();
+    hookToDOM() {
         this.#hookContainerToDOM();
-    }
-
-    #hookOverlayToDOM() {
-        const parser = new DOMParser();
-        let doc = null;
-
-        // Verifica se o overlay da aplicação foi renderizado corretamente.
-        if(!this.html.overlay || this.html.overlay.isEmpty())
-            throw new Error('O formulário precisa ter um overlay.');
-
-         // Obtém o elemento HTML do overlay da aplicação.
-         doc = parser.parseFromString(this.html.overlay, 'text/html');
-         const overlay = doc.body.firstChild;
-
-        // Adiciona o overlay ao DOM.
-        document.body.appendChild(overlay);
     }
 
     #hookContainerToDOM() {
@@ -456,23 +434,7 @@ export default class Application {
 
         // Adiciona o container ao DOM.
         document.body.appendChild(container);
-    }
-
-    #hookMainToContainer() {
-        const parser = new DOMParser();
-        let doc = null;
-
-        // Verifica se o container da aplicação foi renderizado corretamente.
-        if(!this.html.main || this.html.main.isEmpty())
-            throw new Error('O formulário precisa ter um main.');
-
-         // Obtém o elemento HTML do container da aplicação.
-         doc = parser.parseFromString(this.html.main, 'text/html');
-         const main = doc.body.firstChild;
-
-        // Adiciona o container ao DOM.
-        this.ui.app.appendChild(main);
-    }
+    }    
     /* ---------------------------------------------------------------------------------------------------------------- */
     // LISTENERS
     /**

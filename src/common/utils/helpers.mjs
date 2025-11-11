@@ -148,7 +148,7 @@ export async function getFontAwesomeIcons() {
         Object.keys(json).forEach((key) => {
             const item = json[key];
             const selector = item.selector.replace('fa-', '');
-            item._icon = `<i class="fas ${item.selector}"></i>`;
+            item._icon = `<i class="fa ${item.selector}"></i>`;
             item._label = selector.capitalize();
             item._value = item.selector;
         });

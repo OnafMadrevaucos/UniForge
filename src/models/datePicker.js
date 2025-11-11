@@ -1,7 +1,7 @@
 import CustomDate from "../common/primitives/date.mjs";
 
 export default class DatePicker {
-  
+
   /** Modos de vizualização do DatePicker.
    * @type {Object}
    * @property {string} days - Vizualiza os dias do mês.
@@ -23,7 +23,7 @@ export default class DatePicker {
     this.id = id;
 
     // Inicia com os dados informados o genrenciador interno de Data do DatePicker.
-    if (date && !date.empty()) this.date = date;   
+    if (date && !date.empty()) this.date = date;
   }
 
   #state = {
@@ -91,7 +91,7 @@ export default class DatePicker {
   }
   get date() {
     return this.#selectedDate;
-  }  
+  }
   get currentView() {
     return this.#state.view;
   }
@@ -111,7 +111,7 @@ export default class DatePicker {
     return this.#currentDate.fullYear;
   }
 
-  get value() {    
+  get value() {
     return this.#selectedDate.toString('MMn DD, YYYYs');
   }
   get ticks() {
@@ -143,20 +143,20 @@ export default class DatePicker {
   set opened(value) {
     const calendar = this.calendar;
 
-    if(value === true) calendar.classList.add('open');
+    if (value === true) calendar.classList.add('open');
     else calendar.classList.remove('open');
 
     this.#state.opened = value;
   }
 
   set date(value) {
-    this.configured = false;   
+    this.configured = false;
     this.#selectedDate.selectDate(value.day, value.month, value.year);
   }
   set currentView(value) {
     this.#state.view = value;
   }
-  set currentDay(value) {    
+  set currentDay(value) {
     this.#currentDate.day = value;
   }
   set currentMonth(value) {
@@ -194,11 +194,10 @@ export default class DatePicker {
     // Defina meses, dias e anos customizados.
     this.#selectedDate = new CustomDate(calendar);
     // Defina meses, dias e anos customizados.
-    this.#currentDate = new CustomDate(calendar, {day: 1, month: 0, year: 1});
+    this.#currentDate = new CustomDate(calendar, { day: 1, month: 0, year: 1 });
 
-    if (refresh) {
-      this.#clearCalendar(true);      
-    }
+    this.#clearCalendar(refresh);
+
     this.currentView = DatePicker.Views.days;
     this.changeView();
 
@@ -206,8 +205,7 @@ export default class DatePicker {
   }
 
   // Função para atualizar o calendário conforme o modo
-  update(reset = false) {
-    this.#clearCalendar(reset); 
+  update(reset = false, options = { doZoom: true, zoom: 'out', doSlide: false, slide: 'left' }) {
 
     if (this.currentView === "years") {
       clearInterval(this.decrementInterval);
@@ -223,7 +221,7 @@ export default class DatePicker {
       clearInterval(this.decrementInterval);
     }
 
-    this.changeView(this.currentView);
+    this.changeView(this.currentView, reset, options);
   }
 
   updateView() {
@@ -242,20 +240,6 @@ export default class DatePicker {
       if (propagate) this.#hiddenInput.dispatchEvent(new Event('change'));
     }
   }
-
-  /**
-   * Carrega um calendário customizado no DatePicker.
-   * @param {object} dateType - Objeto com os dados do calendário a ser carregado.
-   * @param {boolean} [clearText=true] - Flag para limpar o texto do input de data
-   *   ao carregar o calendário. Se `false`, o texto do input de data
-   *   será mantido.
-  
-  show(dateType, clearText = true) {
-    if(!this.opened) this.config(dateType, clearText);
-
-    this.update(); // Inicializa o calendário.
-  }
-  */
 
   /**
   * Define a data máxima permitida para o DatePicker.
@@ -316,16 +300,25 @@ export default class DatePicker {
   }
 
   onDatePickerClick() {
-    const calendar = this.calendar;
-    const dateDisplay = this.dateDisplay;
-    const dateDisplayRect = dateDisplay.getBoundingClientRect();
+    if (!this.opened) {
+      const calendar = this.calendar;
+      const dateDisplay = this.dateDisplay;
+      const dateDisplayRect = dateDisplay.getBoundingClientRect();
 
-    calendar.style.top = `${dateDisplayRect.bottom}px`;
-    calendar.style.left = `${dateDisplayRect.left}px`;
+      calendar.style.top = `${dateDisplayRect.bottom}px`;
+      calendar.style.left = `${dateDisplayRect.left}px`;
 
-    if(this.currentYear === 0) this.currentYear = 1;
-    
-    this.opened = true;
+      if (this.currentYear === 0) this.currentYear = 1;
+
+      if (!this.date.isEmpty) {
+        this.#currentDate = new CustomDate(this.date.calendar, { day: this.date.day, month: this.date.month, year: this.date.year });
+        this.changeView(this.currentView, false, { animate: false });
+      }
+
+      this.opened = true;
+    } else {
+      this.opened = false;
+    }
   }
   onNextGroupClick(event) {
     event.stopPropagation(); // Impede que o clique "vaze" para o container e feche o calendário.
@@ -358,7 +351,7 @@ export default class DatePicker {
 
     if (this.currentYear == 0) this.currentYear++;
 
-    this.update();
+    this.update(false, { doZoom: false, doSlide: true, slide: 'right' });
   }
   onPrevGroupClick(event) {
     event.stopPropagation(); // Impede que o clique "vaze" para o container e feche o calendário.
@@ -392,7 +385,7 @@ export default class DatePicker {
 
     if (this.currentYear == 0) this.currentYear--;
 
-    this.update();
+    this.update(false, { doZoom: false, doSlide: true, slide: 'left' });
   }
   onMonthYearClick(event) {
     event.stopPropagation(); // Impede que o clique "vaze" para o container e feche o calendário.
@@ -416,7 +409,7 @@ export default class DatePicker {
 
       this.opened = false;
     }
-  }    
+  }
 
   // Função para atualizar o calendário conforme o valor da data selecionada.
   #clearCalendar(reset = false) {
@@ -425,17 +418,53 @@ export default class DatePicker {
     if (reset) {
       this.clearDate();
       this.currentView = DatePicker.Views.days;
-    }        
+    }
   }
 
-  changeView(newView = this.currentView) {
-    // Adiciona a classe de animação
-    this.calendarView.classList.add('zoom-out');
-    // Aguarda a conclusão da animação antes de mudar a visualização
-    setTimeout(() => {
-      this.calendarView.classList.remove('zoom-out');
+  changeView(newView = this.currentView, reset = false, options = {}) {
+    options = uniforge.utils.mergeObjects({ animate: true, doZoom: true, zoom: 'out', doSlide: false, slide: 'left' }, options);
 
-      // Lógica para mudar a visualização (ajustar para sua lógica específica)
+
+    // Se for para animar, busque as classes de animação selecionadas.
+    if (options.animate) {
+      // Obtém as classes de animação.
+      const animClass = this._getAnimClass(options);
+
+      // Há alguma animação a ser executada.
+      if (animClass.length > 0)
+        // Adiciona as classes de animação.
+        this.calendarView.classList.add(animClass);
+
+      // Aguarda a conclusão da animação antes de mudar a visualização.
+      setTimeout(() => {
+        // Limpa o calendário.
+        this.#clearCalendar(reset);
+
+        // Há alguma animação a ser finalizada.
+        if (animClass.length > 0)
+          // Remove as classes de animação.
+          this.calendarView.classList.remove(animClass);
+
+        // Lógica para mudar a visualização (ajustar para sua lógica específica).
+        switch (newView) {
+          case 'days':
+            this.showDays();
+            break;
+          case 'months':
+            this.showMonths();
+            break;
+          case 'years':
+            this.showYears();
+            break;
+        }
+
+        this.updateView();
+      }, 300);
+    } else {
+      // Limpa o calendário.
+      this.#clearCalendar(reset);
+
+      // Lógica para mudar a visualização (ajustar para sua lógica específica).
       switch (newView) {
         case 'days':
           this.showDays();
@@ -447,9 +476,9 @@ export default class DatePicker {
           this.showYears();
           break;
       }
-    }, 100);
 
-    this.updateView();
+      this.updateView();
+    }
   }
 
   // Seleciona um mês
@@ -467,10 +496,10 @@ export default class DatePicker {
   }
 
   // Seleciona a data
-  selectDate(day) {    
-    if(this.currentYear === 0) this.currentYear = 1;
+  selectDate(day) {
+    if (this.currentYear === 0) this.currentYear = 1;
 
-    this.date = { day: day, month: this.currentMonth, year: this.currentYear };        
+    this.date = { day: day, month: this.currentMonth, year: this.currentYear };
     this.update();
   }
 
@@ -505,13 +534,13 @@ export default class DatePicker {
         day.classList.add('invalid');
       }
 
-      const date = new CustomDate(this.date.calendar, { 
-        day: i, 
-        month: this.currentMonth, 
-        year: this.currentYear 
+      const date = new CustomDate(this.date.calendar, {
+        day: i,
+        month: this.currentMonth,
+        year: this.currentYear
       });
 
-      if(!this.date.isEmpty && date.ticks == this.date.ticks) {
+      if (!this.date.isEmpty && date.ticks == this.date.ticks) {
         day.classList.add('selected');
       }
     }
@@ -570,20 +599,27 @@ export default class DatePicker {
     if (this.minDate && year === this.minDate.year && month < this.minDate.month) return false;
 
     if (this.maxDate && year > this.maxDate.year) return false;
-    if (this.maxDate && year === this.maxDate.year &&  month > this.maxDate.month) return false;
+    if (this.maxDate && year === this.maxDate.year && month > this.maxDate.month) return false;
 
     return true;
   }
 
   isDayValid(day) {
-    const date = new CustomDate(this.date.calendar, { 
-      day: day, 
-      month: this.currentMonth, 
-      year: this.currentYear 
+    const date = new CustomDate(this.date.calendar, {
+      day: day,
+      month: this.currentMonth,
+      year: this.currentYear
     });
 
     if (this.minDate && date < this.minDate) return false;
     if (this.maxDate && date > this.maxDate) return false;
     return true;
+  }
+
+  _getAnimClass(options = { doZoom: true, zoom: 'out', doSlide: false, slide: 'left' }) {
+    const animClass = [];
+    if (options.doZoom) animClass.push(`zoom-${options.zoom}`);
+    if (options.doSlide) animClass.push(`slide-${options.slide}`);
+    return animClass;
   }
 }
