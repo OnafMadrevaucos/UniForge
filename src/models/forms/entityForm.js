@@ -207,9 +207,12 @@ export default class EntityForm extends EntryForm {
   onNewLineageClick(event) {
     event.stopPropagation();
 
+    const section = uniforge.doc.sections.get(this.data.entry.sid);
+    const chapterType = uniforge.doc.chapterTypes.get(section.chapterType);
+
     this.manager.addNode(this.data.entry, true);
 
-    this.manager.buildTree();
+    this.manager.buildTree({isPerson: chapterType.ctid === 3});
 
     // Exibe o controle da Árvore de Linhagem.
     this._toggleLineageTree(true);

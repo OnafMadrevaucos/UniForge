@@ -255,11 +255,12 @@ export default class DBManager {
      * @param {string} data.title - Título da Seção.
      * @param {string} data.htmlString - String HTML a ser associada à Seção.
      * @param {boolean} data.isDraft - Indica se a Seção é um rascunho.
+     * @param {boolean} data.hasLineage - Indica se a seção possui linhagem.
      * 
      * @returns {Promise<Object>} - Resultado da execução do comando, incluindo o ID da Seção adicionada.
     */
     async addSection(data) {
-        let query = 'INSERT INTO section (sid, cid, title, htmlString, isDraft) VALUES (?,?,?,?,?);';
+        let query = 'INSERT INTO section (sid, cid, title, htmlString, isDraft, hasLineage) VALUES (?,?,?,?,?,?);';
         const params = [];
 
         const sid = (!data.sid || data.sid.isEmpty()) ? this.generateID() : data.sid;
@@ -269,6 +270,7 @@ export default class DBManager {
         params.push(data.title);
         params.push(data.htmlString);
         params.push(Number(data.isDraft));
+        params.push(Number(data.hasLineage));
 
         const result = await this.#execQuery(query, params);
         result.lastInsertRowid = sid;
@@ -543,6 +545,7 @@ export default class DBManager {
      * @param {string} data.title - Título da seção.
      * @param {string} data.htmlString - String HTML a ser associada à seção.
      * @param {boolean} data.isDraft - Indica se a seção é um rascunho.
+     * @param {boolean} data.hasLineage - Indica se a seção possui linhagem.
      * 
      * @returns {Promise<Object>} - Resultado da execução do comando de atualização.
     */
@@ -551,7 +554,8 @@ export default class DBManager {
             ['cid', data.cid],
             ['title', data.title],
             ['htmlString', data.htmlString],
-            ['isDraft', Number(data.isDraft)]
+            ['isDraft', Number(data.isDraft)],
+            ['hasLineage', Number(data.hasLineage)]
         ]);
 
         let query = `UPDATE section SET ${updateSet} WHERE sid = ?`;
@@ -960,6 +964,7 @@ export default class DBManager {
      * @property {string} title      - Título da Seção.
      * @property {string} htmlString - Conte do HTML da Seção.
      * @property {boolean} isDraft   - A Seção é um rascunho? (falso por padrão).
+     * @property {boolean} hasLineage   - A Seção é tem linhagem? (falso por padrão).
      */
     async getSection(sid) {
         let query = 'SELECT * FROM section WHERE sid = ?';
@@ -1436,7 +1441,7 @@ export default class DBManager {
      * @property {string} ltid           - ID da Árvore de Linhagem.
     */
     async getAllLineageTreeEntries() {
-        const query = 'SELECT * FROM _lineageTreeEntries';  
+        const query = 'SELECT * FROM _lineageTreeEntries';
         this.results = await uniforge.sql.query(query);
         return this.result.map(row => ({
             _label: row.title,
@@ -1830,6 +1835,7 @@ export default class DBManager {
         const query = 'CREATE TABLE IF NOT EXISTS `_lineageTreeEntries` (' +
             '`ltid` VARCHAR(16) NOT NULL,' +            // Identificador da Linhagem.
             '`eid` VARCHAR(16) NOT NULL,' +             // Identificador da Entrada Fundadora da Linhagem.
+            '`code` VARCHAR(5) NOT NULL,' +             // Identificador da Entrada dentro da Árvore.
             'PRIMARY KEY (`ltid`,`eid`))';
 
         this.results = await this.#execQuery(query);

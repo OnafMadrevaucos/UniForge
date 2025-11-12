@@ -145,10 +145,22 @@ export async function getFontAwesomeIcons() {
          * @type {Object}
          */
         const json = uniforge.parser.parseCssToJson(cssContent);
+
+        const iconsMetadata = '../node_modules/@fortawesome/fontawesome-free/metadata/icon-families.json';
+
+        /**
+          * Faz uma requisição ao arquivo de metadados dos ícones.
+          * @type {Response}
+          */
+        const metadata = await fetch(iconsMetadata);
+
+        const types = JSON.parse(await metadata.text());
+
         Object.keys(json).forEach((key) => {
             const item = json[key];
             const selector = item.selector.replace('fa-', '');
-            item._icon = `<i class="fa ${item.selector}"></i>`;
+            const type = _detectFontAwesomeType(types, selector);
+            item._icon = `<i class="${type} ${item.selector}"></i>`;
             item._label = selector.capitalize();
             item._value = item.selector;
         });
@@ -209,4 +221,13 @@ export function loremIpsum(numParagraphs) {
     }
 
     return paragraphs;
+}
+
+function _detectFontAwesomeType(types, selector) {
+    const familyStyles = types[selector]?.familyStylesByLicense ?? null;
+
+    if (!familyStyles)
+        return 'fas';
+    else
+        return familyStyles.free[0]?.style.includes('brands') ? 'fab' : 'fas';
 }

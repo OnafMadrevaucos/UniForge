@@ -79,7 +79,8 @@ export default class EntityManager extends BaseManager {
                 linage: 'linage',
                 marriage: 'marriage',
                 text: 'node-text'
-            }
+            },
+            options: this.options || {}
         };
     }
 
@@ -110,9 +111,11 @@ export default class EntityManager extends BaseManager {
 
     /**
      * Constroe a Árvore de Linhagem no diagram de fluxograma.
-     * @param {HTMLElement} container - O elemento HTML que irá conter o diagram de fluxograma.
+     * @param {object} options - O elemento HTML que irá conter o diagram de fluxograma.
     */
-    async buildTree() {
+    async buildTree(options = {}) {
+        this.options = options;
+
         const seed = this._growSeed();
         const root = this.#tree.nodes[this.#tree.root];
         const container = this.treeContainer;
@@ -161,9 +164,9 @@ export default class EntityManager extends BaseManager {
     addNode(entry, isRoot = false) {
         const tree = this.#tree;
 
-        const id = uniforge.utils.randomString(5, false, true); 
+        const id = uniforge.utils.randomString(5, false, true);
 
-        if(isRoot) {
+        if (isRoot) {
             tree.root = id;
         }
 
@@ -465,7 +468,7 @@ export default class EntityManager extends BaseManager {
 
     _getNodesDepth(node, depthOffset = 0) {
         // Verifica se o Nó existe.
-        if(!node) return;
+        if (!node) return;
 
         node.depthOffset = depthOffset;
 
@@ -496,7 +499,7 @@ export default class EntityManager extends BaseManager {
         }
     }
 
-    _renderText(name, extra, textClass) { 
+    _renderText(name, extra, textClass, options) {
         const text = document.createElement('div');
         text.classList.add(textClass, 'flexcol');
 
@@ -519,26 +522,29 @@ export default class EntityManager extends BaseManager {
             dateDiv.appendChild(deathDate);
         }
 
-        const genderSpan = document.createElement('span');
-        genderSpan.classList.add('node-gender', extra.gender === 'm' ? 'male' : 'female');
-        genderSpan.innerHTML = extra.gender === 'm' ? 'Masc.' : 'Fem.';        
-
         text.appendChild(nameSpan);
         text.appendChild(dateDiv);
-        text.appendChild(genderSpan);
+
+        if (options?.isPerson) {
+            const genderSpan = document.createElement('span');
+            genderSpan.classList.add('node-gender', extra.gender === 'm' ? 'male' : 'female');
+            genderSpan.innerHTML = extra.gender === 'm' ? 'Masc.' : 'Fem.';
+
+            text.appendChild(genderSpan);
+        }
 
         return text;
     }
 
-    _renderNode(name, x, y, width, height, extra, id, nodeClass, textClass, textRenderer) {
+    _renderNode(name, x, y, width, height, extra, id, nodeClass, textClass, textRenderer, options) {
         const node = document.createElement('div');
-        node.classList.add(nodeClass, 'flexrow');        
+        node.classList.add(nodeClass, 'flexrow');
         node.id = 'node' + id;
         node.dataset.id = id;
         node.tabIndex = 0;
 
         // Sinalize que o Node é um node de uma entidade morta.
-        if(extra.deceased) node.classList.add('deceased');
+        if (extra.deceased) node.classList.add('deceased');
 
         const iconMap = {
             'king': 'fa-chess-king',
@@ -552,7 +558,7 @@ export default class EntityManager extends BaseManager {
         icon.innerHTML = `<i class="fas ${extra.deceased ? 'fa-skull' : iconMap[extra.title]}"></i>`;;
         node.appendChild(icon);
 
-        const text = textRenderer(name, extra, textClass);
+        const text = textRenderer(name, extra, textClass, options);
         node.appendChild(text);
 
         return node.outerHTML;
@@ -561,27 +567,27 @@ export default class EntityManager extends BaseManager {
     _onNodeClick(name, extra, id) {
         const selectedNode = document.getElementById('node' + id);
         const alreadeSelected = selectedNode.classList.contains('selected');
-        
-        const nodes = document.querySelectorAll('.node');
-        nodes.forEach(node => node.classList.remove('selected'));               
 
-        if(!alreadeSelected) selectedNode.classList.add('selected');
+        const nodes = document.querySelectorAll('.node');
+        nodes.forEach(node => node.classList.remove('selected'));
+
+        if (!alreadeSelected) selectedNode.classList.add('selected');
 
         const actionButtons = document.querySelectorAll('.tree-editor .action-buttons button');
-        actionButtons.forEach(button => button.disabled = alreadeSelected);         
+        actionButtons.forEach(button => button.disabled = alreadeSelected);
     }
 
     _onAddMateClick(event) {
         event.stopPropagation();
         const node = event.target.closest('.node');
-        
+
         console.log('Adicionar Parceiro');
     }
 
     _onAddChildrenClick(event) {
         event.stopPropagation();
         const node = event.target.closest('.node');
-        
+
         console.log('Adicionar Filhos');
     }
 }

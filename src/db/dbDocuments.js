@@ -340,7 +340,7 @@ export default class DBDocuments {
                     });                
 
                 // Adiciona a categoria ao conjunto, incluindo suas entradas
-                sectionSet.add({ ...section, type: chapter.tome, chapterType: chapter.type, entries: entrySet, events: eventSet });
+                sectionSet.add({ ...section, type: chapter.tome, chapterType: chapter.type, chapter: chapter.hasLineage, entries: entrySet, events: eventSet });
             });
         } else throw new Error('Não foi possível criar o Set das categorias. O Set dos chapters deve ser criado antes do de sections.');
 

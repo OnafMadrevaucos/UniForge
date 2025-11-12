@@ -1475,10 +1475,20 @@ input:checked+.slider::before {
     color: var(--light-text-color);
 }
 
+.dialog .main .chapter-dialog .icon-list .icon-item .item-content {
+    gap: 5px;
+}
+.dialog .main .chapter-dialog .icon-list .icon-item .item-content i {
+    width: 42px;
+}
+.dialog .main .chapter-dialog .icon-list .icon-item .item-content span {
+    font-size: var(--big-size);
+    align-content: center;
+}
+
 .dialog .main .folder-list {
     margin-top: 5px;
     gap: var(--default-gap-size);
-    ;
 }
 
 .dialog .main .folder-list li:not(.entry-item) {

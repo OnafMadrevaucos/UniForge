@@ -288,7 +288,7 @@ export default class Application {
             this.data = this.prepareBaseData();
 
             // Função para obter os dados específicos da aplicação.
-            if (this.prepareData) this.prepareData();
+            if (this.prepareData) await this.prepareData();
 
             //if (!this.prepareTemplate) throw new Error('A função prepareTemplate precisa ser implementada.');
             await this.prepareTemplate();

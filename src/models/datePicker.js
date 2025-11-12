@@ -424,7 +424,6 @@ export default class DatePicker {
   changeView(newView = this.currentView, reset = false, options = {}) {
     options = uniforge.utils.mergeObjects({ animate: true, doZoom: true, zoom: 'out', doSlide: false, slide: 'left' }, options);
 
-
     // Se for para animar, busque as classes de animação selecionadas.
     if (options.animate) {
       // Obtém as classes de animação.
@@ -484,15 +483,15 @@ export default class DatePicker {
   // Seleciona um mês
   selectMonth(month) {
     this.currentMonth = month;
-    this.currentView = 'days';  // Volta para a exibição de dias após escolher o mês
-    this.update();
+    this.currentView = 'days';  // Volta para a exibição de dias após escolher o mês.
+    this.update(false, {animate: false});
   }
 
   // Seleciona um ano
   selectYear(year) {
     this.currentYear = year;
-    this.currentView = 'months';  // Volta para a exibição de meses após escolher o ano
-    this.update();
+    this.currentView = 'months';  // Volta para a exibição de meses após escolher o ano.
+    this.update(false, {animate: false});
   }
 
   // Seleciona a data
@@ -500,7 +499,8 @@ export default class DatePicker {
     if (this.currentYear === 0) this.currentYear = 1;
 
     this.date = { day: day, month: this.currentMonth, year: this.currentYear };
-    this.update();
+    this.updateDisplay(false);
+    this.update(false, {animate: false});
   }
 
   // Seleciona a data completa
@@ -508,7 +508,7 @@ export default class DatePicker {
     this.date.selectDate(day, month, year);
 
     this.updateDisplay(false);
-    this.update();
+    this.update(false, {animate: false});
   }
 
   // Exibe os dias do mês

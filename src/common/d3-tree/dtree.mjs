@@ -22,14 +22,14 @@ const dTree = {
         },
         nodeRenderer: function (name, x, y, height, width, extra, id, nodeClass, textClass, textRenderer) {
           return TreeBuilder._nodeRenderer(name, x, y, height, width, extra,
-            id, nodeClass, textClass, textRenderer);
+            id, nodeClass, textClass, textRenderer, options);
         },
         nodeSize: function (nodes, width, minHeight, textRenderer) {
           return TreeBuilder._nodeSize(nodes, width, minHeight, textRenderer);
         },
         nodeSorter: function (aName, aExtra, bName, bExtra) { return 0; },
         textRenderer: function (name, extra, textClass) {
-          return TreeBuilder._textRenderer(name, extra, textClass);
+          return TreeBuilder._textRenderer(name, extra, textClass, options);
         },
         marriageRenderer: function (x, y, height, width, extra, id, nodeClass) {
           return TreeBuilder._marriageRenderer(x, y, height, width, extra, id, nodeClass)
