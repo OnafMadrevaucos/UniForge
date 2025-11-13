@@ -19,9 +19,9 @@ const lControl = {
     constants: {
         DEFAULT_OVERLAY: 'De#m@Pgl0ba1Unfg',
 
-        EXTENT:[0.00000000, -4054.00000000, 6000.00000000, 0.00000000],
+        EXTENT: [0.00000000, -4054.00000000, 6000.00000000, 0.00000000],
 
-        TILE_EXTENT:[0.00000000, -4054.00000000, 6000.00000000, 0.00000000],
+        TILE_EXTENT: [0.00000000, -4054.00000000, 6000.00000000, 0.00000000],
         TILE_SIZE: 256,
 
         MIN_ZOOM: 3,
@@ -33,7 +33,7 @@ const lControl = {
         IMG_WIDTH: 6000,
         IMG_HEIGHT: 4054,
         VIEW_WIDTH: 3840,
-        VIEW_HEIGHT: 2160,       
+        VIEW_HEIGHT: 2160,
     },
 
     /**
@@ -161,19 +161,19 @@ const lControl = {
 
         map.mid = lControl.constants.DEFAULT_OVERLAY; // Define o ID do mapa como o mapa padrão.
 
-        const mapElements = lControl.mapElements = new L.FeatureGroup();    
-        
-         /**
-        * Instância da camada de armazenagem a imagem que representa os caminhos do Mapa.
-        * @type {L.ImageOverlay}
-        *        
-        */
+        const mapElements = lControl.mapElements = new L.FeatureGroup();
+
+        /**
+       * Instância da camada de armazenagem a imagem que representa os caminhos do Mapa.
+       * @type {L.ImageOverlay}
+       *        
+       */
         const paths = lControl.overlay = L.imageOverlay(`${uniforge.urls.mapOverlays}/paths.png`, bounds, {
             zIndex: 1,
             interactive: false
-        }); 
-        paths.addTo(map);   
-        paths.bringToFront(); 
+        });
+        paths.addTo(map);
+        paths.bringToFront();
 
         /**
         * Instância da camada de armazenagem a imagem que representa as cidades do Mapa.
@@ -183,9 +183,9 @@ const lControl = {
         const cities = lControl.overlay = L.imageOverlay(`${uniforge.urls.mapOverlays}/cities.png`, bounds, {
             zIndex: 2,
             interactive: false
-        });  
-        cities.addTo(map); 
-        cities.bringToFront();         
+        });
+        cities.addTo(map);
+        cities.bringToFront();
 
         /**
         * Instância da camada de armazenagem a imagem que representa os nomes do Mapa.
@@ -195,21 +195,23 @@ const lControl = {
         const labels = lControl.overlay = L.imageOverlay(`${uniforge.urls.mapOverlays}/labels.png`, bounds, {
             zIndex: 3,
             interactive: false
-        });    
+        });
         labels.addTo(map);
         labels.bringToFront();
 
         const overlayLayerControl = L.control.layers(null, {
             "Caminhos": paths,
-            "Cidades": cities,            
+            "Cidades": cities,
             "Nomes": labels
         }).addTo(map);
-                
+
+        _configureOverlayControl();
+
         const scale = L.control.scale({
             imperial: false
         });
         scale.addTo(map);
-        
+
 
         // Grupo para armazenar as camadas desenhadas.
         map.addLayer(mapElements);
@@ -250,7 +252,6 @@ const lControl = {
 
         const draw = new lControl.CustomDrawControl();
 
-        
         const grid = new lControl.TransparentGridLayer({
             tileSize: lControl.constants.TILE_SIZE,
             opacity: 0.8, // Adjust transparency.
@@ -259,7 +260,7 @@ const lControl = {
 
         grid.addTo(map);
         grid.bringToFront();
-        
+
 
         map.addControl(main);
         map.addControl(layerControl);
@@ -282,6 +283,39 @@ const lControl = {
         map.on('draw:drawstop', function (e) {
             map.dragging.enable();
         });
+
+        
+        function _configureOverlayControl() {
+            // Pega o container do controle
+            const container = overlayLayerControl.getContainer();
+
+            // Pega o botão de toggle (ícone do controle)
+            const toggleButton = container.querySelector('.leaflet-control-layers-toggle');
+
+            // Pega a lista de layers
+            const list = container.querySelector('.leaflet-control-layers-list');
+
+            // Esconde inicialmente
+            list.classList.add('hidden');
+
+            // Alterna ao clicar no botão
+            toggleButton.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const visible = !list.classList.contains('hidden');
+
+                if (visible)
+                    list.classList.add('hidden');
+                else
+                    list.classList.remove('hidden');
+            });
+
+            // Fecha se clicar fora do controle
+            document.addEventListener('click', (e) => {
+                if (!container.contains(e.target)) {
+                    list.classList.add('hidden');
+                }
+            });
+        }
 
         // Função para calcular os pontos ao redor da uniforge.mapOverlay com um padding (0.0 a 1.0).
         function _checkMapVisibility() {

@@ -15,8 +15,6 @@ export default class FilePickerDialog extends BaseDialog {
     * @protected
     */
     activateListeners() {
-        super.activateListeners();
-
         const hiddenImageInput = this.querySelector('#hiddenImageInput');
         const chooseFileButton = this.querySelector('#chooseFileButton');
         const chosenFilePath = this.querySelector('#chosenFilePath');

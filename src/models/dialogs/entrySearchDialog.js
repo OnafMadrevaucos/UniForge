@@ -7,6 +7,10 @@ export default class EntrySearchDialog extends BaseDialog {
       width: '950px'
     }));
 
+    if (!dialogData.entity) throw new Error('Entidade de origem não foi fornecida.');
+
+    this.entity = dialogData.entity;
+
     this.fromLineage = options?.fromLineage ?? false;
 
     this.isFounder = options?.isFounder ?? false;
@@ -39,7 +43,7 @@ export default class EntrySearchDialog extends BaseDialog {
   get typesToCommit() {
     return EntrySearchDialog.#typesToCommit;
   }
-  set typesToCommit(value) {    
+  set typesToCommit(value) {
     EntrySearchDialog.#typesToCommit = value;
   }
 
@@ -61,6 +65,8 @@ export default class EntrySearchDialog extends BaseDialog {
 
   prepareFolders(data) {
     const folders = uniforge.doc.entries.reduce((folder, entry) => {
+      if (entry.eid === this.entity.eid) return folder;
+
       const entryType = uniforge.doc.entryTypes.get(Number(entry.etid));
       const type = entryType.title;
 
@@ -100,7 +106,7 @@ export default class EntrySearchDialog extends BaseDialog {
     lineageTypesSelect.disabled = (this.data.lineageTypes.length === 0);
 
     if (this.isFounder) {
-      const lineageGroup = this.querySelector('#lineageGroup');
+      const lineageGroup = this.querySelector('#lineageGroupSelect');
 
       const option = document.createElement('option');
       option.value = 'root';
@@ -121,6 +127,9 @@ export default class EntrySearchDialog extends BaseDialog {
 
     await this.configureTinyMCE();
     await this.configureFlavorTinyMCE();
+
+    const entryType = this.querySelector('#entryType');
+    //entryType.disabled = true;
   }
 
   /**
@@ -167,13 +176,15 @@ export default class EntrySearchDialog extends BaseDialog {
   configureLineageTypesSelect(types) {
     const lineageTypesSelect = this.querySelector('#lineageTypes');
     lineageTypesSelect.value = '';
-    lineageTypesSelect.innerHTML = '';    
+    lineageTypesSelect.innerHTML = '';
 
     types.forEach(type => {
-      const option = document.createElement('option');
-      option.value = type.tag;
-      option.textContent = type.label;
-      lineageTypesSelect.appendChild(option);
+      if (type.dbAction !== 'd') {
+        const option = document.createElement('option');
+        option.value = type.tag;
+        option.textContent = type.label;
+        lineageTypesSelect.appendChild(option);
+      }
     });
 
     if (lineageTypesSelect.childElementCount > 0) {
@@ -192,9 +203,7 @@ export default class EntrySearchDialog extends BaseDialog {
   * Configura ouvintes de eventos básicos para o dialog.
   * @protected
   */
-  _activateListeners() {
-    super._activateListeners();
-
+  activateListeners() {
     const sidebar = this.querySelector('.sidebar');
     sidebar.addEventListener('click', (event) => { this.onSidebarClick(event); });
 
@@ -303,7 +312,7 @@ export default class EntrySearchDialog extends BaseDialog {
 
   async onManageTypeClick(event) {
     event.stopPropagation();
-    const types = await LineageTypeDialog.configDialog(this.ltid);
+    const types = await LineageTypeDialog.configDialog(this.ltid, this.typesToCommit);
 
     if (types) {
       this.typesToCommit.merge(types);
@@ -372,57 +381,61 @@ export default class EntrySearchDialog extends BaseDialog {
     });
   }
 
-  static async configDialog(options = {}) {    
-    return new Promise((resolve, reject) => {  
+  static async configDialog(entity, options = {}) {
+    return new Promise((resolve, reject) => {
       const dialog = new this({
         title: 'Vincular Entrada',
         buttons: {
           cancel: {
             label: "Cancelar",
             icon: "fas fa-xmark",
-            callback: () => resolve(false)
+            callback: () => {
+              resolve(null);
+              return true;
+            }
           },
           linkUp: {
             label: "Vincular",
             icon: "fas fa-paperclip",
             callback: (dialog, event) => {
-              const eid = event.target.dataset.eid ?? null;              
+              const eid = event.target.dataset.eid ?? null;
 
               if (!eid) {
-                uniforge.msgBox.showWarning('Por favor, selecione uma Entrada.');               
-                return false;                
+                uniforge.msgBox.showWarning('Por favor, selecione uma Entrada.');
+                return false;
               }
               let entry = uniforge.doc.entries.get(eid);
               const startEvent = dialog.querySelector('#startEvent');
               const endEvent = dialog.querySelector('#endEvent');
               const lineageTypes = dialog.querySelector('#lineageTypes');
               const founderTitle = dialog.querySelector('#founderTitle');
-              const lineageGroup = dialog.querySelector('#lineageGroup');
+              const lineageGroup = dialog.querySelector('#lineageGroupSelect');
               const lineageGroupOrder = dialog.querySelector('#lineageGroupOrder');
 
               entry = uniforge.utils.mergeObjects(entry, {
                 id: entry.eid,
                 givenName: entry.title,
                 birthDate: entry.birthDate ?? '00010101',
-                deathDate: entry.deathDate ?? '00010101',            
+                deathDate: entry.deathDate ?? '00010101',
                 gender: lineageTypes.value ?? 'n',
                 title: founderTitle.value ?? '',
                 group: lineageGroup.value ?? '',
                 groupOrder: lineageGroupOrder.value ?? 0,
                 genitors: entry.genitors ?? {},
                 deceased: entry.deceased ?? false
-              });              
+              });
 
-              if(this.#typesToCommit.size > 0) {
+              if (this.#typesToCommit.size > 0) {
                 entry.lineageTypes = this.#typesToCommit.toArray();
               }
-              
+
               resolve(entry);
               return true;
             }
           }
         },
-        abort: () => resolve(null)
+        abort: () => resolve(null),
+        entity
       }, options);
       dialog.show(true);
     });

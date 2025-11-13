@@ -10,6 +10,8 @@ export default class LineageTypeDialog extends BaseDialog {
 
         this.ltid = dialogData.ltid; // Código da Árvore de Linhagem.
 
+        this.typesToCommit = new Map(dialogData.types);
+
         this.template = 'lineageTypeDialog'; // Define o template do diálogo.
     }
 
@@ -46,14 +48,12 @@ export default class LineageTypeDialog extends BaseDialog {
         });
     }
 
-    close() {
-        super.close();
+    close() {       
         this.typesToCommit.clear();
+        super.close();
     }
 
     activateListeners() {
-        super.activateListeners();
-
         const clearButton = this.querySelector('#clearButton');
         clearButton.addEventListener('click', (event) => { this.onClearTypeClick(event); });
 
@@ -169,26 +169,23 @@ export default class LineageTypeDialog extends BaseDialog {
         this.oldType = type;
     }
 
-    static async configDialog(ltid, options = {}) {   
+    static async configDialog(ltid, types, options = {}) {   
         options = uniforge.utils.mergeObjects(options, {alwaysClose: true});     
         return new Promise((resolve, reject) => {
             const dialog = new this({
                 title: 'Gerenciar Tipos da Linhagem',
                 ltid: ltid,
+                types: types,
                 buttons: {
                     cancel: {
                         label: "Cancelar",
                         icon: "fas fa-xmark",
-                        callback: () => {
-                            resolve(false);                            
-                        }
+                        callback: () =>  resolve(false)                        
                     },
                     apply: {
                         label: "Aplicar",
                         icon: "fas fa-check",
-                        callback: () => {
-                            resolve (new Map(this.#typesToCommit));                            
-                        }
+                        callback: () => resolve (new Map(this.#typesToCommit))   
                     }
                 },
                 abort: () => resolve(null)

@@ -7,6 +7,7 @@ import ImagePickerDialog from "../dialogs/imagePickerDialog.js";
 import Dialogs from "../dialogs/dialog.js";
 import DatePicker from "../datePicker.js";
 import FilePickerDialog from "../dialogs/filePickerDialog.js";
+import Entry from "../../entities/entry.mjs";
 
 /**
  * Classe EntryForm estende a funcionalidade da classe BaseForm para gerenciar formulários que manipulem Entradas.
@@ -26,6 +27,8 @@ export default class EntryForm extends SidebarForm {
      * @type {string} - O modelo HTML utilizado pelo formulário.
      */
     this.template = 'entryForm';
+
+    this.type = 'entry'; // Define o tipo do formulário. 
 
     /**
     * Estados válidos para os elements do formulário.
@@ -75,6 +78,8 @@ export default class EntryForm extends SidebarForm {
       endDate: new DatePicker('endDate')
     }
 
+    this.objClass = Entry;
+
     this.selection.event = null; // ID do Evento selecionado na EventTab.
   }
 
@@ -98,12 +103,26 @@ export default class EntryForm extends SidebarForm {
     editing: 3
   }
 
+  /** Objeto que representa os dados da entrada.
+    * @property {Object} obj - Objeto que armazena os eventos vinculados à entrada.    
+    * @private    
+    */
+  #obj = null;
+
+  get obj() { return this.#obj; }
+  set obj(value) { this.#obj = value; }
+
   /** Eventos temporários, vinculados à Entrada até serem salvos (ou não).
     * @property {Object} events - Objeto que armazena os eventos vinculados à entrada.    
     * @private
     * @default {}
     */
   #events = {};
+
+  /** Identificador da Entrada atual.
+   * @returns {Object} 
+   * */
+  get eid() { return this.obj.eid; }
 
   /**
    * @overload
@@ -556,7 +575,7 @@ export default class EntryForm extends SidebarForm {
     this.eventEditor = '';
 
     if (this.isEventForm && this.hasEvent) {
-      this.eid = null;
+      this.obj = null;
       this.#events = [];
 
       const entryTypeSelect = this.querySelector('#entryType');
@@ -857,7 +876,7 @@ export default class EntryForm extends SidebarForm {
       // Abre o diálogo de seleção de imagem.
       const imageData = await FilePickerDialog.configDialog(null, { canUpload: true, hasCaption: false, type: 'image' });
 
-      if(imageData) {
+      if (imageData) {
         // Obtem o caminho completo da imagem.
         const fullPath = await uniforge.path.join(imageData.path);
 
@@ -978,7 +997,7 @@ export default class EntryForm extends SidebarForm {
 
   onEventItemClick(clkEvent) {
     clkEvent.stopPropagation();
-    const clickedEvent = clkEvent.target.closest('.item'); 
+    const clickedEvent = clkEvent.target.closest('.item');
     const evid = clickedEvent.dataset.value;
     const event = this.#events[evid];
 
@@ -1099,8 +1118,8 @@ export default class EntryForm extends SidebarForm {
     const saveButton = this.querySelector('#saveButton');
     saveButton.innerHTML = '<i class="fa-regular fa-floppy-disk"></i> Salvar';
 
-    // Gera um novo ID para a Entrada.
-    this.eid = uniforge.db.generateID();
+    // Gera um novo object que representa a nova Entrada.   
+    this.obj = new this.objClass();
 
     // Atualiza o estado do formulário.
     this.controlStates(this.states.adding);
@@ -1155,8 +1174,8 @@ export default class EntryForm extends SidebarForm {
         }
 
         // Verifica se o item já existe no banco de dados.
-        if (this.isUpdate) this._updateEntry(data);
-        else this._addEntry(data);
+        if (this.isUpdate) await this._updateEntry(data);
+        else await this._addEntry(data);
 
         // Finaliza a transação de salvamento.
         await uniforge.db.commitTransaction();
@@ -1200,6 +1219,8 @@ export default class EntryForm extends SidebarForm {
     const entry = uniforge.doc[itemType].get(itemId);
 
     if (entry) {
+      this.obj = new Entry(entry);
+
       const headerInfo = this.querySelector('.header-info');
       headerInfo.dataset.cid = entry.cid ?? null;
       headerInfo.dataset.sid = entry.sid ?? null;
@@ -1251,13 +1272,10 @@ export default class EntryForm extends SidebarForm {
 
         this.#events[event.evid] = event;
       });
-      this._generateEventListItems();
-
-      // Obtém o identificador do item selecionado.
-      this.eid = entry.eid;
+      this._generateEventListItems();      
 
       // Armazena os dados da entrada atual.
-      this.data.entry = entry;      
+      this.data.entry = entry;
 
       // Atualiza o estado dos elements do formulário.
       this.controlStates(this.states.editing);

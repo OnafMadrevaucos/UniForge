@@ -203,6 +203,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Configura o estado inicial da aplicação, se ele ainda não foi criado.
     uniforge.state.init();
 
+    // Inicia o gerenciador de banco de dados.
+    uniforge.db.init();
+
     // Atalho para o Controle de Mensagens para o Usuário
     uniforge.msgBox = uniforge.ctrls.msgBox;
     // Atalho para o Controle de Tooltips de Entradas
@@ -253,7 +256,7 @@ function checkState() {
  * FUNÇÕES DE CONFIGURAÇÕES 
  * ------------------------------------------------------------------
  * */
-// Configura a ferramenta de mapas Leaflet 
+// Recarrega os documentos do banco de dados.
 async function refreshDocuments() {
     const data = await DBDocuments.UniForgeData();
     uniforge.doc = new DBDocuments(data);

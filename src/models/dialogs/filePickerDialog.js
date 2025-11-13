@@ -303,8 +303,6 @@ export default class FilePickerDialog extends BaseDialog {
     }
 
     activateListeners() {
-        super.activateListeners();
-
         const goBackButton = this.querySelector('#goBackButton');
         goBackButton.addEventListener('click', (event) => { this._onGoBackButtonClick(event); });
 

@@ -71,6 +71,21 @@ export default class DBManager {
         this.#state.results.push(value);
     }
 
+    async init() {
+        try {
+            await uniforge.sql.exec('ROLLBACK');
+            console.log('UniForge | Transação aberta encerrada com sucesso.');
+        } catch (error) {
+            console.log('UniForge | Nenhuma transação aberta encontrada.');
+        }
+
+        this.#state = {
+            transactionStarted: false,
+            results: [],
+            changes: 0
+        }
+    }
+
     async clear(doRollback = false) {
         // Cancela qualquer transação aberta indevidamente.
         if (doRollback) await uniforge.sql.exec('ROLLBACK');
@@ -87,17 +102,13 @@ export default class DBManager {
         try {
             if (!this.transactionStarted) {
                 console.log('UniForge | Abrindo transação....');
-                // Limpa o estado atual do gerenciador do banco de dados.
-                await this.clear(true);
                 // Inicia uma nova transação.
                 await uniforge.sql.exec('BEGIN TRANSACTION');
                 // Registra o início da transação.
                 this.transactionStarted = true;
-            } else console.warn('UniForge | Há outra transação ainda aberta, finalize-a primeiro.');
+            } else throw new Error('Há outra transação ainda aberta.');
         } catch (error) {
-            console.error('UniForge | Erro ao iniciar a transação:', error);
-            // Se ocorrer um erro ao iniciar a transação, limpa o estado do gerenciador do banco de dados.
-            await this.clear();
+            console.error('UniForge | Não foi possível abrir a transação. ', error);
         }
     }
 
@@ -111,11 +122,9 @@ export default class DBManager {
                 if (this.totalCanges > 0) this.rebuildDocs();
 
                 this.transactionStarted = false;
-            } else console.warn('UniForge | Nenhuma transação aberta encontrada.');
+            } else throw new Error('Nenhuma transação aberta encontrada.');
         } catch (error) {
-            console.error('UniForge | Erro ao confirmar a transação:', error);
-            // Se ocorrer um erro ao confirmar a transação, limpa o estado do gerenciador do banco de dados.
-            await this.clear();
+            console.error('UniForge | Não foi possível confirmar a transação. ', error);
         }
     }
 
@@ -435,7 +444,6 @@ export default class DBManager {
         params.push(data.code);
 
         const result = await this.#execQuery(query, params);
-        result.lastInsertRowid = ltid;
         this.results = result;
 
         return this.result;
@@ -839,12 +847,13 @@ export default class DBManager {
 
     /**
      * Deleta o tipo de Árvore de Linhagem com o ID especificado.
-     * @param {string} ltid         - O ID do tipo de Árvore de Linhagem a ser deletado.
+     * @param {string} ltid         - O ID da Árvore de Linhagem do tipo a ser deletado.
+     * @param {string} tag         - A Tag de identificação do tipo de Linhagem a ser deletado.
      * @returns {Promise<Object>} A resposta do banco de dados.
      */
-    async deleteLineageType(ltid) {
-        let query = 'DELETE FROM lineageType WHERE ltid = ?;';
-        let params = [ltid];
+    async deleteLineageType(ltid, tag) {
+        let query = 'DELETE FROM lineageType WHERE ltid = ? AND tag = ?;';
+        let params = [ltid, tag];
         this.results = await this.#execQuery(query, params);
 
         return this.result;
@@ -1064,6 +1073,25 @@ export default class DBManager {
     async getLineageTree(ltid) {
         let query = 'SELECT * FROM lineageTree WHERE ltid = ?;';
         const params = [ltid];
+
+        this.results = await uniforge.sql.query(query, params);
+        return this.result.first();
+    }
+
+    /**
+     * Recupera a Árvore de Linhagem de um Tomo.
+     * @param {string} eid          - ID da Entidade a que perteence a Árvore de Linhagem.
+     * @return {Promise<Object>} Retorna um objeto com as informações da Árvore de Linhagem.
+     * @property {string} _id       - ID da Árvore de Linhagem.
+     * @property {string} ltid      - ID da Árvore de Linhagem.
+     * @property {string} sid       - ID da Seção a qual a Árvore de Linhagem pertence.
+     * @property {string} founder   - ID da Entrada que serve de fundador para a Árvore de Linhagem.
+     * @property {string} tree      - String contendo a estrutura da Árvore de Linhagem em FamilyScript.
+     * @property {boolean} isDraft  - A Árvore de Linhagem é rascunho? (falso por padrão).
+    */
+    async getLineageTreeFromEntry(eid) {
+        let query = 'SELECT * FROM lineageTree WHERE eid = ?;';
+        const params = [eid];
 
         this.results = await uniforge.sql.query(query, params);
         return this.result.first();

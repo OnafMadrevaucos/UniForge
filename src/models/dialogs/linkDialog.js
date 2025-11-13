@@ -200,7 +200,6 @@ export default class LinkDialog extends BaseDialog {
     * @protected
     */
     activateListeners() {
-        super.activateListeners();
         const sidebar = this.querySelector('.sidebar');
         const folders = this.querySelectorAll('.folder');
         const itemsList = this.querySelectorAll('.entry-item');

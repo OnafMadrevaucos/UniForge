@@ -31,9 +31,7 @@ export default class ChapterDialog extends BaseDialog {
     * Configura ouvintes de eventos básicos para o dialog.
     * @protected
     */
-  activateListeners() {
-    super.activateListeners();
-    
+  activateListeners() {    
     const searchInput = this.querySelector('#iconSearch');
     const iconItems = this.querySelectorAll('.icon-item');
     

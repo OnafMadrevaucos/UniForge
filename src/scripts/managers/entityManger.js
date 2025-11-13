@@ -154,7 +154,7 @@ export default class EntityManager extends BaseManager {
 
         if (cleardata) {
             this.#tree = {
-                root: null,
+                root: '',
                 nodes: {},
                 branches: []
             };
@@ -173,7 +173,8 @@ export default class EntityManager extends BaseManager {
         const node = new TreeNode({
             id: id,
             eid: entry.eid,
-            name: entry.title ?? '',
+            name: entry.givenName ?? '',
+            img: entry.img ?? '',
             extra: {
                 title: entry.title ?? '',
                 gender: entry.gender ?? 'm',
@@ -189,29 +190,14 @@ export default class EntityManager extends BaseManager {
             }
         });
 
-        let line = `i${node.id}`;
-
-        if (!node.name?.isEmpty()) line += `\tp${node.name}`;
-        if (!node.title?.isEmpty()) line += `\tT${node.title}`;
-        if (!node.born?.isEmpty()) line += `\tb${node.born}`;
-        if (!node.death?.isEmpty()) line += `\td${node.death}`;
-        if (!node.gender?.isEmpty()) line += `\tg${node.gender}`;
-        if (!node.group?.isEmpty()) line += `\tq${node.group}`;
-        if (!node.groupOrder?.toString().isEmpty()) line += `\tO${node.groupOrder}`;
-
-        // A raiz da árvore não tem genitores.
-        if (!isRoot) {
-            if (!node.genitors.a?.isEmpty()) line += `\tm${node.genitors.a}`;
-            if (!node.genitors.b?.isEmpty()) line += `\tf${node.genitors.b}`;
-        }
-
-        if (node.deceased) line += `\tz1`;
+        const line = this.getNodeLine(node);
 
         tree.nodes[node.id] = node;
 
         this.refreshTree();
         return line;
     }
+
 
     removeNode(eid) {
         const tree = this.#tree;
@@ -227,6 +213,45 @@ export default class EntityManager extends BaseManager {
 
         this.refreshTree();
         return true;
+    }
+
+    getNodeLine(node, isRoot = false) {
+        let line = `i${node.id}`;
+
+        if (!node.name?.isEmpty()) line += `\tp${node.name}`;
+        if (!node.title?.isEmpty()) line += `\tT${node.title}`;
+        if (!node.born?.isEmpty()) line += `\tb${node.born}`;
+        if (!node.death?.isEmpty()) line += `\td${node.death}`;
+        if (!node.gender?.isEmpty()) line += `\tg${node.gender}`;
+
+        if (isRoot) line += 'qroot';
+        else if (!node.group?.isEmpty()) line += `\tq${node.group}`;
+
+        if (!node.groupOrder?.toString().isEmpty()) line += `\tO${node.groupOrder}`;
+
+        // A raiz da árvore não tem genitores.
+        if (!isRoot) {
+            if (!node.genitors.a?.isEmpty()) line += `\tm${node.genitors.a}`;
+            if (!node.genitors.b?.isEmpty()) line += `\tf${node.genitors.b}`;
+        }
+
+        if (node.deceased) line += `\tz1`;
+
+        return line;
+    }
+
+    getBranchLine(branch) {
+        let line = `p${branch.id1} ${branch.id2}`;
+
+        if (branch.type === 'mate') {
+
+            if (branch.partners?.isEmpty()) line += `\te${branch.partners}`;
+            if (branch.status?.isEmpty()) line += `\tg${branch.status}`;
+            if (branch.startDate?.isEmpty()) line += `\tb${branch.startDate}`;
+            if (branch.endDate?.isEmpty()) line += `\tz${branch.endDate}`;
+        }
+
+        return line;
     }
 
     /**
@@ -262,7 +287,7 @@ export default class EntityManager extends BaseManager {
 
         const lines = data.split(/\r?\n/);
         const tree = {
-            root: 'A334F',
+            root: '',
             nodes: {},
             branches: []
         };
@@ -287,6 +312,9 @@ export default class EntityManager extends BaseManager {
                             break;
                         case 'q':
                             node.group = data;
+
+                            node.isRoot = data === 'root';
+                            if (node.isRoot) tree.root = id;                                                        
                             break;
                         case 'g':
                             node.gender = data;
@@ -299,12 +327,16 @@ export default class EntityManager extends BaseManager {
                             node.deceased = true;
                             break;
                         case 'm': {
-                            node.genitors.a = data;
-                            tree.branches.push({ id1: data, id2: id, type: 'genitor' });
+                            if (!node.isRoot) {
+                                node.genitors.a = data;
+                                tree.branches.push({ id1: data, id2: id, type: 'genitor' });
+                            }
                         } break;
                         case 'f': {
-                            node.genitors.b = data;
-                            tree.branches.push({ id1: data, id2: id, type: 'genitor' });
+                            if (!node.isRoot) {
+                                node.genitors.b = data;
+                                tree.branches.push({ id1: data, id2: id, type: 'genitor' });
+                            }
                         } break;
                         case 'O':
                             node.groupOrder = data;
@@ -373,21 +405,15 @@ export default class EntityManager extends BaseManager {
 
         // Processar indivíduos.
         Object.values(this.#tree.nodes).forEach(node => {
-            const line = this.addNode(node, node.isRoot);
+            let line = this.getNodeLine(node, node.isRoot);
             scriptLines.push(line);
         });
 
         // Processar relacionamentos de parceiros (mesma camada hieráquica).
         this.#tree.branches.forEach(branch => {
-            let line = `p${branch.id1} ${branch.id2}`;
+            let line = this.getBranchLine(branch);
 
             if (branch.type === 'mate') {
-
-                if (branch.partners?.isEmpty()) line += `\te${branch.partners}`;
-                if (branch.status?.isEmpty()) line += `\tg${branch.status}`;
-                if (branch.startDate?.isEmpty()) line += `\tb${branch.startDate}`;
-                if (branch.endDate?.isEmpty()) line += `\tz${branch.endDate}`;
-
                 scriptLines.push(line);
             }
         });

@@ -171,6 +171,20 @@ export default class BaseDialog extends Application {
     }
 
     /**
+     * Cria a estrutura específica do diálogo, incluindo os seus botões.
+     * @interface
+     */
+    async refreshDerivedTemplate() { 
+        // Obtem os elementos HTML para renderização.
+        const main = this.ui.main;
+
+        const html = await this._prepareBody();
+        main.innerHTML = html;
+
+        return main;
+    }
+
+    /**
     * Exibe o diálogo na página.
     * @inheritdoc
     */
@@ -190,7 +204,8 @@ export default class BaseDialog extends Application {
         // Centralizar o diálogo no parentElement
         this._centerDialog();
 
-        this.activateListeners();
+        // Se o diálogo implementa 'activateListeners', chama o método.
+        if(this.activateListeners) this.activateListeners();
     }
 
     submit(button, event) {
@@ -208,7 +223,7 @@ export default class BaseDialog extends Application {
         }
     }
 
-    close() {        
+    close() {     
         this.ui.overlay.remove();   
         super.close();     
     }
@@ -241,7 +256,9 @@ export default class BaseDialog extends Application {
     * Configura ouvintes de eventos básicos para o dialog.
     * @protected
     */
-    activateListeners() {
+    activateBaseListeners() {
+        super.activateBaseListeners();
+
         const main = this.ui.main;
         main.addEventListener('submit', (event) => { event.preventDefault(); });
 

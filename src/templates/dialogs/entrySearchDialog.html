@@ -1,7 +1,7 @@
 <div class="source-dialog entries flexrow">
   <div id="sideBar" class="sidebar">
     <h4>Entradas</h4>
-    <foldertree id="entryTypes" item="entries" fixed></foldertree>
+    <foldertree id="entryTypes" item="entries" fixed="true"></foldertree>
     <div class="footer">
       <div id="searchEntry" class="input-container search-bar flexrow">
         <input type="text" id="searchInput" class="search-data" placeholder="Pesquisar entrada...">
@@ -20,7 +20,7 @@
         <fieldset class="info-set" disabled>
           <div id="entryTypeGroup" class="data-group combo">
             <span class="data-label">Tipo </span>
-            <combo id="entryType" value="entryTypes" disabled />
+            <combo id="entryType" value="entryTypes"/>
           </div>
           <div id="eventGroup" class="date-info flexrow hidden">
             <div id="startEventGroup" class="data-group combo">
@@ -45,7 +45,7 @@
           <div class="data-complex flexrow">
             <div id="lineageGroups" class="data-group combo">
               <span class="data-label">Grupo </span>
-              <combo id="lineageGroup" value="groups" />
+              <combo id="lineageGroupSelect" value="groups" />
             </div>
             <div class="data-group number">
               <span class="data-label">Ordem </span>

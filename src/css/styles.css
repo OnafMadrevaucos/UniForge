@@ -278,12 +278,15 @@ input[type="password"],
 input[type="checkbox"],
 input.dial[type="number"] {
     padding: 5px;
-    margin: 10px 0;
     border: var(--data-group-border);
     border-radius: 5px;
     background: var(--light-background-color);
     color: var(--light-text-color);
     font-size: var(--default-size);
+}
+
+input.dial[type="number"] {
+    margin: 0;
 }
 
 input[type="text"]:focus,
@@ -315,6 +318,11 @@ select {
     color: var(--light-text-color);
 }
 
+input:disabled,
+select:disabled {
+    background-color: var(--dark-grey);
+}
+
 .leaflet-container a,
 button {
     padding: 10px 15px;
@@ -328,7 +336,7 @@ button {
     border-radius: var(--default-border-radius);
     font-size: var(--default-size);
     font-weight: 700;
-    transition: background-color 0.3s;    
+    transition: background-color 0.3s;
     height: fit-content;
     width: 10em;
 }
@@ -691,20 +699,41 @@ input:checked+.slider::before {
 }
 
 .leaflet-touch .leaflet-control-layers .leaflet-control-layers-list {
+    display: block !important;
     position: absolute;
-    top: 10px;
-    right: 5.5em;
-    width: max-content;
-    background-color: var(--dark-blueT87) !important;
+    top: 0.5em;
+    right: 5.25em;
+    background: var(--grey);
     border-radius: var(--default-border-radius);
-    box-shadow: var(--small-shadow);
-    color: var(--light-text-color);
+    color: var(--dark-grey);
+    font-weight: bold;
     padding: 5px;
+    width: max-content;
 }
 
-.leaflet-control-layers-overlays input[type="checkbox"] {
+.leaflet-touch .leaflet-control-layers .leaflet-control-layers-list.hidden {
+    display: none !important;
+}
+
+.leaflet-touch .leaflet-control-layers .leaflet-control-layers-list::after {
+    content: "";
+    position: absolute;
+    background: var(--grey);
+    height: 17px;
+    width: 17px;
+    transform: rotate(45deg);
+    top: 1em;
+    right: -0.5em;
+    z-index: -1;
+}
+
+.leaflet-touch .leaflet-control-layers .leaflet-control-layers-overlays input[type="checkbox"] {
     accent-color: var(--dark-red);
     width: 1.2em;
+}
+
+.leaflet-touch .leaflet-control-layers-expanded {
+    padding: 0;
 }
 
 .leaflet-container .leaflet-div-icon {
@@ -1273,8 +1302,8 @@ input:checked+.slider::before {
 }
 
 .form.container.fullscreen {
-    height: 90%;
-    width: 97%;
+    height: 85%;
+    width: 90%;
 }
 
 .form .header-bar {
@@ -1457,7 +1486,7 @@ input:checked+.slider::before {
     flex: 2;
 }
 
-.dialog .main input,
+.dialog .main input.title,
 .dialog .main .button {
     margin-block: 3px;
 }
@@ -1478,9 +1507,11 @@ input:checked+.slider::before {
 .dialog .main .chapter-dialog .icon-list .icon-item .item-content {
     gap: 5px;
 }
+
 .dialog .main .chapter-dialog .icon-list .icon-item .item-content i {
     width: 42px;
 }
+
 .dialog .main .chapter-dialog .icon-list .icon-item .item-content span {
     font-size: var(--big-size);
     align-content: center;
@@ -1590,6 +1621,7 @@ input:checked+.slider::before {
 .dialog .main .file-dialog .upload-file {
     margin-top: auto;
 }
+
 .dialog .main .file-dialog .upload-file .uploader {
     flex: 2;
     color: var(--light-text-color);
@@ -1599,13 +1631,16 @@ input:checked+.slider::before {
     padding: 5px;
     gap: var(--default-gap-size);
 }
+
 .dialog .main .file-dialog .upload-file .uploader button {
     margin: 0;
 }
+
 .dialog .main .file-dialog .upload-file .uploader label {
     flex: 1;
     align-content: center;
 }
+
 .dialog .main .file-dialog .upload-file .uploader a {
     flex: 0;
 }
@@ -1657,23 +1692,28 @@ input:checked+.slider::before {
 .dialog .directory ul li {
     padding: 10px;
 }
+
 .dialog .directory .folders-list li {
-    background-color: var(--blueT50);    
+    background-color: var(--blueT50);
     border-radius: var(--default-border-radius);
 }
+
 .dialog .directory .files-list li {
     align-items: center;
-    border: var(--filled-border);  
+    border: var(--filled-border);
     gap: var(--default-gap-size);
 }
+
 .dialog .directory .files-list li:first-of-type {
     border-top-left-radius: var(--default-border-radius);
     border-top-right-radius: var(--default-border-radius);
 }
+
 .dialog .directory .files-list li:last-of-type {
     border-bottom-left-radius: var(--default-border-radius);
     border-bottom-right-radius: var(--default-border-radius);
 }
+
 .dialog .directory .files-list.list li {
     font-size: var(--default-size);
 }
@@ -1684,7 +1724,7 @@ input:checked+.slider::before {
 
 .dialog .directory .files-list.thumbs li img {
     height: var(--heading-2-size)
-} 
+}
 
 .dialog .directory ul.files-list.tiles {
     display: grid;
@@ -1702,19 +1742,24 @@ input:checked+.slider::before {
     align-items: center;
     border-radius: var(--default-border-radius);
 }
+
 .dialog .directory ul.files-list.images li {
     gap: var(--big-gap-size);
     margin-bottom: var(--big-gap-size);
 }
+
 .dialog .directory ul.files-list.tiles li i {
-    font-size: var(--grid-tile-size);    
+    font-size: var(--grid-tile-size);
 }
+
 .dialog .directory ul.files-list.tiles li img {
     height: var(--grid-tile-size);
 }
+
 .dialog .directory ul.files-list.images li i {
     font-size: var(--images-size);
 }
+
 .dialog .directory ul.files-list.images li img {
     height: var(--images-size);
 }
@@ -2082,7 +2127,7 @@ input:checked+.slider::before {
 }
 
 /* ------ Form Backgrounds ------ */
-.content::before {
+.form .content::before {
     content: "";
     position: absolute;
     inset: 0 0 0 0em;
@@ -2134,10 +2179,9 @@ input:checked+.slider::before {
 }
 
 /* ------ Dialogs Backgrounds ------ */
-.source-dialog {
-    background-image:
-        linear-gradient(180deg, rgba(255, 255, 255, 0) 35%, rgba(30, 30, 47, 1) 70%),
-        url('../ui/misc.jpg');
+.dialog {
+    background-color: var(--dark-blue);
+    background-image: url(../ui/denim065.png);
 }
 
 /* ------ Tabs Control ------ */
@@ -3134,7 +3178,6 @@ input:checked+.slider::before {
     margin: 0;
     font-family: 'Georgia', serif;
     color: var(--light-text-color);
-    background-image: url(../ui/denim065.png);
     border-bottom-left-radius: var(--default-border-radius);
     border-bottom-right-radius: var(--default-border-radius);
     user-select: none;
@@ -3142,6 +3185,10 @@ input:checked+.slider::before {
 
 .entries input[type="text"] {
     color: var(--light-text-color);
+}
+
+.form .entries {
+    background-image: url(../ui/denim065.png);
 }
 
 .sidebar {
@@ -3415,6 +3462,7 @@ input:checked+.slider::before {
     font-size: var(--heading-2-size);
     box-shadow: var(--small-shadow);
     border: none;
+    margin-block: 10px;
 }
 
 .panel .content .header .header-info,
@@ -3718,7 +3766,7 @@ input:checked+.slider::before {
 }
 
 .calendar .calendar-view {
-    position: relative;    
+    position: relative;
     transition: transform 0.3s;
 }
 
@@ -3744,7 +3792,7 @@ input:checked+.slider::before {
 }
 
 /* Visualização dos dias */
-.days .calendar-content {    
+.days .calendar-content {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
     text-align: center;
@@ -3811,12 +3859,15 @@ input:checked+.slider::before {
 .zoom-in {
     transform: scale(1.2);
 }
+
 .zoom-out {
     transform: scale(0.8);
 }
+
 .slide-left {
     transform: translateX(-100%);
 }
+
 .slide-right {
     transform: translateX(100%);
 }

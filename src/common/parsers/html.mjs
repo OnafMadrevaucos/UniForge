@@ -91,9 +91,6 @@ function _parseSwitchTags(html) {
             <div class="slider"></div>
         </label>`;
     });
-
-    // Em seguida, remova as tags de fechamento </switch>
-    html = html.replace(/<\/switch>/g, '');
     return html;
 }
 
@@ -106,7 +103,8 @@ function _parseSwitchTags(html) {
 function _parseComboTags(html, data) {
     console.log('UniForge | Substituindo tags de Combo...');
 
-    const regex = /<combo\s+id="([^"]+)"\s+value="([^"]+)"\s*(blank="([^"]+)")?\s*(search="([^"]+)")?\s*(disabled)?\s*\/?>/g;
+    const regex = /<combo\s+id="([^"]+)"\s+value="([^"]+)"(?:\s+blank="([^"]+)")?(?:\s+search="([^"]+)")?(?:\s+(disabled)(?=\s|\/|>))?\s*\/?>/g;
+
     html = html.replace(regex, (match, id, valueKey, blankAttr, blankValue, searchAttr, searchValue, disabled) => {
         console.log(`Correspondência encontrada: ${match}`);
         console.log(`ID: ${id}, ValueKey: ${valueKey}${blankValue ? `, BlankValue: ${blankValue}` : ''}${searchAttr ? `, IsSearchable: ${searchValue}` : ''}${disabled ? ', Disabled' : ''}`);
@@ -116,7 +114,6 @@ function _parseComboTags(html, data) {
             console.log(`O identificador '${valueKey}' não foi encontrado no objeto data. Retornando um <select> vazio.`);
             return result;
         }
-
 
         const isSearchable = searchValue === 'true';
 
@@ -147,9 +144,6 @@ function _parseComboTags(html, data) {
 
         return result;
     });
-
-    // Em seguida, remova as tags de fechamento </combo>
-    html = html.replace(/<\/combo>/g, '');
     return html;
 }
 
@@ -181,9 +175,6 @@ function _parseCalendarTags(html) {
             </div>
         </div>`;
     });
-
-    // Em seguida, remova as tags de fechamento </calendar>
-    html = html.replace(/<\/calendar>/g, '');
     return html;
 }
 
@@ -215,9 +206,6 @@ function _parseFoldertreeTags(html, data) {
         const result = utils.html.generateFolderlistHTML(id, data.folders, itemKey, type, isFixed);
         return result;
     });
-
-    // Em seguida, remova as tags de fechamento </foldertree>
-    html = html.replace(/<\/foldertree>/g, '');
     return html;
 }
 
@@ -289,9 +277,6 @@ function _parseSidetabsTags(html) {
         result += `</div>`;
         return result;
     });
-
-    // Em seguida, remova as tags de fechamento </sidetabs>
-    html = html.replace(/<\/sidetabs>/g, '');
     return html;
 }
 
@@ -312,9 +297,6 @@ function _replaceListTags(html, data) {
         const result = utils.html.generateListHTML(id, data[valueKey], { extraClasses, itemClass: itemClass });
         return result;
     });
-
-    // Em seguida, remova as tags de fechamento </list>
-    html = html.replace(/<\/list>/g, '');
     return html;
 }
 

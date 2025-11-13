@@ -273,6 +273,7 @@ export default class Application {
     * TODO: Utilizar a biblioteca Handlebars para renderizar templates.
     */
     parseTemplate(html) {
+        if(html instanceof HTMLElement) html = html.innerHTML;
         return uniforge.parser.parseHTML(html, this.data);
     }
 
@@ -323,12 +324,12 @@ export default class Application {
         const main = this.ui.main;
 
         // Prepara o HTML específico da aplicação para renderização.
-        this.html.main = await this.refreshDerivedTemplate(main);
+        this.html.main = await this.refreshDerivedTemplate();
 
         // Prepara o HTML da aplicação para renderização (Substitui pseudo-elements).
-        this.html.main = this.parseTemplate(this.html.main); 
+        const innerMain = this.parseTemplate(this.html.main); 
         
-        main.innerHTML = this.html.main;
+        main.innerHTML = innerMain;
 
         // Configura os conteúdos específicos da aplicação.
         await this.initialize();

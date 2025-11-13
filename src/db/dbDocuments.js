@@ -31,8 +31,8 @@ export default class DBDocuments {
         this.tomes = this.createSimpleSet(data.tomes);
         this.chapters = this.createChapterSet(data.chapters, data.sections);
         this.sections = this.createSectionSet(data.sections, data.entries, data.events); 
-        this.lineages = this.createLineageSet(data.lineages, data.lineageTypes, data.lineageEntries); 
-        this.entries = this.createEntrySet(data.entries, data.events, data.lineageEntries); 
+        this.entries = this.createEntrySet(data.entries, data.events); 
+        this.lineages = this.createLineageSet(data.lineages, data.lineageTypes, data.lineageEntries);         
         this.events = this.createEventSet(data.events);
         this.timelines = this.createTimelineSet(data.timelines, data.events, data._timelineEvents);
         this.maps = this.createMapSet(data.maps, data.mapElements);
@@ -258,10 +258,9 @@ export default class DBDocuments {
      *
      * @param {Array<Object>} entries   - Dados da tabela entry.
      * @param {Array<Object>} events    - Dados da tabela event.
-     * @param {Array<Object>} lineages  - Dados da tabela lineageTree.
      * @returns {Set} Conjunto de entradas.
      */
-    createEntrySet(entries, events, lineages) {
+    createEntrySet(entries, events) {
         const entrySet = new Set();
 
         entries.forEach((entry) => {
@@ -271,18 +270,10 @@ export default class DBDocuments {
                 .filter((e) => e.source === entry.eid)
                 .forEach((e) => {
                     event = e.evid;
-                });           
-
-            let trees = [];
-            // Filtra as linhagens associadas à entrada atual.
-            lineages
-                .filter((l) => l.eid === entry.eid)
-                .forEach((l) => {
-                    trees = l.ltid;
                 });
 
             // Adiciona a entrada ao conjunto, incluindo seus eventos
-            entrySet.add({ ...entry, event: event, trees: trees });
+            entrySet.add({ ...entry, event: event });
         });        
 
         return entrySet;

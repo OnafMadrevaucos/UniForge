@@ -3,6 +3,7 @@ import EntityManager from "../../scripts/managers/entityManger.js";
 import DatePicker from "../datePicker.js";
 import EntrySearchDialog from "../dialogs/entrySearchDialog.js";
 import Dialogs from "../dialogs/dialog.js";
+import Entity from "../../entities/entity.mjs";
 
 export default class EntityForm extends EntryForm {
   /**
@@ -19,31 +20,33 @@ export default class EntityForm extends EntryForm {
     this.type = 'entity'; // Define o tipo do formulário. 
 
     // Inicializa o Gerenciador de Linhagens, enviando o container que conterá a árvore.
-    this.manager = new EntityManager(this);    
+    this.manager = new EntityManager(this);
 
     /**
-    * @property {object} datePickers - Um objeto que gerencia os seletores de data para registro de entradas.
+    * @property {object} datePickers - Um objeto que gerencia os seletores de data para registro de entidades.
     * Contém duas instâncias de `DatePicker` para 'startDate' (data de início) e 'endDate' (data de término).
     */
     this.datePickers = {
       startDate: new DatePicker('startDate'),
       endDate: new DatePicker('endDate')
     }
-  }
 
+    this.objClass = Entity;
+  }
+  
   /** 
-    * @property {Object} events - Objeto que armazena os eventos vinculados à entrada.    
+    * @property {Array<object>} lineageTypes - Objeto que armazena os tipos de linhagem vinculados à entidade.    
     * @private
     * @default {}
     */
-  #events = {};
+  #lineageTypes = [];
 
   /**
-  * O Evento possui eventos vinculados à Entrada? (false por padrão)
+  * O Evento possui tipos de Linhagem vinculados à Entrada? (false por padrão)
   * @type {boolean}
   */
-  get hasEvents() {
-    return Object.keys(this.#events).length > 0;
+  get hasLineageTypes() {
+    return Object.keys(this.#lineageTypes).length > 0;
   };
 
   get treeContainer() {
@@ -132,6 +135,8 @@ export default class EntityForm extends EntryForm {
 
     const lineageFlavorEditor = tinymce.get('lineageFlavorEditor');
     lineageFlavorEditor.setContent('');
+
+    this.manager.clearTree(true);
   }
 
 
@@ -143,13 +148,10 @@ export default class EntityForm extends EntryForm {
   * @inheritdoc
   */
   activateListeners() {
-    super.activateListeners();    
+    super.activateListeners();
 
     const newLineageButton = this.querySelector('#newLineageButton');
     newLineageButton.addEventListener('click', (event) => { this.onNewLineageClick(event); });
-
-    const linkLineageButton = this.querySelector('#linkLineageButton');
-    linkLineageButton.addEventListener('click', (event) => { this.onLinkLineageClick(event); });
   }
 
   /**@inheritdoc */
@@ -179,7 +181,7 @@ export default class EntityForm extends EntryForm {
     }
   }*/
 
-  
+
   /**
   * Manipulador de evento para retirar um evento de uma entrada.
   * @param {Event} event - Evento de clique no bot o de Remover Evento.
@@ -202,28 +204,34 @@ export default class EntityForm extends EntryForm {
     }
   }
   */
-  
 
-  onNewLineageClick(event) {
+
+  async onNewLineageClick(event) {
     event.stopPropagation();
 
-    const section = uniforge.doc.sections.get(this.data.entry.sid);
+    const sid = this.data.entry?.sid ?? this.selection.folder?.dataset.id ?? null;
+
+    if(!sid) {
+      this.msgBox.showWarning('Nenhuma pasta foi selecionada.');
+      return;
+    }
+
+    const section = uniforge.doc.sections.get(sid);
     const chapterType = uniforge.doc.chapterTypes.get(section.chapterType);
 
-    this.manager.addNode(this.data.entry, true);
+    const rootEntry = await EntrySearchDialog.configDialog(this.obj, { isFounder: true, fromLineage: true });
 
-    this.manager.buildTree({isPerson: chapterType.ctid === 3});
+    if (rootEntry) {
+      this.manager.addNode(rootEntry, true);
 
-    // Exibe o controle da Árvore de Linhagem.
-    this._toggleLineageTree(true);
+      this.manager.buildTree({ isPerson: chapterType.ctid === 3 });
+
+      // Exibe o controle da Árvore de Linhagem.
+      this._toggleLineageTree(true);
+
+      this.#lineageTypes = uniforge.utils.deepClone(rootEntry.lineageTypes);
+    }
   }
-
-  onLinkLineageClick(event) {
-    event.stopPropagation();
-
-    // Exibe o controle da Árvore de Linhagem.
-    this._toggleLineageTree(true);
-  }   
 
   /**
   * Trata o evento de criação de uma nova entrada.
@@ -233,9 +241,12 @@ export default class EntityForm extends EntryForm {
   async onNewClick(event) {
     super.onNewClick(event);
 
+
+
     const headerInfo = this.querySelector('.header-info');
     headerInfo.dataset.ltid = uniforge.db.generateID();
   }
+
   /**
   * Gerencia cliques duplos em itens de entrada.
   * @inheritdoc
@@ -243,14 +254,18 @@ export default class EntityForm extends EntryForm {
   */
   async onEntryItemDoubleClick(event) {
     await super.onEntryItemDoubleClick(event, { dataSource: 'entries' });
-    const entry = this.data.entry;
+    const lineages = uniforge.doc.lineages.toObject();    
+
+    this.obj.lineage = lineages.find(lineage => lineage.eid === this.eid);
 
     // Se a Entrada possui uma Árvore de Linhagem, carregue-a.
-    if (entry.trees.length > 0) {
-      this._toggleLineageTree(entry);
-      // this._buildDiagram(entry.tree);
+    if (this.obj.lineage) {
+      this._toggleLineageTree(true);
+      this._buildDiagram(this.obj.lineage.tree);
+    } else {
+      this._toggleLineageTree(false);
     }
-  }  
+  }
 
   /**
    * Alterna a visibilidade das informações da Árvore de Linhagem.
@@ -318,9 +333,32 @@ export default class EntityForm extends EntryForm {
      * @returns {Promise<void>} - Não retorna valor, mas exibe uma mensagem de sucesso ao concluir.
     */
   async _addEntry(data) {
-    // Inserir tratamento da adição da Árvore de Linhagem aqui...
-
     super._addEntry(data);
+
+    const nodes = this.manager.Tree.nodes;
+    data.tree = this.manager.toFamilyScript();
+
+    const result = await uniforge.db.addLineageTree(data);
+    data.ltid = result.lastInsertRowid;
+
+    for (let node of Object.values(nodes)) {
+      await uniforge.db.addLineageTreeEntry({ ltid: data.ltid, eid: node.eid, code: node.id });
+    }
+
+    for (let type of this.#lineageTypes) {
+      switch (type.dbAction) {
+        case 'a': {
+          await uniforge.db.addLineageType({ ltid: data.ltid, tag: type.tag, label: type.label });
+        } break;
+        case 'u': {
+          await uniforge.db.updateLineageType({ ltid: data.ltid, tag: type.tag, label: type.label });
+        } break;
+        case 'd': {
+          await uniforge.db.deleteLineageType({ ltid: data.ltid, tag: type.tag });
+        }
+        default: break;
+      }      
+    }    
   }
 
   /**
@@ -339,11 +377,11 @@ export default class EntityForm extends EntryForm {
    * 
    * @returns {Promise<Object>} - Resultado da execução do comando de atualização.
  */
-  async _updateEntry(data) {  
+  async _updateEntry(data) {
     //Inserir tratamento da atualização da Árvore de Linhagem aqui...
 
     super._updateEntry(data);
-  }  
+  }
 
   async _handleLineageSave(data, lineages) {
     // Percorre a lista de linhagens associadas à entrada.
