@@ -1219,8 +1219,6 @@ export default class EntryForm extends SidebarForm {
     const entry = uniforge.doc[itemType].get(itemId);
 
     if (entry) {
-      this.obj = new Entry(entry);
-
       const headerInfo = this.querySelector('.header-info');
       headerInfo.dataset.cid = entry.cid ?? null;
       headerInfo.dataset.sid = entry.sid ?? null;
@@ -1272,10 +1270,10 @@ export default class EntryForm extends SidebarForm {
 
         this.#events[event.evid] = event;
       });
-      this._generateEventListItems();      
-
+      this._generateEventListItems();     
+      
       // Armazena os dados da entrada atual.
-      this.data.entry = entry;
+      this.obj = new this.objClass(entry);
 
       // Atualiza o estado dos elements do formulário.
       this.controlStates(this.states.editing);

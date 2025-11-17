@@ -33,7 +33,7 @@ export default class EntityForm extends EntryForm {
 
     this.objClass = Entity;
   }
-  
+
   /** 
     * @property {Array<object>} lineageTypes - Objeto que armazena os tipos de linhagem vinculados à entidade.    
     * @private
@@ -139,8 +139,6 @@ export default class EntityForm extends EntryForm {
     this.manager.clearTree(true);
   }
 
-
-
   /* ---------------------------------------------------------------------------------------------------------------- */
   // LISTENERS
   /**
@@ -159,59 +157,21 @@ export default class EntityForm extends EntryForm {
     super.onDeleteSwitchChange(event);
 
     const removeEntryButton = this.querySelector('#removeEntryButton');
-    removeEntryButton.hidden = !event.target.checked;
-  }
 
-  /*
-  async onFounderButtonClick(event) {
-    event.stopPropagation();
-
-    const headerInfo = this.querySelector('.header-info');
-    const ltid = headerInfo.dataset.ltid;
-
-    const entry = await EntrySearchDialog.configDialog({ ltid: ltid, isFounder: true, fromLineage: true });
-
-    if (entry) {
-      this.founder = entry;
-
-      // Alterna a visibilidade do grupo de eventos.
-      this._toggleLineageTree(entry);
-
-      this._buildDiagram(entry.tree);
-    }
-  }*/
-
-
-  /**
-  * Manipulador de evento para retirar um evento de uma entrada.
-  * @param {Event} event - Evento de clique no bot o de Remover Evento.
-  * @fires
-  
-  async onRemoveFounderClick(event) {
-    event.stopPropagation();
-
-    // Confirma a desvinculação da Entrada ao Evento.
-    if (await Dialogs.confirm('Desvincular Entrada', 'Deseja desvincular o fundador da Árvore? Isso irá apagar todos os dados associados a ela.')) {
-
-      // Alternar a visibilidade do grupo de eventos.
-      this._toggleLineageTree();
-
-      // Limpar os dados da Entrada desvinculada.
-      this._clearEntryData();
-
-      // A Entrada será retirada.
-      this.hasEntry = false;
+    if (removeEntryButton) {
+      if (event.target.checked)
+        removeEntryButton.classList.remove('hidden');
+      else
+        removeEntryButton.classList.add('hidden');
     }
   }
-  */
-
 
   async onNewLineageClick(event) {
     event.stopPropagation();
 
     const sid = this.data.entry?.sid ?? this.selection.folder?.dataset.id ?? null;
 
-    if(!sid) {
+    if (!sid) {
       this.msgBox.showWarning('Nenhuma pasta foi selecionada.');
       return;
     }
@@ -219,17 +179,21 @@ export default class EntityForm extends EntryForm {
     const section = uniforge.doc.sections.get(sid);
     const chapterType = uniforge.doc.chapterTypes.get(section.chapterType);
 
-    const rootEntry = await EntrySearchDialog.configDialog(this.obj, { isFounder: true, fromLineage: true });
+    const newLineageData = await EntrySearchDialog.configDialog(this.obj, { isFounder: true, fromLineage: true });
 
-    if (rootEntry) {
-      this.manager.addNode(rootEntry, true);
+    if (newLineageData) {
+      if(newLineageData.entry.img) {
+        const imageUrl = await uniforge.utils.blobToImage(newLineageData.entry.img, newLineageData.entry.img);
+        newLineageData.entry.img = imageUrl;
+      }
+      this.manager.addNode(newLineageData.entry, true);
 
       this.manager.buildTree({ isPerson: chapterType.ctid === 3 });
 
       // Exibe o controle da Árvore de Linhagem.
       this._toggleLineageTree(true);
 
-      this.#lineageTypes = uniforge.utils.deepClone(rootEntry.lineageTypes);
+      this.#lineageTypes = uniforge.utils.deepClone(newLineageData.lineageTypes);
     }
   }
 
@@ -240,8 +204,6 @@ export default class EntityForm extends EntryForm {
   */
   async onNewClick(event) {
     super.onNewClick(event);
-
-
 
     const headerInfo = this.querySelector('.header-info');
     headerInfo.dataset.ltid = uniforge.db.generateID();
@@ -254,14 +216,14 @@ export default class EntityForm extends EntryForm {
   */
   async onEntryItemDoubleClick(event) {
     await super.onEntryItemDoubleClick(event, { dataSource: 'entries' });
-    const lineages = uniforge.doc.lineages.toObject();    
-
-    this.obj.lineage = lineages.find(lineage => lineage.eid === this.eid);
 
     // Se a Entrada possui uma Árvore de Linhagem, carregue-a.
     if (this.obj.lineage) {
       this._toggleLineageTree(true);
-      this._buildDiagram(this.obj.lineage.tree);
+      this._buildDiagram(this.obj.lineage);
+
+      const lineageFlavorEditor = this.querySelector('#lineageFlavorEditor');
+      lineageFlavorEditor.value = this.obj.lineage
     } else {
       this._toggleLineageTree(false);
     }
@@ -308,11 +270,11 @@ export default class EntityForm extends EntryForm {
   /**
    * Constroi a árvore de linhagem com base nos dados da entrada.
    * 
-   * @param {string} tree - Dados da árvore em formato de FamilyScript.
+   * @param {object} lineage - Dados da árvore em formato de FamilyScript.
    * @protected
   */
-  _buildDiagram(tree) {
-    this.manager.fromFamilyScript(tree);
+  _buildDiagram(lineage) {
+    this.manager.fromFamilyScript(lineage);
     this.manager.buildTree(); // Atualiza a árvore com os dados da entrada.
   }
 
@@ -336,13 +298,18 @@ export default class EntityForm extends EntryForm {
     super._addEntry(data);
 
     const nodes = this.manager.Tree.nodes;
-    data.tree = this.manager.toFamilyScript();
+    data.lineage = this.manager.toFamilyScript();
 
     const result = await uniforge.db.addLineageTree(data);
     data.ltid = result.lastInsertRowid;
 
     for (let node of Object.values(nodes)) {
-      await uniforge.db.addLineageTreeEntry({ ltid: data.ltid, eid: node.eid, code: node.id });
+      switch (node.dbAction) {
+        case 'a': {
+          await uniforge.db.addLineageTreeEntry({ ltid: data.ltid, eid: node.eid, code: node.id });
+        } break;
+        default: break;
+      }
     }
 
     for (let type of this.#lineageTypes) {
@@ -357,8 +324,8 @@ export default class EntityForm extends EntryForm {
           await uniforge.db.deleteLineageType({ ltid: data.ltid, tag: type.tag });
         }
         default: break;
-      }      
-    }    
+      }
+    }
   }
 
   /**
@@ -378,16 +345,38 @@ export default class EntityForm extends EntryForm {
    * @returns {Promise<Object>} - Resultado da execução do comando de atualização.
  */
   async _updateEntry(data) {
-    //Inserir tratamento da atualização da Árvore de Linhagem aqui...
-
     super._updateEntry(data);
-  }
 
-  async _handleLineageSave(data, lineages) {
-    // Percorre a lista de linhagens associadas à entrada.
-    for (const lineage of lineages) {
-      // Adiciona o identificador de Seção da Entrada à linhagem.
-      lineage.sid = data.sid;
+    const nodes = this.manager.Tree.nodes;
+    data.tree = this.manager.toFamilyScript();
+
+    await uniforge.db.updateLineageTree(data);
+
+    for (let node of Object.values(nodes)) {
+      switch (node.dbAction) {
+        case 'a': {
+          await uniforge.db.addLineageTreeEntry({ ltid: data.ltid, eid: node.eid, code: node.id });
+        } break;
+        case 'd': {
+          await uniforge.db.deleteLineageTreeEntry({ ltid: data.ltid, eid: node.eid });
+        }
+        default: break;
+      }
+    }
+
+    for (let type of this.#lineageTypes) {
+      switch (type.dbAction) {
+        case 'a': {
+          await uniforge.db.addLineageType({ ltid: data.ltid, tag: type.tag, label: type.label });
+        } break;
+        case 'u': {
+          await uniforge.db.updateLineageType({ ltid: data.ltid, tag: type.tag, label: type.label });
+        } break;
+        case 'd': {
+          await uniforge.db.deleteLineageType({ ltid: data.ltid, tag: type.tag });
+        }
+        default: break;
+      }
     }
   }
 }

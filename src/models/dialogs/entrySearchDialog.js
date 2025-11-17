@@ -429,7 +429,9 @@ export default class EntrySearchDialog extends BaseDialog {
                 entry.lineageTypes = this.#typesToCommit.toArray();
               }
 
-              resolve(entry);
+              resolve({
+                entry: entry
+              });
               return true;
             }
           }

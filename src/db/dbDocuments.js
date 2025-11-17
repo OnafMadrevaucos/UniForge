@@ -157,7 +157,10 @@ export default class DBDocuments {
             })));
 
             const lineageEntries = entries.filter(e => e.ltid === lineage.ltid).map((e) => {
-                const entry = this.entries.get(e.eid);
+                const entry = uniforge.utils.deepClone(this.entries.get(e.eid));
+                entry.code = e.code;
+                entry._id = e.code;
+
                 return {...entry};
             });
 

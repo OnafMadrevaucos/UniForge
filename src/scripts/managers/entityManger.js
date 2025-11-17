@@ -123,7 +123,7 @@ export default class EntityManager extends BaseManager {
         if (seed.length > 0) {
             container.classList.remove('empty');
 
-            this.diagram = dTree.init(root, seed, this.diagramConfig);
+            this.diagram = dTree.init(this, root, seed, this.diagramConfig);
         } else {
             container.classList.add('empty');
             container.innerHTML = '';
@@ -173,10 +173,10 @@ export default class EntityManager extends BaseManager {
         const node = new TreeNode({
             id: id,
             eid: entry.eid,
-            name: entry.givenName ?? '',
-            img: entry.img ?? '',
+            name: entry.givenName ?? '',            
             extra: {
                 title: entry.title ?? '',
+                img: entry.img ?? uniforge.urls.blankImg,
                 gender: entry.gender ?? 'm',
                 genitors: {
                     a: null,
@@ -282,10 +282,11 @@ export default class EntityManager extends BaseManager {
      * @param {string} data - O script de família em formato de texto.
      */
     fromFamilyScript(data) {
+        const ltid = data.ltid ?? '';
         // Se nenhuma data foi fornecida, ignora.
         if (!data) return null;
 
-        const lines = data.split(/\r?\n/);
+        const lines = data.tree.split(/\r?\n/);
         const tree = {
             root: '',
             nodes: {},
@@ -297,7 +298,9 @@ export default class EntityManager extends BaseManager {
                 // Linha que representa um indivíduo
                 const [idPart, ...facts] = line.split('\t');
                 const id = idPart.substring(1);
-                const node = new TreeNode({ id: id });
+                const entry = data.entries.get(id);
+
+                const node = new TreeNode(entry);
 
                 facts.forEach(fact => {
                     const tag = fact[0];
@@ -562,11 +565,11 @@ export default class EntityManager extends BaseManager {
         return text;
     }
 
-    _renderNode(name, x, y, width, height, extra, id, nodeClass, textClass, textRenderer, options) {
+    _renderNode(name, x, y, width, height, extra, id, code, nodeClass, textClass, textRenderer, options) {
         const node = document.createElement('div');
         node.classList.add(nodeClass, 'flexrow');
         node.id = 'node' + id;
-        node.dataset.id = id;
+        node.dataset.id = code;
         node.tabIndex = 0;
 
         // Sinalize que o Node é um node de uma entidade morta.
@@ -581,7 +584,7 @@ export default class EntityManager extends BaseManager {
 
         const icon = document.createElement('div');
         icon.classList.add('node-icon');
-        icon.innerHTML = `<i class="fas ${extra.deceased ? 'fa-skull' : iconMap[extra.title]}"></i>`;;
+        icon.innerHTML = `<img class="icon" src="${extra.img}"/>`;
         node.appendChild(icon);
 
         const text = textRenderer(name, extra, textClass, options);
@@ -590,17 +593,22 @@ export default class EntityManager extends BaseManager {
         return node.outerHTML;
     }
 
-    _onNodeClick(name, extra, id) {
+    _onNodeClick(manager, name, extra, id, code) {
         const selectedNode = document.getElementById('node' + id);
-        const alreadeSelected = selectedNode.classList.contains('selected');
+        const alreadySelected = selectedNode.classList.contains('selected');
 
         const nodes = document.querySelectorAll('.node');
         nodes.forEach(node => node.classList.remove('selected'));
 
-        if (!alreadeSelected) selectedNode.classList.add('selected');
+        if (!alreadySelected) selectedNode.classList.add('selected');
 
         const actionButtons = document.querySelectorAll('.tree-editor .action-buttons button');
-        actionButtons.forEach(button => button.disabled = alreadeSelected);
+        actionButtons.forEach(button => button.disabled = alreadySelected);
+
+        Object.values(manager.Tree.nodes).forEach(node => {
+            node.selected = false;
+            if(node.id === code) node.selected = selectedNode.classList.contains('selected');
+        });
     }
 
     _onAddMateClick(event) {
@@ -620,19 +628,22 @@ export default class EntityManager extends BaseManager {
 
 class TreeNode {
     constructor(data) {
-        this.#id = data.id ?? null;
+        this.#id = data.id ?? data.code ?? null;
         this.#eid = data.eid ?? null;
         this.#name = data.name ?? null;
         this.#depthOffset = data.depthOffset ?? 0;
         this.#marriages = data.marriages ?? [];
         this.#extra = data.extra ?? this.#extra;
+
+        this.dbAction = 'a';
     }
     #id = null;
     #eid = null;
-    #name = null;
+    #name = null;    
     #depthOffset = 0;
     #marriages = [];
     #extra = {
+        img: '',
         title: null,
         gender: null,
         genitors: {
@@ -645,10 +656,12 @@ class TreeNode {
         death: null,
         deceased: false
     };
+    #selected = false;
 
     get id() { return this.#id; }
     get eid() { return this.#eid; }
     get name() { return this.#name; }
+    get img() { return this.#extra.img; }
     get depthOffset() { return this.#depthOffset; }
     get marriages() { return this.#marriages; }
     get extra() { return this.#extra; }
@@ -660,8 +673,10 @@ class TreeNode {
     get born() { return this.#extra.born; }
     get death() { return this.#extra.death; }
     get deceased() { return this.#extra.deceased; }
+    get selected() { return this.#selected; }
 
     set name(value) { this.#name = value; }
+    set img(value) { this.#extra.img = value; }
     set depthOffset(value) { this.#depthOffset = value; }
     set marriages(value) { this.#marriages = value; }
     set extra(value) { this.#extra = value; }
@@ -673,4 +688,5 @@ class TreeNode {
     set born(value) { this.#extra.born = value; }
     set death(value) { this.#extra.death = value; }
     set deceased(value) { this.#extra.deceased = value; }
+    set selected(value) { this.#selected = value; }
 }

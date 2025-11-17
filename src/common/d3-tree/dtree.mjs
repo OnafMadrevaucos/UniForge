@@ -3,9 +3,11 @@ import * as _ from "../../../node_modules/lodash-es/lodash.js";
 
 const dTree = {
 
+  manager: null,
+
   VERSION: '/* @echo DTREE_VERSION */',
 
-  init: function (root, data, options = {}) {
+  init: function (manager, root, data, options = {}) {
     var opts = _.defaultsDeep(options || {}, {
       target: '#graph',
       debug: false,
@@ -13,10 +15,10 @@ const dTree = {
       height: 600,
       hideMarriageNodes: true,
       callbacks: {
-        nodeClick: function (name, extra, id) { },
-        nodeRightClick: function (name, extra, id) { },
-        marriageClick: function (extra, id) { },
-        marriageRightClick: function (extra, id) { },
+        nodeClick: function (manager, name, extra, id, code) { },
+        nodeRightClick: function (manager, name, extra, id) { },
+        marriageClick: function (manager, extra, id) { },
+        marriageRightClick: function (manager, extra, id) { },
         nodeHeightSeperation: function (nodeWidth, nodeMaxHeight) {
           return TreeBuilder._nodeHeightSeperation(nodeWidth, nodeMaxHeight);
         },
@@ -57,7 +59,7 @@ const dTree = {
     });
 
     var data = this._preprocess(root, opts);
-    var treeBuilder = new TreeBuilder(data.root, data.siblings, opts);
+    var treeBuilder = new TreeBuilder(manager, data.root, data.siblings, opts);
     treeBuilder.create();
 
     function _zoomTo(x, y, zoom = 1, duration = 500) {
@@ -121,8 +123,9 @@ const dTree = {
     var root = {
       name: '',
       id: id++,
+      code: rootNode.id,
       hidden: true,
-      children: []
+      children: [],
     };
 
     var reconstructTree = function (person, parent, depth) {
@@ -131,6 +134,7 @@ const dTree = {
       var node = {
         name: person.name,
         id: id++,
+        code: person.id,
         hidden: false,
         children: [],
         extra: person.extra,

@@ -662,7 +662,7 @@ export default class DBManager {
      */
     async updateLineageTree(data) {
         const updateSet = this.buildUpdateSet([
-            ['title', data.title]
+            ['title', data.title],
             ['tree', data.tree]
         ]);
 

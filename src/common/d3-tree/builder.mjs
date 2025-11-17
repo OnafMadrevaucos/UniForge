@@ -1,8 +1,10 @@
 import * as _ from "../../../node_modules/lodash-es/lodash.js";
 class TreeBuilder {
 
-    constructor(root, siblings, opts) {
+    constructor(manager, root, siblings, opts) {
       TreeBuilder.DEBUG_LEVEL = opts.debug ? 1 : 0;
+
+      this.manager = manager;
   
       this.root = root;
       this.siblings = siblings;
@@ -78,6 +80,8 @@ class TreeBuilder {
     }
   
     _update(source) {
+
+      const manager = this.manager;
   
       let opts = this.opts;
       let allNodes = this.allNodes;
@@ -165,6 +169,7 @@ class TreeBuilder {
               nodeSize[1],
               d.data.extra,
               d.data.id,
+              d.data.code,
               d.data.class,
               d.data.textClass,
               opts.callbacks.textRenderer
@@ -182,9 +187,9 @@ class TreeBuilder {
             return;
           }
           if (d.data.isMarriage) {
-            opts.callbacks.marriageClick.call(this, d.data.extra, d.data.id)
+            opts.callbacks.marriageClick.call(this, manager, d.data.extra, d.data.id, d.data.code)
           } else {
-            opts.callbacks.nodeClick.call(this, d.data.name, d.data.extra, d.data.id)
+            opts.callbacks.nodeClick.call(this, manager, d.data.name, d.data.extra, d.data.id, d.data.code)
           }
         })
         .on('contextmenu', function(event, d)  {
@@ -193,9 +198,9 @@ class TreeBuilder {
           }
           event.preventDefault();
           if (d.data.isMarriage) {
-            opts.callbacks.marriageRightClick.call(this, d.data.extra, d.data.id)
+            opts.callbacks.marriageRightClick.call(this, d.data.extra, d.data.id, d.data.code)
           } else {
-            opts.callbacks.nodeRightClick.call(this, d.data.name, d.data.extra, d.data.id)
+            opts.callbacks.nodeRightClick.call(this, d.data.name, d.data.extra, d.data.id, d.data.code)
           }
         });
     }

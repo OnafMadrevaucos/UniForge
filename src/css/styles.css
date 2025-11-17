@@ -4258,10 +4258,16 @@ input:checked+.slider::before {
     border: 1px solid;
     text-align: center;
     align-content: center;
+    overflow: hidden;
 }
 
 .lineage-tree .node.deceased .node-icon {
     color: var(--disabled-text-color);
+}
+
+.lineage-tree .node .node-icon .icon {
+    height: 25px;
+    width: 25px;
 }
 
 .lineage-tree .linage {
@@ -4392,18 +4398,19 @@ input:checked+.slider::before {
     transition-duration: 300ms;
 }
 
-[data-tooltip]:not([data-tooltip-left]):not([data-tooltip-center])::after {
+[data-tooltip][data-tooltip-side="right"]::after {
+    left: 100%;
+    top: calc(100% + 5px);
+}
+
+[data-tooltip][data-tooltip-side="center"]::after {
     left: 50%;
     top: calc(100% + 5px);
 }
 
-[data-tooltip][data-tooltip-center]::after {
-    left: -4vw;
-    top: calc(100% + 5px);
-}
-
-[data-tooltip][data-tooltip-left]::after {
-    left: -8vw;
+[data-tooltip]:not([data-tooltip-side="left"]):not([data-tooltip-side="center"])::after,
+[data-tooltip][data-tooltip-side="left"]::after {
+    left: 0;
     top: calc(100% + 5px);
 }
 
