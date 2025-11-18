@@ -1,3 +1,4 @@
+import CustomDate from '../../common/primitives/date.mjs';
 import BaseDialog from './baseDialog.js';
 import LineageTypeDialog from './lineageTypeDialog.js';
 export default class EntrySearchDialog extends BaseDialog {
@@ -13,9 +14,7 @@ export default class EntrySearchDialog extends BaseDialog {
 
     this.fromLineage = options?.fromLineage ?? false;
 
-    this.isFounder = options?.isFounder ?? false;
-
-    this.ltid = options?.ltid ?? null;
+    this.isRoot = options?.isFounder ?? false;    
 
     this.lineageGroups = [];
 
@@ -39,6 +38,10 @@ export default class EntrySearchDialog extends BaseDialog {
   }
 
   static #typesToCommit = new Map();
+
+  get ltid() {
+    return this.entity.ltid;
+  }
 
   get typesToCommit() {
     return EntrySearchDialog.#typesToCommit;
@@ -65,7 +68,14 @@ export default class EntrySearchDialog extends BaseDialog {
 
   prepareFolders(data) {
     const folders = uniforge.doc.entries.reduce((folder, entry) => {
+      // Ignora a entrada de origem.
       if (entry.eid === this.entity.eid) return folder;
+      
+      const lineage = this.entity.lineage;
+      const lineageEntry = lineage?.entries.find(e => e.eid === entry.eid);
+
+      // Ignora as entradas que já fazem parte da linhagem.
+      if (lineageEntry) return folder;
 
       const entryType = uniforge.doc.entryTypes.get(Number(entry.etid));
       const type = entryType.title;
@@ -93,7 +103,7 @@ export default class EntrySearchDialog extends BaseDialog {
   }
 
   prepareLineageGroups(data) {
-    if (this.isFounder) {
+    if (this.isRoot) {
       data.groups = [{ _label: 'Fundador', _id: 'founder' }];
     }
   }
@@ -105,7 +115,7 @@ export default class EntrySearchDialog extends BaseDialog {
     const lineageTypesSelect = this.querySelector('#lineageTypes');
     lineageTypesSelect.disabled = (this.data.lineageTypes.length === 0);
 
-    if (this.isFounder) {
+    if (this.isRoot) {
       const lineageGroup = this.querySelector('#lineageGroupSelect');
 
       const option = document.createElement('option');
@@ -278,14 +288,10 @@ export default class EntrySearchDialog extends BaseDialog {
 
     if (this.fromLineage) {
       this.typesToCommit = new Map();
-      const startEvent = this.querySelector('#startEvent');
-      const endEvent = this.querySelector('#endEvent');
+      const mainEventSelect = this.querySelector('#mainEvent');
 
-      startEvent.disabled = false;
-      endEvent.disabled = false;
-
-      this._filterEventInput(startEvent, entry.eid);
-      this._filterEventInput(endEvent, entry.eid);
+      mainEventSelect.disabled = false;
+      this._filterEventInput(mainEventSelect, entry.eid);
 
       this.configureLineageTypesSelect(this.data.lineageTypes);
     }
@@ -405,24 +411,26 @@ export default class EntrySearchDialog extends BaseDialog {
                 return false;
               }
               let entry = uniforge.doc.entries.get(eid);
-              const startEvent = dialog.querySelector('#startEvent');
-              const endEvent = dialog.querySelector('#endEvent');
+              const eventSelect = dialog.querySelector('#mainEvent');
               const lineageTypes = dialog.querySelector('#lineageTypes');
               const founderTitle = dialog.querySelector('#founderTitle');
               const lineageGroup = dialog.querySelector('#lineageGroupSelect');
-              const lineageGroupOrder = dialog.querySelector('#lineageGroupOrder');
+              const lineageGroupOrder = dialog.querySelector('#lineageGroupOrder');              
+
+              const mainEvent = uniforge.doc.events.get(eventSelect.value) ?? null;
 
               entry = uniforge.utils.mergeObjects(entry, {
                 id: entry.eid,
                 givenName: entry.title,
-                birthDate: entry.birthDate ?? '00010101',
-                deathDate: entry.deathDate ?? '00010101',
+                birthDate: mainEvent?.date.start.toString() ?? null,
+                deathDate: mainEvent?.date.end?.toString() ?? null,
                 gender: lineageTypes.value ?? 'n',
                 title: founderTitle.value ?? '',
                 group: lineageGroup.value ?? '',
                 groupOrder: lineageGroupOrder.value ?? 0,
                 genitors: entry.genitors ?? {},
-                deceased: entry.deceased ?? false
+                deceased: entry.deceased ?? false,
+                isRoot: this.isRoot ?? false
               });
 
               if (this.#typesToCommit.size > 0) {

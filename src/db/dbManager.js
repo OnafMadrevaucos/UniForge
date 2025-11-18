@@ -435,13 +435,14 @@ export default class DBManager {
      * @returns {Promise<Object>} A resposta do banco de dados.
      */
     async addLineageTreeEntry(data) {
-        let query = 'INSERT INTO _lineageTreeEntries (ltid, eid, code) ';
+        let query = 'INSERT INTO _lineageTreeEntries (ltid, eid, code, isRoot) ';
         query += 'VALUES (?,?,?);';
         const params = [];
 
         params.push(data.ltid);
         params.push(data.eid);
         params.push(data.code);
+        params.push(Number(data.isRoot));
 
         const result = await this.#execQuery(query, params);
         this.results = result;
@@ -1864,6 +1865,7 @@ export default class DBManager {
             '`ltid` VARCHAR(16) NOT NULL,' +            // Identificador da Linhagem.
             '`eid` VARCHAR(16) NOT NULL,' +             // Identificador da Entrada Fundadora da Linhagem.
             '`code` VARCHAR(5) NOT NULL,' +             // Identificador da Entrada dentro da Árvore.
+            '`isRoot` BOOLEAN NOT NULL DEFAULT 0,'      // A Entrada Fundadora da Linhagem.
             'PRIMARY KEY (`ltid`,`eid`))';
 
         this.results = await this.#execQuery(query);
@@ -1987,6 +1989,7 @@ export default class DBManager {
             '`title` TEXT NOT NULL,' +                              // Título do Tipo de Entrada.
             '`icon` VARCHAR(255) NULL,' +                           // Ícone do Tipo de Entrada.
             '`isMaterial` BOOLEAN NOT NULL DEFAULT 1,' +            // A Seção é material (true por padrão).
+            '`isEntity` BOOLEAN NOT NULL DEFAULT 0,' +              // A Seção é entidade (false por padrão).
             'UNIQUE (`etid`))';
 
         this.results = await this.#execQuery(query);

@@ -257,7 +257,9 @@ const dTree = {
     if (marriages != undefined && Array.isArray(marriages)) {
       marriages.sort(function (marriageA, marriageB) {
         var a = marriageA.spouse;
+        if(!a) return;
         var b = marriageB.spouse;
+        if(!b) return;
         return opts.callbacks.nodeSorter.call(this, a.name, a.extra, b.name, b.extra);
       });
     }

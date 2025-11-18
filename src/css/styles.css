@@ -2075,6 +2075,10 @@ input:checked+.slider::before {
     border-radius: var(--default-border-radius);
 }
 
+.source-dialog .data-group .data {
+    flex: 2;
+}
+
 .data-group .data:not(div) {
     flex: 2;
 }
@@ -4149,6 +4153,7 @@ input:checked+.slider::before {
 }
 
 .tree-editor .action-buttons {
+    position: absolute;
     width: fit-content;
     bottom: 50vh;
     left: calc(100% - 5vh);
@@ -4268,6 +4273,30 @@ input:checked+.slider::before {
 .lineage-tree .node .node-icon .icon {
     height: 25px;
     width: 25px;
+}
+
+.lineage-tree .node .node-buttons {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    z-index: 9999;
+}
+
+.lineage-tree .node .node-buttons .node-button {
+    padding: 2px;
+    border-radius: 0;
+    font-size: var(--tiny-size);
+}
+
+.lineage-tree .node .node-buttons .node-button[data-tooltip]::after {
+    font-size: var(--tiny-size);
+    width: max-content ;
+    padding: 5px;
+}
+
+.lineage-tree .node .node-buttons .node-button[data-tooltip-block='top']::after {
+    top: calc(100% - 35px);
 }
 
 .lineage-tree .linage {
@@ -4400,17 +4429,23 @@ input:checked+.slider::before {
 
 [data-tooltip][data-tooltip-side="right"]::after {
     left: 100%;
-    top: calc(100% + 5px);
 }
 
 [data-tooltip][data-tooltip-side="center"]::after {
     left: 50%;
-    top: calc(100% + 5px);
 }
 
 [data-tooltip]:not([data-tooltip-side="left"]):not([data-tooltip-side="center"])::after,
 [data-tooltip][data-tooltip-side="left"]::after {
     left: 0;
+}
+
+[data-tooltip][data-tooltip-block="top"]::after {
+    top: calc(100% - 45px);
+}
+
+[data-tooltip]:not([data-tooltip-block="top"])::after,
+[data-tooltip][data-tooltip-block="bottom"]::after {
     top: calc(100% + 5px);
 }
 

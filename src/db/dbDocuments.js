@@ -1,5 +1,7 @@
 // Código JavaScript para criar os Sets baseados no banco de dados
 
+import CustomDate from "../common/primitives/date.mjs";
+
 /**
  * Classe para criar e gerenciar conjuntos (Sets) baseados em dados de um banco de dados.
  */
@@ -32,11 +34,11 @@ export default class DBDocuments {
         this.chapters = this.createChapterSet(data.chapters, data.sections);
         this.sections = this.createSectionSet(data.sections, data.entries, data.events); 
         this.entries = this.createEntrySet(data.entries, data.events); 
-        this.lineages = this.createLineageSet(data.lineages, data.lineageTypes, data.lineageEntries);         
+        this.lineages = this.createLineageSet(data.lineages, data.lineageTypes, data.lineageEntries);  
+        this.calendars = this.createCalendarsMergedSet(data.calendars, data.calendarsMonths, data.calendarsDays, data.calendarsDaysInMonths);        
         this.events = this.createEventSet(data.events);
         this.timelines = this.createTimelineSet(data.timelines, data.events, data._timelineEvents);
-        this.maps = this.createMapSet(data.maps, data.mapElements);
-        this.calendars = this.createCalendarsMergedSet(data.calendars, data.calendarsMonths, data.calendarsDays, data.calendarsDaysInMonths); 
+        this.maps = this.createMapSet(data.maps, data.mapElements);        
         this.textImages = this.createSimpleSet(data._textImages);        
         this.chapterTypes = this.createSimpleSet(data.chapterTypes);
         this.entryTypes = this.createSimpleSet(data.entryTypes);
@@ -292,8 +294,12 @@ export default class DBDocuments {
         const eventSet = new Set();
 
         events.forEach((event) => { 
+            const calendar = this.calendars?.get(event.clid) ?? null;
+            const start = calendar ? new CustomDate(calendar, { day: event.s_day, month: event.s_month, year: event.s_year }) : null;
+            const end = calendar && event.e_day ? new CustomDate(calendar, { day: event.e_day, month: event.e_month, year: event.e_year }) : null;
+
             // Adiciona o evento ao conjunto.
-            eventSet.add({ ...event, _id: event.evid, _label: event.title });
+            eventSet.add({ ...event, _id: event.evid, _label: event.title, date: { start, end } });
         });        
 
         return eventSet;

@@ -1,4 +1,5 @@
 import CustomDate from "../common/primitives/date.mjs";
+import Application from "./application.js";
 
 export default class DatePicker {
 
@@ -14,7 +15,10 @@ export default class DatePicker {
     years: 'years'
   }
 
-  constructor(id, date = {}) {
+  constructor(id, parent = null, date = {}) {
+    if(parent instanceof Application) this.parent = parent;
+    if(!this.parent) throw new Error('O DatePicker precisa de uma aplicação.');   
+
     /**
     * O identificador do HTMLElement que representa o DatePicker.
     * @type {string}
@@ -43,7 +47,7 @@ export default class DatePicker {
   #currentDate = new CustomDate(null, { day: 1, month: 0, year: 1 });
 
   get dataGroup() {
-    return document.getElementById(`${this.id}`);
+    return this.parent.querySelector(`#${this.id}`);
   }
   get dateInput() {
     return this.dataGroup?.querySelector('#dateInput') ?? null;

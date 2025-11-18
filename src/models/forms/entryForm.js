@@ -74,8 +74,8 @@ export default class EntryForm extends SidebarForm {
     * Contém duas instâncias de `DatePicker` para 'startDate' (data de início) e 'endDate' (data de término).
     */
     this.datePickers = {
-      startDate: new DatePicker('startDate'),
-      endDate: new DatePicker('endDate')
+      startDate: new DatePicker('startDate', this),
+      endDate: new DatePicker('endDate', this)
     }
 
     this.objClass = Entry;
@@ -316,6 +316,8 @@ export default class EntryForm extends SidebarForm {
     const deleteSwitch = this.querySelector('#deleteSwitch');
     const deleteCheckbox = deleteSwitch.querySelector('#checkbox');
 
+    const entryTypeSelect = options.ignoreEntryType ? null : this.querySelector('#entryType');
+
     const flavorEditor = this.flavorEditor;
 
     const ignoreEditor = options.ignoreEditor ?? false;
@@ -369,6 +371,11 @@ export default class EntryForm extends SidebarForm {
         if (imageContainer)
           imageContainer.classList.remove('disabled');
 
+        if (entryTypeSelect) {
+          entryTypeSelect.selectedIndex = 0;
+          entryTypeSelect.disabled = false;
+        }
+
         deleteSwitch.classList.remove('hidden');
 
         // Configuração dos Estados dos Botões.
@@ -400,6 +407,10 @@ export default class EntryForm extends SidebarForm {
         if (imageContainer)
           imageContainer.classList.remove('disabled');
 
+        if (entryTypeSelect) {
+          entryTypeSelect.disabled = false;
+        }
+
         deleteSwitch.classList.remove('hidden');
 
         // Configuração dos Estados dos Botões.
@@ -423,8 +434,10 @@ export default class EntryForm extends SidebarForm {
       default: {
         this.clearContent();
 
-        const entryTypeSelect = this.querySelector('#entryType');
-        if (entryTypeSelect) entryTypeSelect.selectedIndex = 0;
+        if (entryTypeSelect) {
+          entryTypeSelect.selectedIndex = 0;
+          entryTypeSelect.disabled = true;
+        }
 
         deleteSwitch.classList.add('hidden');
 

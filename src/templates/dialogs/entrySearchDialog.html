@@ -20,17 +20,11 @@
         <fieldset class="info-set" disabled>
           <div id="entryTypeGroup" class="data-group combo">
             <span class="data-label">Tipo </span>
-            <combo id="entryType" value="entryTypes"/>
+            <combo id="entryType" value="entryTypes" />
           </div>
-          <div id="eventGroup" class="date-info flexrow hidden">
-            <div id="startEventGroup" class="data-group combo">
-              <span class="data-label">Início </span>
-              <combo id="startEvent" value="entryEvents" />
-            </div>
-            <div id="endEventGroup" class="data-group combo">
-              <span class="data-label">Término </span>
-              <combo id="endEvent" value="entryEvents" />
-            </div>
+          <div id="eventGroup" class="data-group combo flexrow hidden">
+            <span class="data-label">Duração </span>
+            <combo id="mainEvent" value="entryEvents" blank="true"/>
           </div>
           <div id="lineageTypeGroup" class="data-group combo">
             <span class="data-label">Tipo </span>
@@ -49,7 +43,7 @@
             </div>
             <div class="data-group number">
               <span class="data-label">Ordem </span>
-              <input id="lineageGroupOrder" type="number" class="data dial" min="0" max="99"/>
+              <input id="lineageGroupOrder" type="number" class="data dial" min="0" max="99" />
             </div>
           </div>
         </fieldset>

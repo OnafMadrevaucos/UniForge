@@ -22,15 +22,6 @@ export default class EntityForm extends EntryForm {
     // Inicializa o Gerenciador de Linhagens, enviando o container que conterá a árvore.
     this.manager = new EntityManager(this);
 
-    /**
-    * @property {object} datePickers - Um objeto que gerencia os seletores de data para registro de entidades.
-    * Contém duas instâncias de `DatePicker` para 'startDate' (data de início) e 'endDate' (data de término).
-    */
-    this.datePickers = {
-      startDate: new DatePicker('startDate'),
-      endDate: new DatePicker('endDate')
-    }
-
     this.objClass = Entity;
   }
 
@@ -67,6 +58,8 @@ export default class EntityForm extends EntryForm {
       noLineageLink: 'A Entrada não está vinculada a nenhuma Linhagem.',
     };
 
+    this.data.entryTypes = this.data.entryTypes.filter(et => et.isEntity);
+
     //this.manager.fromFamilyScript(this.manager.testScript);  
     //this.manager.fromFamilyScript(this.manager.noLinksTestScript); 
 
@@ -84,6 +77,11 @@ export default class EntityForm extends EntryForm {
 
   /* ---------------------------------------------------------------------------------------------------------------- */
   // CONFIGURAÇÕES
+
+  /**@inheritdoc */
+  controlStates(state, options = {}) {
+    super.controlStates(state, uniforge.utils.mergeObjects(options, { ignoreEntryType: true }));
+  }
   /**
     * Configura o conteúdo do formulário associado à instância.
     * Este método sobrescreve a implementação da classe pai e adiciona configurações específicas.
@@ -188,7 +186,7 @@ export default class EntityForm extends EntryForm {
       }
       this.manager.addNode(newLineageData.entry, true);
 
-      this.manager.buildTree({ isPerson: chapterType.ctid === 3 });
+      this.manager.buildTree(this.obj, { isPerson: chapterType.ctid === 3 });
 
       // Exibe o controle da Árvore de Linhagem.
       this._toggleLineageTree(true);
@@ -275,7 +273,7 @@ export default class EntityForm extends EntryForm {
   */
   _buildDiagram(lineage) {
     this.manager.fromFamilyScript(lineage);
-    this.manager.buildTree(); // Atualiza a árvore com os dados da entrada.
+    this.manager.buildTree(this.obj); // Atualiza a árvore com os dados da entrada.
   }
 
   /**
@@ -298,15 +296,17 @@ export default class EntityForm extends EntryForm {
     super._addEntry(data);
 
     const nodes = this.manager.Tree.nodes;
+    const root = this.manager.Tree.root;
     data.lineage = this.manager.toFamilyScript();
 
     const result = await uniforge.db.addLineageTree(data);
     data.ltid = result.lastInsertRowid;
 
     for (let node of Object.values(nodes)) {
+      const isRoot = node.id === root;
       switch (node.dbAction) {
         case 'a': {
-          await uniforge.db.addLineageTreeEntry({ ltid: data.ltid, eid: node.eid, code: node.id });
+          await uniforge.db.addLineageTreeEntry({ ltid: data.ltid, eid: node.eid, code: node.id, isRoot });
         } break;
         default: break;
       }

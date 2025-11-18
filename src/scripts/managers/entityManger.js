@@ -30,6 +30,7 @@ export default class EntityManager extends BaseManager {
      * Objeto privado que gerencia os indivíduos (nós) e relacionamentos (galhos) de uma família.
     */
     #tree = {
+        ltid: '',
         root: '',
         nodes: {},
         branches: []
@@ -80,6 +81,28 @@ export default class EntityManager extends BaseManager {
                 marriage: 'marriage',
                 text: 'node-text'
             },
+            actions: {
+                addMate: this._onAddMateClick,
+                addChild: this._onAddChildrenClick,
+                deleteNode: this._onDeleteNodeClick
+            },
+            buttons: {
+                mate: {
+                    tooltip: 'Adicionar Parceiro',
+                    action: 'addMate',
+                    icon: 'fa-ring'
+                },
+                child: {
+                    tooltip: 'Adicionar Descendente',
+                    action: 'addChild',
+                    icon: 'fa-baby-carriage'
+                },
+                delete: {
+                    tooltip: 'Deletar Entrada',
+                    action: 'deleteNode',
+                    icon: 'fa-trash'
+                }
+            },
             options: this.options || {}
         };
     }
@@ -113,7 +136,8 @@ export default class EntityManager extends BaseManager {
      * Constroe a Árvore de Linhagem no diagram de fluxograma.
      * @param {object} options - O elemento HTML que irá conter o diagram de fluxograma.
     */
-    async buildTree(options = {}) {
+    async buildTree(entity, options = {}) {
+        this.entity = entity;
         this.options = options;
 
         const seed = this._growSeed();
@@ -139,7 +163,7 @@ export default class EntityManager extends BaseManager {
             this.clearTree();
 
             // Cria um novo diagrama.
-            this.buildTree();
+            this.buildTree(this.entity, this.options);
         }
     }
 
@@ -154,6 +178,7 @@ export default class EntityManager extends BaseManager {
 
         if (cleardata) {
             this.#tree = {
+                ltid: '',
                 root: '',
                 nodes: {},
                 branches: []
@@ -173,14 +198,14 @@ export default class EntityManager extends BaseManager {
         const node = new TreeNode({
             id: id,
             eid: entry.eid,
-            name: entry.givenName ?? '',            
+            name: entry.givenName ?? '',
             extra: {
                 title: entry.title ?? '',
                 img: entry.img ?? uniforge.urls.blankImg,
                 gender: entry.gender ?? 'm',
                 genitors: {
-                    a: null,
-                    b: null
+                    a: entry.genitors.a ?? null,
+                    b: entry.genitors.b ?? null
                 },
                 group: entry.group ?? null,
                 groupOrder: entry.groupOrder ?? 0,
@@ -189,6 +214,11 @@ export default class EntityManager extends BaseManager {
                 deceased: entry.deceased ?? false
             }
         });
+
+        if(!isRoot) {
+            if(node.extra.genitors.a) tree.branches.push({ id1: node.extra.genitors.a, id2: id, type: 'genitor' });
+            if(node.extra.genitors.b) tree.branches.push({ id1: node.extra.genitors.b, id2: id, type: 'genitor' });
+        }
 
         const line = this.getNodeLine(node);
 
@@ -288,6 +318,7 @@ export default class EntityManager extends BaseManager {
 
         const lines = data.tree.split(/\r?\n/);
         const tree = {
+            ltid: ltid,
             root: '',
             nodes: {},
             branches: []
@@ -317,7 +348,7 @@ export default class EntityManager extends BaseManager {
                             node.group = data;
 
                             node.isRoot = data === 'root';
-                            if (node.isRoot) tree.root = id;                                                        
+                            if (node.isRoot) tree.root = id;
                             break;
                         case 'g':
                             node.gender = data;
@@ -572,16 +603,6 @@ export default class EntityManager extends BaseManager {
         node.dataset.id = code;
         node.tabIndex = 0;
 
-        // Sinalize que o Node é um node de uma entidade morta.
-        if (extra.deceased) node.classList.add('deceased');
-
-        const iconMap = {
-            'king': 'fa-chess-king',
-            'queen': 'fa-chess-queen',
-            'civilian': 'fa-user',
-            'princess': 'fa-crown',
-        }
-
         const icon = document.createElement('div');
         icon.classList.add('node-icon');
         icon.innerHTML = `<img class="icon" src="${extra.img}"/>`;
@@ -590,39 +611,78 @@ export default class EntityManager extends BaseManager {
         const text = textRenderer(name, extra, textClass, options);
         node.appendChild(text);
 
+        const innerButtons = document.createElement('div');
+        innerButtons.classList.add('node-buttons', 'flexrow', 'hidden');
+        node.appendChild(innerButtons);
+
+        const buttons = options.buttons;
+
+        Object.values(buttons).forEach(b => {
+            const button = document.createElement('button');
+            button.classList.add('node-button');
+            button.setAttribute('data-tooltip', b.tooltip);
+            button.setAttribute('data-tooltip-block', 'top');
+            button.setAttribute('data-action', b.action);
+            button.innerHTML = `<i class="fas ${b.icon}"></i>`;
+
+            innerButtons.appendChild(button);
+        });
+
         return node.outerHTML;
     }
 
-    _onNodeClick(manager, name, extra, id, code) {
+    _onNodeClick(event, name, extra, id, code, options) {
+        const manager = options.manager;
+
         const selectedNode = document.getElementById('node' + id);
         const alreadySelected = selectedNode.classList.contains('selected');
 
         const nodes = document.querySelectorAll('.node');
-        nodes.forEach(node => node.classList.remove('selected'));
+        nodes.forEach(node => {
+            node.classList.remove('selected');
+            node.querySelector('.node-buttons').classList.add('hidden');
+        });
 
-        if (!alreadySelected) selectedNode.classList.add('selected');
-
-        const actionButtons = document.querySelectorAll('.tree-editor .action-buttons button');
-        actionButtons.forEach(button => button.disabled = alreadySelected);
+        if (!alreadySelected) {
+            selectedNode.classList.add('selected');
+            selectedNode.querySelector('.node-buttons').classList.remove('hidden');
+        }
 
         Object.values(manager.Tree.nodes).forEach(node => {
             node.selected = false;
-            if(node.id === code) node.selected = selectedNode.classList.contains('selected');
+            if (node.id === code) node.selected = selectedNode.classList.contains('selected');
         });
     }
 
-    _onAddMateClick(event) {
-        event.stopPropagation();
+    async _onAddMateClick(event, manager) {
         const node = event.target.closest('.node');
+        const code = node.dataset.id;
 
-        console.log('Adicionar Parceiro');
+
     }
 
-    _onAddChildrenClick(event) {
-        event.stopPropagation();
+    async _onAddChildrenClick(event, manager) {
         const node = event.target.closest('.node');
+        const code = node.dataset.id;
 
-        console.log('Adicionar Filhos');
+        const mateData = await EntrySearchDialog.configDialog(manager.entity, { isFounder: false, fromLineage: true });
+
+        if (mateData) {
+            const mate = mateData.entry;
+            const genitors = mate.genitors;
+
+            if (!genitors.a) genitors.a = code;
+            else if (!genitors.b) genitors.b = code;
+
+            manager.addNode(mate);
+        }
+    }
+
+    async _onDeleteNodeClick(event, manager) {
+        const node = event.target.closest('.node');
+        const code = node.dataset.id;
+
+        console.log('Deletar Entrada');
     }
 }
 
@@ -639,7 +699,7 @@ class TreeNode {
     }
     #id = null;
     #eid = null;
-    #name = null;    
+    #name = null;
     #depthOffset = 0;
     #marriages = [];
     #extra = {
