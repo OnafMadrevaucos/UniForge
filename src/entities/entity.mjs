@@ -1,19 +1,25 @@
 import Entry from "./entry.mjs";
+import LineageTree from "./lineageTree.mjs";
 
 export default class Entity extends Entry {
     constructor(data) {
         super(data);
-
-        let lineages = Object.values(uniforge.doc.lineages.toObject());
-        let lineage = lineages.find(l => l.eid === data.eid) ?? null;
-
-        this.#ltid = lineage?.ltid ?? '';
-        this.data.lineage = lineage ?? null;
+        this.#lineage = data?.lineage ?? new LineageTree({
+            eid: this.eid,
+            title: '',
+            flavor: '',
+            root: '',
+            tree: '',
+            entity: this,
+            entries: new Set(),
+            types: new Set()
+        });
     }
+    #lineage = null;
 
-    #type = 'entity';
-    #ltid = '';
+    get type() { return 'entity'; }
+    get ltid() { return this.#lineage.ltid; }
 
-    get ltid() { return this.#ltid; }
-    get lineage() { return this.data.lineage; }
+    get lineage() { return this.#lineage; }
+    set lineage(value) { this.#lineage = value; }
 }

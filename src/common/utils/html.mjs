@@ -55,7 +55,7 @@ export function generateFolderlistHTML(id, folders, itemKey, type = 'default', i
                 </div>
                 <div class="folder-content">
                     <ul class="entry-list">
-                        ${(itemList.length > 0 ? generateFolderItemHTML(itemKey, itemList, type, isFixed) : '')}
+                        ${generateFolderItemHTML(itemKey, itemList, type, isFixed)}
                     </ul>
                 </div>
             </li>`;
@@ -89,6 +89,9 @@ export function generateFolderlistHTML(id, folders, itemKey, type = 'default', i
 */
 export function generateFolderItemHTML(itemKey, itemList, isFixed = false) {
     let html = '';
+
+    if (itemList instanceof Array && itemList.length === 0) return html;
+    if (itemList instanceof Set && itemList.size === 0) return html;
 
     itemList.forEach(item => {
         const data = uniforge.doc[itemKey].get(item._id);

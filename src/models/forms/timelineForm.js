@@ -71,14 +71,14 @@ export default class TimelineForm extends SidebarForm {
         super.prepareData();
 
         // Obtém todos os Eventos registrados.
-        this.data.events = uniforge.doc.events.toObject();
+        this.data.events = uniforge.doc.events.toArray();
 
         return this.data;
     }
 
     /**@inheritdoc */
     prepareFolders(data) {
-        const folders = uniforge.doc.timelines.toObject();
+        const folders = uniforge.doc.timelines.toArray();
         data.folders = folders.sort();
     }
 

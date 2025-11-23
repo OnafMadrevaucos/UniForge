@@ -12,6 +12,8 @@ export default class EntrySearchDialog extends BaseDialog {
 
     this.entity = dialogData.entity;
 
+    this.groupOrder = options?.groupOrder ?? null;
+
     this.fromLineage = options?.fromLineage ?? false;
 
     this.isRoot = options?.isFounder ?? false;    
@@ -57,8 +59,8 @@ export default class EntrySearchDialog extends BaseDialog {
   prepareData() {
     this.prepareFolders(this.data);
 
-    this.data.entryTypes = uniforge.doc.entryTypes.toObject();
-    this.data.entryEvents = uniforge.doc.events.toObject();
+    this.data.entryTypes = uniforge.doc.entryTypes.toArray();
+    this.data.entryEvents = uniforge.doc.events.toArray();
 
     if (this.fromLineage) {
       this.prepareLineageTypes(this.data);
@@ -98,8 +100,8 @@ export default class EntrySearchDialog extends BaseDialog {
   }
 
   prepareLineageTypes(data) {
-    const lineage = uniforge.doc.lineages.get(this.ltid);
-    data.lineageTypes = lineage?.types.toObject() ?? [];
+    const lineage = this.entity.lineage;
+    data.lineageTypes = lineage?.types.toArray() ?? [];
   }
 
   prepareLineageGroups(data) {
@@ -115,6 +117,8 @@ export default class EntrySearchDialog extends BaseDialog {
     const lineageTypesSelect = this.querySelector('#lineageTypes');
     lineageTypesSelect.disabled = (this.data.lineageTypes.length === 0);
 
+    const lineageGroupOrder = this.querySelector('#lineageGroupOrder');
+
     if (this.isRoot) {
       const lineageGroup = this.querySelector('#lineageGroupSelect');
 
@@ -125,11 +129,12 @@ export default class EntrySearchDialog extends BaseDialog {
 
       lineageGroup.value = 'root';
       lineageGroup.disabled = true;
-
-      const lineageGroupOrder = this.querySelector('#lineageGroupOrder');
-      lineageGroupOrder.value = 0;
-      lineageGroupOrder.disabled = true;
+      
+      lineageGroupOrder.value = 0;      
+    } else {
+      lineageGroupOrder.value = this.groupOrder ?? 1;
     }
+    lineageGroupOrder.disabled = true;
   }
 
   async configureElements() {
@@ -323,7 +328,7 @@ export default class EntrySearchDialog extends BaseDialog {
     if (types) {
       this.typesToCommit.merge(types);
       const lineage = uniforge.doc.lineages.get(this.ltid);
-      const committedTypes = lineage?.types.toObject() ?? [];
+      const committedTypes = lineage?.types.toArray() ?? [];
       const notCommittedTypes = this.typesToCommit.toArray();
 
       this.data.lineageTypes = committedTypes.merge(notCommittedTypes);
@@ -433,12 +438,14 @@ export default class EntrySearchDialog extends BaseDialog {
                 isRoot: this.isRoot ?? false
               });
 
+              let lTypes = [];
               if (this.#typesToCommit.size > 0) {
-                entry.lineageTypes = this.#typesToCommit.toArray();
+                lTypes = this.#typesToCommit.toArray();
               }
 
               resolve({
-                entry: entry
+                entry: entry,
+                lineageTypes: lTypes
               });
               return true;
             }

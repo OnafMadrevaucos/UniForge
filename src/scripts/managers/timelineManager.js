@@ -41,7 +41,7 @@ export class TimelineManager extends BaseManager {
             calendar: null
         };
 
-        const events = timeline.events.toObject();
+        const events = timeline.events.toArray();
         events.forEach(event => {
             event.dbAction = '-',
                 event.committed = true
@@ -91,7 +91,7 @@ export class TimelineManager extends BaseManager {
                 result = await uniforge.db.updateTimeline(this.#timeline);
             }
 
-            const events = this.#timeline.events.toObject();
+            const events = this.#timeline.events.toArray();
             events.forEach(async event => {
                 if (event.dbAction === 'a') {
                     await this.insertEvent(event._id);

@@ -3,20 +3,47 @@ export default class Entry {
         this.#eid = data?.eid ?? uniforge.db.generateID();
         this.#isDraft = data?.isDraft ?? false;
 
-        this.#data = data ?? {};
+        this.initialize(data);
     }
 
     #eid = '';
-    #type = 'entry';
     #data = {};
     #isDraft = false;
 
-    get eid() { return this.#eid; }
-    get type() { return this.#type; }
-    get title() { return this.data.title; }
+    get type() { return 'entry'; }
+
+    get _id() { return this.#eid; }
+    get _label() { return this.title; }
+    
+    get eid() { return this.#eid; }        
     get data() { return this.#data; }
+    get sid() { return this.#data.sid; }
+    get etid() { return this.#data.entryType.etid;}
+    get img() { return this.#data.img; }
+    get title() { return this.data.title; }
     get isDraft() { return this.#isDraft; }
+    get flavor() { return this.#data.flavor; }
+    get htmlString() { return this.#data.htmlString; }
+    
+    get section() { return this.#data.section; }
+    get entryType() { return this.#data.entryType; }
+    get isEntity() { return this.entryType.isEntity; }
 
     set title(value) { this.data.title = value; }
+    set img(value) { this.#data.img = value; }
     set isDraft(value) { this.#isDraft = value; }
+    set flavor(value) { this.#data.flavor = value; }
+    set htmlString(value) { this.#data.htmlString = value; }
+
+    initialize(data) {
+        this.#data = {};
+
+        if(!data) return;
+
+        Object.entries(data).forEach(([key, value]) => {
+            if (key !== 'eid') {
+                this.#data[key] = value;
+            }
+        });
+    }
 }

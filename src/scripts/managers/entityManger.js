@@ -29,10 +29,10 @@ export default class EntityManager extends BaseManager {
     /**
      * Objeto privado que gerencia os indivíduos (nós) e relacionamentos (galhos) de uma família.
     */
-    #tree = {
+    static #tree = {
         ltid: '',
         root: '',
-        nodes: {},
+        nodes: new Set(),
         branches: []
     };
 
@@ -108,7 +108,7 @@ export default class EntityManager extends BaseManager {
     }
 
     get Root() {
-        return this.#tree.root;
+        return this.Tree.root;
     }
 
     /**
@@ -120,48 +120,56 @@ export default class EntityManager extends BaseManager {
      * @property {Array<Object>} branches - Array de objetos, cada um representando uma relação entre dois indivíduos da familia.
      */
     get Tree() {
-        return this.#tree;
+        return EntityManager.#tree;
     }
 
     get treeContainer() {
         return this.form.querySelector(this.treeContainerId);
     }
 
+    set Tree(value) {
+        EntityManager.#tree = value;
+    }
+
     set Root(value) {
-        this.#tree.root = value;
+        this.Tree.root = value;
         this.addNode(value, true);
     }
 
+    init(lineage) {
+        this.fromFamilyScript(lineage);
+    }
+
     /**
-     * Constroe a Árvore de Linhagem no diagram de fluxograma.
+     * Constroi a Árvore de Linhagem no diagram de fluxograma.
      * @param {object} options - O elemento HTML que irá conter o diagram de fluxograma.
     */
-    async buildTree(entity, options = {}) {
+    buildTree(entity, options = {}) {
         this.entity = entity;
         this.options = options;
 
+        if (entity) {
+            this.Tree.ltid = entity.ltid ?? '';
+        }
+
         const seed = this._growSeed();
-        const root = this.#tree.nodes[this.#tree.root];
+        const root = this.Tree.nodes.get(this.Tree.root);
         const container = this.treeContainer;
 
-        if (seed.length > 0) {
+        if (seed.size > 0) {
             container.classList.remove('empty');
-
-            this.diagram = dTree.init(this, root, seed, this.diagramConfig);
+            dTree.init(this, root, seed.toArray(), this.diagramConfig);
         } else {
             container.classList.add('empty');
             container.innerHTML = '';
         }
-
-        return this.diagram;
     }
 
-    refreshTree() {
+    refreshTree(cleardata = true) {
         // Verifica se o diagrama foi inicializado.
-        if (this.diagram) {
+        if (this.treeContainer) {
             // Limpa o diagrama atual.
-            this.clearTree();
-
+            this.clearTree(cleardata);
             // Cria um novo diagrama.
             this.buildTree(this.entity, this.options);
         }
@@ -169,25 +177,29 @@ export default class EntityManager extends BaseManager {
 
     clearTree(cleardata = false) {
         // Limpa o diagrama atual, caso haja um inicializado.
-        if (this.diagram) {
-            this.diagram = null;
-
+        if (this.treeContainer) {
             const container = this.treeContainer;
             container.innerHTML = '';
         }
 
         if (cleardata) {
-            this.#tree = {
+            this.Tree = {
                 ltid: '',
                 root: '',
-                nodes: {},
+                nodes: new Set(),
                 branches: []
             };
         }
     }
 
+    /**
+     * Adiciona uma nova entrada à Árvore de Linhagem e recria o diagrama.
+     * @param {object} entry - A entrada a ser adicionada à Árvore de Linhagem.
+     * @param {boolean} isRoot - Se a entrada é a raiz da Árvore de Linhagem.
+     * @return {TreeNode} A linha da entrada adicionada.
+     */
     addNode(entry, isRoot = false) {
-        const tree = this.#tree;
+        const tree = this.Tree;
 
         const id = uniforge.utils.randomString(5, false, true);
 
@@ -204,8 +216,8 @@ export default class EntityManager extends BaseManager {
                 img: entry.img ?? uniforge.urls.blankImg,
                 gender: entry.gender ?? 'm',
                 genitors: {
-                    a: entry.genitors.a ?? null,
-                    b: entry.genitors.b ?? null
+                    a: entry.genitors?.a ?? null,
+                    b: entry.genitors?.b ?? null
                 },
                 group: entry.group ?? null,
                 groupOrder: entry.groupOrder ?? 0,
@@ -215,30 +227,25 @@ export default class EntityManager extends BaseManager {
             }
         });
 
-        if(!isRoot) {
-            if(node.extra.genitors.a) tree.branches.push({ id1: node.extra.genitors.a, id2: id, type: 'genitor' });
-            if(node.extra.genitors.b) tree.branches.push({ id1: node.extra.genitors.b, id2: id, type: 'genitor' });
+        if (!isRoot) {
+            if (node.extra.genitors.a) tree.branches.push({ id1: node.extra.genitors.a, id2: id, type: 'genitor' });
+            if (node.extra.genitors.b) tree.branches.push({ id1: node.extra.genitors.b, id2: id, type: 'genitor' });
         }
 
-        const line = this.getNodeLine(node);
+        tree.nodes.add(node);
+        this.refreshTree(false);
 
-        tree.nodes[node.id] = node;
-
-        this.refreshTree();
-        return line;
+        return node;
     }
 
 
-    removeNode(eid) {
-        const tree = this.#tree;
-        const node = tree.nodes[eid];
+    removeNode(code) {
+        const tree = this.Tree;
 
-        if (node) {
-            // Remove o nó da árvore.
-            delete tree.nodes[eid];
-
-            // Remove os branches relacionados ao nó.
-            tree.branches = tree.branches.filter(branch => branch.id1 !== eid && branch.id2 !== eid);
+        // Tenta remover o nó da árvore.
+        if (tree.nodes.remove(code)) {
+            // Se o nó for removido, remove os branches relacionados ao nó.
+            tree.branches = tree.branches.filter(branch => branch.id1 !== code && branch.id2 !== code);
         }
 
         this.refreshTree();
@@ -320,7 +327,7 @@ export default class EntityManager extends BaseManager {
         const tree = {
             ltid: ltid,
             root: '',
-            nodes: {},
+            nodes: new Set(),
             branches: []
         };
 
@@ -381,7 +388,7 @@ export default class EntityManager extends BaseManager {
                     }
                 });
 
-                tree.nodes[id] = node;
+                tree.nodes.add(node);
             } else if (line.startsWith('p')) {
                 // Linha que representa uma relação entre indivíduos.
                 const [relationshipPart, ...facts] = line.split('\t');
@@ -425,7 +432,7 @@ export default class EntityManager extends BaseManager {
             }
         });
 
-        this.#tree = tree;
+        this.Tree = tree;
     }
 
     /**
@@ -438,13 +445,13 @@ export default class EntityManager extends BaseManager {
         let scriptLines = [];
 
         // Processar indivíduos.
-        Object.values(this.#tree.nodes).forEach(node => {
+        this.Tree.nodes.toArray().forEach(node => {
             let line = this.getNodeLine(node, node.isRoot);
             scriptLines.push(line);
         });
 
         // Processar relacionamentos de parceiros (mesma camada hieráquica).
-        this.#tree.branches.forEach(branch => {
+        this.Tree.branches.forEach(branch => {
             let line = this.getBranchLine(branch);
 
             if (branch.type === 'mate') {
@@ -456,21 +463,21 @@ export default class EntityManager extends BaseManager {
     }
 
     _growSeed() {
-        if (!this.#tree.root) throw new Error('Não é possível gerar a árvore sem uma raiz.');
+        if (!this.Tree.root) throw new Error('Não é possível gerar a árvore sem uma raiz.');
 
-        const seed = this.#tree.nodes;
-        const branches = this.#tree.branches;
+        const seed = this.Tree.nodes;
+        const branches = this.Tree.branches;
 
         branches.forEach((branch) => {
             const type = branch.type;
 
             if (type === 'genitor') {
-                const genitor = seed[branch.id1];
-                const child = seed[branch.id2];
+                const genitor = seed.get(branch.id1);
+                const child = seed.get(branch.id2);
 
                 // Busca o outro genitor da Criança.
                 const otherBranch = branches.find((b) => b.type === 'genitor' && b.id2 === child.id && b.id1 !== genitor.id);
-                const otherGenitor = otherBranch ? seed[otherBranch.id1] : null;
+                const otherGenitor = otherBranch ? seed.get(otherBranch.id1) : null;
 
                 // Se houver, adiciona a criança ao casamento do genitor.
                 if (otherGenitor) {
@@ -499,8 +506,8 @@ export default class EntityManager extends BaseManager {
                 }
 
             } else {
-                const node1 = seed[branch.id1];
-                const node2 = seed[branch.id2];
+                const node1 = seed.get(branch.id1);
+                const node2 = seed.get(branch.id2);
 
                 let spouseDuplicated = false;
                 node2.marriages.forEach((marriage) => {
@@ -521,11 +528,17 @@ export default class EntityManager extends BaseManager {
             }
         });
 
-        this._getNodesDepth(seed[this.#tree.root]);
+        this._getNodesDepth(seed.get(this.Tree.root));
 
-        return Object.values(seed);
+        return seed;
     }
 
+    /**
+     * Recursivamente percorre a Árvore de Linhagem calculando a profundidade de cada Nó interligado ao 'node'.
+     * @param {TreeNode} node - Nó da Árvore de Linhagem.
+     * @param {number} depthOffset - Profundidade do Nó em relação ao Pai.
+     * @return {number} Retorna a profundidade do Nó.
+     */
     _getNodesDepth(node, depthOffset = 0) {
         // Verifica se o Nó existe.
         if (!node) return;
@@ -559,6 +572,14 @@ export default class EntityManager extends BaseManager {
         }
     }
 
+    /**
+     * Função usada pela biblioteca d3-tree para renderizar o conteúdo de cada nó.
+     * @param {string} name - O nome do indivíduo.
+     * @param {Object} extra - Objeto com as informações extras do indivíduo.
+     * @param {string} textClass - A classe CSS do elemento <div>.
+     * @param {Object} options - Objeto com as opções de renderização.
+     * @returns {HTMLElement} O elemento <div> renderizado.
+     */
     _renderText(name, extra, textClass, options) {
         const text = document.createElement('div');
         text.classList.add(textClass, 'flexcol');
@@ -596,24 +617,44 @@ export default class EntityManager extends BaseManager {
         return text;
     }
 
-    _renderNode(name, x, y, width, height, extra, id, code, nodeClass, textClass, textRenderer, options) {
-        const node = document.createElement('div');
-        node.classList.add(nodeClass, 'flexrow');
-        node.id = 'node' + id;
-        node.dataset.id = code;
-        node.tabIndex = 0;
+    /**
+     * Função usada pela biblioteca d3-tree para renderizar os seus nós.
+     * 
+     * @param {string} name Nome do nó.
+     * @param {number} x Coordenada x do nó no mapa.
+     * @param {number} y Coordenada y do nó no mapa.
+     * @param {number} width Largura do nó no mapa.
+     * @param {number} height Altura do nó no mapa.
+     * @param {Object} extra Informações extras do nó.
+     * @param {number} id Identificador único do nó.
+     * @param {string} code Código único do nó.
+     * @param {string} nodeClass Classe CSS do nó.
+     * @param {string} textClass Classe CSS do texto do nó.
+     * @param {function} textRenderer Função para renderizar o texto do nó.
+     * @param {Object} options Opções do nó.
+     * @returns {string} HTML do nó renderizado.
+     */
+    _renderNode(name, x, y, width, height, extra, id, code, isVirtual, nodeClass, textClass, textRenderer, options) {
+        const nodeElement = document.createElement('div');
+        nodeElement.classList.add(nodeClass, 'flexrow');
+
+        if (isVirtual) nodeElement.classList.add('virtual');
+
+        nodeElement.id = 'node' + id;
+        nodeElement.dataset.id = code;
+        nodeElement.tabIndex = 0;
 
         const icon = document.createElement('div');
         icon.classList.add('node-icon');
         icon.innerHTML = `<img class="icon" src="${extra.img}"/>`;
-        node.appendChild(icon);
+        nodeElement.appendChild(icon);
 
         const text = textRenderer(name, extra, textClass, options);
-        node.appendChild(text);
+        nodeElement.appendChild(text);
 
         const innerButtons = document.createElement('div');
         innerButtons.classList.add('node-buttons', 'flexrow', 'hidden');
-        node.appendChild(innerButtons);
+        nodeElement.appendChild(innerButtons);
 
         const buttons = options.buttons;
 
@@ -628,7 +669,7 @@ export default class EntityManager extends BaseManager {
             innerButtons.appendChild(button);
         });
 
-        return node.outerHTML;
+        return nodeElement.outerHTML;
     }
 
     _onNodeClick(event, name, extra, id, code, options) {
@@ -662,19 +703,40 @@ export default class EntityManager extends BaseManager {
     }
 
     async _onAddChildrenClick(event, manager) {
-        const node = event.target.closest('.node');
-        const code = node.dataset.id;
+        const nodeElement = event.target.closest('.node');
+        const code = nodeElement.dataset.id;
+        const node = manager.Tree.nodes.get(code);
 
-        const mateData = await EntrySearchDialog.configDialog(manager.entity, { isFounder: false, fromLineage: true });
+        const childData = await EntrySearchDialog.configDialog(manager.entity, { groupOrder: node.depthOffset + 1, isFounder: false, fromLineage: true });
 
-        if (mateData) {
-            const mate = mateData.entry;
-            const genitors = mate.genitors;
+        if (childData) {
+            const child = childData.entry;
+            const genitors = child.genitors;
 
+            // Atribui o nó selecionado ao genitor A do filho, caso não haja um.
             if (!genitors.a) genitors.a = code;
-            else if (!genitors.b) genitors.b = code;
+            // Atribui o nó selecionado ao genitor B do filho, caso não seja o mesmo que o genitor A.
+            else if (!genitors.b && genitors.a !== code) genitors.b = code;
 
-            manager.addNode(mate);
+            // Se um dos genitores estiver faltando, cria um genitor virtual para o espaço vazio.
+            if (!genitors.a || !genitors.b) {
+                // Gera um nó virtual para o genitor ausente.
+                const virtualGenitor = {
+                    givenName: 'Desconhecido(a)',
+                    depthOffset: node.depthOffset
+                };
+
+                // Adiciona o nó virtual à árvore.
+                const virtualNode = manager.addNode(virtualGenitor);
+
+                manager.Tree.branches.push({ id1: node.id, id2: virtualNode.id, type: 'mate', status: '2' });
+
+                // Atribui o nó virtual ao genitor ausente do filho.
+                if (!genitors.a) genitors.a = virtualNode.id;
+                else if (!genitors.b) genitors.b = virtualNode.id;
+            }
+
+            manager.addNode(child);
         }
     }
 
@@ -694,6 +756,9 @@ class TreeNode {
         this.#depthOffset = data.depthOffset ?? 0;
         this.#marriages = data.marriages ?? [];
         this.#extra = data.extra ?? this.#extra;
+
+        // Nodes sem vínculo com uma entrada são virtuais.
+        this.#virtual = !this.#eid;
 
         this.dbAction = 'a';
     }
@@ -716,7 +781,10 @@ class TreeNode {
         death: null,
         deceased: false
     };
+    #virtual = false;
     #selected = false;
+
+    get _id() { return this.#id; }
 
     get id() { return this.#id; }
     get eid() { return this.#eid; }
@@ -733,8 +801,10 @@ class TreeNode {
     get born() { return this.#extra.born; }
     get death() { return this.#extra.death; }
     get deceased() { return this.#extra.deceased; }
+    get virtual() { return !this.#eid; }
     get selected() { return this.#selected; }
 
+    set eid(value) { this.#eid = value; }
     set name(value) { this.#name = value; }
     set img(value) { this.#extra.img = value; }
     set depthOffset(value) { this.#depthOffset = value; }

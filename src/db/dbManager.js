@@ -436,7 +436,7 @@ export default class DBManager {
      */
     async addLineageTreeEntry(data) {
         let query = 'INSERT INTO _lineageTreeEntries (ltid, eid, code, isRoot) ';
-        query += 'VALUES (?,?,?);';
+        query += 'VALUES (?,?,?,?);';
         const params = [];
 
         params.push(data.ltid);
@@ -1865,7 +1865,8 @@ export default class DBManager {
             '`ltid` VARCHAR(16) NOT NULL,' +            // Identificador da Linhagem.
             '`eid` VARCHAR(16) NOT NULL,' +             // Identificador da Entrada Fundadora da Linhagem.
             '`code` VARCHAR(5) NOT NULL,' +             // Identificador da Entrada dentro da Árvore.
-            '`isRoot` BOOLEAN NOT NULL DEFAULT 0,'      // A Entrada Fundadora da Linhagem.
+            '`isRoot` BOOLEAN NOT NULL DEFAULT 0,'      // É a Entrada Fundadora da Linhagem.
+            '`isVirtual` BOOLEAN NOT NULL DEFAULT 0,'      // A Entrada é virtual? (Existe apenas para dar sentido à Linhagem).
             'PRIMARY KEY (`ltid`,`eid`))';
 
         this.results = await this.#execQuery(query);

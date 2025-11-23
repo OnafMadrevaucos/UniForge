@@ -1,9 +1,8 @@
 import TreeBuilder from "./builder.mjs";
 import * as _ from "../../../node_modules/lodash-es/lodash.js";
+import EntityManager from "../../scripts/managers/entityManger.js";
 
 const dTree = {
-
-  manager: null,
 
   VERSION: '/* @echo DTREE_VERSION */',
 
@@ -125,6 +124,7 @@ const dTree = {
       id: id++,
       code: rootNode.id,
       hidden: true,
+      virtual: rootNode.virtual,
       children: [],
     };
 
@@ -135,7 +135,9 @@ const dTree = {
         name: person.name,
         id: id++,
         code: person.id,
+        eid: person.eid,
         hidden: false,
+        virtual: person.virtual,
         children: [],
         extra: person.extra,
         textClass: person.textClass ? person.textClass : opts.styles.text,
@@ -153,6 +155,7 @@ const dTree = {
           name: '',
           id: id++,
           hidden: true,
+          virtual: false,
           children: [],
           noParent: node.noParent
         };

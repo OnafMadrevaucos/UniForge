@@ -64,15 +64,15 @@ export default class LinkDialog extends BaseDialog {
     prepareData() {
         this.prepareFolders(this.data);
 
-        this.data.entryTypes = uniforge.doc.entryTypes.toObject();
-        this.data.relevances = uniforge.doc.relevances.toObject();
+        this.data.entryTypes = uniforge.doc.entryTypes.toArray();
+        this.data.relevances = uniforge.doc.relevances.toArray();
     }
 
     prepareFolders(data) {
-        const entries = uniforge.doc.entries.toObject();
-        const events = uniforge.doc.events.toObject();
-        const lineages = uniforge.doc.lineages.toObject();
-        const timelines = uniforge.doc.timelines.toObject();
+        const entries = uniforge.doc.entries.toArray();
+        const events = uniforge.doc.events.toArray();
+        const lineages = uniforge.doc.lineages.toArray();
+        const timelines = uniforge.doc.timelines.toArray();
 
         const folders = [];
 

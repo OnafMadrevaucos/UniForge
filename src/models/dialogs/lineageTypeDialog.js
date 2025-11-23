@@ -30,7 +30,7 @@ export default class LineageTypeDialog extends BaseDialog {
 
     async prepareList(data) {
         const lineageCommited = uniforge.doc.lineages.get(this.ltid);
-        const typesCommited = lineageCommited?.types.toObject() ?? [];
+        const typesCommited = lineageCommited?.types.toArray() ?? [];
         const typesNotCommited = [...this.typesToCommit.values()].filter(t => t.dbAction !== 'd');
 
         data.types = typesCommited.merge(typesNotCommited);

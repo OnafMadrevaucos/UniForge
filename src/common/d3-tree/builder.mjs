@@ -170,8 +170,9 @@ class TreeBuilder {
             d.data.extra,
             d.data.id,
             d.data.code,
+            d.data.virtual,
             d.data.class,
-            d.data.textClass,            
+            d.data.textClass,
             opts.callbacks.textRenderer,
             opts
           )
@@ -214,7 +215,7 @@ class TreeBuilder {
               event.stopPropagation();
               const action = btn.dataset.action;
 
-              if(action) await opts.actions[action](event, opts.manager);
+              if (action) await opts.actions[action](event, opts.manager);
             });
           });
         }

@@ -154,9 +154,9 @@ export default class SimpleEntryForm extends BaseForm {
     this.data.type = this.type;
 
     if (this.isEventForm) {
-      this.data.entryTypes = uniforge.doc.entryTypes.toObject();
-      this.data.relevances = uniforge.doc.relevances.toObject();
-      this.data.calendars = uniforge.doc.calendars.toObject();
+      this.data.entryTypes = uniforge.doc.entryTypes.toArray();
+      this.data.relevances = uniforge.doc.relevances.toArray();
+      this.data.calendars = uniforge.doc.calendars.toArray();
     }
 
     return this.data;

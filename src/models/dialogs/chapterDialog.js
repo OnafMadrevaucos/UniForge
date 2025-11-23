@@ -16,8 +16,8 @@ export default class ChapterDialog extends BaseDialog {
    * @async
    */
   async prepareData() {
-    this.data.tomes = uniforge.doc.tomes.toObject();
-    this.data.chapterTypes = uniforge.doc.chapterTypes.toObject();
+    this.data.tomes = uniforge.doc.tomes.toArray();
+    this.data.chapterTypes = uniforge.doc.chapterTypes.toArray();
 
     Object.keys(this.data.tomes).forEach((key) => {
       const item = this.data.tomes[key];

@@ -22,8 +22,10 @@ export default class EntityForm extends EntryForm {
     // Inicializa o Gerenciador de Linhagens, enviando o container que conterá a árvore.
     this.manager = new EntityManager(this);
 
-    this.objClass = Entity;
+    this.documentClass = Entity;
   }
+
+  #newTree = false;
 
   /** 
     * @property {Array<object>} lineageTypes - Objeto que armazena os tipos de linhagem vinculados à entidade.    
@@ -135,6 +137,8 @@ export default class EntityForm extends EntryForm {
     lineageFlavorEditor.setContent('');
 
     this.manager.clearTree(true);
+
+    this.#newTree = false;
   }
 
   /* ---------------------------------------------------------------------------------------------------------------- */
@@ -177,21 +181,23 @@ export default class EntityForm extends EntryForm {
     const section = uniforge.doc.sections.get(sid);
     const chapterType = uniforge.doc.chapterTypes.get(section.chapterType);
 
-    const newLineageData = await EntrySearchDialog.configDialog(this.obj, { isFounder: true, fromLineage: true });
+    const newLineageData = await EntrySearchDialog.configDialog(this.document, { isFounder: true, fromLineage: true });
 
     if (newLineageData) {
-      if(newLineageData.entry.img) {
+      this.#lineageTypes = uniforge.utils.deepClone(newLineageData.lineageTypes);
+
+      if (newLineageData.entry.img) {
         const imageUrl = await uniforge.utils.blobToImage(newLineageData.entry.img, newLineageData.entry.img);
         newLineageData.entry.img = imageUrl;
       }
       this.manager.addNode(newLineageData.entry, true);
 
-      this.manager.buildTree(this.obj, { isPerson: chapterType.ctid === 3 });
+      this.manager.buildTree(this.document, { isPerson: chapterType.ctid === 3 });
 
       // Exibe o controle da Árvore de Linhagem.
       this._toggleLineageTree(true);
 
-      this.#lineageTypes = uniforge.utils.deepClone(newLineageData.lineageTypes);
+      this.#newTree = true;
     }
   }
 
@@ -202,9 +208,6 @@ export default class EntityForm extends EntryForm {
   */
   async onNewClick(event) {
     super.onNewClick(event);
-
-    const headerInfo = this.querySelector('.header-info');
-    headerInfo.dataset.ltid = uniforge.db.generateID();
   }
 
   /**
@@ -216,12 +219,14 @@ export default class EntityForm extends EntryForm {
     await super.onEntryItemDoubleClick(event, { dataSource: 'entries' });
 
     // Se a Entrada possui uma Árvore de Linhagem, carregue-a.
-    if (this.obj.lineage) {
+    if (this.document.lineage.root) {
+      this.#newTree = false;
+
       this._toggleLineageTree(true);
-      this._buildDiagram(this.obj.lineage);
+      this._buildDiagram(this.document.lineage);
 
       const lineageFlavorEditor = this.querySelector('#lineageFlavorEditor');
-      lineageFlavorEditor.value = this.obj.lineage
+      lineageFlavorEditor.value = this.document.lineage;
     } else {
       this._toggleLineageTree(false);
     }
@@ -272,8 +277,9 @@ export default class EntityForm extends EntryForm {
    * @protected
   */
   _buildDiagram(lineage) {
+    this.manager.clearTree(true);
     this.manager.fromFamilyScript(lineage);
-    this.manager.buildTree(this.obj); // Atualiza a árvore com os dados da entrada.
+    this.manager.buildTree(this.document); // Atualiza a árvore com os dados da entrada.
   }
 
   /**
@@ -295,14 +301,14 @@ export default class EntityForm extends EntryForm {
   async _addEntry(data) {
     super._addEntry(data);
 
+    data.ltid = this.manager.Tree.ltid;
     const nodes = this.manager.Tree.nodes;
     const root = this.manager.Tree.root;
     data.lineage = this.manager.toFamilyScript();
 
     const result = await uniforge.db.addLineageTree(data);
-    data.ltid = result.lastInsertRowid;
 
-    for (let node of Object.values(nodes)) {
+    for (let node of nodes.toArray()) {
       const isRoot = node.id === root;
       switch (node.dbAction) {
         case 'a': {
@@ -347,12 +353,17 @@ export default class EntityForm extends EntryForm {
   async _updateEntry(data) {
     super._updateEntry(data);
 
+    data.ltid = this.manager.Tree.ltid;
     const nodes = this.manager.Tree.nodes;
     data.tree = this.manager.toFamilyScript();
 
-    await uniforge.db.updateLineageTree(data);
+    if (this.#newTree) {
+      await uniforge.db.addLineageTree(data);
+    } else {
+      await uniforge.db.updateLineageTree(data);
+    }
 
-    for (let node of Object.values(nodes)) {
+    for (let node of nodes.toArray()) {
       switch (node.dbAction) {
         case 'a': {
           await uniforge.db.addLineageTreeEntry({ ltid: data.ltid, eid: node.eid, code: node.id });

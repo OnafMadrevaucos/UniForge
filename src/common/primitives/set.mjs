@@ -7,13 +7,54 @@
 * @returns {Object|undefined} O membro do conjunto que tem a propriedade _id igual ao valor fornecido, ou undefined se não encontrar.
 */
 export function get(_id) {
+    let _value = undefined;
 
     // Itera sobre os membros do conjunto.        
-    for (const member of this) {
+    for (const member of this.toArray()) {
         // Verifica se o membro tem uma propriedade _id e se ela é igual ao _id fornecido.
-        if (member._id === _id) return member;
+        if (member._id === _id) {
+            _value = member; 
+            break;}
     }
-    return undefined;
+    return _value;
+}
+
+/**
+* Adiciona um método set ao Set.prototype para editar um membro do conjunto com base no valor da propriedade _id com o valor _value.
+*
+* @method set
+* @memberof Set.prototype
+* @param {_id} _id - O valor da propriedade _id a ser buscado.
+* @param {_value} _value - O novo valor a ser atribuído ao membro encontrado.
+* @returns {boolean} Retorna true se o membro foi encontrado e atualizado, ou false caso contrário.
+*/
+export function set(_id, _value) {
+    // Itera sobre os membros do conjunto.        
+    for (const member of this.toArray()) {
+        // Verifica se o membro tem uma propriedade _id e se ela é igual ao _id fornecido.
+        if (member._id === _id) {
+            member = _value;
+            return true;
+        }
+    }
+    return false;
+}
+
+/**
+* Adiciona um método remove ao Set.prototype para remover um membro do conjunto com base no valor da propriedade _id.
+*
+* @method remove
+* @memberof Set.prototype
+* @param {_id} _id - O valor da propriedade _id a ser buscado.
+* @returns {boolean} Retorna true se o membro foi encontrado e removido, ou false caso contrário.
+*/
+export function remove(_id) {
+    const _value = this.get(_id);
+    if (_value) {
+        this.delete(_value);
+        return true;
+    }
+    return false;
 }
 
 /**
@@ -106,7 +147,7 @@ export function first() {
  * @returns {*}             - O último elemento do conjunto, ou undefined
  */
 export function last() {
-    return this.toObject().last();
+    return this.toArray().last();
 }
 
 /**
@@ -175,8 +216,28 @@ export function isSubset(other) {
  * 
  * @returns {Array}           - Os elementos do conjunto como um array.
  */
-export function toObject() {
+export function toArray() {
     return Array.from(this);
+}
+
+/**
+ * Converte um conjunto em um objeto JSON mapeando seu conteúdo para um array.
+ * @memberof Set.prototype
+ * 
+ * @returns {Object}           - Os elementos do conjunto como um objeto.
+ */
+export function toObject() {
+    if (this.size === 0) return {};
+
+    const object = {};
+
+    for (const item of this.toArray()) {
+        if (item.hasOwnProperty('_id')) {
+            object[item._id] = item;
+        }
+    }
+
+    return object;
 }
 
 /**
@@ -339,6 +400,8 @@ console.log('UniForge | Atribuindo primitivos ao protótipo dos Sets...');
 // Atribui primitivos ao protótipo de Set
 Object.defineProperties(Set.prototype, {
     get: { value: get, configurable: true },
+    set: { value: set, configurable: true },
+    remove: { value: remove, configurable: true },
     hasId: { value: hasId, configurable: true },
     difference: { value: difference, configurable: true },
     symmetricDifference: { value: symmetricDifference, configurable: true },
@@ -356,6 +419,7 @@ Object.defineProperties(Set.prototype, {
     reduce: { value: reduce, configurable: true },
     some: { value: some, configurable: true },
     sort: { value: sort, configurable: true },
+    toArray: { value: toArray, configurable: true },
     toObject: { value: toObject, configurable: true },
     isEmpty: { value: isEmpty, configurable: true }
 });

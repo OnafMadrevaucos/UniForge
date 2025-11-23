@@ -34,7 +34,7 @@ export default class CodexForm extends SidebarForm {
 
     /**@inheritdoc */
     prepareFolders(data) {
-        const folders = uniforge.doc.sections.toObject();
+        const folders = uniforge.doc.sections.toArray();
         data.folders = folders.sort();
     }
 

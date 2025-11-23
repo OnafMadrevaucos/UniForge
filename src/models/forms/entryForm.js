@@ -78,7 +78,7 @@ export default class EntryForm extends SidebarForm {
       endDate: new DatePicker('endDate', this)
     }
 
-    this.objClass = Entry;
+    this.documentClass = Entry;
 
     this.selection.event = null; // ID do Evento selecionado na EventTab.
   }
@@ -107,10 +107,10 @@ export default class EntryForm extends SidebarForm {
     * @property {Object} obj - Objeto que armazena os eventos vinculados à entrada.    
     * @private    
     */
-  #obj = null;
+  #document = null;
 
-  get obj() { return this.#obj; }
-  set obj(value) { this.#obj = value; }
+  get document() { return this.#document; }
+  set document(value) { this.#document = value; }
 
   /** Eventos temporários, vinculados à Entrada até serem salvos (ou não).
     * @property {Object} events - Objeto que armazena os eventos vinculados à entrada.    
@@ -122,7 +122,7 @@ export default class EntryForm extends SidebarForm {
   /** Identificador da Entrada atual.
    * @returns {Object} 
    * */
-  get eid() { return this.obj.eid; }
+  get eid() { return this.document.eid; }
 
   /**
    * @overload
@@ -273,9 +273,9 @@ export default class EntryForm extends SidebarForm {
     this.data.type = this.type;
 
     if (this.isEventForm) {
-      this.data.entryTypes = uniforge.doc.entryTypes.toObject();
-      this.data.relevances = uniforge.doc.relevances.toObject();
-      this.data.calendars = uniforge.doc.calendars.toObject();
+      this.data.entryTypes = uniforge.doc.entryTypes.toArray();
+      this.data.relevances = uniforge.doc.relevances.toArray();
+      this.data.calendars = uniforge.doc.calendars.toArray();
     }
 
     return super.prepareData();
@@ -588,7 +588,7 @@ export default class EntryForm extends SidebarForm {
     this.eventEditor = '';
 
     if (this.isEventForm && this.hasEvent) {
-      this.obj = null;
+      this.document = null;
       this.#events = [];
 
       const entryTypeSelect = this.querySelector('#entryType');
@@ -808,6 +808,13 @@ export default class EntryForm extends SidebarForm {
       const newEventButton = this.querySelector('#addEventButton');
       newEventButton.addEventListener('click', (event) => { this.onAddEventClick(event); });
     }
+
+    /*
+    const dataElements = this.querySelectorAll('[name]');
+    dataElements.forEach((element) => {
+      element.addEventListener('change', (event) => { this.onDocumentChange(event); })
+    });
+    */
   }
 
   /**
@@ -823,6 +830,12 @@ export default class EntryForm extends SidebarForm {
       const deleteIcon = item.querySelector('.remove-button');
       deleteIcon.addEventListener('click', (event) => { this.onOpenDialogClick(event, item); });
     });
+  }
+
+  onDocumentChange(event) {
+    // TODO:  Alterar metódo de armazenagem e edição dos dados para a armazenagem local
+    //        dos dados na propriedade 'document' que é enviada ao banco quando os dados forem
+    //        confirmados pelo usuário no momento do salvamento.
   }
 
   /**
@@ -1132,7 +1145,7 @@ export default class EntryForm extends SidebarForm {
     saveButton.innerHTML = '<i class="fa-regular fa-floppy-disk"></i> Salvar';
 
     // Gera um novo object que representa a nova Entrada.   
-    this.obj = new this.objClass();
+    this.document = new this.documentClass();
 
     // Atualiza o estado do formulário.
     this.controlStates(this.states.adding);
@@ -1226,6 +1239,8 @@ export default class EntryForm extends SidebarForm {
     // Se o formulário for o de Configurações, ignore.
     if (this.isSettings) return;
 
+    this.#document = null;
+
     const item = event.target.closest('.entry-item');
     const itemId = item.dataset.id;
     const itemType = options.dataSource ?? 'entries';
@@ -1266,15 +1281,15 @@ export default class EntryForm extends SidebarForm {
 
       const entryType = this.querySelector('#entryType');
 
-      entryType.value = Number(entry.etid);
+      const entryData = entry.data
 
-      this.flavorEditor = entry.flavor;
-      this.mainEditor = entry.htmlString;
+      entryType.value = Number(entryData.etid);
+
+      this.flavorEditor = entryData.flavor;
+      this.mainEditor = entryData.htmlString;
 
       this.#events = {};
-      const events = uniforge.doc.events.filter(e => {
-        return e.source === entry.eid;
-      });
+      const events = entryData.events.toArray();
 
       events.forEach(event => {
         event._value = event.evid;
@@ -1283,10 +1298,10 @@ export default class EntryForm extends SidebarForm {
 
         this.#events[event.evid] = event;
       });
-      this._generateEventListItems();     
-      
+      this._generateEventListItems();
+
       // Armazena os dados da entrada atual.
-      this.obj = new this.objClass(entry);
+      this.document = entry;
 
       // Atualiza o estado dos elements do formulário.
       this.controlStates(this.states.editing);
