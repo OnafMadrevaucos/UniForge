@@ -8,6 +8,7 @@ import Dialogs from "../dialogs/dialog.js";
 import DatePicker from "../datePicker.js";
 import FilePickerDialog from "../dialogs/filePickerDialog.js";
 import Entry from "../../entities/entry.mjs";
+import EntryEvent from "../../entities/event.mjs";
 
 /**
  * Classe EntryForm estende a funcionalidade da classe BaseForm para gerenciar formulários que manipulem Entradas.
@@ -41,6 +42,12 @@ export default class EntryForm extends SidebarForm {
      * @type {number}
      */
     this.currentState = 0;
+
+    /**
+     * Estado atual dos elements do formulário.
+     * @type {number}
+     */
+    this.currentEventState = 0;
 
     /**
      * O ícone Font Awesome para quando uma entrada é selecionada.
@@ -101,6 +108,22 @@ export default class EntryForm extends SidebarForm {
     newEntry: 1,
     adding: 2,
     editing: 3
+  }
+
+  /**
+  * Conjunto de filtros de item que representam os estados aplicáveis ao controle de Eventos na classe EntryForm.
+  * Os estados estão mapeados para números inteiros que representam ações específicas.
+  * 
+  * @type {Object<number, number>}
+  * @private
+  * @property {number} default  - Representa o estado padrão do controle de evento (valor 0).
+  * @property {number} adding   - Representa o estado de salvamento de um evento novo (valor 1).
+  * @property {number} editing  - Representa o estado de salvamento de um evento pré-existente (valor 2). 
+  */
+  #eventStates = {
+    default: 0,
+    adding: 1,
+    editing: 2
   }
 
   /** Objeto que representa os dados da entrada.
@@ -189,6 +212,10 @@ export default class EntryForm extends SidebarForm {
   */
   get _states() {
     return this.#states;
+  };
+
+  get _eventStates() {
+    return this.#eventStates;
   };
 
   /**
@@ -328,11 +355,13 @@ export default class EntryForm extends SidebarForm {
     infoSet.disabled = false;
 
     switch (state) {
-      // ESTADO DE HABILITAÇÃO DE NOVA ENTRADA.
+      // ESTADO DE HABILITAÇÃO DE NOVA ENTRADA. 
+      // Ex.: Após a seleção de uma pasta.
       case this.states.newEntry: {
         titleInput.disabled = true;
         infoSet.disabled = true;
 
+        // Habilita recipiente de imagens caso haja um.
         if (imageContainer)
           imageContainer.classList.remove('disabled');
 
@@ -351,6 +380,7 @@ export default class EntryForm extends SidebarForm {
 
         cancelButton.classList.add('hidden');
 
+        // Não é a tela de Configurações, configura o editor de floreio para 'readonly'.
         if (!this.isSettings)
           flavorEditor.mode.set('readonly');
 
@@ -358,8 +388,10 @@ export default class EntryForm extends SidebarForm {
 
         if (!ignoreEditor) mainEditor?.mode.set('readonly');
       } break;
-      // ESTADO DE EDIÇÃO DE ENTRADA.
+      // ESTADO DE ADIÇÃO DE ENTRADA.
+      // Ex.: O usuário clicou em "Nova Entrada".
       case this.states.adding: {
+        // Limpe o conteúdo do formulário.
         this.clearContent();
         // Está adicionando uma Entrada nova.
         this.isUpdate = false;
@@ -368,14 +400,17 @@ export default class EntryForm extends SidebarForm {
         const titleInput = this.querySelector('#titleInput');
         titleInput.focus();
 
+        // Habilita recipiente de imagens caso haja um.
         if (imageContainer)
           imageContainer.classList.remove('disabled');
 
+        // Configura o tipo de Entrada caso haja um.
         if (entryTypeSelect) {
           entryTypeSelect.selectedIndex = 0;
           entryTypeSelect.disabled = false;
         }
 
+        // Exibe o switch de Deleção de Dados.
         deleteSwitch.classList.remove('hidden');
 
         // Configuração dos Estados dos Botões.
@@ -386,8 +421,10 @@ export default class EntryForm extends SidebarForm {
         saveButton.innerHTML = '<i class="fa-regular fa-floppy-disk"></i> Salvar';
         saveButton.classList.remove('disabled');
 
+        // Exibe o botão de Cancelar.
         cancelButton.classList.remove('hidden');
 
+        // Não é a tela de Configurações, configura o editor de floreio para 'design'.
         if (!this.isSettings)
           flavorEditor.mode.set('design');
 
@@ -396,6 +433,7 @@ export default class EntryForm extends SidebarForm {
         if (!ignoreEditor) mainEditor?.mode.set('design');
       } break;
       // ESTADO DE EDIÇÃO DE ENTRADA.
+      // Ex.: O usuário está editando uma Entrada já existente.
       case this.states.editing: {
         // Está atualizando uma Entrada pré-existente.
         this.isUpdate = true;
@@ -404,13 +442,16 @@ export default class EntryForm extends SidebarForm {
         const titleInput = this.querySelector('#titleInput');
         titleInput.focus();
 
+        // Habilita recipiente de imagens caso haja um.
         if (imageContainer)
           imageContainer.classList.remove('disabled');
 
+        // Configura o tipo de Entrada caso haja um.
         if (entryTypeSelect) {
           entryTypeSelect.disabled = false;
         }
 
+        // Exibe o switch de Deleção de Dados.
         deleteSwitch.classList.remove('hidden');
 
         // Configuração dos Estados dos Botões.
@@ -421,8 +462,10 @@ export default class EntryForm extends SidebarForm {
         saveButton.innerHTML = '<i class="fa-regular fa-floppy-disk"></i> Atualizar';
         saveButton.classList.remove('disabled');
 
+        // Exibe o botão de Cancelar.
         cancelButton.classList.remove('hidden');
 
+        // Não é a tela de Configurações, configura o editor de floreio para 'design'.
         if (!this.isSettings)
           flavorEditor.mode.set('design');
 
@@ -431,14 +474,18 @@ export default class EntryForm extends SidebarForm {
         if (!ignoreEditor) mainEditor?.mode.set('design');
       } break;
       // ESTADO PADRÃO.
+      // Estado exibido quando a tela é aberta ou quando uma ação é cancelada.
       default: {
+        // Limpe o conteúdo do formulário.
         this.clearContent();
 
+        // Desabilita o seletor de tipo de Entrada caso haja um.
         if (entryTypeSelect) {
           entryTypeSelect.selectedIndex = 0;
           entryTypeSelect.disabled = true;
         }
 
+        // Oculta o switch de Deleção de Dados.
         deleteSwitch.classList.add('hidden');
 
         // Limpa todo o dataset do Header Info.
@@ -447,6 +494,7 @@ export default class EntryForm extends SidebarForm {
           delete headerInfo.dataset[key];
         });
 
+        // Desativa recipiente de imagens caso haja um.
         if (imageContainer)
           // Desativa recipiente de imagens.
           imageContainer.classList.add('disabled');
@@ -496,6 +544,63 @@ export default class EntryForm extends SidebarForm {
   refreshStates() {
     const state = this.currentState;
     this.controlStates(state);
+  }
+
+  /**
+   * Habilita/desabilita os controles dos eventos do formulário.
+   * @param {Number} state - O novo estado do evento.
+   * @protected
+   */
+  controlEventStates(state, options = {}) {
+    const eventInfoSet = this.querySelector('.event-info fieldset.info-set');
+
+    const addEventButton = this.querySelector('#addEventButton');
+    const cancelEventButton = this.querySelector('#cancelEventButton');
+
+    switch (state) {
+      // ESTADO DE ADIÇÃO DE EVENTO.
+      case this._eventStates.adding: {
+        // Limpa o evento selecionado.
+        this.selection.event = null;
+
+        // Limpa a aba de eventos.
+        this.clearEventTab();
+
+        // Habilita os elementos de entrada de dados.
+        eventInfoSet.disabled = false;
+
+        addEventButton.classList.remove('disabled');
+        cancelEventButton.classList.remove('hidden');
+
+      } break;
+      // ESTADO DE MANIPULAÇÃO DE EVENTO.
+      case this._eventStates.editing: {
+        // Habilita os elementos de entrada de dados.
+        eventInfoSet.disabled = false;
+
+        addEventButton.classList.remove('disabled');
+        cancelEventButton.classList.remove('hidden');
+
+      } break;
+      // ESTADO PADRÃO.
+      // Estado exibido quando a tab de eventos é aberta ou quando uma ação é cancelada.
+      default: {
+        // Limpa a aba de eventos.
+        this.clearEventTab();
+
+        // Desativa os elementos de entrada de dados.
+        eventInfoSet.disabled = true;
+
+        addEventButton.classList.add('disabled');
+        cancelEventButton.classList.add('hidden');
+
+        // Limpa o evento selecionado.
+        this.selection.event = null;
+
+      } break;
+    }
+
+    this.currentEventState = state;
   }
 
   /** @inheritdoc */
@@ -629,9 +734,6 @@ export default class EntryForm extends SidebarForm {
 
     this.datePickers.endDate.dateInput.classList.add('disabled');
     this.datePickers.endDate.clearDate();
-
-    const addEventButton = this.querySelector('#addEventButton');
-    addEventButton.innerHTML = '<i class="fas fa-square-plus"></i> Adicionar Evento';
   }
 
   /**
@@ -789,6 +891,12 @@ export default class EntryForm extends SidebarForm {
     noBtn.addEventListener('click', (event) => { this.onCancelSidebarDialogClick(event); });
 
     if (this.isEventForm) {
+      const newEventButton = this.querySelector('#newEventButton');
+      newEventButton.addEventListener('click', (event) => { this.onNewEventClick(event); });
+
+      const cancelEventButton = this.querySelector('#cancelEventButton');
+      cancelEventButton.addEventListener('click', (event) => { this.onCancelEventClick(event); });
+
       const calendarType = this.querySelector('#calendarType');
       calendarType.addEventListener('change', (event) => { this.onDateTypeChange(event); });
 
@@ -805,8 +913,8 @@ export default class EntryForm extends SidebarForm {
       const entryEvents = this.querySelector('#entryEvents');
       entryEvents.addEventListener('click', (event) => { this.onEventListClick(event); });
 
-      const newEventButton = this.querySelector('#addEventButton');
-      newEventButton.addEventListener('click', (event) => { this.onAddEventClick(event); });
+      const addEventButton = this.querySelector('#addEventButton');
+      addEventButton.addEventListener('click', (event) => { this.onAddEventClick(event); });
     }
 
     /*
@@ -1052,6 +1160,13 @@ export default class EntryForm extends SidebarForm {
     this.selection.event = clickedEvent;
   }
 
+  onNewEventClick(event) {
+    event.stopPropagation();
+
+    this.clearEventTab();
+    this.controlEventStates(this._eventStates.adding);
+  }
+
   /**
    * Trata o evento de clique no botão de adicionar um novo Evento.
    * @param {Event} event - O evento de clique no botão de adicionar um novo Evento.
@@ -1059,31 +1174,33 @@ export default class EntryForm extends SidebarForm {
   onAddEventClick(event) {
     event.stopPropagation();
 
+    const selectedFolder = this.selection.folder;
+    const sid = selectedFolder ? selectedFolder.dataset.id : null;
     const eventTitle = this.querySelector('#eventTitle');
     const eventEntryType = this.querySelector('#eventEntryType');
     const relevance = this.querySelector('#relevance');
     const calendarType = this.querySelector('#calendarType');
 
-    const newEvid = this.selection.event ? this.selection.event.dataset.value : uniforge.db.generateID();
+    const evid = this.selection.event ? this.selection.event.dataset.value : null;
 
-    const newEvent = {
-      _value: newEvid,
-      _label: eventTitle.value,
-      _icon: '<i class="fa-solid fa-calendar-days"></i>',
-      evid: newEvid,
+    const newEvent = new EntryEvent({
+      evid: evid,
+      sid: sid,
       title: eventTitle.value,
       etid: eventEntryType.value,
+      source: this.eid,
       relevance: relevance.value,
-      clid: calendarType.value,
+      clid: Number(calendarType.value),
       flavor: this.eventEditor.getContent() ?? '',
       s_day: this.datePickers.startDate.date.day,
       s_month: this.datePickers.startDate.date.month,
       s_year: this.datePickers.startDate.date.year,
       e_day: this.datePickers.endDate.isEmpty ? null : this.datePickers.endDate.date.day,
       e_month: this.datePickers.endDate.isEmpty ? null : this.datePickers.endDate.date.month,
-      e_year: this.datePickers.endDate.isEmpty ? null : this.datePickers.endDate.date.year,
-      dbAction: uniforge.doc.events.get(newEvid) ? 'u' : 'a'
-    };
+      e_year: this.datePickers.endDate.isEmpty ? null : this.datePickers.endDate.date.year
+    });
+
+    newEvent.dbAction = evid ? 'u' : 'a';
 
     const result = uniforge.db.validateEvent(newEvent);
     if (result !== '') {
@@ -1091,11 +1208,10 @@ export default class EntryForm extends SidebarForm {
       return;
     }
 
-    this.#events[newEvid] = newEvent;
+    this.#events[newEvent.evid] = newEvent;
     this._generateEventListItems();
 
-    // Limpa o evento selecionado.
-    this.selection.event = null;
+    this.controlEventStates(this._eventStates.default);
   }
 
   /**
@@ -1111,6 +1227,11 @@ export default class EntryForm extends SidebarForm {
       this.#events[itemId].dbAction = 'd';
       this._generateEventListItems();
     }
+  }
+
+  onCancelEventClick(event) {
+    event.stopPropagation();
+    this.controlEventStates(this._eventStates.default);
   }
 
   /**
@@ -1292,8 +1413,6 @@ export default class EntryForm extends SidebarForm {
       const events = entryData.events.toArray();
 
       events.forEach(event => {
-        event._value = event.evid;
-        event._icon = '<i class="fa-solid fa-calendar-days"></i>';
         event.dbAction = '-';
 
         this.#events[event.evid] = event;
@@ -1837,9 +1956,6 @@ export default class EntryForm extends SidebarForm {
      */
   async _handleEventSave(data, events) {
     for (const event of events) {
-      event.sid = data.sid;
-      event.source = data.eid;
-
       const result = await uniforge.db.validateEvent(event);
 
       switch (event.dbAction) {

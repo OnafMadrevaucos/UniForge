@@ -2264,6 +2264,10 @@ input:checked+.slider::before {
 .tabs-control .tab-content div.event-info {
     overflow-x: hidden;
 }
+.tabs-control .tab-content div.event-info .footer {
+    margin-top: 10px;
+    margin-bottom: 5px;
+}
 
 /* ------ Settings Form ------ */
 #settings.tabs-control .tabs-options button {

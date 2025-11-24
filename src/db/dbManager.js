@@ -1,3 +1,4 @@
+import EntryEvent from "../entities/event.mjs";
 import { registerHook, triggerHook } from "../scripts/hooks.js";
 import DBDocuments from "./dbDocuments.js";
 
@@ -361,13 +362,13 @@ export default class DBManager {
         params.push(data.flavor);
         params.push(Number(data.relevance));
         params.push(data.source);
-        params.push(Number(data.clid));
-        params.push(data.s_year);
-        params.push(data.s_month);
-        params.push(data.s_day);
-        params.push(data.e_year);
-        params.push(data.e_month);
-        params.push(data.e_day);
+        params.push(data.clid);
+        params.push(data.date.start.year);
+        params.push(data.date.start.month);
+        params.push(data.date.start.day);
+        params.push(data.date.end?.year);
+        params.push(data.date.end?.month);
+        params.push(data.date.end?.day);
         params.push(Number(data.isDraft ?? false));
 
         const result = await this.#execQuery(query, params);
@@ -2406,7 +2407,7 @@ export default class DBManager {
 
     /**
      * Valida se os dados de um Evento são válidos.
-     * @param {Object} event - Dados do Evento a ser validado.
+     * @param {EntryEvent} event - Dados do Evento a ser validado.
      * @returns {string} - Erro(s) encontrado(s) ou uma string vazia se o Evento for válido.
      */
     validateEvent(event) {
@@ -2418,16 +2419,10 @@ export default class DBManager {
             return 'É necessário informar um título válido para o Evento.';
         if (!event.relevance)
             return 'É necessário informar a Relevância do Evento.';
-        if (!event.clid)
+        if (!event.calendar)
             return 'É necessário informar um Calendário válido para o Evento.';
-        if (!event.s_day || !event.s_year)
+        if (!event.date.start)
             return 'Um Evento deve informar uma data inicial.';
-        if (event.s_year == 0)
-            return 'Um Evento deve informar uma data inicial. O ano informado é inválido.';
-        if (event.s_month < 0)
-            return 'Um Evento deve informar uma data inicial. O mês informado é inválido.';
-        if (!event.s_day || event.s_day < 1)
-            return 'Um Evento deve informar uma data inicial. O dia informado é inválido.';
         return '';
     }
 

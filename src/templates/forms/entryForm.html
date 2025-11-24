@@ -61,19 +61,20 @@
       </div>
       <div id="eventTab" class="tab-content flex-1 flexrow">
         <div class="data-group list flexcol">
-          <h4 class="flex-0">Eventos Vinculados</h4>          
+          <h4 class="flex-0">Eventos Vinculados</h4>
+          <a id="newEventButton" class="flyer-button"><i class="fas fa-calendar-plus"></i> Novo Evento</a>
           <ul id="entryEvents" class="list flex-1"></ul>
         </div>
-        <div class="event-info flex-2">
-          <fieldset class="info-set flexcol">
+        <div class="event-info flexcol flex-2">
+          <fieldset class="info-set flexcol" disabled>
             <div class="data-group text">
               <span class="data-label">Nome Evento </span>
-              <input id="eventTitle" type="text" class="data" placeholder="Nome do Evento"/>
-            </div> 
+              <input id="eventTitle" type="text" class="data" placeholder="Nome do Evento" />
+            </div>
             <div id="eventEntryTypeGroup" class="data-group combo">
               <span class="data-label">Tipo </span>
               <combo id="eventEntryType" value="entryTypes" />
-            </div>           
+            </div>
             <div id="dateTypeGroup" class="data-group combo">
               <span class="data-label">Calendário </span>
               <combo id="calendarType" value="calendars" />
@@ -98,8 +99,17 @@
             <div id="eventFlavorEditor" class="simple-tmce">
               <div class="text-content editable"></div>
             </div>
-            <button id="addEventButton"><i class="fas fa-square-plus"></i> Adicionar Evento</button>
-          </fieldset>          
+          </fieldset>
+          <div class="footer flex-1 flexrow">
+            <div class="extra buttons flexrow">
+              <button id="cancelEventButton" class="cancel-entry hidden">
+                <i class="fas fa-square-xmark"></i> Cancelar
+              </button>
+            </div>
+            <div class="fixed buttons flexrow">
+              <button id="addEventButton" class="disabled"><i class="fas fa-floppy-disk"></i> Salvar</button>
+            </div>
+          </div>
         </div>
       </div>
     </div>

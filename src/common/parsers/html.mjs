@@ -105,9 +105,9 @@ function _parseComboTags(html, data) {
 
     const regex = /<combo\s+id="([^"]+)"\s+value="([^"]+)"(?:\s+blank="([^"]+)")?(?:\s+search="([^"]+)")?(?:\s+(disabled)(?=\s|\/|>))?\s*\/?>/g;
 
-    html = html.replace(regex, (match, id, valueKey, blankAttr, blankValue, searchAttr, searchValue, disabled) => {
+    html = html.replace(regex, (match, id, valueKey, blankValue, searchValue, disabled) => {
         console.log(`Correspondência encontrada: ${match}`);
-        console.log(`ID: ${id}, ValueKey: ${valueKey}${blankValue ? `, BlankValue: ${blankValue}` : ''}${searchAttr ? `, IsSearchable: ${searchValue}` : ''}${disabled ? ', Disabled' : ''}`);
+        console.log(`ID: ${id}, ValueKey: ${valueKey}${blankValue ? `, BlankValue: ${blankValue}` : ''}${searchValue ? `, IsSearchable: ${searchValue}` : ''}${disabled ? ', Disabled' : ''}`);
 
         let result = `<select id="${id}" class="data" name="${id}"></select>`;
         if (!(valueKey in data)) {
@@ -118,7 +118,7 @@ function _parseComboTags(html, data) {
         const isSearchable = searchValue === 'true';
 
         if (isSearchable) {
-            const blankOption = blankAttr ? `<option value="&#8212" label="&#8212"/>` : '';
+            const blankOption = blankValue ? `<option value="&#8212" label="&#8212"/>` : '';
             const options = Array.isArray(data[valueKey])
                 ? data[valueKey].map(val => `<option id="${val._id}" value="${val._label}" class="search-option"/>`).join('\n')
                 : Object.keys(data[valueKey]).map(key => `<option id="${data[valueKey][key]._id}" value="${data[valueKey][key]._label}" class="search-option"/>`).join('\n');
@@ -130,7 +130,7 @@ function _parseComboTags(html, data) {
                 ${options}
             </datalist >`;
         } else {
-            const blankOption = blankAttr ? `<option value="${blankValue}" label="&#8212"/>` : '';
+            const blankOption = blankValue ? `<option value="${blankValue}" label="&#8212"/>` : '';
             const options = Array.isArray(data[valueKey])
                 ? data[valueKey].map(val => `<option value="${val._id}" label="${val._label}"/>`).join('\n')
                 : Object.keys(data[valueKey]).map(key => `<option value="${data[valueKey][key]._id}" label="${data[valueKey][key]._label}"/>`).join('\n');
@@ -242,11 +242,13 @@ function _parseSidetabsTags(html) {
 
         let body = '';
         data[source].forEach(tab => {
-            //body += `<div class="tab${tab.title === 'entity' ? ' disabled' : ''}" data-target="${tab.title}">
-            body += `<div class="tab" data-target="${tab.title}">
+            if (tab.enabled) {
+                //body += `<div class="tab${tab.title === 'entity' ? ' disabled' : ''}" data-target="${tab.title}">
+                body += `<div class="tab" data-target="${tab.title}">
                         <span class="tab-text"><i class="${tab.icon}"></i> ${tab.label}</span>
                         <span class="tab-icon"><i class="${tab.icon}"></i></span>
                     </div>`
+            }
         });
 
         // É o Sidetab do menu principal? Adicione os campos extras.
