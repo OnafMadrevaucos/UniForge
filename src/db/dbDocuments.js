@@ -6,6 +6,7 @@ import EntryEvent from "../entities/event.mjs";
 import LineageEntry from "../entities/lineageEntry.mjs";
 import Section from "../entities/section.mjs";
 import LineageTree from "../entities/lineageTree.mjs";
+import Relevance from "../entities/relevance.mjs";
 
 /**
  * Classe para criar e gerenciar conjuntos (Sets) baseados em dados de um banco de dados.
@@ -323,13 +324,24 @@ export default class DBDocuments {
      * Cria um conjunto de eventos (Events).
      *
      * @param {Array<Object>} events - Dados da tabela event.
-     * @returns {Set} Conjunto de eventos.
+     * @returns {Set<EntryEvent>} Conjunto de eventos.
      */
     createEventSet(events) {
         const eventSet = new Set();
 
         events.forEach((event) => {
+            // Adiciona o Calendário usado pelo Evento.
             event.calendar = this.calendars.get(event.clid);
+
+            // Adiciona a Entrada a qual pertence o Evento.
+            event.entry = this.entries.get(event.source);
+
+            // Adiciona o Tipo de Entrada do Evento.
+            event.entryType = new EntryType(this.entryTypes.get(event.etid));
+
+            // Adiciona a Relevância do Evento.
+            event.relevance = new Relevance(this.relevances.get(event.relevance));
+
             // Adiciona o evento ao conjunto.
             eventSet.add(new EntryEvent(event));
         });
@@ -373,7 +385,7 @@ export default class DBDocuments {
                     });
 
                 // Adiciona a categoria ao conjunto, incluindo suas entradas
-                sectionSet.add({ ...section, type: chapter.tome, chapterType: chapter.cType, chapter: chapter.hasLineage, entries: entrySet, events: eventSet });
+                sectionSet.add(new Section({ ...section, chapter: chapter, entries: entrySet, events: eventSet }));
             });
         } else throw new Error('Não foi possível criar o Set das categorias. O Set dos chapters deve ser criado antes do de sections.');
 

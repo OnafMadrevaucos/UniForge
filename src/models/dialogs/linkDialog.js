@@ -296,21 +296,17 @@ export default class LinkDialog extends BaseDialog {
         switch (folder.id) {
             case 'entryList':
                 data = uniforge.doc.entries.get(itemId);
-                data.type = 'entry';
                 break;
             case 'eventList':
                 data = uniforge.doc.events.get(itemId);
-                data.type = 'event';
                 this._toggleEventGroups(true);
                 break;
             case 'lineageList':
                 data = uniforge.doc.lineages.get(itemId);
-                data.type = 'lineage';
                 this._toggleLineageGroups(true);
                 break;
             case 'timelineList':
                 data = uniforge.doc.timelines.get(itemId);
-                data.type = 'timeline';
                 this._toggleTimelineGroups(true);
                 break;
             default:

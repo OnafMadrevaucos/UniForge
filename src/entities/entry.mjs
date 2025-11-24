@@ -1,5 +1,8 @@
-export default class Entry {
+import BaseDocument from "./base.mjs";
+
+export default class Entry extends BaseDocument {
     constructor(data) {
+        super();
         this.#eid = data?.eid ?? uniforge.db.generateID();
         this.#isDraft = data?.isDraft ?? false;
 
@@ -7,7 +10,6 @@ export default class Entry {
     }
 
     #eid = '';
-    #data = {};
     #isDraft = false;
 
     get type() { return 'entry'; }
@@ -16,33 +18,31 @@ export default class Entry {
     get _label() { return this.title; }
     
     get eid() { return this.#eid; }        
-    get data() { return this.#data; }
-    get sid() { return this.#data.sid; }
-    get etid() { return this.#data.entryType.etid;}
-    get img() { return this.#data.img; }
+    
+    get sid() { return this.data.sid; }
+    get etid() { return this.data.entryType.etid;}
+    get img() { return this.data.img; }
     get title() { return this.data.title; }
     get isDraft() { return this.#isDraft; }
-    get flavor() { return this.#data.flavor; }
-    get htmlString() { return this.#data.htmlString; }
+    get flavor() { return this.data.flavor; }
+    get htmlString() { return this.data.htmlString; }
     
-    get section() { return this.#data.section; }
-    get entryType() { return this.#data.entryType; }
+    get section() { return this.data.section; }
+    get entryType() { return this.data.entryType; }
     get isEntity() { return this.entryType.isEntity; }
 
     set title(value) { this.data.title = value; }
-    set img(value) { this.#data.img = value; }
+    set img(value) { this.data.img = value; }
     set isDraft(value) { this.#isDraft = value; }
-    set flavor(value) { this.#data.flavor = value; }
-    set htmlString(value) { this.#data.htmlString = value; }
+    set flavor(value) { this.data.flavor = value; }
+    set htmlString(value) { this.data.htmlString = value; }
 
     initialize(data) {
-        this.#data = {};
-
-        if(!data) return;
+        super.initialize(data);
 
         Object.entries(data).forEach(([key, value]) => {
             if (key !== 'eid') {
-                this.#data[key] = value;
+                this.data[key] = value;
             }
         });
     }

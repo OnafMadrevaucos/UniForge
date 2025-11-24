@@ -44,6 +44,14 @@ export default class TimelineForm extends SidebarForm {
         });
     }
 
+    get query() {
+        const query = {
+            flavor_editor: `FlavorEditor-${this.uuid}`,
+            event_editor: `EventEditor-${this.uuid}`,
+        }
+        return uniforge.utils.mergeObjects(super.query, query);
+    }
+
     get states() {
         return this.#states;
     }
@@ -61,6 +69,42 @@ export default class TimelineForm extends SidebarForm {
             forge: document.querySelector(`#formMain-${this.uuid} #timelineForge`)
         };
         return uniforge.utils.mergeObjects(super.ui, ui);
+    }
+
+    get flavorEditor() {
+        const editor = tinymce.get(this.query.flavor_editor);
+        return editor ? editor : null;
+    }
+
+    get eventEditor() {
+        const editor = tinymce.get(this.query.event_editor);
+        return editor ? editor : null;
+    }
+
+    /**
+   * Define o conteúdo do editor de floreio.
+   * @param {string} content - O conteúdo a ser definido.
+   */
+    set flavorEditor(content) {
+        if (this.flavorEditor && content !== undefined) {
+            if (content !== null && !(typeof content === 'string')) throw new TypeError('O conteúdo deve ser uma string.');
+
+            content = content ?? ''; // Se o conteúdo for nulo, faça o conteúdo vazio.
+            this.flavorEditor.setContent(content);
+        }
+    }
+
+    /**
+     * Define o conteúdo do editor de eventos.
+     * @param {string} content - O conteúdo a ser definido.
+     */
+    set eventEditor(content) {
+        if (this.eventEditor && content !== undefined) {
+            if (content !== null && !(typeof content === 'string')) throw new TypeError('O conteúdo deve ser uma string.');
+
+            content = content ?? ''; // Se o conteúdo for nulo, faça o conteúdo vazio.
+            this.eventEditor.setContent(content);
+        }
     }
 
     /**
@@ -104,7 +148,9 @@ export default class TimelineForm extends SidebarForm {
         const titleInput = this.ui.forge.querySelector('#titleInput');
         titleInput.value = '';
 
-        tinymce.get('timelineFlavorEditor').setContent('');
+        // Limpa todos os editores Tiny MCE inicializados.
+        this.flavorEditor = '';
+        this.eventEditor = '';
     }
     /* ---------------------------------------------------------------------------------------------------------------- */
     // INTERFACE DE USUÁRIO
@@ -205,13 +251,17 @@ export default class TimelineForm extends SidebarForm {
     * Configura o editor TinyMCE para o texto de floreio da Linha do Tempo.
     */
     async configureFlavorTinyMCE() {
-        if (tinymce.get('timelineFlavorEditor')) {
-            tinymce.remove('#timelineFlavorEditor');
+        if (this.flavorEditor) {
+            tinymce.remove(this.query.flavor_editor);
+        } else {
+            // Trata o id do container do editor, inserindo o uuid do formulário.
+            const div = this.querySelector('#timelineFlavorEditor');
+            div.id = this.query.flavor_editor;
         }
 
         const options = uniforge.utils.mergeObjects(uniforge.tinymceOptions.simple, {
-            selector: 'div#timelineFlavorEditor',
-            placeholder: "Descrição da linha do tempo...",
+            selector: `div#${this.query.flavor_editor}`,
+            placeholder: "Texto de floreio...",
             init_instance_callback: (editor) => {
                 editor.setContent(""); // Garante que o editor seja iniciado vazio.
             },
@@ -308,11 +358,11 @@ export default class TimelineForm extends SidebarForm {
             const titleInput = forge.querySelector('#titleInput');
 
             this.manager.timeline.title = titleInput.value;
-            this.manager.timeline.flavor = tinymce.get('timelineFlavorEditor').getContent();
+            this.manager.timeline.flavor = this.flavorEditor.getContent();
             const committed = await this.manager.commit();
 
             // Se a linha do tempo foi salva com sucesso, atualiza o título da pasta.
-            if(committed) { 
+            if (committed) {
                 this.refresh();
             } else if (committed === null) {
                 // Se o usuário não confirmou a exclusão, retorna ao estado padrão.
@@ -340,22 +390,19 @@ export default class TimelineForm extends SidebarForm {
 
         eventTitle.value = eventData.title;
 
-        const entryType = uniforge.doc.entryTypes.get(eventData.etid);
+        const entryType = eventData.entryType;
         eventEntryType.value = entryType.title;
 
-        const relevance = uniforge.doc.relevances.get(eventData.relevance);
-        eventRelevance.value = relevance.title;
-
-        const calendar = uniforge.doc.calendars.get(eventData.clid);
+        const calendar = eventData.calendar;
         eventCalendarType.value = calendar.label;
 
-        const startDate = new CustomDate(calendar, { day: eventData.s_day, month: eventData.s_month, year: eventData.s_year });
-        const endDate = eventData.e_day ? new CustomDate(calendar, { day: eventData.e_day, month: eventData.e_month, year: eventData.e_year }) : null;
+        const relevance = eventData.relevance;
+        eventRelevance.value = relevance.title;        
 
-        eventStartDate.value = startDate.toString('MMn DD, YYYYs');
-        eventEndDate.value = endDate ? endDate.toString('MMn DD, YYYYs') : '\u2014';
+        eventStartDate.value = eventData.date.start.toString('MMn DD, YYYYs');
+        eventEndDate.value = eventData.date.end ? eventData.date.end.toString('MMn DD, YYYYs') : '\u2014';
 
-        tinymce.get('eventFlavorEditor').setContent(eventData.flavor);
+        this.eventEditor = eventData.flavor;
     }
 
     /**
@@ -377,7 +424,7 @@ export default class TimelineForm extends SidebarForm {
             const checkedIcon = document.createElement('i');
             checkedIcon.classList.add('fas', this.eventCheckedIcon, 'icon');
 
-            const eventData = uniforge.doc.events.get(item.dataset.value);            
+            const eventData = uniforge.doc.events.get(item.dataset.value);
             this.manager.addEvent(eventData);
 
             content.appendChild(checkedIcon);
@@ -425,9 +472,17 @@ export default class TimelineForm extends SidebarForm {
     async onDeleteTimeline(event) {
         event.stopPropagation();
 
-        if(await Dialogs.confirm('Excluir Linha do Tempo', 'Você tem certeza que deseja excluir esta Linha do Tempo?')) {
+        if (await Dialogs.confirm('Excluir Linha do Tempo', 'Você tem certeza que deseja excluir esta Linha do Tempo?')) {
             await this.manager.deleteTimeline();
-            this.controlStates(this.states.default);
+            const committed = await this.manager.commit();
+
+            // Se a linha do tempo foi salva com sucesso, atualiza o título da pasta.
+            if (committed) {
+                this.refresh();
+            } else if (committed === null) {
+                // Se o usuário não confirmou a exclusão, retorna ao estado padrão.
+                this.controlStates(this.states.default);
+            }
         }
     }
 
@@ -457,7 +512,7 @@ export default class TimelineForm extends SidebarForm {
 
         console.log('*CLICK*');
     }
-   
+
     /* ---------------------------------------------------------------------------------------------------------------- */
     // UTILITÁRIOS    
     /**
@@ -528,8 +583,8 @@ export default class TimelineForm extends SidebarForm {
         const forge = this.querySelector('#timelineForge');
         const titleInput = forge.querySelector('#titleInput');
         titleInput.value = title;
-
-        tinymce.get('timelineFlavorEditor').setContent(flavor);
+                
+        this.flavorEditor = flavor;
 
         const eventList = this.querySelector('#eventList');
         const eventItens = eventList.querySelectorAll('.item');
@@ -539,7 +594,7 @@ export default class TimelineForm extends SidebarForm {
             if (this.manager.hasEvent(evid)) {
                 item.classList.add('checked');
                 const content = item.querySelector('.item-content');
-                
+
                 // Adiciona o ícone de evento selecionado.
                 const checkedIcon = document.createElement('i');
                 checkedIcon.classList.add('fas', this.eventCheckedIcon, 'icon');

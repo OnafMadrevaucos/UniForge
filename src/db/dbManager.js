@@ -505,7 +505,10 @@ export default class DBManager {
         params.push(data.title);
         params.push(data.flavor);
 
-        this.results = await this.#execQuery(query, params);
+        const result = await this.#execQuery(query, params);
+        result.lastInsertRowid = tid;
+        this.results = result;
+        
         return this.result;
     }
 
@@ -636,12 +639,12 @@ export default class DBManager {
             ['relevance', Number(data.relevance)],
             ['source', data.source],
             ['clid', Number(data.clid)],
-            ['s_year', data.s_year],
-            ['s_month', data.s_month],
-            ['s_day', data.s_day],
-            ['e_year', data.e_year],
-            ['e_month', data.e_month],
-            ['e_day', data.e_day],
+            ['s_year', data.date.start.year],
+            ['s_month', data.date.start.month],
+            ['s_day', data.date.start.day],
+            ['e_year', data.date.end?.year],
+            ['e_month', data.date.end?.month],
+            ['e_day', data.date.end?.day],
             ['isDraft', Number(data.isDraft ?? false)]
         ], { withNulls: true });
 

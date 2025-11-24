@@ -59,9 +59,32 @@ export class TimelineManager extends BaseManager {
     }
 
     async deleteTimeline() {
-        const tid = this.#timeline.tid;
-        if (!tid.isEmpty()) {
-            await uniforge.db.deleteTimeline(tid);
+        try {
+            const tid = this.#timeline.tid;
+            if (!tid.isEmpty()) {
+                await uniforge.db.beginTransaction();
+
+                await uniforge.db.deleteTimeline(tid);
+
+                const events = this.#timeline.events.toArray();
+                for(let event of events) {
+                    await this.deleteEvent(event._id);
+                };                
+
+                // Finaliza a transação de salvamento.
+                await uniforge.db.commitTransaction();
+                return true;
+            } else {
+                this.msgBox.showWarning("Nenhuma linha do tempo selecionada para remoção.");
+                return false;
+            }
+        } catch (error) {
+            uniforge.msgBox.showError('Erro ao remover linha do tempo.', error);
+
+            // Faz rollback em caso de erro no processo de salvamento.
+            await uniforge.db.rollbackTransaction(error);
+
+            return false;
         }
     }
 
@@ -106,7 +129,7 @@ export class TimelineManager extends BaseManager {
 
             return true;
         } catch (error) {
-            uniforge.msgBox.showError('Erro ao adicionar evneto à linha do tempo.', error);
+            uniforge.msgBox.showError('Erro ao manipular linha do tempo.', error);
 
             // Faz rollback em caso de erro no processo de salvamento.
             await uniforge.db.rollbackTransaction(error);
@@ -321,12 +344,12 @@ export class TimelineManager extends BaseManager {
         // Criação do elemento <li>
         const li = document.createElement('li');
         li.dataset.id = data._id;
-        li.classList.add('timeline-entry', `${data.relevance}`);
+        li.classList.add('timeline-entry', `${data.relevance.value}`);
         if (isInverted) li.classList.add('inverted');
 
         // Criação do elemento <div> com classe "tl-circ"
         const tlCirc = document.createElement('div');
-        tlCirc.classList.add('tl-circ', `${data.relevance}`);
+        tlCirc.classList.add('tl-circ', `${data.relevance.value}`);
         tlCirc.setAttribute('data-toggle', 'tooltip');
         tlCirc.setAttribute('title', entryType.title);
         li.appendChild(tlCirc);
@@ -439,7 +462,7 @@ export class TimelineManager extends BaseManager {
         // Verifica se o evento possui uma Entrada associada a ele.
         // Se não houver, desabilita o botão de edição.
         if (data.source !== null && !data.source.isEmpty()) {
-            const externalLink = this.#createExternalLink(data);
+            const externalLink = this.#createExternalLink(data, true, isInverted);
             tlSection.appendChild(externalLink);
         }
 
@@ -463,12 +486,12 @@ export class TimelineManager extends BaseManager {
 
         // Criação do elemento <li>
         const li = document.createElement('li');
-        li.classList.add('timeline-entry', `${data.relevance}`);
+        li.classList.add('timeline-entry', `${data.relevance.value}`);
         if (isInverted) li.classList.add('inverted');
 
         // Criação do elemento <div> com classe "tl-circ"
         const tlCirc = document.createElement('div');
-        tlCirc.classList.add('tl-circ', `${data.relevance}`);
+        tlCirc.classList.add('tl-circ', `${data.relevance.value}`);
         tlCirc.setAttribute('data-toggle', 'tooltip');
         tlCirc.setAttribute('title', linkTitle);
         li.appendChild(tlCirc);
@@ -558,7 +581,7 @@ export class TimelineManager extends BaseManager {
         // Verifica se o evento possui uma Entrada associada a ele.
         // Se não houver, desabilita o botão de edição.
         if (data.source !== null && !data.source.isEmpty()) {
-            const externalLink = this.#createExternalLink(data, 'timeline');
+            const externalLink = this.#createExternalLink(data, false, isInverted);
             tlSection.appendChild(externalLink);
         }
 
@@ -578,17 +601,17 @@ export class TimelineManager extends BaseManager {
         return li;
     }
 
-    #createExternalLink(data, type = 'entry') {
+    #createExternalLink(data, isEntry = true, isInverted = false) {
         // Link externo
         const externalLink = document.createElement('div');
         externalLink.className = 'external-link';
 
-        if (type === 'entry') {           
-            
-
+        if (isEntry) {
             const externalAnchor = document.createElement('a');
             externalAnchor.className = 'anchor';
             externalAnchor.setAttribute('data-tooltip', 'Artigo Completo');
+            if (!isInverted) externalAnchor.setAttribute('data-tooltip-side', 'right');
+
             externalAnchor.dataset.id = data.source;
             const externalIcon = document.createElement('i');
             externalIcon.className = 'fa-solid fa-arrow-up-right-from-square';
@@ -602,6 +625,8 @@ export class TimelineManager extends BaseManager {
             const externalAnchor = document.createElement('a');
             externalAnchor.className = 'anchor';
             externalAnchor.setAttribute('data-tooltip', 'Timeline Externa');
+            if (!isInverted) externalAnchor.setAttribute('data-tooltip-side', 'right');
+
             externalAnchor.dataset.id = data.source;
             const externalIcon = document.createElement('i');
             externalIcon.className = 'fa-solid fa-timeline';
@@ -658,7 +683,7 @@ export class TimelineManager extends BaseManager {
 
         uniforge.navQueue.push(this);
 
-        document.body.style.cursor = 'wait';        
+        document.body.style.cursor = 'wait';
     }
 
     _onTimeContentScroll() {

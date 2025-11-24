@@ -3,7 +3,7 @@ import LineageTree from "./lineageTree.mjs";
 
 export default class Entity extends Entry {
     constructor(data) {
-        super(data);
+        super(data);        
         this.#lineage = data?.lineage ?? new LineageTree({
             eid: this.eid,
             title: '',

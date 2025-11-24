@@ -18,8 +18,8 @@ export class CodexManager extends BaseManager {
      * Retorna o elemento HTML do visualizador de Entradas.
      * @type {HTMLElement} - O elemento HTML do visualizador de Entradas.
      */
-    get viewer() { 
-        return document.getElementById('entryViewer'); 
+    get viewer() {
+        return document.getElementById('entryViewer');
     }
 
     /**
@@ -55,7 +55,7 @@ export class CodexManager extends BaseManager {
             const container = this.viewer;
 
             // Verifica se o container existe.
-            if (!container) throw new Error('Vizualizador da Entrada não encontrado.');            
+            if (!container) throw new Error('Vizualizador da Entrada não encontrado.');
 
             // Limpa o conteúdo do vizualizador da Entrada.
             container.innerHTML = '';
@@ -81,11 +81,25 @@ export class CodexManager extends BaseManager {
         }
     }
 
+    async clearView() {
+        // Limpa o objeto da Entrada.
+        this.#entry = null;
+
+        // Obtém o element do Container da Entrada
+        const container = this.viewer;
+
+        // Verifica se o container existe.
+        if (!container) throw new Error('Vizualizador da Entrada não encontrado.');
+
+        // Limpa o conteúdo do vizualizador da Entrada.
+        container.innerHTML = '';
+    }
+
     configureLinks() {
         this.configureTooltip();
         this.configureSpan();
     }
-    
+
     /**
      * Configura o evento de mouseover e mouseout para exibir tooltips nos links
      * de Entradas no formulário.
@@ -112,10 +126,10 @@ export class CodexManager extends BaseManager {
     configureSpan() {
         const textContent = this.viewer.querySelector('.text-content');
 
-         // Configura os links de todos os <span> do texto da Entrada
-         const linkSpans = textContent.querySelectorAll('.linked-text');
-         linkSpans.forEach(span => {
-             span.addEventListener('click', (event) => { this.article.onLinkClick(event); });
-         });
+        // Configura os links de todos os <span> do texto da Entrada
+        const linkSpans = textContent.querySelectorAll('.linked-text');
+        linkSpans.forEach(span => {
+            span.addEventListener('click', (event) => { this.article.onLinkClick(event); });
+        });
     }
 }

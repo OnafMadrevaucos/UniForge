@@ -597,6 +597,9 @@ export default class EntryForm extends SidebarForm {
         // Limpa o evento selecionado.
         this.selection.event = null;
 
+        const eventList = this.querySelector('#entryEvents');
+        eventList.querySelectorAll('.item').forEach(item => item.classList.remove('selected'));
+
       } break;
     }
 
@@ -825,10 +828,10 @@ export default class EntryForm extends SidebarForm {
 
     // Se houver um evento, carregue o DatePicker com a data do evento.
     if (event) {
-      this.datePickers.startDate.selectFullDate(event.s_day, event.s_month, event.s_year);
+      this.datePickers.startDate.selectFullDate(...event.date.start.expand());
       // Se houver uma data de fim, carregue o DatePicker com a data do evento.
-      if (event.e_day)
-        this.datePickers.endDate.selectFullDate(event.e_day, event.e_month, event.e_year);
+      if (event.date.end)
+        this.datePickers.endDate.selectFullDate(...event.date.end.expand());
     }
   }
 
@@ -1123,10 +1126,7 @@ export default class EntryForm extends SidebarForm {
 
   onEventListClick(clkEvent) {
     clkEvent.stopPropagation();
-    const eventList = clkEvent.target;
-
-    eventList.querySelectorAll('.item').forEach(item => item.classList.remove('selected'));
-    this.clearEventTab();
+    this.controlEventStates(this._eventStates.default);
   }
 
   onEventItemClick(clkEvent) {
@@ -1154,10 +1154,8 @@ export default class EntryForm extends SidebarForm {
 
     this.eventEditor = event.flavor;
 
-    const addEventButton = this.querySelector('#addEventButton');
-    addEventButton.innerHTML = '<i class="fas fa-pen-to-square"></i> Editar Evento';
-
     this.selection.event = clickedEvent;
+    this.controlEventStates(this._eventStates.editing);
   }
 
   onNewEventClick(event) {

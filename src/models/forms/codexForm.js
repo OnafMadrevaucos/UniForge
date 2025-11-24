@@ -40,6 +40,12 @@ export default class CodexForm extends SidebarForm {
 
     /* ---------------------------------------------------------------------------------------------------------------- */
     // LISTENERS
+    /**@inheritdoc */
+    onSidebarClick(event) {
+        super.onSidebarClick(event);
+
+        this.manager.clearView();
+    }
     /**
      * Gerencia cliques duplos em itens de entrada.
      * @protected

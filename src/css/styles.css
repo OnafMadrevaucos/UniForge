@@ -1003,14 +1003,13 @@ input:checked+.slider::before {
 }
 
 #toolsTopbar .tools-container button[data-tooltip]::after {
-    left: -100%;
+    right: 50%;
 }
 
 #toolsTopbar .tools-container .time-tool {
     flex: 0 0 75%;
     justify-content: center;
     gap: var(--default-gap-size);
-    ;
 }
 
 #toolsTopbar .tools-container .time-tool .year-container {
@@ -2541,6 +2540,7 @@ input:checked+.slider::before {
 .timeline .content div {
     z-index: 1;
     color: var(--light-text-color);
+    gap: 5px;
 }
 
 .timeline .content .time-manager {
@@ -2755,7 +2755,7 @@ input:checked+.slider::before {
 .timeline .timeline-content .timeline-list li .tl-circ {
     position: relative;
     top: 9.5vh;
-    left: 36.24vw;
+    left: 32.75vw;
     text-align: center;
     background: var(--dark-red);
     color: var(--light-text-color);
@@ -2829,7 +2829,7 @@ input:checked+.slider::before {
 
 .timeline-entry .timeline-panel:nth-of-type(2):after {
     position: absolute;
-    top: 24px;
+    top: 45px;
     right: -16px;
     display: inline-block;
     border-top: 16px solid transparent;
@@ -4441,7 +4441,7 @@ input:checked+.slider::before {
 
 [data-tooltip]:not([data-tooltip-side="left"]):not([data-tooltip-side="center"])::after,
 [data-tooltip][data-tooltip-side="left"]::after {
-    left: 0;
+    right: 50%;
 }
 
 [data-tooltip][data-tooltip-block="top"]::after {
