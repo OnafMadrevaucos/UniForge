@@ -26,7 +26,7 @@ export default class Entry extends BaseDocument {
     get isDraft() { return this.#isDraft; }
     get flavor() { return this.data.flavor; }
     get htmlString() { return this.data.htmlString; }
-    
+    get events() { return this.data.events; }    
     get section() { return this.data.section; }
     get entryType() { return this.data.entryType; }
     get isEntity() { return this.entryType.isEntity; }

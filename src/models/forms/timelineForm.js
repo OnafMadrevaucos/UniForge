@@ -425,7 +425,10 @@ export default class TimelineForm extends SidebarForm {
             checkedIcon.classList.add('fas', this.eventCheckedIcon, 'icon');
 
             const eventData = uniforge.doc.events.get(item.dataset.value);
-            this.manager.addEvent(eventData);
+            if(!this.manager.selectEvent(eventData)) {
+                item.classList.toggle('checked');
+                return;
+            }
 
             content.appendChild(checkedIcon);
         } else {

@@ -291,7 +291,7 @@ export default class DBDocuments {
 
             const entryType = new EntryType(this.entryTypes.get(entry.etid));
 
-            const section = new Section(this.sections.get(entry.sid));
+            const section = this.sections.get(entry.sid);
 
             if (!entryType.isEntity) {
                 // Adiciona a entrada ao conjunto, incluindo seus eventos.

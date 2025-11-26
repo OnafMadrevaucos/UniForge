@@ -10,8 +10,8 @@ export default class BaseForm extends Application {
    * Construtor da classe BaseForm.
    * @param {HTMLElement} title   - O título do formulário.
    */
-  constructor(title, options = {extraClasses: []}) {    
-    super(title, options);    
+  constructor(title, options = { extraClasses: [] }) {
+    super(title, options);
 
     /**
      * Gerenciador de conexão de Banco de Dados.
@@ -29,7 +29,7 @@ export default class BaseForm extends Application {
      * O caminho para quando a entrada não possui imagem.
      * @type {string}
      */
-    this.blankImgUrl = uniforge.urls.blankImg;    
+    this.blankImgUrl = uniforge.urls.blankImg;
 
     /**
      * Indica se o formulário está oculto inicialmente.
@@ -65,6 +65,12 @@ export default class BaseForm extends Application {
   */
   #type = 'article';
 
+  /** Objeto que representa os dados manipulados pelo formulário.
+    * @property {BaseDocument} obj - Objeto que armazena os eventos vinculados à entrada.    
+    * @private    
+    */
+  #document = null;
+
   /* ---------------------------------------------------------------------------------------------------------------- */
   // GETTERS E SETTERS
   /**
@@ -72,8 +78,8 @@ export default class BaseForm extends Application {
   * @inheritdoc
   */
   get defaultOptions() {
-    const config = super.defaultOptions;   
-    return uniforge.utils.mergeObjects(config,{
+    const config = super.defaultOptions;
+    return uniforge.utils.mergeObjects(config, {
       style: Application.Styles.FORM,
       classes: [...config.classes, 'maximized']
     });
@@ -96,6 +102,22 @@ export default class BaseForm extends Application {
   get type() {
     return this.#type;
   }
+
+  /** Objeto que representa os dados manipulados pelo formulário.
+    * @property {BaseDocument} obj - Objeto que armazena os eventos vinculados à entrada.    
+    * @private    
+    */
+  get document() { return this.#document; }
+
+  /**
+    * O formulário é o de Configuração.
+    * 
+    * @type {boolean}
+  */
+  get isSettings() {
+    return this.type === 'settings';
+  };
+
   /**
    * Determina o tipo do Formulário.
    * @async
@@ -106,13 +128,10 @@ export default class BaseForm extends Application {
   }
 
   /**
-    * O formulário é o de Enciclopédia
-    * 
-    * @type {boolean}
-  */
-  get isSettings() {
-    return this.type === 'settings';
-  };
+   * Define o objeto que representa os dados manipulados pelo formulário.
+   * @param {BaseDocument} value - O novo objeto de dados.
+   */
+  set document(value) { this.#document = value; }
 
   prepareBaseData() {
     const data = super.prepareBaseData();
@@ -157,7 +176,7 @@ export default class BaseForm extends Application {
             <switch id="deleteSwitch" class="hidden"></switch>
             <a id="${this.style}Close-${this.uuid}" class="close-button flexcol"><i class="fas fa-circle-xmark"></i></a>
         `;
-        
+
     const mainContent = await uniforge.utils.loadTemplate(this.template);
     main.appendChild(mainContent);
 
@@ -169,7 +188,7 @@ export default class BaseForm extends Application {
   * Cria a estrutura específica do formulário.
   * @interface
   */
-  async refreshDerivedTemplate() {            
+  async refreshDerivedTemplate() {
     const mainContent = await uniforge.utils.loadTemplate(this.template);
     return mainContent.outerHTML;
   }
@@ -189,29 +208,29 @@ export default class BaseForm extends Application {
   /**
    * Exibe o formulário e o overlay associados.
    */
-  async show(forceLoad = false) {        
+  async show(forceLoad = false) {
     await super.show(forceLoad);
 
     this._activateForm();
   }
 
   /** @inheritdoc */
-  close() {  
+  close() {
     const tabs = document.querySelectorAll('.tab');
     let sourceFinded = false;
-    
+
     tabs.forEach((tab) => {
-      if(tab.getAttribute('data-target') === this.type) {
+      if (tab.getAttribute('data-target') === this.type) {
         tab.classList.remove('disabled');
         sourceFinded = true;
       }
     });
 
-    if(!sourceFinded) {    
+    if (!sourceFinded) {
       const buttonsTool = document.querySelector('.buttons-tool');
       const buttons = buttonsTool.querySelectorAll('button');
       buttons.forEach((button) => {
-        if(button.getAttribute('data-target') === this.type) button.classList.remove('disabled');
+        if (button.getAttribute('data-target') === this.type) button.classList.remove('disabled');
       });
     }
 
@@ -234,7 +253,7 @@ export default class BaseForm extends Application {
     super.activateBaseListeners();
 
     const app = this.ui.app;
-    app.addEventListener('mousedown', (event) =>{ this._onAppActive.bind(this)(event); });
+    app.addEventListener('mousedown', (event) => { this._onAppActive.bind(this)(event); });
 
     const header = this.ui.header;
     header.addEventListener('dblclick', (event) => { this._onHeaderDblClick.bind(this)(event); });
@@ -249,7 +268,7 @@ export default class BaseForm extends Application {
   _onAppActive(event) {
     const clickedApp = event.target.closest('.container');
     const clickedAppUuid = clickedApp.id?.split('-')[1];
-    if(clickedAppUuid === uniforge.form?.uuid) return;
+    if (clickedAppUuid === uniforge.form?.uuid) return;
 
     this._activateForm();
   }
@@ -258,7 +277,7 @@ export default class BaseForm extends Application {
     event.stopPropagation();
     this.ui.app.classList.toggle('maximized');
 
-    if(this.ui.app.classList.contains('maximized')) this._activateForm();
+    if (this.ui.app.classList.contains('maximized')) this._activateForm();
   }
 
   _onSearchInputList(event) {
@@ -312,14 +331,14 @@ export default class BaseForm extends Application {
       return false;
     }
   }
-  
+
   /**
    * Adiciona um listener de eventos ao aplicativo de interface do usuário.
    * @param {string} event - O nome do evento a ser adicionado.
    * @param {Function} callback - A função a ser executada quando o evento for disparado.
    */
   addEventListener(event, callback) {
-    if(!this.rendered) throw new Error('O formulário ainda não foi renderizado e não pode receber ouvintes.');
+    if (!this.rendered) throw new Error('O formulário ainda não foi renderizado e não pode receber ouvintes.');
     this.ui.app.addEventListener(event, callback);
   }
 
@@ -332,5 +351,5 @@ export default class BaseForm extends Application {
     this.ui.app.classList.add('active');
     uniforge.form = this;
   }
-  
+
 }

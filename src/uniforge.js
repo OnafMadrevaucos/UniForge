@@ -302,6 +302,10 @@ function configureBody() {
 
 function configureHooks() {
     registerHook('beforeRender', async () => { await refreshDocuments(); });
+    registerHook('simpleEntryFormClosed', async () => { 
+        await refreshDocuments(); 
+        console.log('simpleEntryFormClosed');
+    });
 }
 // Configura o listeners que tratam os eventos dos tabs do Menu Lateral e as rotinas de fechamento do Form
 function activateMainListeners() {

@@ -3,9 +3,12 @@
  */
 import BaseForm from "./baseForm.js";
 import LinkDialog from "../dialogs/linkDialog.js";
-import ImagePickerDialog from "../dialogs/imagePickerDialog.js";
 import Dialogs from "../dialogs/dialog.js";
 import DatePicker from "../datePicker.js";
+import Entry from "../../entities/entry.mjs";
+import EntryEvent from "../../entities/event.mjs";
+import FilePickerDialog from "../dialogs/filePickerDialog.js";
+import { triggerHook } from "../../scripts/hooks.js";
 
 /**
  * Classe EntryForm estende a funcionalidade da classe BaseForm para gerenciar formulários que manipulem Entradas.
@@ -16,18 +19,21 @@ export default class SimpleEntryForm extends BaseForm {
   /**
    * Construtor da classe EntryForm.
    * 
-   * @param {Object} title   - A Entrada a ser manipulada.
+   * @param {HTMLElement} sourceBtn   - O botão que originou a chamada do formulário.
+   * @param {Entry} entry             - Os dados da Entrada manipulada pelo formulário.
    */
-  constructor(sourceBtn, data, options = {}) {
-    if(!sourceBtn) throw new Error('O botão de origem não pode ser nulo ou indefinido.');
-    if (!data) throw new Error('A Entrada não pode ser nula ou indefinida.');
+  constructor(sourceBtn, entry, options = {}) {
+    if (!sourceBtn) throw new Error('O botão de origem não pode ser nulo ou indefinido.');
+    if (!entry) throw new Error('É necessário informar uma entrada válida.');
 
-    super(data.title, uniforge.utils.mergeObjects(options, {
+    super(entry.title, uniforge.utils.mergeObjects(options, {
       height: '1100px',
       width: '1000px'
     }));
 
     this.sourceBtn = sourceBtn;
+
+    this.document = entry;
 
     /**
      * @type {string} - O modelo HTML utilizado pelo formulário.
@@ -44,7 +50,7 @@ export default class SimpleEntryForm extends BaseForm {
      * Estado atual dos elements do formulário.
      * @type {number}
      */
-    this.currentState = 0;
+    this.currentEventState = 0;
 
     /**
      * Objeto com os dados da imagem da entrada.
@@ -62,33 +68,48 @@ export default class SimpleEntryForm extends BaseForm {
     this.isUpdate = false;
 
     /**
-     * O formulário possui funcionalidade de vinculação de Eventos? (true por padrão)
-     * @type {boolean}
-     */
-    this.isEventForm = true;
-
-    /**
     * @property {Object} datePickers - Um objeto que gerencia os seletores de data para registro de entradas.
     * Contém duas instâncias de `DatePicker` para 'startDate' (data de início) e 'endDate' (data de término).
     */
     this.datePickers = {
-      startDate: new DatePicker('startDate'),
-      endDate: new DatePicker('endDate')
+      startDate: new DatePicker('startDate', this),
+      endDate: new DatePicker('endDate', this)
     }
 
     // Armazena o ID do evento selecionado.
     this.selection = {
-      entry: data,
+      entry: entry,
       event: null
     }
-  }  
+  }
 
-  /** 
+  /**
+  * Conjunto de filtros de item que representam os estados aplicáveis ao controle de Eventos na classe EntryForm.
+  * Os estados estão mapeados para números inteiros que representam ações específicas.
+  * 
+  * @type {Object<number, number>}
+  * @private
+  * @property {number} default  - Representa o estado padrão do controle de evento (valor 0).
+  * @property {number} adding   - Representa o estado de salvamento de um evento novo (valor 1).
+  * @property {number} editing  - Representa o estado de salvamento de um evento pré-existente (valor 2). 
+  */
+  #eventStates = {
+    default: 0,
+    adding: 1,
+    editing: 2
+  }
+
+  /** Eventos temporários, vinculados à Entrada até serem salvos (ou não).
     * @property {Object} events - Objeto que armazena os eventos vinculados à entrada.    
     * @private
     * @default {}
     */
   #events = {};
+
+  /** Identificador da Entrada atual.
+   * @returns {Object} 
+   * */
+  get eid() { return this.document.eid; }
 
   /* ---------------------------------------------------------------------------------------------------------------- */
   // GETTERS E SETTERS 
@@ -104,10 +125,16 @@ export default class SimpleEntryForm extends BaseForm {
   }
 
   get type() {
-    const entry = this.selection.entry;
-    const section = uniforge.doc.sections.get(entry.sid);
-    const chapter = uniforge.doc.chapters.get(section.cid);
-    return chapter.tome;
+    return this.document.section.tome;
+  }
+
+  get query() {
+    const query = {
+      main_editor: `MainEditor-${this.uuid}`,
+      flavor_editor: `FlavorEditor-${this.uuid}`,
+      event_editor: `EventEditor-${this.uuid}`,
+    }
+    return uniforge.utils.mergeObjects(super.query, query);
   }
 
   /**
@@ -126,6 +153,10 @@ export default class SimpleEntryForm extends BaseForm {
     return idx;
   }
 
+  get _eventStates() {
+    return this.#eventStates;
+  };
+
   /**
   * Retorna o objeto que armazena os eventos vinculados à entrada.
   * 
@@ -143,6 +174,60 @@ export default class SimpleEntryForm extends BaseForm {
     return Object.keys(this.#events).length > 0;
   };
 
+  get mainEditor() {
+    const editor = tinymce.get(this.query.main_editor);
+    return editor ? editor : null;
+  }
+
+  get flavorEditor() {
+    const editor = tinymce.get(this.query.flavor_editor);
+    return editor ? editor : null;
+  }
+
+  get eventEditor() {
+    const editor = tinymce.get(this.query.event_editor);
+    return editor ? editor : null;
+  }
+
+  /**
+   * Define o conteúdo do editor principal.
+   * @param {string} content - O conteúdo a ser definido.
+   */
+  set mainEditor(content) {
+    if (this.mainEditor && content !== undefined) {
+      if (content !== null && !(typeof content === 'string')) throw new TypeError('O conteúdo deve ser uma string.');
+
+      content = content ?? ''; // Se o conteúdo for nulo, faça o conteúdo vazio.
+      this.mainEditor.setContent(content);
+    }
+  }
+
+  /**
+   * Define o conteúdo do editor de floreio.
+   * @param {string} content - O conteúdo a ser definido.
+   */
+  set flavorEditor(content) {
+    if (this.flavorEditor && content !== undefined) {
+      if (content !== null && !(typeof content === 'string')) throw new TypeError('O conteúdo deve ser uma string.');
+
+      content = content ?? ''; // Se o conteúdo for nulo, faça o conteúdo vazio.
+      this.flavorEditor.setContent(content);
+    }
+  }
+
+  /**
+   * Define o conteúdo do editor de eventos.
+   * @param {string} content - O conteúdo a ser definido.
+   */
+  set eventEditor(content) {
+    if (this.eventEditor && content !== undefined) {
+      if (content !== null && !(typeof content === 'string')) throw new TypeError('O conteúdo deve ser uma string.');
+
+      content = content ?? ''; // Se o conteúdo for nulo, faça o conteúdo vazio.
+      this.eventEditor.setContent(content);
+    }
+  }
+
   /**
     * Obtém os dados unificados necessários para o funcionamento do formulário.
     * @implements Implemente um método filho para as especificidades de cada formulário.
@@ -153,11 +238,9 @@ export default class SimpleEntryForm extends BaseForm {
     // Informa ao formulário atual o seu tipo.
     this.data.type = this.type;
 
-    if (this.isEventForm) {
-      this.data.entryTypes = uniforge.doc.entryTypes.toArray();
-      this.data.relevances = uniforge.doc.relevances.toArray();
-      this.data.calendars = uniforge.doc.calendars.toArray();
-    }
+    this.data.entryTypes = uniforge.doc.entryTypes.toArray();
+    this.data.relevances = uniforge.doc.relevances.toArray();
+    this.data.calendars = uniforge.doc.calendars.toArray();
 
     return this.data;
   }
@@ -171,7 +254,7 @@ export default class SimpleEntryForm extends BaseForm {
   async initialize() {
     await super.initialize();
 
-    this.loadEntry();   
+    this.loadEntry();
 
     this.controlStates();
   }
@@ -190,7 +273,7 @@ export default class SimpleEntryForm extends BaseForm {
   */
   async loadEntry() {
     this.clearContent();
-    const entry = this.selection.entry;
+    const entry = this.document;
 
     if (entry) {
       const headerInfo = this.querySelector('.header-info');
@@ -229,25 +312,19 @@ export default class SimpleEntryForm extends BaseForm {
 
       entryType.value = Number(entry.etid);
 
-      tinymce.get('flavorEditor').setContent(entry.flavor);
-      tinymce.get('mainEditor').setContent(entry.htmlString);
+      this.flavorEditor = entry.flavor;
+      this.mainEditor = entry.htmlString;
 
       this.#events = {};
-      const events = uniforge.doc.events.filter(e => {
-        return e.source === entry.eid;
-      });
+      const events = entry.events.toArray();
 
       events.forEach(event => {
-        event._value = event.evid;
-        event._icon = '<i class="fa-solid fa-calendar-days"></i>';
         event.dbAction = '-';
 
         this.#events[event.evid] = event;
       });
       this._generateEventListItems();
 
-      // Obtém o identificador do item selecionado.
-      this.eid = entry.eid;
     } else {
       this.msgBox.showWarning('Erro ao carregar a entrada.');
     }
@@ -255,22 +332,79 @@ export default class SimpleEntryForm extends BaseForm {
 
   /**
    * Habilita/desabilita os controles do formulário.
-   * @param {Number} state - O novo estado do formulário.
    * @protected
    */
   controlStates() {
     const titleInput = this.querySelector('#entryTitleInput');
     const imageContainer = this.querySelector('#imageContainer');
     const infoSet = this.querySelector('.info-set:not(.not-disable)');
-    const flavorEditor = tinymce.get('flavorEditor');
-    const mainEditor = tinymce.get('mainEditor');
     const deleteSwitch = this.querySelector('#deleteSwitch');
     const deleteCheckbox = deleteSwitch.querySelector('#checkbox');
 
     deleteCheckbox.click();
 
-    flavorEditor.mode.set('design');
-    mainEditor.mode.set('design');  
+    this.flavorEditor.mode.set('design');
+    this.mainEditor.mode.set('design');
+  }
+
+  /**
+   * Habilita/desabilita os controles dos eventos do formulário.
+   * @param {Number} state - O novo estado do evento.
+   * @protected
+   */
+  controlEventStates(state, options = {}) {
+    const eventInfoSet = this.querySelector('.event-info fieldset.info-set');
+
+    const addEventButton = this.querySelector('#addEventButton');
+    const cancelEventButton = this.querySelector('#cancelEventButton');
+
+    switch (state) {
+      // ESTADO DE ADIÇÃO DE EVENTO.
+      case this._eventStates.adding: {
+        // Limpa o evento selecionado.
+        this.selection.event = null;
+
+        // Limpa a aba de eventos.
+        this.clearEventTab();
+
+        // Habilita os elementos de entrada de dados.
+        eventInfoSet.disabled = false;
+
+        addEventButton.classList.remove('disabled');
+        cancelEventButton.classList.remove('hidden');
+
+      } break;
+      // ESTADO DE MANIPULAÇÃO DE EVENTO.
+      case this._eventStates.editing: {
+        // Habilita os elementos de entrada de dados.
+        eventInfoSet.disabled = false;
+
+        addEventButton.classList.remove('disabled');
+        cancelEventButton.classList.remove('hidden');
+
+      } break;
+      // ESTADO PADRÃO.
+      // Estado exibido quando a tab de eventos é aberta ou quando uma ação é cancelada.
+      default: {
+        // Limpa a aba de eventos.
+        this.clearEventTab();
+
+        // Desativa os elementos de entrada de dados.
+        eventInfoSet.disabled = true;
+
+        addEventButton.classList.add('disabled');
+        cancelEventButton.classList.add('hidden');
+
+        // Limpa o evento selecionado.
+        this.selection.event = null;
+
+        const eventList = this.querySelector('#entryEvents');
+        eventList.querySelectorAll('.item').forEach(item => item.classList.remove('selected'));
+
+      } break;
+    }
+
+    this.currentEventState = state;
   }
   /* ---------------------------------------------------------------------------------------------------------------- */
   // CONFIGURAÇÃO
@@ -305,11 +439,10 @@ export default class SimpleEntryForm extends BaseForm {
     isDraftSwitch.checked = false;
 
     // Limpa todos os editores Tiny MCE inicializados.
-    tinymce.get().forEach(editor => {
-      editor.setContent('');
-    });
+    this.mainEditor = '';
+    this.flavorEditor = '';
 
-    if (this.isEventForm && this.hasEvent) {
+    if (this.hasEvent) {
       this.eid = null;
       this.#events = [];
 
@@ -357,16 +490,12 @@ export default class SimpleEntryForm extends BaseForm {
     const calendarTypeSelect = this.querySelector('#calendarType');
     calendarTypeSelect.value = 1;
 
-    const eventFlavorEditor = tinymce.get('eventFlavorEditor');
-    eventFlavorEditor.setContent('');
+    this.eventEditor = '';
 
     this.datePickers.startDate.clearDate();
 
     this.datePickers.endDate.dateInput.classList.add('disabled');
     this.datePickers.endDate.clearDate();
-
-    const addEventButton = this.querySelector('#addEventButton');
-    addEventButton.innerHTML = '<i class="fas fa-square-plus"></i> Adicionar Evento';
   }
 
   /**
@@ -375,12 +504,16 @@ export default class SimpleEntryForm extends BaseForm {
    * @private
    */
   async configureTinyMCE() {
-    if (tinymce.get('mainEditor')) {
-      tinymce.remove('#mainEditor');
+    if (this.mainEditor) {
+      tinymce.remove(this.query.main_editor);
+    } else {
+      // Trata o id do container do editor, inserindo o uuid do formulário.
+      const textarea = this.querySelector('#mainEditor');
+      textarea.id = this.query.main_editor;
     }
 
     const options = uniforge.utils.mergeObjects(uniforge.tinymceOptions.default, {
-      selector: 'textarea#mainEditor',
+      selector: `textarea#${this.query.main_editor}`,
       init_instance_callback: (editor) => {
         editor.setContent(""); // Garante que o editor seja iniciado vazio.
       },
@@ -399,12 +532,16 @@ export default class SimpleEntryForm extends BaseForm {
     * Configura o editor TinyMCE para o texto de floreio da Entrada.
     */
   async configureFlavorTinyMCE() {
-    if (tinymce.get('flavorEditor')) {
-      tinymce.remove('#flavorEditor');
+    if (this.flavorEditor) {
+      tinymce.remove(this.query.flavor_editor);
+    } else {
+      // Trata o id do container do editor, inserindo o uuid do formulário.
+      const div = this.querySelector('#flavorEditor');
+      div.id = this.query.flavor_editor;
     }
 
     const options = uniforge.utils.mergeObjects(uniforge.tinymceOptions.simple, {
-      selector: 'div#flavorEditor',
+      selector: `div#${this.query.flavor_editor}`,
       placeholder: "Texto de floreio...",
       init_instance_callback: (editor) => {
         editor.setContent(""); // Garante que o editor seja iniciado vazio.
@@ -419,12 +556,16 @@ export default class SimpleEntryForm extends BaseForm {
   * Configura o editor TinyMCE para o texto de floreio dos eventos da Entrada.
   */
   async configureEventFlavorTinyMCE() {
-    if (tinymce.get('eventFlavorEditor')) {
-      tinymce.remove('#eventFlavorEditor');
+    if (this.eventEditor) {
+      tinymce.remove(this.query.event_editor);
+    } else {
+      // Trata o id do container do editor, inserindo o uuid do formulário.
+      const div = this.querySelector('#eventFlavorEditor');
+      div.id = this.query.event_editor;
     }
 
     const options = uniforge.utils.mergeObjects(uniforge.tinymceOptions.simple, {
-      selector: 'div#eventFlavorEditor',
+      selector: `div#${this.query.event_editor}`,
       placeholder: "Descrição do evento...",
       init_instance_callback: (editor) => {
         editor.setContent(""); // Garante que o editor seja iniciado vazio.
@@ -446,10 +587,10 @@ export default class SimpleEntryForm extends BaseForm {
 
     // Se houver um evento, carregue o DatePicker com a data do evento.
     if (event) {
-      this.datePickers.startDate.selectFullDate(event.s_day, event.s_month, event.s_year);
+      this.datePickers.startDate.selectFullDate(...event.date.start.expand());
       // Se houver uma data de fim, carregue o DatePicker com a data do evento.
-      if (event.e_day)
-        this.datePickers.endDate.selectFullDate(event.e_day, event.e_month, event.e_year);
+      if (event.date.end)
+        this.datePickers.endDate.selectFullDate(...event.date.end.expand());
     }
   }
 
@@ -491,7 +632,6 @@ export default class SimpleEntryForm extends BaseForm {
 
     saveButton.addEventListener('click', (event) => { this.onSaveClick(event); });
 
-
     const calendarType = this.querySelector('#calendarType');
     calendarType.addEventListener('change', (event) => { this.onDateTypeChange(event); });
 
@@ -505,23 +645,14 @@ export default class SimpleEntryForm extends BaseForm {
       picker.addEventListener('change', (event) => this.onDatePickerChange(event));
     });
 
-    const newEventButton = this.querySelector('#addEventButton');
-    newEventButton.addEventListener('click', (event) => { this.onAddEventClick(event); });
-  }
+    const newEventButton = this.querySelector('#newEventButton');
+    newEventButton.addEventListener('click', (event) => { this.onNewEventClick(event); });
 
-  /**
-   * Reconfigura alguns ouvintes de eventos para o formulário após alguma alteração nos dados.
-   * @param {HTMLElement} form - O formulário principal.
-   * @private
-   */
-  reactivateListeners(form) {
-    super.reactivateListeners(form);
-    const entriesList = this.querySelectorAll('.entry-item');
+    const cancelEventButton = this.querySelector('#cancelEventButton');
+    cancelEventButton.addEventListener('click', (event) => { this.onCancelEventClick(event); });
 
-    entriesList.forEach(item => {
-      const deleteIcon = item.querySelector('.remove-button');
-      deleteIcon.addEventListener('click', (event) => { this.onOpenDialogClick(event, item); });
-    });
+    const addEventButton = this.querySelector('#addEventButton');
+    addEventButton.addEventListener('click', (event) => { this.onAddEventClick(event); });
   }
 
   /**
@@ -560,7 +691,23 @@ export default class SimpleEntryForm extends BaseForm {
         displayedImage.classList.add('empty');
       }
     } else {
-      fileInput.click();
+      // Abre o diálogo de seleção de imagem.
+      const imageData = await FilePickerDialog.configDialog(null, { canUpload: true, hasCaption: false, type: 'image' });
+
+      if (imageData) {
+        // Obtem o caminho completo da imagem.
+        const fullPath = await uniforge.path.join(imageData.path);
+
+        // Lê o arquivo de imagem como um buffer.
+        const buffer = await uniforge.fs.readFile(fullPath);
+        const imageUrl = await uniforge.utils.bufferToImage(buffer, imageData.ext);
+
+        displayedImage.dataset.ext = imageData.ext;
+        displayedImage.src = imageUrl
+        displayedImage.classList.remove('empty');
+
+        this.selectedImg = await uniforge.utils.bufferToBlob(buffer, imageData.ext);
+      }
     }
   }
   /**
@@ -626,7 +773,6 @@ export default class SimpleEntryForm extends BaseForm {
     const picker = this.datePickers[pickerId];
 
     if (!picker.empty) {
-
       // Obtem as datas de inicio e fim.
       const startDate = this.datePickers.startDate;
       const endDate = this.datePickers.endDate;
@@ -669,6 +815,9 @@ export default class SimpleEntryForm extends BaseForm {
     const relevance = this.querySelector('#relevance');
     const calendarType = this.querySelector('#calendarType');
 
+    this.querySelectorAll('#entryEvents .item').forEach(item => item.classList.remove('selected'));
+    clickedEvent.classList.add('selected');
+
     eventTitle.value = event.title;
     eventTitle.focus();
 
@@ -676,14 +825,21 @@ export default class SimpleEntryForm extends BaseForm {
     relevance.value = event.relevance;
     calendarType.value = event.clid;
 
+    calendarType.disabled = true;
+
     this.configureDatePickers(event);
 
-    tinymce.get('eventFlavorEditor').setContent(event.flavor);
-
-    const addEventButton = this.querySelector('#addEventButton');
-    addEventButton.innerHTML = '<i class="fas fa-pen-to-square"></i> Editar Evento';
+    this.eventEditor = event.flavor;
 
     this.selection.event = clickedEvent;
+    this.controlEventStates(this._eventStates.editing);
+  }
+
+  onNewEventClick(event) {
+    event.stopPropagation();
+
+    this.clearEventTab();
+    this.controlEventStates(this._eventStates.adding);
   }
 
   /**
@@ -698,26 +854,26 @@ export default class SimpleEntryForm extends BaseForm {
     const relevance = this.querySelector('#relevance');
     const calendarType = this.querySelector('#calendarType');
 
-    const newEvid = this.selection.event ? this.selection.event.dataset.value : uniforge.db.generateID();
+    const evid = this.selection.event ? this.selection.event.dataset.value : null;
 
-    const newEvent = {
-      _value: newEvid,
-      _label: eventTitle.value,
-      _icon: '<i class="fa-solid fa-calendar-days"></i>',
-      evid: newEvid,
+    const newEvent = new EntryEvent({
+      evid: evid,
+      sid: this.document.sid,
       title: eventTitle.value,
       etid: eventEntryType.value,
+      source: this.eid,
       relevance: relevance.value,
-      clid: calendarType.value,
-      flavor: tinymce.get('eventFlavorEditor').getContent() ?? '',
+      clid: Number(calendarType.value),
+      flavor: this.eventEditor.getContent() ?? '',
       s_day: this.datePickers.startDate.date.day,
       s_month: this.datePickers.startDate.date.month,
       s_year: this.datePickers.startDate.date.year,
       e_day: this.datePickers.endDate.isEmpty ? null : this.datePickers.endDate.date.day,
       e_month: this.datePickers.endDate.isEmpty ? null : this.datePickers.endDate.date.month,
-      e_year: this.datePickers.endDate.isEmpty ? null : this.datePickers.endDate.date.year,
-      dbAction: uniforge.doc.events.get(newEvid) ? 'u' : 'a'
-    };
+      e_year: this.datePickers.endDate.isEmpty ? null : this.datePickers.endDate.date.year
+    });
+
+    newEvent.dbAction = evid ? 'u' : 'a';
 
     const result = uniforge.db.validateEvent(newEvent);
     if (result !== '') {
@@ -725,8 +881,10 @@ export default class SimpleEntryForm extends BaseForm {
       return;
     }
 
-    this.#events[newEvid] = newEvent;
+    this.#events[evid] = newEvent;
     this._generateEventListItems();
+
+    this.controlEventStates(this._eventStates.default);
   }
 
   /**
@@ -742,6 +900,11 @@ export default class SimpleEntryForm extends BaseForm {
       this.#events[itemId].dbAction = 'd';
       this._generateEventListItems();
     }
+  }
+
+  onCancelEventClick(event) {
+    event.stopPropagation();
+    this.controlEventStates(this._eventStates.default);
   }
 
   /**
@@ -778,8 +941,8 @@ export default class SimpleEntryForm extends BaseForm {
           eid: this.eid ?? null,
           etid: entryType.value,
           sid: headerInfo.dataset.sid,
-          flavor: tinymce.get('flavorEditor').getContent() ?? '',
-          htmlString: tinymce.get('mainEditor').getContent() ?? ''
+          flavor: this.flavorEditor.getContent() ?? '',
+          htmlString: this.mainEditor.getContent() ?? ''
         });
 
         let validation = uniforge.db.validateEntry(data);
@@ -791,8 +954,12 @@ export default class SimpleEntryForm extends BaseForm {
         this._updateEntry(data);
 
         // Finaliza a transação de salvamento.
-        await uniforge.db.commitTransaction();
+        await uniforge.db.commitTransaction();       
+
         await this.close();
+
+        // Atualiza documentos.
+        await triggerHook('simpleEntryFormClosed');
       }
     } catch (error) {
       this.msgBox.showError(error.message, error);
@@ -801,19 +968,6 @@ export default class SimpleEntryForm extends BaseForm {
       await uniforge.db.rollbackTransaction(error);
     }
   }
-
-  /**
-   * Remove uma entrada de uma categoria da lista.
-   * @param {Event} event - Evento de clique no botão para excluir a entrada.
-  */
-  async onDeleteClick(event) {
-    event.stopPropagation();
-    //const id = this.ui.dialog.dataset.id;
-
-    await uniforge.db.deleteEntry(id);
-    this.msgBox.showInfo('Entrada removida com sucesso.');
-    await this.close();
-  }  
 
   /**
     * Ação personalizada no editor TinyMCE para criar ou modificar links.
@@ -858,41 +1012,61 @@ export default class SimpleEntryForm extends BaseForm {
    */
   async onUploadImage(editor) {
     // Abre o diálogo de seleção de imagem.
-    const image = await ImagePickerDialog.configDialog();
+    const imageData = await FilePickerDialog.configDialog(null, { canUpload: true, hasCaption: true, type: 'image' });
 
     // Se uma imagem foi selecionada, insira-a no editor.
-    if (image) {
-      const rawData = image.data;
+    if (imageData) {
+      try {
+        // Obtem o caminho completo da imagem.
+        const fullPath = await uniforge.path.join(imageData.path);
 
-      // Recupera o elemento do editor TinyMCE.
-      const editorTexarea = editor.targetElm;
-      // Recupera a contagem de imagens no editor.
-      const imgCount = Number(editorTexarea.dataset.imgCounter);
+        // Lê o arquivo de imagem como um buffer.
+        const buffer = await uniforge.fs.readFile(fullPath);
+        // Converte o buffer em um Blob com a extensão correta.
+        const data = await uniforge.utils.bufferToBlob(buffer, imageData.ext);
 
-      // Cria o elemento <div> que envolverá a imagem e sua legenda.
-      const imgWrapper = document.createElement('figure');
-      imgWrapper.dataset.uuid = image.uuid;
-      imgWrapper.className = 'img-wrapper image';
-      imgWrapper.contenteditable = 'false';
+        // Cria um objeto de imagem com os dados necessários.
+        const image = {
+          uuid: imageData.uuid,
+          caption: imageData.caption,
+          data: data
+        }
 
-      const newImage = document.createElement('img');
-      const imageURL = await uniforge.utils.blobToImage(rawData.img, rawData.ext);
-      newImage.src = imageURL;
+        // Recupera o elemento do editor TinyMCE.
+        const editorTexarea = editor.targetElm;
+        // Recupera a contagem de imagens no editor.
+        const imgCount = Number(editorTexarea.dataset.imgCounter);
 
-      const newCaption = document.createElement('figcaption');
-      newCaption.className = 'img-caption';
-      newCaption.textContent = `Imagem ${imgCount + 1} - ${image.caption}`;
-      newCaption.contenteditable = 'true';
+        // Cria o elemento <div> que envolverá a imagem e sua legenda.
+        const imgWrapper = document.createElement('figure');
+        imgWrapper.dataset.uuid = image.uuid;
+        imgWrapper.className = 'img-wrapper image';
+        imgWrapper.contenteditable = 'false';
 
-      imgWrapper.appendChild(newImage);
-      imgWrapper.appendChild(newCaption);
+        const newImage = document.createElement('img');
+        const imageURL = await uniforge.utils.blobToImage(data.raw, data.ext);
+        newImage.src = imageURL;
 
-      // Insira o HTML na posição atual do cursor.
-      editor.execCommand('mceInsertContent', false, imgWrapper.outerHTML);
-      // Registra o Blob da imagem no banco de dados.
-      await uniforge.db.addEntriesTextImages(image);
-      // Atualiza a contagem de imagens no editor.
-      this._updateImageCount(editor);
+        imgWrapper.appendChild(newImage);
+
+        if (image.caption) {
+          const newCaption = document.createElement('figcaption');
+          newCaption.className = 'img-caption';
+          newCaption.textContent = `Imagem ${imgCount + 1} - ${image.caption}`;
+          newCaption.contenteditable = 'true';
+
+          imgWrapper.appendChild(newCaption);
+        }
+
+        // Insira o HTML na posição atual do cursor.
+        editor.execCommand('mceInsertContent', false, imgWrapper.outerHTML);
+        // Registra o Blob da imagem no banco de dados.
+        await uniforge.db.addTextImages(image);
+        // Atualiza a contagem de imagens no editor.
+        this._updateImageCount(editor);
+      } catch (error) {
+        this.msgBox.showError('Erro ao carregar a imagem.', error);
+      }
     }
   }
 
@@ -1078,14 +1252,10 @@ export default class SimpleEntryForm extends BaseForm {
     // Gera os itens da lista de Eventos.
     eventsData.forEach(event => {
       // Gera o item de Evento.
-      const item = uniforge.parser.generateItemList(event, { withDelete: true });
+      const item = uniforge.parser.generateItemList(event);
 
       // Adiciona o evento de clique no item de Evento.
       item.addEventListener('click', (event) => { this.onEventItemClick(event); });
-
-      // Adiciona o evento de clique no botão de exclusão.
-      const deleteButton = item.querySelector('.delete-button');
-      deleteButton.addEventListener('click', (event) => { this.onDeleteEventClick(event); });
 
       // Adiciona o item na lista de Eventos.
       entryEvents.appendChild(item);
@@ -1143,46 +1313,18 @@ export default class SimpleEntryForm extends BaseForm {
   }
 
   /**
-     * Adiciona uma nova entrada no banco de dados e atualiza a lista de eventos associados.
-     * 
-     * @async
-     * @param {Object} data - Dados da entrada a ser adicionada.
-     * @param {string} [data.sid] - ID da seção associada à entrada.
-     * @param {string} [data.etid] - ID do tipo de entrada.
-     * @param {string} [data.title] - Título da entrada.
-     * @param {string} [data.flavor] - Texto de descrição ou sabor.
-     * @param {string} [data.htmlString] - String HTML a ser associada à entrada.
-     * @param {string|Buffer} [data.rawData] - Dados binários da imagem associada, opcional.
-     * @param {string} [data.ext='jpeg'] - Extensão da imagem, padrão é 'jpeg'.
-     * @param {boolean} [data.isDraft] - Indica se a entrada é um rascunho.
-     * 
-     * @returns {Promise<void>} - Não retorna valor, mas exibe uma mensagem de sucesso ao concluir.
-    */
-  async _addEntry(data) {
-    let result = await uniforge.db.addEntry(data);
-    data.eid = result.addedId;
-
-    const events = Object.values(this.#events);
-    if (events.length > 0) {
-      this._handleEventSave(data, events);
-    }
-
-    this.msgBox.showInfo('Entrada criada com sucesso.');
-  }
-
-  /**
        * Atualiza uma entrada no banco de dados com base nos dados fornecidos.
        * 
-       * @param {Object} data                     - Dados da entrada a serem atualizados.
-       * @param {string} data.eid                 - ID da entrada a ser atualizada.
-       * @param {string} data.sid                 - ID da seção associada à entrada.
-       * @param {string} data.etid                - ID do tipo de entrada.
-       * @param {string} data.title               - Título da entrada.
-       * @param {string} data.flavor              - Texto de descrição ou sabor.
-       * @param {string} data.htmlString          - String HTML a ser associada à entrada.
-       * @param {string|Buffer} [data.rawData]    - Dados binários da imagem associada (opcional).
-       * @param {string} [data.ext='jpeg']        - Extensão da imagem, padrão é 'jpeg'.
-       * @param {boolean} data.isDraft            - Indica se a entrada é um rascunho.
+       * @param {Object} entry                     - Dados da entrada a serem atualizados.
+       * @param {string} entry.eid                 - ID da entrada a ser atualizada.
+       * @param {string} entry.sid                 - ID da seção associada à entrada.
+       * @param {string} entry.etid                - ID do tipo de entrada.
+       * @param {string} entry.title               - Título da entrada.
+       * @param {string} entry.flavor              - Texto de descrição ou sabor.
+       * @param {string} entry.htmlString          - String HTML a ser associada à entrada.
+       * @param {string|Buffer} [entry.rawData]    - Dados binários da imagem associada (opcional).
+       * @param {string} [entry.ext='jpeg']        - Extensão da imagem, padrão é 'jpeg'.
+       * @param {boolean} entry.isDraft            - Indica se a entrada é um rascunho.
        * 
        * @returns {Promise<Object>} - Resultado da execução do comando de atualização.
        */
@@ -1213,14 +1355,19 @@ export default class SimpleEntryForm extends BaseForm {
      */
   async _handleEventSave(data, events) {
     for (const event of events) {
-      event.sid = data.sid;
-      event.source = data.eid;
-
       const result = await uniforge.db.validateEvent(event);
 
       switch (event.dbAction) {
         case 'd': {
           await uniforge.db.deleteEvent(event.evid);
+
+          const timelines = uniforge.doc.timelines.toArray().find(t => {
+            return t.events.hasId(event.evid);
+          });
+
+          for(let timeline of timelines) {
+            await uniforge.db.deleteTimelineEvent(timeline.tid, event.evid);
+          }
         } break;
         case 'a': {
           if (result !== '') {

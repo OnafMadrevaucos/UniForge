@@ -69,7 +69,7 @@ export function hasId(data) {
 
     // Verifica se o argumento é um objeto e possui a propriedade _id.
     if (typeof data !== "object" || !data.hasOwnProperty("_id")) {
-        throw new Error("O argumento deve ser um objeto com a propriedade _id.");
+        throw new Error("O argumento deve ser um objeto com a propriedade '_id'.");
     }
 
     // Itera sobre os membros do conjunto.        

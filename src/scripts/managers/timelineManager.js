@@ -32,6 +32,10 @@ export class TimelineManager extends BaseManager {
         return this.#timeline.tid.isEmpty();
     }
 
+    get events() {
+        return this.#timeline.events;
+    }
+
     loadTimeline(timeline) {
         this.#timeline = {
             tid: timeline.tid,
@@ -67,9 +71,9 @@ export class TimelineManager extends BaseManager {
                 await uniforge.db.deleteTimeline(tid);
 
                 const events = this.#timeline.events.toArray();
-                for(let event of events) {
+                for (let event of events) {
                     await this.deleteEvent(event._id);
-                };                
+                };
 
                 // Finaliza a transação de salvamento.
                 await uniforge.db.commitTransaction();
@@ -138,65 +142,65 @@ export class TimelineManager extends BaseManager {
         }
     }
 
-    addEvent(newEvent) {
-        const events = this.#timeline.events;
+    selectEvent(newEvent) {
+        let added = true;
+        const events = this.events;        
 
         // Verifica que o calendário do evento é o mesmo que o da linha do tempo. Se não for, aborta.
-        if (this.#timeline.calendar && newEvent.clid !== this.#timeline.calendar.clid) {
-            uniforge.msgBox.show('Erro', 'O evento não pode ser adicionado a linha do tempo, pois o calendário é diferente.', 'error');
-            return;
+        if (this.#timeline.calendar && newEvent.clid !== this.#timeline.calendar?.clid) {
+            uniforge.msgBox.showWarning('O evento não pode ser adicionado a linha do tempo, pois o calendário é diferente.');
+            added = false;
         }
 
-        // O evento já existe na linha do tempo.
-        if (events.hasId(newEvent)) {
-            const event = events.get(newEvent._id);
-            // O Evento já está comitado ao banco de dados. Aborte.
-            if (event.committed) {
-                event.dbAction = '-';
-                return;
+        if (added) {
+            // O evento já existe na linha do tempo.
+            if (events.hasId(newEvent)) {
+                const event = events.get(newEvent._id);
+                // O Evento já está comitado ao banco de dados. Aborte.
+                if (event.committed) {
+                    event.dbAction = '-';
+                } else {
+                    // Marque o evento para inclusão no banco de dados.
+                    event.dbAction = 'a';
+                }
+            } else {
+                // O evento ainda não existe no banco de dados.
+                newEvent.committed = false;
+                // Marque o evento para inclusão no banco de dados.
+                newEvent.dbAction = 'a';
+                // Adicona o evento à lista de Eventos da linha do tempo. 
+                // OBS.: Nem todo evento na lista está presente no banco de dados.
+                events.add(newEvent);
             }
-            // Marque o evento para inclusão no banco de dados.
-            event.dbAction = 'a';
-        } else {
-            // O evento ainda não existe no banco de dados.
-            newEvent.committed = false;
-            // Marque o evento para inclusão no banco de dados.
-            newEvent.dbAction = 'a';
-            // Adicona o evento à lista de Eventos da linha do tempo. 
-            // OBS.: Nem todo evento na lista está presente no banco de dados.
-            events.add(newEvent);
         }
 
-        // Verifica que o calendário do evento é o mesmo que o da linha do tempo.
-        if (this.#timeline.calendar && newEvent.clid !== this.#timeline.calendar.clid) {
-            uniforge.msgBox.show('Erro', 'O evento não pode ser adicionado a linha do tempo, pois o calendário é diferente.', 'error');
-            return;
-        }
+        const validEvents = events.filter(event => event.dbAction !== 'd');
 
         // Configura o calendário da linha do tempo, caso não tenha sido definido.
-        if (events.size === 1) {
-            const firstEvent = events.first();
-            const calendar = uniforge.doc.calendars.get(firstEvent.clid);
-
-            this.#timeline.calendar = calendar ?? null;
+        if (validEvents.size > 0 && added) {
+            const firstEvent = validEvents.first();
+            this.#timeline.calendar = firstEvent.calendar ?? null;
         }
 
         // Ordena os eventos por Data de Início.
         this.sortEvents();
+        return added;
     }
     removeEvent(evid) {
-        const events = this.#timeline.events;
+        const events = this.#timeline.events;       
 
         // Verifica se o evento existe na linha do tempo.
         const event = events.get(evid);
         // Tentativa de remover um evento que não existe na linha do tempo. Aborte.
         if (!event) return;
 
-        // Marque o evento para remoção do banco de dados.
+        // Marque o evento para remoção do banco de dados.  
         event.dbAction = 'd';
 
+        const validEvents = events.filter(event => event.dbAction !== 'd');
+
         // Verifica se a linha do tempo está vazia e remove o calendário.
-        if (this.#timeline.events.length === 0) {
+        if (validEvents.size === 0) {
             this.#timeline.calendar = null;
         }
     }
@@ -327,8 +331,8 @@ export class TimelineManager extends BaseManager {
         const scrollToTopButton = document.createElement('button');
         scrollToTopButton.id = 'scrollToTopButton';
         scrollToTopButton.innerHTML = '<i class="fa-solid fa-chevron-up"></i>';
-        scrollToTopButton.setAttribute('data-tooltip', 'Voltar ao topo...');
-        scrollToTopButton.setAttribute('data-tooltip-center', '');
+        scrollToTopButton.setAttribute('data-tooltip', 'Voltar ao topo');
+        scrollToTopButton.setAttribute('data-tooltip-side', 'center');
 
         scrollToTopButton.addEventListener('click', (event) => { this._onScrollToTopClick(event); });
 
@@ -721,8 +725,7 @@ export class TimelineManager extends BaseManager {
             return;
         }
 
-        const eid = event.source;
-        const entry = uniforge.doc.entries.get(eid);
+        const entry = event.entry;
         const editForm = new SimpleEntryForm(button, entry);
         editForm.show(true);
     }

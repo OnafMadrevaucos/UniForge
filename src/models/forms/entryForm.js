@@ -3,7 +3,6 @@
  */
 import SidebarForm from "./sidebarForm.js";
 import LinkDialog from "../dialogs/linkDialog.js";
-import ImagePickerDialog from "../dialogs/imagePickerDialog.js";
 import Dialogs from "../dialogs/dialog.js";
 import DatePicker from "../datePicker.js";
 import FilePickerDialog from "../dialogs/filePickerDialog.js";
@@ -125,15 +124,6 @@ export default class EntryForm extends SidebarForm {
     adding: 1,
     editing: 2
   }
-
-  /** Objeto que representa os dados da entrada.
-    * @property {Object} obj - Objeto que armazena os eventos vinculados à entrada.    
-    * @private    
-    */
-  #document = null;
-
-  get document() { return this.#document; }
-  set document(value) { this.#document = value; }
 
   /** Eventos temporários, vinculados à Entrada até serem salvos (ou não).
     * @property {Object} events - Objeto que armazena os eventos vinculados à entrada.    
@@ -697,7 +687,7 @@ export default class EntryForm extends SidebarForm {
 
     if (this.isEventForm && this.hasEvent) {
       this.document = null;
-      this.#events = [];
+      this.#events = {};
 
       const entryTypeSelect = this.querySelector('#entryType');
       entryTypeSelect.value = 1;
@@ -928,21 +918,6 @@ export default class EntryForm extends SidebarForm {
     */
   }
 
-  /**
-   * Reconfigura alguns ouvintes de eventos para o formulário após alguma alteração nos dados.
-   * @param {HTMLElement} form - O formulário principal.
-   * @private
-   */
-  reactivateListeners(form) {
-    super.reactivateListeners(form);
-    const entriesList = this.querySelectorAll('.entry-item');
-
-    entriesList.forEach(item => {
-      const deleteIcon = item.querySelector('.remove-button');
-      deleteIcon.addEventListener('click', (event) => { this.onOpenDialogClick(event, item); });
-    });
-  }
-
   onDocumentChange(event) {
     // TODO:  Alterar metódo de armazenagem e edição dos dados para a armazenagem local
     //        dos dados na propriedade 'document' que é enviada ao banco quando os dados forem
@@ -1092,7 +1067,6 @@ export default class EntryForm extends SidebarForm {
     const picker = this.datePickers[pickerId];
 
     if (!picker.empty) {
-
       // Obtem as datas de inicio e fim.
       const startDate = this.datePickers.startDate;
       const endDate = this.datePickers.endDate;
@@ -1111,9 +1085,9 @@ export default class EntryForm extends SidebarForm {
   }
 
   /**
-       * Trata o evento de clique em uma se o de uma aba do formul rio.
-       * @param {Event} event - O evento de clique no bot o de se o.
-       */
+  * Trata o evento de clique em uma se o de uma aba do formul rio.
+  * @param {Event} event - O evento de clique no bot o de se o.
+  */
   onSectionButtonClick(event) {
     event.stopPropagation();
     this._toggleSectionButtons(false, true);
@@ -1358,7 +1332,7 @@ export default class EntryForm extends SidebarForm {
     // Se o formulário for o de Configurações, ignore.
     if (this.isSettings) return;
 
-    this.#document = null;
+    this.document = null;
 
     const item = event.target.closest('.entry-item');
     const itemId = item.dataset.id;
@@ -1959,6 +1933,14 @@ export default class EntryForm extends SidebarForm {
       switch (event.dbAction) {
         case 'd': {
           await uniforge.db.deleteEvent(event.evid);
+
+          const timelines = uniforge.doc.timelines.toArray().find(t => {
+            return t.events.hasId(event);
+          });
+
+          for(let timeline of timelines) {
+            await uniforge.db.deleteTimelineEvent(timeline.tid, event.evid);
+          }
         } break;
         case 'a': {
           if (result !== '') {
