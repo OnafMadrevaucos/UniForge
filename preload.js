@@ -15,7 +15,7 @@ contextBridge.exposeInMainWorld('sql', {
 console.log('UniForge | Configurando pré-carregamentos de SQL.');
 
 contextBridge.exposeInMainWorld('app', {
-  refresh: () => ipcRenderer.invoke('window-refresh'),  
+  refresh: () => ipcRenderer.invoke('window-refresh'),
   fileDialog: (type) => ipcRenderer.invoke('select-file', type),
 });
 console.log('UniForge | Configurando pré-carregamentos de Aplicação.');
@@ -26,17 +26,17 @@ contextBridge.exposeInMainWorld('pdfCtrl', {
 console.log('UniForge | Configurando pré-carregamentos de manipulação de PDF.');
 
 contextBridge.exposeInMainWorld('path', {
-  join: async (...args) => { 
+  join: async (...args) => {
     const result = await ipcRenderer.invoke('path-join', args);
     return result;
   },
   resolve: async (protoPath) => await ipcRenderer.invoke('path-resolve', protoPath),
-  extname: async (filePath) =>  await ipcRenderer.invoke('path-extname', filePath)
+  extname: async (filePath) => await ipcRenderer.invoke('path-extname', filePath)
 });
 console.log('UniForge | Configurando pré-carregamentos de Diretórios.');
 
-contextBridge.exposeInMainWorld('fs', { 
-  readFile: (path) => { 
+contextBridge.exposeInMainWorld('fs', {
+  readFile: (path) => {
     const result = ipcRenderer.invoke('read-file', path);
     return result;
   },
@@ -44,9 +44,15 @@ contextBridge.exposeInMainWorld('fs', {
     const result = ipcRenderer.invoke('copy-file', src, dest);
     return result;
   },
-  readDir: (path) => { 
+  readDir: (path) => {
     const result = ipcRenderer.invoke('read-dir', path);
     return result;
   }
 });
 console.log('UniForge | Configurando pré-carregamentos de Manipulador de Arquivos.');
+
+contextBridge.exposeInMainWorld('tiler', {
+  generateTiles: (path, config) => ipcRenderer.invoke("generate-tiles", path, config),
+  onProgress: (callback) => { ipcRenderer.on("progress", (event, msg) => callback(msg)); }
+});
+console.log('UniForge | Configurando pré-carregamentos da Ferramenta de Tiler de Mapa.');

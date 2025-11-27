@@ -18,7 +18,7 @@ console.log(__filename);
  * Instância do banco de dados SQLite.
  * @type {Database}
  */
-const db = new Database(path.join(__dirname, '/db/database.db'));
+const db = new Database(path.join(__dirname, '/modules/db/database.db'));
 
 // Remove o menu padrão
 Menu.setApplicationMenu(null);
@@ -155,6 +155,12 @@ app.whenReady().then(() => {
    * @param {string} fileName - Nome do arquivo do template.
    */
   ipcMain.handle('get-template', async (event, fileName) => getTemplate(fileName));
+
+  /**
+   * Manipulador para gerar tiles de mapas.
+   * @param {object} config - Opções de configuração da geração de tiles de mapas.
+   */
+  ipcMain.handle('generate-tiles', async (event, path, config) => generateTiles(path, config));
 
   console.log('UniForge | Criando requisição de Renders.');
 });
@@ -419,3 +425,39 @@ async function getTemplate(fileName, id) {
     throw err;
   }
 }
+
+/**
+ * Gera tiles de um mapa baseado em uma imagem.
+ * 
+ * @param {string} path - Caminho da imagem base.
+ * @param {object} config - Opções de configuração da geração de tiles.
+ * @param {string} config.imagePath - Caminho da imagem base.
+ * @param {number} [config.tileSize=256] - Tamanho dos tiles.
+ * @param {number} [config.minSide=4096] - Tamanho mínimo do mapa.
+ * @param {number} [config.maxZoom=5] - Nível máximo de zoom.
+ * @param {boolean} [config.expand=true] - Ativa expansão de tiles para o tamanho máximo.
+ * @param {boolean} [config.metadata=false] - Ativa geração de metadados.
+ * @param {boolean} [config.multithread=false] - Ativa multithreading se hardware permitir.
+ * @param {string} config.outputFolder - Caminho da pasta onde os tiles serão escritos.
+ * @returns {Promise<boolean>} - Uma promessa que se resolve com um booleano indicando se a geração ocorreu com sucesso.
+ * */
+async function generateTiles(path, config) {
+  const tiler = new MapTilerNode(path, {
+    tileSize: config.tileSize,
+    minSide: config.minSide,
+    maxZoom: config.maxZoom,
+    expand: config.expand,
+    metadata: config.metadata,
+    multithread: config.multithread
+  });
+
+  // Redireciona a barra de progresso
+  tiler._emitProgress = (msg) => {
+    mainWindow.webContents.send("tiler:progress", msg);
+  };
+
+  await tiler.generateTiles(config.outputFolder);
+
+  return true;
+}
+

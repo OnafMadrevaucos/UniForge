@@ -176,7 +176,7 @@ export default class SidebarForm extends BaseForm {
 
         const span = document.createElement('span');
         span.textContent = data.title;
-        folderHeader.innerHTML = `<i class="fas fa-folder"></i> ${span.outerHTML}`;       
+        folderHeader.innerHTML = `<i class="fas fa-folder"></i> ${span.outerHTML}`;
 
         const folderContent = document.createElement('div');
         folderContent.className = 'folder-content';
@@ -218,7 +218,7 @@ export default class SidebarForm extends BaseForm {
         entryRow.appendChild(icon);
         entryRow.appendChild(span);
 
-        if(this.canDelete) {
+        if (this.canDelete) {
             const deleteIcon = document.createElement('i');
             deleteIcon.className = 'fas fa-trash-can';
             entryRow.appendChild(deleteIcon);
@@ -272,37 +272,17 @@ export default class SidebarForm extends BaseForm {
                     });
                 }
             }
+
+            const searchInput = this.querySelector('#searchInput');
+            if (searchInput) {
+                searchInput.addEventListener('input', (event) => { this.onSearchInput(event); });
+
+                const clearSearch = this.querySelector('#clearSearch');
+                clearSearch.addEventListener('click', (event) => { this.onClearSearch(event); });
+            }
         }
     }
 
-    /**
-   * Reconfigura ouvintes de eventos para o formulário.
-   * @param {HTMLElement} form - O formulário principal.
-   * @private
-   */
-    reactivateListeners(form) {
-        const sidebar = this.ui.sidebar;
-        if (sidebar) {
-            const folders = this.querySelectorAll('.folder');
-            const items = this.querySelectorAll('.entry-item');
-
-            folders.forEach(item => {
-                const folderHeader = item.querySelector('.folder-header');
-                folderHeader.addEventListener('click', (event) => {
-                    this.onFolderClick(event);
-                });
-            });
-
-            items.forEach(item => {
-                item.addEventListener('click', (event) => {
-                    this.onEntryItemClick(event);
-                });
-                item.addEventListener('dblclick', (event) => {
-                    this.onEntryItemDoubleClick(event);
-                });
-            });
-        }
-    }
     /**
     * Gerencia cliques no sidebar.
     * @param {MouseEvent} event - O evento de clique.
@@ -311,6 +291,9 @@ export default class SidebarForm extends BaseForm {
         event.stopPropagation();
         if (!this.isSimpleSidebar && event.target.classList.contains('entry-item')) return;
         if (this.isSimpleSidebar && event.target.classList.contains('folder')) return;
+        
+        // Se o clique foi feito na barra de pesquisa, ignora.
+        if(event.target.closest('.search-bar')) return;
 
         this.clearContent();
         if (this.controlStates) this.controlStates(this.states.default);
@@ -327,7 +310,8 @@ export default class SidebarForm extends BaseForm {
     * @param {MouseEvent} event - O evento de clique.
     */
     onFolderClick(event) {
-        event.stopPropagation();
+        event.stopPropagation();  
+
         const clickedFolder = event.target.closest('.folder');
         const isSelected = clickedFolder.classList.contains('selected');
 
@@ -372,7 +356,7 @@ export default class SidebarForm extends BaseForm {
      * @private
      */
     onEntryItemClick(event) {
-        event.stopPropagation();        
+        event.stopPropagation();
     }
 
     /**
@@ -391,6 +375,125 @@ export default class SidebarForm extends BaseForm {
         itemIcon.className = this.selectedIcon;
 
         this.selection.entry = clickedItem;
+    }
+
+    onSearchInput(event) {
+        const filter = event.target.value.trim().toLowerCase();
+        const isSimple = this.isSimpleSidebar;
+
+        const folders = this.querySelectorAll('.folder');
+        const entries = this.querySelectorAll('.entry-item');
+
+        // Se busca estiver vazia, mostrar tudo e restaurar textos.
+        if (filter === '') {
+            entries.forEach(e => {
+                e.style.display = '';
+                uniforge.parser.removeHighlight(e);
+            });
+
+            folders.forEach(f => {
+                f.style.display = '';
+                uniforge.parser.removeHighlight(f);
+            });
+
+            return;
+        }
+
+        // ------------------------------
+        // SIDEBAR COMPLEXO (folders + entries)
+        // ------------------------------
+        if (!isSimple) {
+
+            // 1) Filtra e realça entries.
+            entries.forEach(entry => {
+                const span = entry.querySelector('span');
+                const label = entry.dataset.label ?? span.textContent;
+
+                // Guarda texto original (uma vez só).
+                if (!span.dataset.originalText) {
+                    span.dataset.originalText = span.innerHTML;
+                }
+
+                const match = label.toLowerCase().includes(filter);
+                entry.style.display = match ? '' : 'none';
+
+                // Realce.
+                if (match) {
+                    span.innerHTML = uniforge.parser.applyHighlight(label, filter);
+                } else {
+                    uniforge.parser.removeHighlight(entry);
+                }
+            });
+
+            // 2) Folders aparecem se:
+            //    - elas mesmas combinam; ou
+            //    - possuem ao menos um entry visível;
+            folders.forEach(folder => {
+                const span = folder.querySelector('.folder-header span');
+                const folderLabel = folder.dataset.label ?? span.textContent;
+
+                if (!span.dataset.originalText) {
+                    span.dataset.originalText = span.innerHTML;
+                }
+
+                const folderMatches = folderLabel.toLowerCase().includes(filter);
+
+                // Procura entries visíveis dentro desta pasta.
+                const visibleEntries = folder.querySelectorAll('.entry-item:not([style*="display: none"])');
+                const hasVisibleChild = visibleEntries.length > 0;
+
+                // Exibição final.
+                folder.style.display = (folderMatches || hasVisibleChild) ? '' : 'none';
+
+                // Realce se combinar.
+                if (folderMatches) {
+                    span.innerHTML = uniforge.parser.applyHighlight(folderLabel, filter);
+                } else {
+                    uniforge.parser.removeHighlight(folder);
+                }
+            });
+        }
+
+        // ------------------------------
+        // SIDEBAR SIMPLES (somente folders)
+        // ------------------------------
+        else {
+            folders.forEach(folder => {
+                const span = folder.querySelector('.folder-header span');
+                const label = folder.dataset.label ?? span.textContent;
+
+                if (!span.dataset.originalText) {
+                    span.dataset.originalText = span.innerHTML;
+                }
+
+                const match = label.toLowerCase().includes(filter);
+                folder.style.display = match ? '' : 'none';
+
+                if (match) {
+                    span.innerHTML = uniforge.parser.applyHighlight(label, filter);
+                } else {
+                    uniforge.parser.removeHighlight(folder);
+                }
+            });
+        }
+
+        const emptyListSpan = this.querySelector('#emptyListSpan');
+
+        // Verifica se há algum item visível.
+        const anyFolderVisible = Array.from(folders)
+            .some(folder => folder.style.display !== 'none');
+
+        // Se nenhum folder visível, mostrar mensagem de lista vazia.
+        if (!anyFolderVisible) emptyListSpan.classList.remove('hidden');
+        else emptyListSpan.classList.add('hidden');
+
+    }
+
+    onClearSearch(event) {
+        const searchInput = this.querySelector('#searchInput');
+        searchInput.value = '';
+
+        this.onSearchInput({ target: searchInput });
     }
 
     /**

@@ -17,7 +17,7 @@ export async function loadTemplate(filePath) {
     const content = doc.body.firstChild;
 
     return content;
-} 
+}
 
 export function generateListHTML(id, listItems, options = {}) {
     const extraClasses = options.extraClasses;
@@ -63,7 +63,7 @@ export function generateFolderlistHTML(id, folders, itemKey, type = 'default', i
             html += folderHTML;
 
         });
-    } else if(type === 'simple') {
+    } else if (type === 'simple') {
         folders.forEach(folder => {
             const folderHTML =
                 `<li class="folder created" data-id="${folder._id}">
@@ -77,6 +77,8 @@ export function generateFolderlistHTML(id, folders, itemKey, type = 'default', i
 
         });
     }
+
+    html += generateEmptyListHTML();
 
     html += '</ul>';
     return html;
@@ -133,4 +135,22 @@ export function generateListItemHTML(item, options = { itemClass: null, withDele
     li.appendChild(div);
 
     return li;
+}
+
+export function generateEmptyListHTML(visible=false) {
+    return `<span id="emptyListSpan" class="empty-list${visible ? '' : ' hidden'}">Não há nenhuma entrada a ser exibida.</span>`;
+}
+
+export function applyHighlight(text, filter) {
+    if (!filter) return text;
+    const escaped = filter.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // escapa regex.
+    const regex = new RegExp(escaped, 'gi');
+    return text.replace(regex, match => `<mark>${match}</mark>`);
+}
+
+export function removeHighlight(element) {
+    const span = element.querySelector('span');
+    if (span && span.dataset.originalText) {
+        span.innerHTML = span.dataset.originalText;
+    }
 }

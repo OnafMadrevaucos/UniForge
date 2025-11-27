@@ -226,12 +226,101 @@ document.addEventListener('DOMContentLoaded', async () => {
     await configureLeaflet();
 });
 
+// Inicia o gerenciador de tooltips.
+uniforge.tooltip.init();
+
 // Limpa o armazenamento local ao fechar a janela.
 window.addEventListener("beforeunload", () => {
     const json = localStorage.getItem('uniforge');
     const state = JSON.parse(json);
     if (!state.keep) uniforge.state.clear();
 });
+
+/*
+document.addEventListener("mousemove", (event) => {
+    const el = event.target.closest('[data-tooltip]');
+    const tooltip = document.querySelector('.floating-tooltip');
+
+    if (!el) {
+        if (tooltip.classList.contains('show')) tooltip.classList.remove('show');
+
+        tooltip.style.left = `${event.clientX}px`
+        tooltip.style.top = `${event.clientY}px`
+        return;
+    } else {
+        if (tooltip.classList.contains('show')) return;
+
+        let x = event.clientX + 12;
+        let y = event.clientY + 12;
+
+        tooltip.textContent = el.dataset.tooltip;
+
+        // Caixa do alvo.
+        const rect = el.getBoundingClientRect();
+
+        // Caixa estimada do tooltip.
+        const tooltipRect = tooltip.getBoundingClientRect();
+
+        // Detecta se tooltip ficaria sobre o alvo.
+        const wouldOverlap =
+            x < rect.right &&
+            x + tooltipRect.width > rect.left &&
+            y < rect.bottom &&
+            y + tooltipRect.height > rect.top;
+
+        if (!wouldOverlap) {
+            if (el.dataset.tooltipSide) {
+                switch (el.dataset.tooltipSide) {
+                    case 'left':
+                        x = `${event.clientX - tooltip.offsetWidth - 12}px`;
+                        break;
+                    case 'center':
+                        x = `${event.clientX - (tooltip.offsetWidth / 2)}px`;
+                        break;
+                    default:
+                        x = `${event.clientX + 12}px`;
+                }
+            }
+
+            if (el.dataset.tooltipBlock) {
+                switch (el.dataset.tooltipBlock) {
+                    case 'top':
+                        y = `${event.clientY - tooltip.offsetHeight - 12}px`;
+                        break;
+                    default:
+                        y = `${event.clientY + 12}px`;
+                }
+            }
+        } else {
+            // Reposiciona para fora do alvo mantendo a distância fixa.
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+
+            if (event.clientY < centerY) {
+                // cursor está acima → tooltip vai acima do elemento
+                y = rect.top - tooltipRect.height - 12;
+                x = event.clientX;
+            } else {
+                // cursor está abaixo → tooltip vai abaixo
+                y = rect.bottom + 12;
+                x = event.clientX;
+            }
+
+            // Correção horizontal mínima
+            if (event.clientX < centerX) {
+                x = rect.left - tooltipRect.width - 12;
+            } else {
+                x = rect.right + 12;
+            }
+        }
+
+        tooltip.style.left = x;
+        tooltip.style.top = y;
+        tooltip.classList.add('show');
+        return;
+    }
+});
+*/
 
 /*
 async function testPDF() {
@@ -267,7 +356,7 @@ async function refreshDocuments() {
 async function configureLeaflet() {
     /* 
         TODO: Verificar se o usuário informou um mapa padrão alternativo no painel de configuração.
-    */   
+    */
 
     // Inicializa o controle de mapas Leaflet.
     uniforge.ctrls.leaflet = lControl.init(uniforge.urls.worldMap);
@@ -302,8 +391,8 @@ function configureBody() {
 
 function configureHooks() {
     registerHook('beforeRender', async () => { await refreshDocuments(); });
-    registerHook('simpleEntryFormClosed', async () => { 
-        await refreshDocuments(); 
+    registerHook('simpleEntryFormClosed', async () => {
+        await refreshDocuments();
         console.log('simpleEntryFormClosed');
     });
 }

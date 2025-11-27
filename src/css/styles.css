@@ -145,7 +145,8 @@
     /* Borders */
     --filled-border: 1px solid var(--border-yellow);
     --focus-border: 1px solid var(--border-yellow);
-    --info-content-border: 2px groove var(--blue);
+    --info-content-border: 2px solid var(--blue);
+    --active-search-border: 2px solid var(--border-yellow);
     --sidebar-border: 1px solid var(--light-blue);
     --tab-item-border: 1px solid var(--dark-redT87);
     --tooltip-border: 1px solid var(--shadow-header);
@@ -2483,6 +2484,12 @@ input:checked+.slider::before {
     margin-block: 25px;
 }
 
+.article .content .title-header .type-icon:hover {
+    cursor: default;
+    text-shadow: none;
+
+}
+
 .article .content h1,
 .article .content h2,
 .article .content h3 {
@@ -2994,6 +3001,8 @@ input:checked+.slider::before {
     /* Permite rolagem se necessário */
     max-height: 100%;
     /* Garante que não ultrapasse a altura do contêiner */
+    display: flex;
+    flex-direction: column;
 }
 
 .folder-list .folder {
@@ -3098,6 +3107,12 @@ input:checked+.slider::before {
 
 .folder-list .fas {
     margin-right: 10px;
+}
+
+.folder-list .empty-list {
+    align-self: center;
+    color: var(--redT50);
+    font-style: italic;
 }
 
 /* ------ Time Forge ------*/
@@ -3345,51 +3360,37 @@ input:checked+.slider::before {
     align-items: center;
     max-width: 100%;
     transition: all 0.4s ease;
-    padding: 0 2px;
-    background-color: var(--light-blue);
+    background-color: var(--background-color);
     background-image: url(../ui/denim065.png);
     border-radius: 5px;
     border: var(--info-content-border);
     gap: var(--default-gap-size);
 }
 
-.sidebar .footer .input-container.add-bar {
-    display: none;
-    opacity: 0;
-    transform: scale(0);
-}
-
-.sidebar .footer .input-container.add-bar.show {
-    display: flex;
-    opacity: 1;
-    transform: scale(1);
-    height: 30px;
-}
 
 .sidebar .footer .input-container input {
     flex: 1;
     border: none;
-    outline: none;
-    padding: 2px 5px;
-    margin-block: 5px;
-    background-color: var(--dark-blue);
-    width: 95%;
+    outline: none;    
+    background-color: transparent;
+}
+.sidebar .footer .input-container input:focus {
+    box-shadow: inset 0px 0px 5px 0px var(--blue);
 }
 
-.sidebar .footer .input-container button {
+.sidebar .footer .input-container a {
     flex: 0;
     margin-left: 2px;
     padding: 2px 3px;
     border: none;
     align-self: center;
-    color: var(--text-color);
+    color: var(--red);
     cursor: pointer;
     font-size: var(--default-size);
     border-radius: var(--default-border-radius);
 }
 
-.sidebar .footer .input-container button:hover {
-    background-color: var(--dark-red);
+.sidebar .footer .input-container a:hover {
     color: var(--light-text-color);
 }
 
@@ -3401,6 +3402,11 @@ input:checked+.slider::before {
 }
 
 .sidebar button:hover {
+    color: var(--light-text-color);
+}
+
+.sidebar mark {
+    background-color: var(--dark-redT87);
     color: var(--light-text-color);
 }
 
@@ -4360,7 +4366,6 @@ input:checked+.slider::before {
 .link-tooltip.visible {
     opacity: 1;
     transform: translateY(0);
-    transition-duration: 300ms;
 }
 
 .link-tooltip .header {
@@ -4402,15 +4407,10 @@ input:checked+.slider::before {
 }
 
 /* ------ Native Tooltip ------ */
-[data-tooltip] {
-    position: relative;
-}
-
-[data-tooltip]::after {
-    position: absolute;
+.floating-tooltip {
+    position: fixed;
     opacity: 0;
     pointer-events: none;
-    content: attr(data-tooltip);
     border-radius: 3px;
     box-shadow: var(--default-shadow);
     background-color: var(--grey);
@@ -4418,39 +4418,17 @@ input:checked+.slider::before {
     z-index: 99999;
     padding: 8px;
     width: 150px;
+    height: fit-content;
     line-height: normal;
     font-size: var(--default-size);
     font-weight: 700;
     transform: translateY(-20px);
-    transition: all 150ms cubic-bezier(.25, .8, .25, 1);
+    transition: transform 300ms cubic-bezier(.25, .8, .25, 1);
 }
 
-[data-tooltip]:hover::after {
+.floating-tooltip.show {
     opacity: 1;
     transform: translateY(0);
-    transition-duration: 300ms;
-}
-
-[data-tooltip][data-tooltip-side="right"]::after {
-    left: 100%;
-}
-
-[data-tooltip][data-tooltip-side="center"]::after {
-    left: 50%;
-}
-
-[data-tooltip]:not([data-tooltip-side="left"]):not([data-tooltip-side="center"])::after,
-[data-tooltip][data-tooltip-side="left"]::after {
-    right: 50%;
-}
-
-[data-tooltip][data-tooltip-block="top"]::after {
-    top: calc(100% - 45px);
-}
-
-[data-tooltip]:not([data-tooltip-block="top"])::after,
-[data-tooltip][data-tooltip-block="bottom"]::after {
-    top: calc(100% + 5px);
 }
 
 /* ------ Family Tree ------ */

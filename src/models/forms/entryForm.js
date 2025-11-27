@@ -6,8 +6,8 @@ import LinkDialog from "../dialogs/linkDialog.js";
 import Dialogs from "../dialogs/dialog.js";
 import DatePicker from "../datePicker.js";
 import FilePickerDialog from "../dialogs/filePickerDialog.js";
-import Entry from "../../entities/entry.mjs";
-import EntryEvent from "../../entities/event.mjs";
+import Entry from "../../common/entities/entry.mjs";
+import EntryEvent from "../../common/entities/event.mjs";
 
 /**
  * Classe EntryForm estende a funcionalidade da classe BaseForm para gerenciar formulários que manipulem Entradas.

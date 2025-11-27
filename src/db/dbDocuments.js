@@ -1,12 +1,12 @@
-import Chapter from "../entities/chapter.mjs";
-import Entry from "../entities/entry.mjs";
-import Entity from "../entities/entity.mjs";
-import EntryType from "../entities/entryType.mjs";
-import EntryEvent from "../entities/event.mjs";
-import LineageEntry from "../entities/lineageEntry.mjs";
-import Section from "../entities/section.mjs";
-import LineageTree from "../entities/lineageTree.mjs";
-import Relevance from "../entities/relevance.mjs";
+import Chapter from "../common/entities/chapter.mjs";
+import Entry from "../common/entities/entry.mjs";
+import Entity from "../common/entities/entity.mjs";
+import EntryType from "../common/entities/entryType.mjs";
+import EntryEvent from "../common/entities/event.mjs";
+import LineageEntry from "../common/entities/lineageEntry.mjs";
+import Section from "../common/entities/section.mjs";
+import LineageTree from "../common/entities/lineageTree.mjs";
+import Relevance from "../common/entities/relevance.mjs";
 
 /**
  * Classe para criar e gerenciar conjuntos (Sets) baseados em dados de um banco de dados.

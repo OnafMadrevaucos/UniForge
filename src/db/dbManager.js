@@ -1,4 +1,4 @@
-import EntryEvent from "../entities/event.mjs";
+import EntryEvent from "../common/entities/event.mjs";
 import { registerHook, triggerHook } from "../scripts/hooks.js";
 import DBDocuments from "./dbDocuments.js";
 

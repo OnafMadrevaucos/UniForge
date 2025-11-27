@@ -200,7 +200,12 @@ function _parseFoldertreeTags(html, data) {
 
         if (!('folders' in data)) {
             console.log(`O identificador 'folders' não foi encontrado no objeto data. Retornando um <ul> vazio.`);
-            return `<ul id="folderList" type="${type}" class="folder-list" type="${type}"></ul>`;
+            return `<ul id="folderList" type="${type}" class="folder-list" type="${type}">${utils.html.generateEmptyListHTML(true)}</ul>`;
+        }
+
+        if(data.folders.size === 0) {
+            console.log(`A lista 'folders' está vazia. Retornando um <ul> vazio.`);
+            return `<ul id="folderList" type="${type}" class="folder-list" type="${type}">${utils.html.generateEmptyListHTML(true)}</ul>`;
         }
 
         const result = utils.html.generateFolderlistHTML(id, data.folders, itemKey, type, isFixed);

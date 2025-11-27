@@ -5,8 +5,8 @@ import BaseForm from "./baseForm.js";
 import LinkDialog from "../dialogs/linkDialog.js";
 import Dialogs from "../dialogs/dialog.js";
 import DatePicker from "../datePicker.js";
-import Entry from "../../entities/entry.mjs";
-import EntryEvent from "../../entities/event.mjs";
+import Entry from "../../common/entities/entry.mjs";
+import EntryEvent from "../../common/entities/event.mjs";
 import FilePickerDialog from "../dialogs/filePickerDialog.js";
 import { triggerHook } from "../../scripts/hooks.js";
 
@@ -22,7 +22,7 @@ export default class SimpleEntryForm extends BaseForm {
    * @param {HTMLElement} sourceBtn   - O botão que originou a chamada do formulário.
    * @param {Entry} entry             - Os dados da Entrada manipulada pelo formulário.
    */
-  constructor(sourceBtn, entry, options = {}) {
+  constructor(sourceBtn, entry, onCloseCallback=null, options = {}) {
     if (!sourceBtn) throw new Error('O botão de origem não pode ser nulo ou indefinido.');
     if (!entry) throw new Error('É necessário informar uma entrada válida.');
 
@@ -34,6 +34,8 @@ export default class SimpleEntryForm extends BaseForm {
     this.sourceBtn = sourceBtn;
 
     this.document = entry;
+
+    this.onCloseCallback = onCloseCallback;
 
     /**
      * @type {string} - O modelo HTML utilizado pelo formulário.
@@ -265,6 +267,8 @@ export default class SimpleEntryForm extends BaseForm {
   close() {
     this.sourceBtn.classList.remove('disabled');
     super.close();
+
+    if (this.onCloseCallback) this.onCloseCallback();
   }
 
   /**

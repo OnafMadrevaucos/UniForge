@@ -8,3 +8,4 @@ export * as helpers from './helpers.mjs';
 export * as html from './html.mjs';
 export * as images from './images.mjs';
 export * as state from './state.mjs';
+export * as tooltip from './tooltip.mjs';

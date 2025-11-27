@@ -20,7 +20,7 @@ import CodexForm from "../models/forms/codexForm.js";
 import TimelineForm from "../models/forms/timelineForm.js";
 import { APP_STATES } from './utils/state.mjs';
 import { core } from './leaflet/module.mjs';
-import { generateFolderlistHTML } from './utils/html.mjs';
+import { applyHighlight, generateFolderlistHTML } from './utils/html.mjs';
 'use strict';
 
 globalThis.store = new WeakMap(); // WeakMap para armazenar os dados de imagens associados aos elementos.
@@ -54,11 +54,16 @@ const utils = {
 
 const parser = {
     parseHTML: parserEsm.html.parseHTML,
+    parseCssToJson: parserEsm.css.parseCssToJson,
+
     generateList: utilsEsm.html.generateListHTML,
     generateFolderlist: utilsEsm.html.generateFolderlistHTML,
     generateItemList: utilsEsm.html.generateListItemHTML,
     generateFolderItem: utilsEsm.html.generateFolderItemHTML,
-    parseCssToJson: parserEsm.css.parseCssToJson
+    generateEmptyItem: utilsEsm.html.generateEmptyListHTML,    
+
+    applyHighlight: utilsEsm.html.applyHighlight,
+    removeHighlight: utilsEsm.html.removeHighlight
 }
 
 const leaflet = {
@@ -155,7 +160,7 @@ globalThis.uniforge = {
     * 
     * @type {Utils}
     */
-    utils: utils,
+    utils: Object.freeze(utils),
 
     /**
     * Rotinas de gerenciamento do Estado da Aplicação.
@@ -168,21 +173,28 @@ globalThis.uniforge = {
     * 
     * @type {Parser}
     */
-    parser: parser,
+    parser: Object.freeze(parser),
 
     /**
     * Instância de funções auxiliares de manipulação de mapas da ferramenta Leaflet.
     * 
     * @type {Leaflet}
     */
-    leaflet: leaflet,
+    leaflet: Object.freeze(leaflet),
+
+    /**
+    * Instância de gerenciamento das tooltips usada pela aplicação.
+    * 
+    * @type {Utils.Tooltip}
+    */
+    tooltip: utilsEsm.tooltip,
 
     /**
     * Classes de Forms usadas pela aplicação discriminadas por identificador.
     * 
     * @type {Forms}
     */
-    forms: {
+    forms: Object.freeze({
         article: ArticleForm,
         atlas: AtlasForm,
         entity: EntityForm,
@@ -194,7 +206,7 @@ globalThis.uniforge = {
         settings: SettingsForm,
         codex: CodexForm,
         timeline: TimelineForm 
-    },
+    }),
 
     /**
     * Referência ao formulário, utilizado em várias partes da aplicação.

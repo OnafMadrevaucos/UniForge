@@ -14,6 +14,8 @@ export class TimelineManager extends BaseManager {
          * @type {boolean} - Indica se o formulário atual corresponde a um do tipo ArticleForm.
          */
         this.formIsArticle = (form instanceof ArticleForm);
+
+        this.form = form;
     }
 
     #timeline = {
@@ -92,7 +94,7 @@ export class TimelineManager extends BaseManager {
         }
     }
 
-    async commit() {
+    async commit(build=true) {
         try {
             // Valida os dados da linha do tempo.
             let validation = uniforge.db.validateTimeline(this.#timeline);
@@ -127,7 +129,7 @@ export class TimelineManager extends BaseManager {
                 }
             });
 
-            this.buildTimeline();
+            if(build) await this.buildTimeline();
             // Finaliza a transação de salvamento.
             await uniforge.db.commitTransaction();
 
@@ -219,14 +221,18 @@ export class TimelineManager extends BaseManager {
     }
     async insertEvent(evid) {
         const tid = this.timeline.tid;
-        if (!tid.isEmpty()) await uniforge.db.addTimelineEvent({ tid, evid });
+        if (!tid.isEmpty()) {
+            await uniforge.db.addTimelineEvent({ tid, evid });
+            // Se o evento foi adicionado ao banco de dados, reconstrua a base de dados.
+            await this.rebuildTimeline();
+        }
     }
     async deleteEvent(evid) {
         const tid = this.timeline.tid;
         if (!tid.isEmpty()) {
             const result = await uniforge.db.deleteTimelineEvent(tid, evid);
             // Se o evento foi removido do banco de dados, reconstrua a base de dados.
-            if (result?.changes > 0) await uniforge.db.rebuildDocs();
+            if (result?.changes > 0) await this.rebuildTimeline();
         }
     }
     hasEvent(evid) {
@@ -265,6 +271,31 @@ export class TimelineManager extends BaseManager {
         container.appendChild(content);
 
         return container;
+    }  
+    
+    async rebuildTimeline() {
+        this.buildTimeline();
+
+        if(!this.#timeline.tid.isEmpty()) {
+            await uniforge.db.rebuildDocs();
+            this.loadTimeline(this.#timeline);
+
+            let selected = null;
+            this.form.querySelectorAll('.folder').forEach(folder => {
+                const tid = folder.dataset.id;
+                
+                if (tid === this.#timeline.tid) {
+                    folder.classList.add('selected');
+                    selected = folder;
+                } else {
+                    folder.classList.remove('selected');
+                }
+            });
+
+            if(selected) selected.dispatchEvent(new Event('dblclick'));
+        } else {
+            throw new Error('Linha do tempo inválida para reconstrução.');
+        }
     }
 
     // Cria o conteúdo da Linha do Tempo que será atribuído a um Element
@@ -683,11 +714,11 @@ export class TimelineManager extends BaseManager {
         // Impedir que o clique no item desencadeie o clique fora do sidebar
         event.stopPropagation();
         const a = event.target.closest('.anchor');
-        const entryId = a.dataset.id;
+        const eid = a.dataset.id;
 
-        uniforge.navQueue.push(this);
-
-        document.body.style.cursor = 'wait';
+        const entry = uniforge.doc.entries.get(eid);
+        const article = new ArticleForm(entry);
+        article.show(true);
     }
 
     _onTimeContentScroll() {
@@ -726,7 +757,7 @@ export class TimelineManager extends BaseManager {
         }
 
         const entry = event.entry;
-        const editForm = new SimpleEntryForm(button, entry);
+        const editForm = new SimpleEntryForm(button, entry, this._onCloseEditForm.bind(this));
         editForm.show(true);
     }
     async _onDeleteEventClick(event) {
@@ -739,5 +770,9 @@ export class TimelineManager extends BaseManager {
             await this.deleteEvent(evid);
             this.buildTimeline();
         }
+    }
+
+    async _onCloseEditForm() {
+        await this.rebuildTimeline();
     }
 }
