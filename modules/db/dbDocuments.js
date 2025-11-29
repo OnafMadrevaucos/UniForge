@@ -8,9 +8,7 @@ import Section from "./src/common/entities/section.mjs";
 import LineageTree from "./src/common/entities/lineageTree.mjs";
 import Relevance from "./src/common/entities/relevance.mjs";
 
-import DBManager from "./dbManager.js";
-
-const db = new DBManager();
+import * as db from "./dbManager.js";
 
 /**
  * Classe para criar e gerenciar conjuntos (Sets) baseados em dados de um banco de dados.
