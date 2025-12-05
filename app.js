@@ -18,7 +18,7 @@ console.log(__filename);
  * Instância do banco de dados SQLite.
  * @type {Database}
  */
-const db = new Database(path.join(__dirname, '/modules/db/database.db'));
+const db = new Database(path.join(__dirname, '/common/backend/database.db'));
 
 // Remove o menu padrão
 Menu.setApplicationMenu(null);
