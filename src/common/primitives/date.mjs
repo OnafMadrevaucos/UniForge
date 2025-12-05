@@ -1,6 +1,8 @@
+import Calendar from "../documents/calendar.mjs";
+
 export default class CustomDate {
   constructor(calendar = {}, date = {}) {
-    if (calendar && !calendar.empty()) {
+    if (calendar && (calendar instanceof Calendar)) {
       this.calendar = calendar;
     };
 
@@ -24,14 +26,16 @@ export default class CustomDate {
   #calendar = {
     clid: null,
     label: '',
-    months: [],
+    months: new Set(),
     days: [],
-    daysInMonth: []
   };
 
   get months() { return this.#calendar.months; }
   get days() { return this.#calendar.days; }
-  get daysInMonth() { return this.#calendar.daysInMonth; }
+  get daysInMonth() { 
+    const month = this.calendar.months.find(month => month.pos === this.month);
+    return month.size ?? 0;
+   }
 
   get calendar() { return this.#calendar; }
 
@@ -39,7 +43,11 @@ export default class CustomDate {
   get month() { return this.#month; }
   get year() { return this.#year; }
 
-  get monthName() { return this.months[this.month]; }
+  get monthDoc() { return this.calendar.months.find(month => month.pos === this.month); }
+  get monthName() { 
+    const month = this.calendar.months.find(month => month.pos === this.month);
+    return month ? month.name : '';
+   }
   get fullYear() {
     const suffix = this.year > 0 ? ' d.T.' : ' a.T.';
     return `${Math.abs(this.year)}${suffix}`;
@@ -60,21 +68,23 @@ export default class CustomDate {
     const originMonth = this.#origin.month;
     const originDay = this.#origin.day;
 
+    const monthsArray = this.months.toArray();
+
     const secPerDay = 24 * 3600; // Segundos por dia.
 
     let totalDays = 0;
     if (year > originYear || (year === originYear && month > originMonth) || (year === originYear && month === originMonth && day > originDay)) {
       for (let i = originYear; i < year; i++) {
-        totalDays += this.daysInMonth.reduce((a, b) => a + b, 0);
+        totalDays += monthsArray.reduce((a, b) => a + b.size, 0);
       }
-      totalDays += this.daysInMonth.slice(0, month).reduce((a, b) => a + b, 0);
-      totalDays += day - this.daysInMonth.slice(0, originMonth).reduce((a, b) => a + b, 0) - originDay;
+      totalDays += monthsArray.slice(0, month).reduce((a, b) => a + b.size, 0);
+      totalDays += day - monthsArray.slice(0, originMonth).reduce((a, b) => a + b.size, 0) - originDay;
     } else {
       for (let i = year; i < originYear; i++) {
-        totalDays -= this.daysInMonth.reduce((a, b) => a + b, 0);
+        totalDays -= monthsArray.reduce((a, b) => a + b.size, 0);
       }
-      totalDays -= this.daysInMonth.slice(0, originMonth).reduce((a, b) => a + b, 0);
-      totalDays -= originDay - (this.daysInMonth.slice(0, month).reduce((a, b) => a + b, 0) + day);
+      totalDays -= monthsArray.slice(0, originMonth).reduce((a, b) => a + b.size, 0);
+      totalDays -= originDay - (monthsArray.slice(0, month).reduce((a, b) => a + b.size, 0) + day);
     }
 
     const ticks = totalDays * secPerDay;
@@ -103,8 +113,8 @@ export default class CustomDate {
       throw new Error('O calendário não pode ser nulo ou indefinido');
     }
 
-    if (!('clid' in value) || !('label' in value) || !('months' in value) || !('days' in value) || !('daysInMonth' in value)) {
-      throw new Error('O calendário deve ter os campos clid, label, months, days e daysInMonth');
+    if (!('clid' in value) || !('label' in value) || !('months' in value) || !('days' in value)) {
+      throw new Error('O calendário deve ter os campos clid, label, months e days');
     }
 
     if (typeof value.clid !== 'number') {
@@ -115,16 +125,12 @@ export default class CustomDate {
       throw new Error('O campo label deve ser uma string');
     }
 
-    if (!Array.isArray(value.months) || value.months.length === 0) {
-      throw new Error('O campo months deve ser um array não vazio');
+    if (value.months.size === 0) {
+      throw new Error('O campo months deve ser um set não vazio');
     }
 
-    if (!Array.isArray(value.days) || value.days.length !== 7) {
-      throw new Error('O campo days deve ser um array com 7 elementos');
-    }
-
-    if (!Array.isArray(value.daysInMonth) || value.daysInMonth.length !== value.months.length) {
-      throw new Error('O campo daysInMonth deve ser um array com o mesmo número de elementos que o campo months');
+    if (!(value.days instanceof Set) || value.days.size !== 7) {
+      throw new Error('O campo days deve ser um set com 7 elementos');
     }
 
     this.#calendar = value;
@@ -218,7 +224,7 @@ export default class CustomDate {
     const day = this.day.toString().padStart(2, '0');
 
     const fullYear = this.fullYear;
-    const monthName = this.monthName;
+    const monthName = this.monthDoc.label;
 
     const formatMap = {
       DD: day,

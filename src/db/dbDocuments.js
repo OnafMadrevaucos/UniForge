@@ -1,12 +1,23 @@
-import Chapter from "../common/entities/chapter.mjs";
-import Entry from "../common/entities/entry.mjs";
-import Entity from "../common/entities/entity.mjs";
-import EntryType from "../common/entities/entryType.mjs";
-import EntryEvent from "../common/entities/event.mjs";
-import LineageEntry from "../common/entities/lineageEntry.mjs";
-import Section from "../common/entities/section.mjs";
-import LineageTree from "../common/entities/lineageTree.mjs";
-import Relevance from "../common/entities/relevance.mjs";
+import Calendar from "../common/documents/calendar.mjs";
+import CalendarMonths from "../common/documents/calendarMonths.mjs";
+import CalendarDays from "../common/documents/calendarDays.mjs";
+import Chapter from "../common/documents/chapter.mjs";
+import ChapterType from "../common/documents/chapterType.mjs";
+import Entry from "../common/documents/entry.mjs";
+import Entity from "../common/documents/entity.mjs";
+import EntryType from "../common/documents/entryType.mjs";
+import EntryEvent from "../common/documents/event.mjs";
+import LineageEntry from "../common/documents/lineageEntry.mjs";
+import Section from "../common/documents/section.mjs";
+import LineageTree from "../common/documents/lineageTree.mjs";
+import Relevance from "../common/documents/relevance.mjs";
+import BaseDocument from "../common/documents/base.mjs";
+import Tome from "../common/documents/tome.mjs";
+import Setting from "../common/documents/setting.mjs";
+import TextImage from "../common/documents/textImage.mjs";
+import MapAtlas from "../common/documents/map.mjs";
+import MapElement from "../common/documents/mapElement.mjs";
+import Timeline from "../common/documents/timeline.mjs";
 
 /**
  * Classe para criar e gerenciar conjuntos (Sets) baseados em dados de um banco de dados.
@@ -27,7 +38,6 @@ export default class DBDocuments {
      * @param {Array<Object>} data.calendars - Dados da tabela calendars.
      * @param {Array<Object>} data.calendarsMonths - Dados da tabela calendarsMonths.
      * @param {Array<Object>} data.calendarsDays - Dados da tabela calendarsDays.
-     * @param {Array<Object>} data.calendarsDaysInMonths - Dados da tabela calendarsDaysInMonths.
      * @param {Array<Object>} data.tomes - Dados da tabela tomes.
      * @param {Array<Object>} data._textImages - Dados da tabela _textImages.
      * @param {Array<Object>} data.chapterTypes - Dados da tabela chapterTypes.
@@ -36,21 +46,21 @@ export default class DBDocuments {
      * @param {Array<Object>} data.settings - Dados da tabela settings.
      */
     constructor(data) {
-        this.calendars = this.createCalendarsMergedSet(data.calendars, data.calendarsMonths, data.calendarsDays, data.calendarsDaysInMonths);
+        this.calendars = this.createCalendarsMergedSet(data.calendars, data.calendarsMonths, data.calendarsDays);
 
-        this.tomes = this.createSimpleSet(data.tomes);
-        this.textImages = this.createSimpleSet(data._textImages);
-        this.chapterTypes = this.createSimpleSet(data.chapterTypes);
-        this.entryTypes = this.createSimpleSet(data.entryTypes);
-        this.relevances = this.createSimpleSet(data.relevances);
-        this.settings = this.createSimpleSet(data.settings);
+        this.tomes = this.createGenericSet(data.tomes, Tome);
+        this.textImages = this.createGenericSet(data.textImages, TextImage);
+        this.chapterTypes = this.createGenericSet(data.chapterTypes, ChapterType);
+        this.entryTypes = this.createGenericSet(data.entryTypes, EntryType);
+        this.relevances = this.createGenericSet(data.relevances, Relevance);
+        this.settings = this.createGenericSet(data.settings, Setting);
 
         this.chapters = this.createChapterSet(data.chapters, data.sections);
         this.sections = this.createSectionSet(data.sections, data.entries, data.events);
         this.entries = this.createEntrySet(data.entries, data.events);
         this.lineages = this.createLineageSet(data.lineages, data.lineageTypes, data.lineageEntries);
         this.events = this.createEventSet(data.events);
-        this.timelines = this.createTimelineSet(data.timelines, data.events, data._timelineEvents);
+        this.timelines = this.createTimelineSet(data.timelines, data.timelineEvents);
         this.maps = this.createMapSet(data.maps, data.mapElements);
 
         // Adiciona umas propriedades utilitárias para facilitar o acesso.
@@ -75,11 +85,10 @@ export default class DBDocuments {
         data.maps = await uniforge.db.getAllMaps();
         data.mapElements = await uniforge.db.getAllMapElements();
         data.timelines = await uniforge.db.getAllTimelines();
-        data._timelineEvents = await uniforge.db.getAllTimelineEvents();
+        data.timelineEvents = await uniforge.db.getAllTimelineEvents();
         data.calendars = await uniforge.db.getAllCalendars();
         data.calendarsMonths = await uniforge.db.getAllCalendarsMonths();
         data.calendarsDays = await uniforge.db.getAllCalendarsDays();
-        data.calendarsDaysInMonths = await uniforge.db.getAllCalendarsDaysInMonths();
         data.textImages = await uniforge.db.getAllTextImages();
         data.settings = await uniforge.db.getAllSettings();
         data.relevances = await uniforge.db.getAllRelevances();
@@ -100,7 +109,9 @@ export default class DBDocuments {
         const chapterSet = new Set();
 
         chapters.forEach((chapter) => {
-            const sectionSet = new Set();
+            const sectionSet = new Set();   
+            
+            const cType = this.chapterTypes.get(chapter.type);
 
             // Converte os booleanos de 0 e 1 para 'false' e 'true'.
             chapter.hasLineage = (chapter.hasLineage === 1);
@@ -114,7 +125,7 @@ export default class DBDocuments {
                 });
 
             // Adiciona o SubjectType ao conjunto, incluindo suas categorias
-            chapterSet.add(new Chapter({ ...chapter, sections: sectionSet }));
+            chapterSet.add(new Chapter({ ...chapter, cType: cType, sections: sectionSet }));
         });
 
         return chapterSet;
@@ -124,23 +135,26 @@ export default class DBDocuments {
      * Cria um conjunto de Timelines, contendo eventos relacionados.
      *
      * @param {Array<Object>} timelines - Dados da tabela timeline.
-     * @param {Array<Object>} events - Dados da tabela event.
      * @param {Array<Object>} timelineEvents - Dados da tabela _timelineEvent.
      * @returns {Set} Conjunto de Timelines.
      */
-    createTimelineSet(timelines, events, timelineEvents) {
+    createTimelineSet(timelines, timelineEvents) {
         const timelineSet = new Set();
 
         timelines.forEach((timeline) => {
             // Filtra os eventos associados à timeline atual, usando _timelineEvent como relação.
-            const eventSet = new Set(
-                timelineEvents
-                    .filter((te) => te.tid === timeline.tid)
-                    .map((te) => events.find((event) => event.evid === te.evid))
-            );
+            const eventSet = new Set();
+
+            const te = timelineEvents.filter((te) => te.tid === timeline.tid);
+
+            te.forEach((te) => {
+                const e = this.events.get(te.evid);
+
+                if(e) eventSet.add(e);
+            });
 
             // Adiciona a timeline ao conjunto, incluindo seus eventos
-            timelineSet.add({ ...timeline, events: eventSet });
+            timelineSet.add(new Timeline({ ...timeline, events: eventSet }));
         });
 
         return timelineSet;
@@ -169,12 +183,8 @@ export default class DBDocuments {
             const entry = this.entries.get(lineage.eid); 
 
             const lineageEntries = entries.filter(e => e.ltid === lineage.ltid).map((e) => {
-                const entry = uniforge.utils.deepClone(this.entries.get(e.eid));
-                entry.code = e.code;
-                entry.isRoot = e.isRoot;
-                entry.isVirtual = e.isVirtual;
-
-                return new LineageEntry(entry);
+                const entry = this.entries.get(e.eid);
+                return new LineageEntry({...entry, code: e.code, isRoot: e.isRoot, isVirtual: e.isVirtual});
             });
 
             // Filtra os tipos associados à linhagem atual e adiciona os campos _value e _label.
@@ -201,18 +211,18 @@ export default class DBDocuments {
         const mapSet = new Set();
 
         maps.forEach((map) => {
-            const mapElementsSet = new Array();
+            const mapElementsSet = new Set();
 
             // Filtra os Elementos que possuem o mesmo ID do Mapa atual.
             mapElements
                 .filter((mapElement) => mapElement.mid === map.mid)
                 .forEach((mapElement) => {
                     // Adiciona o Elemento ao conjunto.
-                    mapElementsSet.push({ _id: mapElement.meid, ...mapElement });
+                    mapElementsSet.add(new MapElement(mapElement));
                 });
 
             // Adiciona o Map ao conjunto, incluindo seus Elementos.
-            mapSet.add({ ...map, elements: mapElementsSet });
+            mapSet.add(new MapAtlas({ ...map, elements: mapElementsSet }));
         });
 
         return mapSet;
@@ -236,21 +246,20 @@ export default class DBDocuments {
                 _label: calendar.label,
                 clid: calendar.clid,
                 label: calendar.label,
-                months: [],
-                days: [],
-                daysInMonth: [],
+                months: new Set(),
+                days: new Set()
             };
 
             // Obtém os meses associados ao calendário atual
             const months = calendarsMonths.filter((month) => month.clid === calendar.clid);
 
+            let pos = 0;
             months.forEach((month) => {
+                month.pos = pos;
                 // Adiciona o nome do mês à lista de meses
-                data.months.push(month.label);
+                data.months.add(new CalendarMonths(month));                
 
-                // Obtém o número de dias para o mês atual, se disponível
-                const dayMonths = calendarsDaysInMonths.filter((dim) => dim.clmid === month.clmid);
-                data.daysInMonth.push(dayMonths.length > 0 ? dayMonths[0].days : null);
+                pos++;
             });
 
             // Obtém os dias associados ao calendário atual
@@ -258,11 +267,11 @@ export default class DBDocuments {
 
             days.forEach((day) => {
                 // Adiciona o nome do dia à lista de dias
-                data.days.push(day.label);
+                data.days.add(new CalendarDays(day));
             });
 
             // Adiciona o calendário mesclado ao conjunto
-            calendarsSet.add(data);
+            calendarsSet.add(new Calendar(data));
         });
 
         return calendarsSet;
@@ -289,7 +298,7 @@ export default class DBDocuments {
                     eventsSet.add(new EntryEvent(e));
                 });
 
-            const entryType = new EntryType(this.entryTypes.get(entry.etid));
+            const entryType = this.entryTypes.get(entry.etid);
 
             const section = this.sections.get(entry.sid);
 
@@ -340,7 +349,7 @@ export default class DBDocuments {
             event.entryType = new EntryType(this.entryTypes.get(event.etid));
 
             // Adiciona a Relevância do Evento.
-            event.relevance = new Relevance(this.relevances.get(event.relevance));
+            event.relevance = this.relevances.get(event.relevance);
 
             // Adiciona o evento ao conjunto.
             eventSet.add(new EntryEvent(event));
@@ -396,9 +405,10 @@ export default class DBDocuments {
      * Cria um conjunto simples com os dados fornecidos.
      *
      * @param {Array<Object>} data - Dados de uma tabela qualquer.
+     * @param {Object} documentClass - Classe que representa o documento.
      * @returns {Set} Conjunto simples dos dados.
      */
-    createSimpleSet(data) {
-        return new Set(data);
+    createGenericSet(data, documentClass = BaseDocument) {
+        return new Set(data.map((d) => new documentClass(d)));
     }
 }

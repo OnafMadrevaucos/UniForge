@@ -1,4 +1,4 @@
-import EntryEvent from "../common/entities/event.mjs";
+import EntryEvent from "../common/documents/event.mjs";
 import { registerHook, triggerHook } from "../scripts/hooks.js";
 import DBDocuments from "./dbDocuments.js";
 
@@ -8,7 +8,6 @@ export default class DBManager {
             createCalendarTable: () => this.createCalendarTable(),
             createMonthsTable: () => this.createMonthsTable(),
             createDaysTable: () => this.createDaysTable(),
-            createDaysInMonthsTable: () => this.createDaysInMonthsTable(),
             createEntryTypeTable: () => this.createEntryTypeTable(),
             createRelevanceTable: () => this.createRelevanceTable(),
             createChapterTable: () => this.createChapterTable(),
@@ -1222,8 +1221,6 @@ export default class DBManager {
         return result;
     }
 
-
-
     async getAllFolders(root = '*') {
         let query = '';
         if (root === '*') {
@@ -2283,7 +2280,8 @@ export default class DBManager {
     async createMonthsTable() {
         let query = 'CREATE TABLE IF NOT EXISTS calendarsMonths (clmid INTEGER PRIMARY KEY,' +
             'clid INTEGER,' +
-            'label TEXT)';                 // Título do MÊS do calendário
+            'label TEXT,' +
+            'size INTEGER NOT NULL DEFAULT 45)';           // Título do MÊS do calendário
 
 
         this.results = await this.#execQuery(query);
@@ -2307,26 +2305,6 @@ export default class DBManager {
 
         this.results = await this.#execQuery(query);
         console.log('Tabela \'calendarsDays\' criada....OK.');
-
-        return this.result;
-    }
-
-    /**
-     * Cria a tabela 'calendarsDaysInMonths' no banco de dados.
-     * 
-     * Essa tabela é usada para armazenar informações sobre os dias por mês dos calendários.
-     * Cada registro é identificado por um identificador (cldmid) e o identificador do mês ao qual pertence (clmid).
-     * O número de dias por mês é armazenado na coluna 'days'.
-     * 
-     * @returns {Promise<Object>} Uma promessa que informa se a tabela foi criada com sucesso, com o número de alterações.
-     */
-    async createDaysInMonthsTable() {
-        let query = 'CREATE TABLE IF NOT EXISTS calendarsDaysInMonths (cldmid INTEGER PRIMARY KEY,' +
-            'clmid INTEGER,' +
-            'days INTEGER)';                // Número de DIAS por MÊS do calendário
-
-        this.results = await this.#execQuery(query);
-        console.log('Tabela \'calendarsDaysInMonths\' criada....OK.');
 
         return this.result;
     }

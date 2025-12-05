@@ -2,7 +2,7 @@ import BaseDocument from "./base.mjs";
 
 export default class Tome extends BaseDocument {
     constructor(data) {
-        super();
+        super();        
 
         this.initialize(data);
     }
@@ -15,4 +15,18 @@ export default class Tome extends BaseDocument {
     get label() { return this.data.label; }
     get icon() { return this.data.icon; }
     get enabled() { return this.data.enabled; }
+
+    initialize(data) {
+        super.initialize(data);
+
+        Object.entries(data).forEach(([key, value]) => {
+            if (key !== 'tid') {
+                this.data[key] = value;
+            }
+
+            if(key === 'enabled') {
+                this.data[key] = Boolean(value);
+            }
+        });
+    }
 }

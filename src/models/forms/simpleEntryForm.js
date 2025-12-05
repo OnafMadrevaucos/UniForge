@@ -5,8 +5,8 @@ import BaseForm from "./baseForm.js";
 import LinkDialog from "../dialogs/linkDialog.js";
 import Dialogs from "../dialogs/dialog.js";
 import DatePicker from "../datePicker.js";
-import Entry from "../../common/entities/entry.mjs";
-import EntryEvent from "../../common/entities/event.mjs";
+import Entry from "../../common/documents/entry.mjs";
+import EntryEvent from "../../common/documents/event.mjs";
 import FilePickerDialog from "../dialogs/filePickerDialog.js";
 import { triggerHook } from "../../scripts/hooks.js";
 

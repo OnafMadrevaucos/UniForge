@@ -16,8 +16,8 @@ export default class DatePicker {
   }
 
   constructor(id, parent = null, date = {}) {
-    if(parent instanceof Application) this.parent = parent;
-    if(!this.parent) throw new Error('O DatePicker precisa de uma aplicação.');   
+    if (parent instanceof Application) this.parent = parent;
+    if (!this.parent) throw new Error('O DatePicker precisa de uma aplicação.');
 
     /**
     * O identificador do HTMLElement que representa o DatePicker.
@@ -45,6 +45,8 @@ export default class DatePicker {
 
   #selectedDate = new CustomDate();
   #currentDate = new CustomDate(null, { day: 1, month: 0, year: 1 });
+
+  #currentMonthPos = 0;
 
   get dataGroup() {
     return this.parent.querySelector(`#${this.id}`);
@@ -83,6 +85,9 @@ export default class DatePicker {
   get opened() {
     return this.#state.opened;
   }
+  get disabled() {
+    return this.dateInput.classList.contains('disabled');
+  }
 
   get days() {
     return this.#selectedDate.days;
@@ -103,10 +108,11 @@ export default class DatePicker {
     return this.#currentDate.day;
   }
   get currentMonth() {
-    return this.#currentDate.month;
+    const month = this.months.find(month => month.pos === this.#currentMonthPos);
+    return month;
   }
-  get currentMonthName() {
-    return this.#currentDate.monthName;
+  get currentMonthPos() {
+    return this.#currentMonthPos;
   }
   get currentYear() {
     return this.#currentDate.year;
@@ -152,6 +158,10 @@ export default class DatePicker {
 
     this.#state.opened = value;
   }
+  set disabled(value) {
+    if(value === true) this.dateInput.classList.add('disabled');
+    else this.dateInput.classList.remove('disabled');
+  }
 
   set date(value) {
     this.configured = false;
@@ -164,7 +174,8 @@ export default class DatePicker {
     this.#currentDate.day = value;
   }
   set currentMonth(value) {
-    this.#currentDate.month = value;
+    const month = this.months.find(month => month.pos === value);
+    this.#currentMonthPos = month.pos;
   }
   set currentYear(value) {
     this.#currentDate.year = value;
@@ -229,7 +240,7 @@ export default class DatePicker {
   }
 
   updateView() {
-    this.monthYearDisplay.textContent = `${this.currentMonthName}, ${this.currentFullYear}`;
+    this.monthYearDisplay.textContent = `${this.currentMonth.label}, ${this.currentFullYear}`;
 
     this.calendarView.classList.remove(...this.calendarView.classList);
     this.calendarView.classList.add("calendar-view", this.currentView);
@@ -269,6 +280,7 @@ export default class DatePicker {
    */
   clearDate() {
     this.date.clearDate();
+    this.#currentDate.clearDate();  
 
     this.dateDisplay.textContent = 'Selecione uma data';
     this.#hiddenInput.value = null;
@@ -331,8 +343,8 @@ export default class DatePicker {
     const currentTime = Date.now();
 
     if (this.currentView === "days") {
-      this.currentMonth++;
-      if (this.currentMonth >= this.months.length) {
+      this.#currentMonthPos++;
+      if (!this.currentMonth) {
         this.currentMonth = 0;  // Volta para o primeiro mês
         this.currentYear++;  // Incrementa o ano
       }
@@ -364,9 +376,9 @@ export default class DatePicker {
     const currentTime = Date.now();
 
     if (this.currentView === "days") {
-      this.currentMonth--;
-      if (this.currentMonth < 0) {
-        this.currentMonth = this.months.length - 1;  // Volta para o último mês.
+      this.#currentMonthPos--;
+      if (!this.currentMonth) {
+        this.currentMonth = this.months.size - 1;  // Volta para o último mês.
         this.currentYear--;  // Decrementa o ano.
       }
     } else if (this.currentView === "months") {
@@ -486,33 +498,35 @@ export default class DatePicker {
 
   // Seleciona um mês
   selectMonth(month) {
-    this.currentMonth = month;
+    this.currentMonth = month.pos;
     this.currentView = 'days';  // Volta para a exibição de dias após escolher o mês.
-    this.update(false, {animate: false});
+    this.update(false, { animate: false });
   }
 
   // Seleciona um ano
   selectYear(year) {
     this.currentYear = year;
     this.currentView = 'months';  // Volta para a exibição de meses após escolher o ano.
-    this.update(false, {animate: false});
+    this.update(false, { animate: false });
   }
 
   // Seleciona a data
-  selectDate(day) {
+  selectDate(day, propagate = false) {
     if (this.currentYear === 0) this.currentYear = 1;
 
-    this.date = { day: day, month: this.currentMonth, year: this.currentYear };
-    this.updateDisplay(false);
-    this.update(false, {animate: false});
+    this.date = { day: day, month: this.currentMonth.pos, year: this.currentYear };
+    this.updateDisplay(propagate);
+    this.update(false, { animate: false });
   }
 
   // Seleciona a data completa
-  selectFullDate(day, month, year) {
+  selectFullDate(day, month, year) {    
     this.date.selectDate(day, month, year);
+    
+    this.#currentMonthPos = month;
 
     this.updateDisplay(false);
-    this.update(false, {animate: false});
+    this.update(false, { animate: false });
   }
 
   // Exibe os dias do mês
@@ -520,18 +534,18 @@ export default class DatePicker {
     // Exibe os dias da semana.
     this.days.forEach(day => {
       const dayHeader = document.createElement('div');
-      dayHeader.textContent = day;
+      dayHeader.textContent = day.label;
       dayHeader.style.fontWeight = 'bold';
       this.calendarContent.appendChild(dayHeader);
     });
 
     // Exibe os dias do mês.
-    const daysInCurrentMonth = this.daysInMonth[this.currentMonth];
+    const daysInCurrentMonth = this.currentMonth.size;
     for (let i = 1; i <= daysInCurrentMonth; i++) {
       const day = document.createElement('div');
       day.textContent = i;
       day.className = 'day';
-      day.addEventListener('click', () => this.selectDate(i));
+      day.addEventListener('click', () => this.selectDate(i, true));
       this.calendarContent.appendChild(day);
 
       if (!this.isDayValid(i)) {
@@ -540,7 +554,7 @@ export default class DatePicker {
 
       const date = new CustomDate(this.date.calendar, {
         day: i,
-        month: this.currentMonth,
+        month: this.currentMonth.pos,
         year: this.currentYear
       });
 
@@ -553,18 +567,18 @@ export default class DatePicker {
   // Exibe os meses do ano
   showMonths() {
     // Exibe os meses do ano.
-    this.months.forEach((monthName, index) => {
-      const month = document.createElement('div');
-      month.textContent = monthName;
-      month.className = 'month';
-      month.addEventListener('click', (event) => {
+    this.months.forEach((month, index) => {
+      const div = document.createElement('div');
+      div.textContent = month.label;
+      div.className = 'month';
+      div.addEventListener('click', (event) => {
         event.stopPropagation();
         this.selectMonth(index)
       });
-      this.calendarContent.appendChild(month);
+      this.calendarContent.appendChild(div);
 
       if (!this.isMonthValid(index)) {
-        month.classList.add('invalid');
+        div.classList.add('invalid');
       }
     });
   }
@@ -611,7 +625,7 @@ export default class DatePicker {
   isDayValid(day) {
     const date = new CustomDate(this.date.calendar, {
       day: day,
-      month: this.currentMonth,
+      month: this.currentMonth.pos,
       year: this.currentYear
     });
 

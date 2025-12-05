@@ -74,6 +74,8 @@ export function hasId(data) {
 
     // Itera sobre os membros do conjunto.        
     for (const member of this) {
+        if(!member) continue;
+        
         // Verifica se o membro tem uma propriedade _id e se ela é igual ao _id fornecido.
         if (member._id === data._id) return true;
     }

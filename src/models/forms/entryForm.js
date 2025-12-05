@@ -6,8 +6,9 @@ import LinkDialog from "../dialogs/linkDialog.js";
 import Dialogs from "../dialogs/dialog.js";
 import DatePicker from "../datePicker.js";
 import FilePickerDialog from "../dialogs/filePickerDialog.js";
-import Entry from "../../common/entities/entry.mjs";
-import EntryEvent from "../../common/entities/event.mjs";
+import Entry from "../../common/documents/entry.mjs";
+import EntryEvent from "../../common/documents/event.mjs";
+import CustomDate from "../../common/primitives/date.mjs";
 
 /**
  * Classe EntryForm estende a funcionalidade da classe BaseForm para gerenciar formulários que manipulem Entradas.
@@ -820,8 +821,12 @@ export default class EntryForm extends SidebarForm {
     if (event) {
       this.datePickers.startDate.selectFullDate(...event.date.start.expand());
       // Se houver uma data de fim, carregue o DatePicker com a data do evento.
-      if (event.date.end)
+      if (event.date.end) {
+        this.datePickers.endDate.disabled = false;
         this.datePickers.endDate.selectFullDate(...event.date.end.expand());
+      } else {
+        this.datePickers.endDate.disabled = true;
+      }
     }
   }
 
@@ -1050,9 +1055,9 @@ export default class EntryForm extends SidebarForm {
    */
   onDateTypeChange(event) {
     const select = event.target;
-    const dateType = Number(select.value) - 1;
+    const clid = Number(select.value);
 
-    const calendar = this.data.calendars[dateType];
+    const calendar = uniforge.doc.calendars.get(clid);
 
     Object.values(this.datePickers).forEach(pickers => {
       pickers.config(calendar);
@@ -1066,7 +1071,7 @@ export default class EntryForm extends SidebarForm {
     const pickerId = dataGroup.id;
     const picker = this.datePickers[pickerId];
 
-    if (!picker.empty) {
+    if (!picker.empty()) {
       // Obtem as datas de inicio e fim.
       const startDate = this.datePickers.startDate;
       const endDate = this.datePickers.endDate;
@@ -1927,19 +1932,22 @@ export default class EntryForm extends SidebarForm {
      * @returns {Promise<boolean>}  - Retorna true se todos os eventos forem salvos com sucesso, false caso contrário.
      */
   async _handleEventSave(data, events) {
-    for (const event of events) {
-      const result = await uniforge.db.validateEvent(event);
+    for (const e of events) {
+      const result = await uniforge.db.validateEvent(e);
 
-      switch (event.dbAction) {
+      switch (e.dbAction) {
         case 'd': {
-          await uniforge.db.deleteEvent(event.evid);
+          await uniforge.db.deleteEvent(e.evid);
 
+          // Busca por Linhas do Tempo as quais o evento pode ter sido associado.
           const timelines = uniforge.doc.timelines.toArray().find(t => {
-            return t.events.hasId(event);
+            return t.events.hasId(e);
           });
 
-          for(let timeline of timelines) {
-            await uniforge.db.deleteTimelineEvent(timeline.tid, event.evid);
+          if (timelines) {
+            for (let timeline of timelines) {
+              await uniforge.db.deleteTimelineEvent(timeline.tid, e.evid);
+            }
           }
         } break;
         case 'a': {
@@ -1947,14 +1955,14 @@ export default class EntryForm extends SidebarForm {
             this.msgBox.showWarning(result);
             return false;
           }
-          await uniforge.db.addEvent(event);
+          await uniforge.db.addEvent(e);
         } break;
         case 'u': {
           if (result !== '') {
             this.msgBox.showWarning(result);
             return false;
           }
-          await uniforge.db.updateEvent(event);
+          await uniforge.db.updateEvent(e);
         } break;
         default: break;
       }

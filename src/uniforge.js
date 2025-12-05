@@ -14,7 +14,7 @@ import PDFManager from "./scripts/managers/pdfManager.js";
 document.addEventListener('DOMContentLoaded', async () => {
     const cssname = await uniforge.path.join('css/styles.css');
 
-    const urls = {
+    const urls = Object.freeze({
         // Urls de Imagens padrão usadas pelo sistema.
         background: await uniforge.path.join('/ui/lib-background.png'),
         blankImg: await uniforge.path.join('/ui/blank-image.svg'),
@@ -31,7 +31,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         data: await uniforge.path.join('/data/'),
         ui: await uniforge.path.join('/ui/'),
         icons: await uniforge.path.join('/ui/icons/'),
-    }
+    });
 
     // Adiciona as propriedades restantes ao objeto uniforge.
     uniforge.utils.mergeObjects(uniforge, {
@@ -72,9 +72,11 @@ document.addEventListener('DOMContentLoaded', async () => {
          * 
          * @type {Object}
          * @property {Object|null} default  - Opção padrão.
+         * @property {Object|null} readonly - Opção de somente leitura.
          * @property {Object|null} simple   - Opção simplificada.
+         * @property {Object|null} lite     - Opção sem botões do TinyMCE.
          */
-        tinymceOptions: {
+        tinymceOptions: Object.freeze({
             default: {
                 editable_class: 'editable',
                 body_class: 'main-editor',
@@ -136,7 +138,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 skin: 'oxide-dark',
                 content_css: cssname,
             }
-        },
+        }),
 
         /**
          * Instância do gerenciador de PDFs.
@@ -161,7 +163,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             tooltip: new LinkTooltip()
         },
 
-        lineageEditor: {
+        lineageEditor: Object.freeze({
             props: {
                 nameProperty: 'name',
                 genderProperty: 'gender',
@@ -198,7 +200,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 IMAGE_TOP_MARGIN: 20,
                 IMAGE_DIAMETER: 40
             }
-        }
+        })
     });
     // Configura o estado inicial da aplicação, se ele ainda não foi criado.
     uniforge.state.init();
@@ -235,102 +237,6 @@ window.addEventListener("beforeunload", () => {
     const state = JSON.parse(json);
     if (!state.keep) uniforge.state.clear();
 });
-
-/*
-document.addEventListener("mousemove", (event) => {
-    const el = event.target.closest('[data-tooltip]');
-    const tooltip = document.querySelector('.floating-tooltip');
-
-    if (!el) {
-        if (tooltip.classList.contains('show')) tooltip.classList.remove('show');
-
-        tooltip.style.left = `${event.clientX}px`
-        tooltip.style.top = `${event.clientY}px`
-        return;
-    } else {
-        if (tooltip.classList.contains('show')) return;
-
-        let x = event.clientX + 12;
-        let y = event.clientY + 12;
-
-        tooltip.textContent = el.dataset.tooltip;
-
-        // Caixa do alvo.
-        const rect = el.getBoundingClientRect();
-
-        // Caixa estimada do tooltip.
-        const tooltipRect = tooltip.getBoundingClientRect();
-
-        // Detecta se tooltip ficaria sobre o alvo.
-        const wouldOverlap =
-            x < rect.right &&
-            x + tooltipRect.width > rect.left &&
-            y < rect.bottom &&
-            y + tooltipRect.height > rect.top;
-
-        if (!wouldOverlap) {
-            if (el.dataset.tooltipSide) {
-                switch (el.dataset.tooltipSide) {
-                    case 'left':
-                        x = `${event.clientX - tooltip.offsetWidth - 12}px`;
-                        break;
-                    case 'center':
-                        x = `${event.clientX - (tooltip.offsetWidth / 2)}px`;
-                        break;
-                    default:
-                        x = `${event.clientX + 12}px`;
-                }
-            }
-
-            if (el.dataset.tooltipBlock) {
-                switch (el.dataset.tooltipBlock) {
-                    case 'top':
-                        y = `${event.clientY - tooltip.offsetHeight - 12}px`;
-                        break;
-                    default:
-                        y = `${event.clientY + 12}px`;
-                }
-            }
-        } else {
-            // Reposiciona para fora do alvo mantendo a distância fixa.
-            const centerX = rect.left + rect.width / 2;
-            const centerY = rect.top + rect.height / 2;
-
-            if (event.clientY < centerY) {
-                // cursor está acima → tooltip vai acima do elemento
-                y = rect.top - tooltipRect.height - 12;
-                x = event.clientX;
-            } else {
-                // cursor está abaixo → tooltip vai abaixo
-                y = rect.bottom + 12;
-                x = event.clientX;
-            }
-
-            // Correção horizontal mínima
-            if (event.clientX < centerX) {
-                x = rect.left - tooltipRect.width - 12;
-            } else {
-                x = rect.right + 12;
-            }
-        }
-
-        tooltip.style.left = x;
-        tooltip.style.top = y;
-        tooltip.classList.add('show');
-        return;
-    }
-});
-*/
-
-/*
-async function testPDF() {
-    uniforge.pdf.init();
-
-    const html = document.createElement('div');
-    html.innerHTML = '<h1>Teste de PDF</h1>Este é um Teste de PDF';
-    uniforge.pdf.fromHTML(html);
-}   
-*/
 
 /** 
  * ------------------------------------------------------------------

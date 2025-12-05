@@ -1,4 +1,4 @@
-import CustomDate from "../../primitives/date.mjs";
+import CustomDate from "../primitives/date.mjs";
 import BaseDocument from "./base.mjs";
 
 export default class EntryEvent extends BaseDocument {

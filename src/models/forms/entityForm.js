@@ -3,7 +3,7 @@ import EntityManager from "../../scripts/managers/entityManger.js";
 import DatePicker from "../datePicker.js";
 import EntrySearchDialog from "../dialogs/entrySearchDialog.js";
 import Dialogs from "../dialogs/dialog.js";
-import Entity from "../../common/entities/entity.mjs";
+import Entity from "../../common/documents/entity.mjs";
 
 export default class EntityForm extends EntryForm {
   /**
