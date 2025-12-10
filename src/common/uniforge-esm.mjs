@@ -131,6 +131,12 @@ globalThis.uniforge = {
     sql: window.sql,
 
     /**
+    * Instância de Map Tiler usada pela aplicação.
+    * @type {NodeTiler}
+    */
+    tiler: window.tiler,
+
+    /**
      * Instância de Templates de Handlebars usada pela aplicação.
      * @type {Object}
      

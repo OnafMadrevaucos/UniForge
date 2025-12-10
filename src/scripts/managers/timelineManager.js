@@ -418,19 +418,20 @@ export class TimelineManager extends BaseManager {
         const historyYear = document.createElement('div');
         historyYear.className = 'history-year';
         const yearText = document.createElement('strong');
-        yearText.textContent = (data.s_year < 0 ? `${Math.abs(data.s_year)} a.T.` : `${data.s_year} d.T.`);
+        yearText.textContent = (data.date.start.year < 0 ? `${Math.abs(data.date.start.year)} a.T.` : `${data.date.start.year} d.T.`);
         historyYear.appendChild(yearText);
 
         const calendar = uniforge.doc.calendars.get(data.clid);
+        const month = calendar.months.find(m => m.pos === data.date.start.month);
         const smallDate = document.createElement('small');
         const spanDate = document.createElement('span');
         const spanMonth = document.createElement('span');
         spanMonth.className = 'history-month';
-        spanMonth.textContent = calendar.months[data.s_month];
+        spanMonth.textContent = month.label;
 
         const spanDay = document.createElement('span');
         spanDay.className = 'history-day';
-        spanDay.textContent = `, ${data.s_day}`;
+        spanDay.textContent = `, ${data.date.start.day}`;
 
         spanDate.appendChild(spanMonth);
         spanDate.appendChild(spanDay);

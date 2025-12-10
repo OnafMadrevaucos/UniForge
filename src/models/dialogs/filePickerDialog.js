@@ -76,6 +76,7 @@ export default class FilePickerDialog extends BaseDialog {
         * @type {string}
         */
         this.selectedData = {
+            absolutePath: null,
             path: null,
             name: null,
             ext: null,
@@ -214,9 +215,17 @@ export default class FilePickerDialog extends BaseDialog {
             uploadFileDiv.classList.add("hidden");
 
             // Exibe opção de selecionar extensão do arquivo.
-            fileExtensionDiv.classList.remove("hidden");
+            fileExtensionDiv.classList.add("hidden");
+
+            fileExtensionSelect.innerHTML = "";
+            fileExtensionSelect.value = null;
 
             selectedFileSpan.textContent = "Nome do Arquivo";
+        } else {
+            if (this.canUpload) uploadFileDiv.classList.remove("hidden");
+            else uploadFileDiv.classList.add("hidden");
+
+            fileExtensionDiv.classList.remove("hidden");
 
             this.extensions.forEach((ext) => {
                 const option = document.createElement("option");
@@ -229,14 +238,6 @@ export default class FilePickerDialog extends BaseDialog {
             fileExtensionSelect.disabled = (this.type === 'pdf');
 
             this.selectedData.ext = fileExtensionSelect.value;
-        } else {
-            if (this.canUpload) uploadFileDiv.classList.remove("hidden");
-            else uploadFileDiv.classList.add("hidden");
-
-            fileExtensionDiv.classList.add("hidden");
-
-            fileExtensionSelect.innerHTML = "";
-            fileExtensionSelect.value = null;
         }
 
         if (this.canUpload) {
@@ -253,7 +254,7 @@ export default class FilePickerDialog extends BaseDialog {
 
     async browse(target = this.target) {
         this.#loaded = false;
-        
+
         // Atualiza o caminho do diretório alvo.
         this.source.target = target;
 
@@ -296,6 +297,19 @@ export default class FilePickerDialog extends BaseDialog {
             dirContent.files.forEach((file) => {
                 this.#appendFileItem(file);
             });
+        } else {
+            const filePickerInput = this.querySelector('#filePickerInput');
+
+            if (this.selectedData.path) {
+                const absolutePath = await uniforge.path.join(this.selectedData.path);
+                this.selectedData.absolutePath = absolutePath;
+                this.selectedData.type = 'folder';
+
+                filePickerInput.dataset.absolutePath = absolutePath;
+                filePickerInput.dataset.type = 'folder';
+            }
+
+            filePickerInput.value = this.target + '\\';
         }
 
         // Avisa que o conteúdo foi carregado.
@@ -371,7 +385,7 @@ export default class FilePickerDialog extends BaseDialog {
         // O caminho completo do arquivo selecionado.
         const filePath = await uniforge.app.fileDialog(this.type);
         // Os dados binários do arquivo selecionado.
-        const binaryData = await uniforge.fs.readFile(filePath);        
+        const binaryData = await uniforge.fs.readFile(filePath);
 
         // O arquivo não existe ou não foi selecionado.
         if (!binaryData) return;
@@ -404,6 +418,7 @@ export default class FilePickerDialog extends BaseDialog {
         filesList.querySelectorAll('li.file').forEach((file) => file.classList.remove('selected'));
 
         this.selectedData = {
+            absolutePath: filePath,
             path: localPath,
             name: name,
             ext: `.${ext}`,
@@ -432,6 +447,7 @@ export default class FilePickerDialog extends BaseDialog {
 
         // Limpa os dados selecionados.
         this.selectedData = {
+            absolutePath: null,
             path: null,
             name: null,
             ext: null,
@@ -491,27 +507,26 @@ export default class FilePickerDialog extends BaseDialog {
         }
     }
 
-    _onFolderClick(event) {
+    async _onFolderClick(event) {
         event.stopPropagation();
         const clickedFolder = event.target.closest('.dir');
+        const filePickerInput = this.querySelector('#filePickerInput');
 
         if (this.onlyFolders) {
-            const filePickerInput = this.querySelector('#filePickerInput');
-
             this.constructor.LAST_BROWSED_DIRECTORY = this.selectedData.path;
             this.selectedData.path = clickedFolder.dataset.path;
+        }
 
-            if (!this.selectedData.name) {
-                filePickerInput.value = this.selectedData.path + '\\';
-            } else {
-                filePickerInput.value = `${this.selectedData.path}\\${this.selectedData.name}${this.selectedData.ext}`;
-            }
+        if (!this.selectedData.name) {
+            filePickerInput.value = this.selectedData.path + '\\';
+        } else {
+            filePickerInput.value = `${this.selectedData.path}\\${this.selectedData.name}${this.selectedData.ext}`;
         }
 
         this.browse(clickedFolder.dataset.path);
     }
 
-    _onFileClick(event) {
+    async _onFileClick(event) {
         event.stopPropagation();
         const clickedFile = event.target.closest('.file');
         const filePickerInput = this.querySelector('#filePickerInput');
@@ -523,6 +538,7 @@ export default class FilePickerDialog extends BaseDialog {
             filePickerInput.value = '';
 
             this.selectedData = {
+                absolutePath: null,
                 path: null,
                 name: null,
                 ext: null,
@@ -537,17 +553,25 @@ export default class FilePickerDialog extends BaseDialog {
 
         clickedFile.classList.toggle('selected');
 
+        const path = clickedFile.dataset.path;
+        const name = clickedFile.dataset.name;
+        const ext = clickedFile.dataset.ext;
+
+        const absolutePath = await uniforge.path.join(clickedFile.dataset.path);
+
         this.selectedData = {
-            path: clickedFile.dataset.path,
-            name: clickedFile.dataset.name,
-            ext: clickedFile.dataset.ext,
+            absolutePath: absolutePath,
+            path: path,
+            name: name,
+            ext: ext,
             src: null
         };
 
         filePickerInput.value = this.selectedData.path;
         filePickerInput.dataset.name = this.selectedData.name;
         filePickerInput.dataset.ext = this.selectedData.ext;
-        filePickerInput.dataset.type = FilePickerDialog.VALID_FILE_EXTENSIONS[this.selectedData.ext];       
+        filePickerInput.dataset.type = FilePickerDialog.VALID_FILE_EXTENSIONS[this.selectedData.ext];
+        filePickerInput.dataset.absolutePath = this.selectedData.absolutePath;
     }
 
     /**
@@ -571,29 +595,38 @@ export default class FilePickerDialog extends BaseDialog {
                             const filePickerInput = document.querySelector('#filePickerInput');
                             const captionInput = document.querySelector('#captionInput');
 
-                            const name = filePickerInput.dataset.name;
-                            const ext = name.split('.').pop();
                             const type = filePickerInput.dataset.type;
-                            const src = filePickerInput.dataset.src;
+                            const absolutePath = filePickerInput.dataset.absolutePath;
 
-                            // Nenhum arquivo selecionado ou nome do arquivo vazio. Impeça o fechamento do diálogo.
-                            if (uniforge.utils.isEmpty(name)) {
-                                uniforge.ctrls.msgBox.showWarning('Nenhum arquivo selecionado ou nome do arquivo vazio.');
-                                return false;
-                            }
+                            let name = null;
+                            let ext = null;
+                            let src = null;
 
-                            if(src) {
-                                const dest = await uniforge.path.resolve(filePickerInput.value);
-                                const result = await uniforge.fs.copyFile(src, dest);
+                            if (type !== 'folder') {
+                                name = filePickerInput.dataset.name;
+                                ext = name.split('.').pop();
+                                src = filePickerInput.dataset.src;                                
 
-                                if(!result) {
-                                    uniforge.ctrls.msgBox.showWarning('Não foi possível copiar o arquivo selecionado.');
+                                // Nenhum arquivo selecionado ou nome do arquivo vazio. Impeça o fechamento do diálogo.
+                                if (uniforge.utils.isEmpty(name)) {
+                                    uniforge.ctrls.msgBox.showWarning('Nenhum arquivo selecionado ou nome do arquivo vazio.');
                                     return false;
+                                }
+
+                                if (src) {
+                                    const dest = await uniforge.path.resolve(filePickerInput.value);
+                                    const result = await uniforge.fs.copyFile(src, dest);
+
+                                    if (!result) {
+                                        uniforge.ctrls.msgBox.showWarning('Não foi possível copiar o arquivo selecionado.');
+                                        return false;
+                                    }
                                 }
                             }
 
                             const data = {
                                 uuid: uniforge.db.generateID(),
+                                absolutePath: absolutePath,
                                 path: filePickerInput.value,
                                 name: name,
                                 ext: ext,

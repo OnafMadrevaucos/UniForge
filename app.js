@@ -4,6 +4,7 @@ import { fileURLToPath } from 'url';
 import fs from 'fs';
 import Database from 'better-sqlite3';
 import { result } from 'lodash-es';
+import NodeTiler from './modules/nodetiler/nodeTiler.mjs';
 
 // Para resolver o `__dirname` no modo ESM
 const __filename = fileURLToPath(import.meta.url);
@@ -19,6 +20,8 @@ console.log(__filename);
  * @type {Database}
  */
 const db = new Database(path.join(__dirname, '/common/backend/database.db'));
+
+const tiler = null;
 
 // Remove o menu padrão
 Menu.setApplicationMenu(null);
@@ -442,14 +445,7 @@ async function getTemplate(fileName, id) {
  * @returns {Promise<boolean>} - Uma promessa que se resolve com um booleano indicando se a geração ocorreu com sucesso.
  * */
 async function generateTiles(path, config) {
-  const tiler = new MapTilerNode(path, {
-    tileSize: config.tileSize,
-    minSide: config.minSide,
-    maxZoom: config.maxZoom,
-    expand: config.expand,
-    metadata: config.metadata,
-    multithread: config.multithread
-  });
+  const tiler = new NodeTiler(path);
 
   // Redireciona a barra de progresso
   tiler._emitProgress = (msg) => {

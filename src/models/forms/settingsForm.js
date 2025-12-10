@@ -2,6 +2,7 @@ import EntryForm from "./entryForm.js";
 import Dialogs from '../dialogs/dialog.js';
 import ChapterDialog from "../dialogs/chapterDialog.js";
 import DBManager from "../../db/dbManager.js";
+import FilePickerDialog from "../dialogs/filePickerDialog.js";
 
 /**
   * Formulário de configurações do sistema.
@@ -117,6 +118,12 @@ export default class SettingsForm extends EntryForm {
 
         const newChapterButton = this.querySelector('#newChapterButton');
         newChapterButton.addEventListener('click', (event) => { this.onNewChapterClick(event) });
+
+        const defaultMapButton = this.querySelector('#defaultMapButton');
+        defaultMapButton.addEventListener('click', (event) => { this.onDefaultMapClick(event) });
+
+        const loadMapButton = this.querySelector('#loadMapButton');
+        loadMapButton.addEventListener('click', (event) => { this.onLoadMapClick(event) });
     }
 
     /**
@@ -180,11 +187,11 @@ export default class SettingsForm extends EntryForm {
         const mid = uniforge.constants.leaflet.DEFAULT_OVERLAY; // Define o ID do mapa como o mapa padrão.
         const defaultMap = uniforge.doc.maps.get(mid);
 
-        if (!defaultMap) {            
+        if (!defaultMap) {
             const mapBuffer = await uniforge.fs.readFile(uniforge.urls.defaultMap);
             const mapExt = await uniforge.path.extname(uniforge.urls.defaultMap);
-            
-            const mapFile = new File([mapBuffer], `default.${mapExt}`, { type: mapExt });           
+
+            const mapFile = new File([mapBuffer], `default.${mapExt}`, { type: mapExt });
 
             // Criar um DataTransfer e adicionar o arquivo
             const dataTransfer = new DataTransfer();
@@ -496,6 +503,26 @@ export default class SettingsForm extends EntryForm {
                 uniforge.app.refresh(); // Recarrega a aplicação.
             }
         }
+    }
+
+    async onDefaultMapClick(event) {
+        event.stopPropagation();
+        // Abre o diálogo de seleção da pasta.
+        const folderData = await FilePickerDialog.configDialog(null, { canUpload: false, hasCaption: false, onlyFolders: true, type: 'folder' });
+
+        if(folderData) {
+            const defaultMapInput = this.querySelector('#defaultMapInput');
+            defaultMapInput.value = folderData.path;
+            defaultMapInput.dataset.absulutePath = folderData.absolutePath;
+        }
+    }
+
+    async onLoadMapClick(event) {
+        event.stopPropagation();
+        // Abre o diálogo de seleção da pasta.
+        const imageData = await FilePickerDialog.configDialog(null, { canUpload: true, hasCaption: false, type: 'images' });
+        const outputFolder = await uniforge.path.join(imageData.path);
+        await uniforge.tiler.generateTiles(imageData.absolutePath, { outputFolder: outputFolder });
     }
 
     _handleLineageIcon(subject) {

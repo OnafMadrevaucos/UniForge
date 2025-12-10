@@ -545,13 +545,13 @@ input:checked+.slider::before {
     align-self: center;
 }
 
-.footer .buttons button.disabled {
+button.disabled {
     background-color: var(--background-color);
     color: var(--light-text-color);
     border: var(--filled-border);
 }
 
-.footer .buttons button.disabled:hover {
+button.disabled:hover {
     cursor: not-allowed;
 }
 
@@ -2385,6 +2385,14 @@ input:checked+.slider::before {
 
 #settings #leafletPanel .footer .fixed.buttons {
     flex: 0;
+}
+
+#settings #loadMapButton {
+    margin: 0;
+    width: 100%;
+    padding-block: 5px;
+    color: var(--light-text-color);
+    border: var(--filled-border);
 }
 
 /* ------ Article Type Form ------ */

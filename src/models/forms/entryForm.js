@@ -820,10 +820,15 @@ export default class EntryForm extends SidebarForm {
     // Se houver um evento, carregue o DatePicker com a data do evento.
     if (event) {
       this.datePickers.startDate.selectFullDate(...event.date.start.expand());
-      // Se houver uma data de fim, carregue o DatePicker com a data do evento.
-      if (event.date.end) {
+
+      // Se houver uma data de início, habilite o DatePicker de fim.
+      if (event.date.start) {
         this.datePickers.endDate.disabled = false;
-        this.datePickers.endDate.selectFullDate(...event.date.end.expand());
+
+        // Se houver uma data de fim, carregue o DatePicker com a data do evento.
+        if (event.date.end) {
+          this.datePickers.endDate.selectFullDate(...event.date.end.expand());
+        }
       } else {
         this.datePickers.endDate.disabled = true;
       }

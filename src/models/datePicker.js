@@ -280,10 +280,13 @@ export default class DatePicker {
    */
   clearDate() {
     this.date.clearDate();
-    this.#currentDate.clearDate();  
+    this.#currentDate.clearDate(); 
 
     this.dateDisplay.textContent = 'Selecione uma data';
     this.#hiddenInput.value = null;
+
+    const day = this.calendarContent.querySelector('.day.selected');
+    if(day) day.classList.remove('selected');
   }
 
   /**

@@ -1,7 +1,7 @@
 <div id="settings" class="tabs-control flexcol">
     <div class="tabs-options flex-1 flexrow">
         <button id="main" class="flexcol selected" data-panel="mainPanel"><i class="fas fa-sliders"></i> Geral</button>
-        <button id="encyclopedia" class="flexcol" data-panel="chapterPanel"><i class="fa-solid fa-bookmark"></i>
+        <button id="encyclopedia" class="flexcol" data-panel="chapterPanel"><i class="fas fa-bookmark"></i>
             Capítulos</button>
         <button id="database" class="flexcol" data-panel="databasePanel"><i class="fas fa-database"></i> Banco de
             Dados</button>
@@ -14,7 +14,7 @@
                 <div class="footer">
                     <div id="searchEntry" class="input-container search-bar flexrow">
                         <input type="text" id="searchInput" class="search-data" placeholder="Pesquisar opção...">
-                        <a id="clearSearch" data-tooltip="Limpar busca" data-tooltip-side="left" data-tooltip-block="top"><i class="fa-solid fa-xmark"></i></a>
+                        <a id="clearSearch" data-tooltip="Limpar busca" data-tooltip-side="left" data-tooltip-block="top"><i class="fas fa-xmark"></i></a>
                     </div>
                 </div>
             </div>
@@ -46,34 +46,34 @@
                 <span class="data-label">Executar Stored Procedure </span>
                 <div class="data-complex flexcol">
                     <select id="procedureName" class="data" name="procedureName"></select>
-                    <button id="procedureButton"><i class="fa-solid fa-cloud-arrow-up"></i> Executar</button>
+                    <button id="procedureButton"><i class="fas fa-cloud-arrow-up"></i> Executar</button>
                 </div>
             </div>
             <div class="data-group exec combo">
                 <span class="data-label">Excluir Tabela </span>
                 <div class="data-complex flexcol">
                     <select id="tableName" class="data" name="tableName"></select>
-                    <button id="deleteTableButton"><i class="fa-solid fa-cloud-arrow-up"></i> Executar</button>
+                    <button id="deleteTableButton"><i class="fas fa-cloud-arrow-up"></i> Executar</button>
                 </div>
             </div>
             <div class="data-group query">
                 <span class="data-label">Executar Comando </span>
                 <textarea id="queryText"></textarea>
                 <div class="footer flexrow">
-                    <button id="queryButton"><i class="fa-solid fa-cloud-arrow-up"></i> Executar</button>
+                    <button id="queryButton"><i class="fas fa-cloud-arrow-up"></i> Executar</button>
                 </div>
             </div>
             <div class="data-group combo">
                 <span class="data-label">Recriar Banco de Dados </span>
                 <div class="data-complex flexcol">
-                    <button id="resetDatabaseButton"><i class="fa-solid fa-arrows-rotate"></i> Recriar </button>
+                    <button id="resetDatabaseButton"><i class="fas fa-arrows-rotate"></i> Recriar </button>
                 </div>
             </div>
         </div>
         <div id="chapterPanel" class="panel flexrow hidden">
             <div id="sideBar" class="sidebar">
                 <h3>Capítulos</h3>
-                <a id="newChapterButton" class="flyer-button"><i class="fa-solid fa-folder-plus"></i> Novo Capítulo</a>
+                <a id="newChapterButton" class="flyer-button"><i class="fas fa-folder-plus"></i> Novo Capítulo</a>
                 <foldertree id="chapter" item="sections"></foldertree>
                 <div class="footer">
                     <div id="confirmDialog" class="confirmation-tooltip hidden" data-item="" data-action="">
@@ -85,7 +85,7 @@
                     </div>
                     <div id="searchEntry" class="input-container search-bar flexrow">
                         <input type="text" id="searchInput" class="search-data" placeholder="Pesquisar entrada...">
-                        <a id="clearSearch" data-tooltip="Limpar busca" data-tooltip-side="left" data-tooltip-block="top"><i class="fa-solid fa-xmark"></i></a>
+                        <a id="clearSearch" data-tooltip="Limpar busca" data-tooltip-side="left" data-tooltip-block="top"><i class="fas fa-xmark"></i></a>
                     </div>
                 </div>
             </div>
@@ -144,23 +144,28 @@
                         <h3>Mapas</h3>
                         <div class="data-group text">
                             <span class="data-label">Mapa Padrão </span>
-                            <input id="defaultMapInput" type="file" class="data" accept="image/*"/>
-                            <a class="layer-item-delete" data-tooltip="Excluir Padrão" data-tooltip-side="left"><i class="fa-solid fa-trash"></i></a>
+                            <input id="defaultMapInput" class="data" type="text" readonly/>
+                            <a id="defaultMapButton" class="layer-item-select" data-tooltip="Selecionar Pasta" data-tooltip-side="left"><i class="fas fa-folder-open"></i></a>
+                            <a class="layer-item-delete" data-tooltip="Excluir Mapa" data-tooltip-side="left"><i class="fas fa-trash"></i></a>
+                        </div>
+                        <div class="data-group button flexrow">
+                            <span class="data-label"></span>
+                            <button id="loadMapButton" class="data layer-item-select"><i class="fa-solid fa-table-cells-large"></i> Gerar TileMap</button>
                         </div>
                         <h4>Camadas</h4>
                         <div class="data-group text">
                             <span class="data-label">Rótulos </span>
                             <input id="defaultLabelInput" type="file" class="data" accept="image/*"/>
-                            <a class="layer-item-delete" data-tooltip="Excluir Padrão" data-tooltip-side="left"><i class="fa-solid fa-trash"></i></a>
+                            <a class="layer-item-delete" data-tooltip="Excluir Padrão" data-tooltip-side="left"><i class="fas fa-trash"></i></a>
                         </div>
                         <div class="data-group text">
                             <span class="data-label">Caminhos </span>
                             <input id="defaultPathInput" type="file" class="data" accept="image/*"/>
-                            <a class="layer-item-delete" data-tooltip="Excluir Padrão" data-tooltip-side="left"><i class="fa-solid fa-trash"></i></a>
+                            <a class="layer-item-delete" data-tooltip="Excluir Padrão" data-tooltip-side="left"><i class="fas fa-trash"></i></a>
                         </div><div class="data-group text">
                             <span class="data-label">Cidades </span>
                             <input id="defaultCitiesInput" type="file" class="data" accept="image/*"/>
-                            <a class="layer-item-delete" data-tooltip="Excluir Padrão" data-tooltip-side="left"><i class="fa-solid fa-trash"></i></a>
+                            <a class="layer-item-delete" data-tooltip="Excluir Padrão" data-tooltip-side="left"><i class="fas fa-trash"></i></a>
                         </div>
                     </div>
                 </fieldset>
