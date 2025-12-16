@@ -657,6 +657,25 @@ button.disabled:hover {
     display: none !important;
 }
 
+/* ------ Progress Dialog ------ */
+.progress-dialog .progress-bar-wrapper {
+    gap: var(--default-gap-size);
+    padding-block: 0 5px;
+}
+
+.progress-dialog .progress-bar-bg {
+    flex: 1;
+    width: 100%;
+    border-radius: var(--default-border-radius);
+    background-color: var(--blue);
+    box-shadow: inset 1px 1px 4px 0px var(--grey);
+}
+
+.progress-dialog .progress-bar-bg .progress-bar-fill {
+    background-color: var(--redT87);
+    border-radius: var(--default-border-radius);
+    box-shadow: inset 1px 1px 4px 0px var(--hover-red);
+}
 
 /* ------ Leaflet Controls ------ */
 #map {
@@ -2264,6 +2283,7 @@ button.disabled:hover {
 .tabs-control .tab-content div.event-info {
     overflow-x: hidden;
 }
+
 .tabs-control .tab-content div.event-info .footer {
     margin-top: 10px;
     margin-bottom: 5px;
@@ -3379,9 +3399,10 @@ button.disabled:hover {
 .sidebar .footer .input-container input {
     flex: 1;
     border: none;
-    outline: none;    
+    outline: none;
     background-color: transparent;
 }
+
 .sidebar .footer .input-container input:focus {
     box-shadow: inset 0px 0px 5px 0px var(--blue);
 }
@@ -4309,7 +4330,7 @@ button.disabled:hover {
 
 .lineage-tree .node .node-buttons .node-button[data-tooltip]::after {
     font-size: var(--tiny-size);
-    width: max-content ;
+    width: max-content;
     padding: 5px;
 }
 

@@ -9,6 +9,7 @@ import DBDocuments from "./db/dbDocuments.js";
 import * as esm from "./common/uniforge-esm.mjs";
 import lControl from "./common/leaflet/core.mjs";
 import PDFManager from "./scripts/managers/pdfManager.js";
+import ProgressDialog from "./models/dialogs/progressDialog.js";
 
 // Realiza as configurações iniciais da aplicação ao carregar o conteúdo do DOM.
 document.addEventListener('DOMContentLoaded', async () => {
@@ -160,7 +161,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         ctrls: {
             leaflet: null,
             msgBox: new MsgBox(6),
-            tooltip: new LinkTooltip()
+            tooltip: new LinkTooltip(),
+            progressDialog: null
         },
 
         lineageEditor: Object.freeze({
@@ -226,6 +228,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     checkState();
 
     await configureLeaflet();
+
+    configureMapTiler();
 });
 
 // Inicia o gerenciador de tooltips.
@@ -266,6 +270,37 @@ async function configureLeaflet() {
 
     // Inicializa o controle de mapas Leaflet.
     uniforge.ctrls.leaflet = lControl.init(uniforge.urls.worldMap);
+}
+// Configura a ferramenta de geração de map tiles.
+function configureMapTiler() {
+    uniforge.tiler.emitProgress((data) => updateProgressDialog(data));
+}
+// Atualiza o dialog conforme eventos.
+function updateProgressDialog(data) {
+    const progressDialog = uniforge.ctrls.progressDialog;
+
+    if (!progressDialog) return;
+
+    if (data.type === "start") {
+        progressDialog.updateMessage("Iniciando...");
+        return;
+    }
+
+    if (data.type === "tile-progress") {
+        progressDialog.indeterminate = false;
+        progressDialog.updateProgress(data, `Gerando tiles do zoom ${data.zoom}... (${data.processed}/${data.total})`);
+        return;
+    }
+
+    if (data.type === "zoom-done") {
+        progressDialog.updateMessage(`Nível de zoom ${data.zoom} concluído.`);
+        return;
+    }
+
+    if (data.type === "complete") {
+        progressDialog.updateProgress(data, "Concluído!");
+        return;
+    }
 }
 // Configura os elementos da Topbar de Ferramentas
 function configureTopBar() {

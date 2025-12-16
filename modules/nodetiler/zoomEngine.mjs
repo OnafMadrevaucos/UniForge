@@ -105,6 +105,10 @@ export const ZoomEngine = {
       for (let tx = tileX0; tx <= tileX1; tx++) {
         for (let ty = tileY0; ty <= tileY1; ty++) {
 
+          if (opts.isCancelled && opts.isCancelled()) {            
+            return { cancelled: true };
+          }
+
           // tile global bounds
           const tileTopGlobal = ty * tileSize;
           const tileBottomGlobal = tileTopGlobal + tileSize;
@@ -138,7 +142,7 @@ export const ZoomEngine = {
           const p = pool.run(task).then(() => {
             if (typeof onTileDone === "function") {
               try { onTileDone({ z: effectiveZoom - /* we'll pass z as separate in caller if needed*/ 0, tx, ty }); }
-              catch (_) {}
+              catch (_) { }
             }
           });
 

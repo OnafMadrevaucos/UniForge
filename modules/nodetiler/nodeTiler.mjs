@@ -13,6 +13,7 @@ import { fileURLToPath } from "url";
 
 import { WorkerPool } from "./nodeTileWorkerPool.mjs";
 import { ZoomEngine } from "./zoomEngine.mjs";
+import { zoom } from "d3";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -27,7 +28,7 @@ function renderProgressBar(current, total, prefix = "") {
 }
 
 export default class NodeTiler {
-    constructor(imagePath, leafletOptions = {}) {
+    constructor(imagePath, leafletOptions = {}, options = {}) {
         const defaults = {
             tileSize: 256,
             minZoom: 0,
@@ -48,9 +49,10 @@ export default class NodeTiler {
             maxTasksPerStripeFactor: 4
         };
 
-        const opt = { ...defaults, ...leafletOptions };
+        const opt = { ...defaults, ...leafletOptions, ...options };
         this._validateOptions(opt);
 
+        // --- Leaflet-like config ---
         this.tileSize = opt.tileSize;
         this.minZoom = opt.minZoom;
         this.maxZoom = opt.maxZoom;
@@ -62,6 +64,7 @@ export default class NodeTiler {
         this.noWrap = opt.noWrap;
         this.subdomains = opt.subdomains;
 
+        // --- Options ---
         this.imagePath = imagePath;
         this.minSide = opt.minSide;
         this.expand = opt.expand;
@@ -73,9 +76,19 @@ export default class NodeTiler {
 
         this.cpuCount = os.cpus().length;
         this.normalizedImage = null;
+
+        // --- Internals ---
         this.pool = null;
+        this.cancelRequested = false;
+
+        this.totalTiles = 0;
+        this.processedTiles = 0;
+
+        // Progress hook (renderer / main injeta)
         this._emitProgress = null;
     }
+
+    cancelRequested = false;
 
     _validateOptions(opt) {
         const assert = (c, m) => { if (!c) throw new Error("Config error: " + m); };
@@ -97,6 +110,104 @@ export default class NodeTiler {
         assert(Number.isInteger(opt.threadCount) && opt.threadCount >= 1, "threadCount must be >=1");
     }
 
+    _ensurePool() {
+        if (!this.canUseThreads()) return;
+        if (this.pool) return;
+
+        const workerPath = path.resolve(__dirname, "nodeTileWorker.mjs");
+
+        this.pool = new WorkerPool(workerPath, this.threadCount);
+        console.log(`NodeTiler | 🧵 WorkerPool criado com ${this.threadCount} workers`);
+    }
+
+    _clampBoundsToImage(bounds, normalizedWidth, normalizedHeight) {
+        let [[minY, minX], [maxY, maxX]] = bounds;
+        minX = Math.max(0, Math.min(normalizedWidth - 1, Number(minX)));
+        maxX = Math.max(0, Math.min(normalizedWidth - 1, Number(maxX)));
+        minY = Math.max(0, Math.min(normalizedHeight - 1, Number(minY)));
+        maxY = Math.max(0, Math.min(normalizedHeight - 1, Number(maxY)));
+        const realMinX = Math.min(minX, maxX);
+        const realMaxX = Math.max(minX, maxX);
+        const realMinY = Math.min(minY, maxY);
+        const realMaxY = Math.max(minY, maxY);
+        return [[realMinY, realMinX], [realMaxY, realMaxX]];
+    }
+
+    /**
+ * Garante que o diretório esteja limpo antes de receber os tiles.
+ */
+    async _prepareOutputDirectory(dir) {
+        try {
+            const stat = await fs.stat(dir);
+
+            if (!stat.isDirectory()) {
+                // existe mas não é diretório: erro
+                throw new Error(`O caminho '${dir}' existe, mas não é um diretório.`);
+            }
+
+            console.log(`NodeTiler | 📁 Diretório '${dir}' já existe — limpando...`);
+
+            // remove todo o conteúdo
+            const entries = await fs.readdir(dir);
+
+            if (entries.length > 0) {
+                console.log(`NodeTiler | 📁 Diretório '${dir}' não está vazio — limpando conteúdo...`);
+
+                await Promise.all(
+                    entries.map(async (entry) => {
+                        const fullPath = path.join(dir, entry);
+                        await fs.rm(fullPath, { recursive: true, force: true });
+                    })
+                );
+            }
+
+        } catch (err) {
+            // Se o diretório não existir, criamos
+            if (err.code === "ENOENT") {
+                await fs.mkdir(dir, { recursive: true });
+                return;
+            }
+            throw err; // erro real, repassa
+        }
+    }
+
+    _computeTileCount(effectiveZoom, normalizedWidth, normalizedHeight) {
+        this.totalTiles = 0;
+        const scale = Math.pow(2, effectiveZoom);
+
+        const [[minY, minX], [maxY, maxX]] = this._clampBoundsToImage(this.bounds, normalizedWidth, normalizedHeight);
+        const scaledMinX = minX * scale; const scaledMaxX = maxX * scale;
+        const scaledMinY = minY * scale; const scaledMaxY = maxY * scale;
+
+        const minTileX = Math.max(0, Math.floor(scaledMinX / this.tileSize));
+        const maxTileX = Math.max(0, Math.floor((scaledMaxX - 1) / this.tileSize));
+        const minTileY = Math.max(0, Math.floor(scaledMinY / this.tileSize));
+        const maxTileY = Math.max(0, Math.floor((scaledMaxY - 1) / this.tileSize));
+
+        this.totalTiles = (maxTileX - minTileX + 1) * (maxTileY - minTileY + 1);
+    }
+
+    _onTileDone(z) {
+        if(this.cancelRequested) return; 
+        this.processedTiles++;
+
+        const percent = this.totalTiles > 0
+            ? Math.round((this.processedTiles / this.totalTiles) * 100)
+            : 0;
+
+        if (this._emitProgress) {
+            this._emitProgress({
+                type: "tile-progress",
+                zoom: z,
+                processed: this.processedTiles,
+                total: this.totalTiles,
+                value: percent
+            });
+        }
+
+        renderProgressBar(this.processedTiles, this.totalTiles, `Zoom ${z}: `);
+    }
+
     canUseThreads() {
         return this.useMultithreading && this.threadCount > 1;
     }
@@ -109,32 +220,21 @@ export default class NodeTiler {
         const scale = longest < this.minSide ? (this.minSide / longest) : 1;
         const newWidth = Math.round(meta.width * scale);
         const newHeight = Math.round(meta.height * scale);
-        console.log(`Normalizando imagem: ${meta.width}×${meta.height} → ${newWidth}×${newHeight}`);
+        console.log(`NodeTiler | Normalizando imagem: ${meta.width}×${meta.height} → ${newWidth}×${newHeight}`);
         try {
             this.normalizedImage = await img.resize({ width: newWidth, height: newHeight, kernel: sharp.kernel.lanczos3 }).toBuffer();
         } catch (err) {
-            console.log("⚠ Lanczos3 falhou. Usando Bicubic...");
+            console.log("NodeTiler | ⚠ Lanczos3 falhou. Usando Bicubic...");
             this.normalizedImage = await img.resize({ width: newWidth, height: newHeight, kernel: sharp.kernel.cubic }).toBuffer();
         }
 
         if (this.bounds === null) {
             this.bounds = [[0, 0], [newHeight - 1, newWidth - 1]];
-            console.log("Bounds não fornecido — usando bounds completo:", this.bounds);
+            console.log("NodeTiler | Bounds não fornecido — usando bounds completo:", this.bounds);
         }
     }
 
-    _ensurePool() {
-        if (!this.canUseThreads()) return;
-        if (this.pool) return;
-
-        const workerPath = path.resolve(__dirname, "nodeTileWorker.mjs");
-
-        this.pool = new WorkerPool(workerPath, this.threadCount);
-        console.log(`🧵 WorkerPool criado com ${this.threadCount} workers`);
-    }
-
-
-    async generateZoomLevel(z, outputFolder) {
+    async generateZoom(z, outputFolder) {
         const effectiveZoom = z + this.zoomOffset;
         console.log(`\nGerando Z=${z} (efetivo ${effectiveZoom})`);
         this._ensurePool();
@@ -149,35 +249,10 @@ export default class NodeTiler {
         const zoomFolder = path.join(outputFolder, String(z));
         await fs.mkdir(zoomFolder, { recursive: true });
 
-        // Precompute tile count for progress display
-        const scale = Math.pow(2, effectiveZoom);
-        const [[minY, minX], [maxY, maxX]] = this._clampBoundsToImage(this.bounds, normalizedWidth, normalizedHeight);
-        const scaledMinX = minX * scale; const scaledMaxX = maxX * scale;
-        const scaledMinY = minY * scale; const scaledMaxY = maxY * scale;
+        // Precompute tile count for progress display.
+        this._computeTileCount(effectiveZoom, normalizedWidth, normalizedHeight);
 
-        const minTileX = Math.max(0, Math.floor(scaledMinX / this.tileSize));
-        const maxTileX = Math.max(0, Math.floor((scaledMaxX - 1) / this.tileSize));
-        const minTileY = Math.max(0, Math.floor(scaledMinY / this.tileSize));
-        const maxTileY = Math.max(0, Math.floor((scaledMaxY - 1) / this.tileSize));
-
-        const totalTiles = (maxTileX - minTileX + 1) * (maxTileY - minTileY + 1);
-        let processedTiles = 0;
-
-        const onTileDone = ({ tx, ty }) => {
-            processedTiles++;
-            renderProgressBar(processedTiles, totalTiles, `Z=${z}`);
-            if (this._emitProgress) {
-                this._emitProgress({
-                    type: "tile-progress",
-                    z,
-                    processed: processedTiles,
-                    total: totalTiles,
-                    tile: { x: tx, y: ty }
-                });
-            }
-        };
-
-        // Call ZoomEngine and pass onTileDone
+        // Call ZoomEngine and pass onTileDone.
         const result = await ZoomEngine.processZoom({
             normalizedImageBuffer: this.normalizedImage,
             normalizedWidth,
@@ -190,28 +265,19 @@ export default class NodeTiler {
             bounds: this._clampBoundsToImage(this.bounds, normalizedWidth, normalizedHeight),
             outputFolder: zoomFolder,
             maxTasksInFlight,
-            onTileDone: ({ z: ez, tx, ty }) => onTileDone({ tx, ty }) // map args
+            onTileDone: () => this._onTileDone(z),
+            isCancelled: () => this.cancelRequested
         });
 
+        // If cancelled, return null.
+        if(this.cancelRequested) return null;
+
         if (this._emitProgress) {
-            this._emitProgress({ type: "zoom-done", z, result });
+            this._emitProgress({ type: "zoom-done", zoom: z, result });
         }
 
         console.log(`Z=${z} pronto.`);
         return result;
-    }
-
-    _clampBoundsToImage(bounds, normalizedWidth, normalizedHeight) {
-        let [[minY, minX], [maxY, maxX]] = bounds;
-        minX = Math.max(0, Math.min(normalizedWidth - 1, Number(minX)));
-        maxX = Math.max(0, Math.min(normalizedWidth - 1, Number(maxX)));
-        minY = Math.max(0, Math.min(normalizedHeight - 1, Number(minY)));
-        maxY = Math.max(0, Math.min(normalizedHeight - 1, Number(maxY)));
-        const realMinX = Math.min(minX, maxX);
-        const realMaxX = Math.max(minX, maxX);
-        const realMinY = Math.min(minY, maxY);
-        const realMaxY = Math.max(minY, maxY);
-        return [[realMinY, realMinX], [realMaxY, realMaxX]];
     }
 
     async writeMetadata(outputFolder) {
@@ -236,25 +302,49 @@ export default class NodeTiler {
     }
 
     async generateTiles(outputFolder = "./tiles") {
-        await fs.mkdir(outputFolder, { recursive: true });
-        console.log("== Normalizando imagem base ==");
+        this.cancelRequested = false;
+        this.totalTiles = 0;
+        this.processedTiles = 0;
+
+        // Prepara diretório limpo.
+        await this._prepareOutputDirectory(outputFolder);
+
+        if (this._emitProgress) this._emitProgress({ type: "start" });
+
+        this._ensurePool();
+
+        console.log("NodeTiler | Normalizando imagem base...");
         await this.normalizeImage();
 
         for (let z = this.minNativeZoom; z <= this.maxNativeZoom; z++) {
-            await this.generateZoomLevel(z, outputFolder);
+            if (this.cancelRequested) return null;
+            await this.generateZoom(z, outputFolder);
         }
 
         if (this.pool) {
-            console.log("Encerrando WorkerPool...");
+            console.log("NodeTiler | Encerrando WorkerPool...");
             await this.pool.close();
             this.pool = null;
         }
 
-        if (this.generateMetadata) {
-            console.log("Gerando metadata.json...");
-            await this.writeMetadata(outputFolder);
+        if (!this.cancelRequested) {
+            if (this.generateMetadata) {
+                console.log("UniForge | Gerando metadata.json...");
+                await this.writeMetadata(outputFolder);
+            }
         }
 
-        console.log("✔ Todos os tiles gerados.");
+        console.log("NodeTiler | ✔ Todos os tiles gerados.");
+
+        if (this._emitProgress && !this.cancelRequested) this._emitProgress({ type: "complete" });
+    }
+
+    cancel() {
+        console.info("\nNodeTiler | Processo de geração de tiles cancelado pelo usuário.");
+        this.cancelRequested = true;
+
+        if (this.pool) {
+            this.pool.cancelAll(); // encerra workers imediatamente
+        }        
     }
 }

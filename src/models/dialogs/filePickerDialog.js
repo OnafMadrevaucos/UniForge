@@ -77,6 +77,7 @@ export default class FilePickerDialog extends BaseDialog {
         */
         this.selectedData = {
             absolutePath: null,
+            folder: null,
             path: null,
             name: null,
             ext: null,
@@ -419,6 +420,7 @@ export default class FilePickerDialog extends BaseDialog {
 
         this.selectedData = {
             absolutePath: filePath,
+            folder: this.target,
             path: localPath,
             name: name,
             ext: `.${ext}`,
@@ -448,6 +450,7 @@ export default class FilePickerDialog extends BaseDialog {
         // Limpa os dados selecionados.
         this.selectedData = {
             absolutePath: null,
+            folder: null,
             path: null,
             name: null,
             ext: null,
@@ -539,6 +542,7 @@ export default class FilePickerDialog extends BaseDialog {
 
             this.selectedData = {
                 absolutePath: null,
+                folder: null,
                 path: null,
                 name: null,
                 ext: null,
@@ -554,6 +558,7 @@ export default class FilePickerDialog extends BaseDialog {
         clickedFile.classList.toggle('selected');
 
         const path = clickedFile.dataset.path;
+        const folder = clickedFile.dataset.folder;
         const name = clickedFile.dataset.name;
         const ext = clickedFile.dataset.ext;
 
@@ -561,6 +566,7 @@ export default class FilePickerDialog extends BaseDialog {
 
         this.selectedData = {
             absolutePath: absolutePath,
+            folder: folder,
             path: path,
             name: name,
             ext: ext,
@@ -572,6 +578,7 @@ export default class FilePickerDialog extends BaseDialog {
         filePickerInput.dataset.ext = this.selectedData.ext;
         filePickerInput.dataset.type = FilePickerDialog.VALID_FILE_EXTENSIONS[this.selectedData.ext];
         filePickerInput.dataset.absolutePath = this.selectedData.absolutePath;
+        filePickerInput.dataset.folder = this.selectedData.folder;
     }
 
     /**
@@ -597,6 +604,7 @@ export default class FilePickerDialog extends BaseDialog {
 
                             const type = filePickerInput.dataset.type;
                             const absolutePath = filePickerInput.dataset.absolutePath;
+                            const folder = filePickerInput.dataset.folder;
 
                             let name = null;
                             let ext = null;
@@ -627,6 +635,7 @@ export default class FilePickerDialog extends BaseDialog {
                             const data = {
                                 uuid: uniforge.db.generateID(),
                                 absolutePath: absolutePath,
+                                folder: folder,
                                 path: filePickerInput.value,
                                 name: name,
                                 ext: ext,
@@ -767,6 +776,7 @@ export default class FilePickerDialog extends BaseDialog {
         item.className = 'file flexrow';
         item.dataset.file = '';
         item.dataset.action = 'pickFile';
+        item.dataset.folder = this.#getFileDir(file.path);
         item.dataset.path = file.path;
         item.dataset.name = file.name;
         item.dataset.ext = ext;

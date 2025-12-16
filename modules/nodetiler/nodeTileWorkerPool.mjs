@@ -53,7 +53,7 @@ export class WorkerPool {
     const idx = this.workers.indexOf(broken);
     if (idx !== -1) this.workers.splice(idx, 1);
     this.load.delete(broken);
-    try { broken.terminate(); } catch (_) {}
+    try { broken.terminate(); } catch (_) { }
     this._spawnWorker();
   }
 
@@ -98,8 +98,15 @@ export class WorkerPool {
     }
   }
 
+  cancelAll() {    
+    for (const w of this.workers) {
+      try { w.terminate(); } catch { }
+    }
+    this.queue = [];
+  }
+
   async close() {
-    const promises = this.workers.map(w => w.terminate().catch(()=>{}));
+    const promises = this.workers.map(w => w.terminate().catch(() => { }));
     await Promise.all(promises);
     this.workers = [];
     this.queue.length = 0;

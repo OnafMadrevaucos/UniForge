@@ -3,6 +3,7 @@ import Dialogs from '../dialogs/dialog.js';
 import ChapterDialog from "../dialogs/chapterDialog.js";
 import DBManager from "../../db/dbManager.js";
 import FilePickerDialog from "../dialogs/filePickerDialog.js";
+import ProgressDialog from "../dialogs/progressDialog.js";
 
 /**
   * Formulário de configurações do sistema.
@@ -510,7 +511,7 @@ export default class SettingsForm extends EntryForm {
         // Abre o diálogo de seleção da pasta.
         const folderData = await FilePickerDialog.configDialog(null, { canUpload: false, hasCaption: false, onlyFolders: true, type: 'folder' });
 
-        if(folderData) {
+        if (folderData) {
             const defaultMapInput = this.querySelector('#defaultMapInput');
             defaultMapInput.value = folderData.path;
             defaultMapInput.dataset.absulutePath = folderData.absolutePath;
@@ -521,8 +522,26 @@ export default class SettingsForm extends EntryForm {
         event.stopPropagation();
         // Abre o diálogo de seleção da pasta.
         const imageData = await FilePickerDialog.configDialog(null, { canUpload: true, hasCaption: false, type: 'images' });
-        const outputFolder = await uniforge.path.join(imageData.path);
-        await uniforge.tiler.generateTiles(imageData.absolutePath, { outputFolder: outputFolder });
+        const outputFolder = imageData.folder;
+
+        uniforge.ctrls.progressDialog = new ProgressDialog({
+            title: "Gerando Map Tiles",
+            message: "Preparando imagem...",
+            indeterminate: true,
+            cancelable: true,
+            onCancel: () => uniforge.tiler.cancel(),
+            onComplete: () => uniforge.ctrls.progressDialog.resetProgress()
+        }, { alwaysClose: true });
+
+        await uniforge.ctrls.progressDialog.show(true);
+
+        const result = await uniforge.tiler.generateTiles(imageData.absolutePath, { outputFolder: outputFolder });
+
+        if (result instanceof Error) {
+            uniforge.msgBox.showError("Um erro ocorreu ao gerar os tiles e o processo foi abortado.", result);
+        }
+
+        uniforge.ctrls.progressDialog.close();
     }
 
     _handleLineageIcon(subject) {

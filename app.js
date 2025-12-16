@@ -13,6 +13,8 @@ const __srcname = path.join(__dirname, 'src');
 
 let mainWindow;
 
+let activeTiler = null;
+
 console.log(__filename);
 
 /**
@@ -164,6 +166,13 @@ app.whenReady().then(() => {
    * @param {object} config - Opções de configuração da geração de tiles de mapas.
    */
   ipcMain.handle('generate-tiles', async (event, path, config) => generateTiles(path, config));
+
+  /**
+   * Manipulador para cancelar a geração de tiles de mapas.
+   */
+  ipcMain.on('tiler-cancel', () => {
+    if(activeTiler) activeTiler.cancel();
+  });
 
   console.log('UniForge | Criando requisição de Renders.');
 });
@@ -445,15 +454,22 @@ async function getTemplate(fileName, id) {
  * @returns {Promise<boolean>} - Uma promessa que se resolve com um booleano indicando se a geração ocorreu com sucesso.
  * */
 async function generateTiles(path, config) {
-  const tiler = new NodeTiler(path);
+  activeTiler = new NodeTiler(path, config || {});
 
   // Redireciona a barra de progresso
-  tiler._emitProgress = (msg) => {
-    mainWindow.webContents.send("tiler:progress", msg);
-  };
+  activeTiler._emitProgress = (data) => mainWindow.webContents.send("tiler-progress", data);
 
-  await tiler.generateTiles(config.outputFolder);
+  let result = null;
 
-  return true;
+  try {
+    await activeTiler.generateTiles(config.outputFolder);
+  } catch (err) {
+    console.error("UniForge | Tiling foi cancelado ou encerrou devido a um erro:", err);
+    result = err;
+  } finally {
+    activeTiler = null;
+  }
+
+  return result;
 }
 

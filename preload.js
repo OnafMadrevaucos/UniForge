@@ -53,6 +53,7 @@ console.log('UniForge | Configurando pré-carregamentos de Manipulador de Arquiv
 
 contextBridge.exposeInMainWorld('tiler', {
   generateTiles: (path, config) => ipcRenderer.invoke("generate-tiles", path, config),
-  onProgress: (callback) => { ipcRenderer.on("progress", (event, msg) => callback(msg)); }
+  emitProgress: (callback) => { ipcRenderer.on("tiler-progress", (event, data) => callback(data)); },
+  cancel: () => ipcRenderer.sendSync("tiler-cancel")
 });
 console.log('UniForge | Configurando pré-carregamentos da Ferramenta de Tiler de Mapa.');

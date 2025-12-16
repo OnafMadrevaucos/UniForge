@@ -38,6 +38,8 @@ export default class BaseDialog extends Application {
         this.alwaysOnTop = options?.alwaysOnTop ?? false;
 
         this.alwaysClose = options?.alwaysClose ?? false;
+
+        this._closed = false;
     }
 
     /* ---------------------------------------------------------------------------------------------------------------- */
@@ -174,7 +176,7 @@ export default class BaseDialog extends Application {
      * Cria a estrutura específica do diálogo, incluindo os seus botões.
      * @interface
      */
-    async refreshDerivedTemplate() { 
+    async refreshDerivedTemplate() {
         // Obtem os elementos HTML para renderização.
         const main = this.ui.main;
 
@@ -205,7 +207,7 @@ export default class BaseDialog extends Application {
         this._centerDialog();
 
         // Se o diálogo implementa 'activateListeners', chama o método.
-        if(this.activateListeners) this.activateListeners();
+        if (this.activateListeners) this.activateListeners();
     }
 
     submit(button, event) {
@@ -223,9 +225,17 @@ export default class BaseDialog extends Application {
         }
     }
 
-    close() {     
-        this.ui.overlay.remove();   
-        super.close();     
+    close() {
+        if (this._closed) return;
+        this._closed = true;
+
+        if (this.element) {
+            this.element.remove();
+            this.element = null;
+        }
+
+        this.ui.overlay.remove();
+        super.close();
     }
 
     hookToDOM() {

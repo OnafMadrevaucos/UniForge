@@ -227,7 +227,7 @@ export default class Application {
     }
 
     prepareBaseData() {
-        const data = {
+        const baseData = {
             title: this.title,
             type: this.type,
             core: {
@@ -235,7 +235,7 @@ export default class Application {
             }
         };
 
-        return data;
+        return { ...baseData, ...this.data };
     }
 
     /**
