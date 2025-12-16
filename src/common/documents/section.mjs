@@ -1,7 +1,7 @@
 import BaseDocument from "./base.mjs";
 
 export default class Section extends BaseDocument { 
-    constructor(data) {
+    constructor(data={}) {
         super();        
         this.#sid = data?.sid ?? uniforge.db.generateID();
         this.#isDraft = data?.isDraft ?? false;

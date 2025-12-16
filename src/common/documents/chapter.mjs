@@ -1,7 +1,7 @@
 import BaseDocument from "./base.mjs";
 
 export default class Chapter extends BaseDocument {
-    constructor(data) {
+    constructor(data={}) {
         super();
         this.#cid = data?.cid ?? uniforge.db.generateID();
 

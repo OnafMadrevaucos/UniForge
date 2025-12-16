@@ -1,7 +1,7 @@
 import BaseDocument from "./base.mjs";
 
 export default class Entry extends BaseDocument {
-    constructor(data) {
+    constructor(data={}) {
         super();
         this.#eid = data?.eid ?? uniforge.db.generateID();
         this.#isDraft = data?.isDraft ?? false;

@@ -34,6 +34,51 @@ const lControl = {
         IMG_HEIGHT: 4054,
         VIEW_WIDTH: 3840,
         VIEW_HEIGHT: 2160,
+
+        UNIT_TO_METER_RATIO: 165000 // 1 Map Unit = 165000 unidades'
+    },
+
+    /**
+    * Calcula a resolução (Map Units por Pixel) e a escala (Metros por Pixel) para um ZoomLevel.
+    * @param {number} zoomLevel - O nível de zoom para o qual calcular a escala.
+    * @returns {{zoomLevel: number, resolution: number, mpp: number, scaleDisplay: string}} Objeto com a resolução e a escala.
+    */
+    getScaleForZoom(zoomLevel) {
+        // Puxa as constantes globais.
+        const { MAX_ZOOM, UNIT_TO_METER_RATIO } = this.constants;
+
+        // 1. Resolução em Map Units por Pixel (Map Units / Pixel)
+        // Fórmula Rz = 1 * 2 ^ (Zmax - Z)
+        const resolution = 1 * Math.pow(2, MAX_ZOOM - zoomLevel);
+
+        // 2. Metros por Pixel (MPP)
+        const mpp = resolution * UNIT_TO_METER_RATIO;
+
+        // 3. Cálculo para exibição (distância no mapa que 100px na tela representa)
+        const distanceInMeters = mpp * 100;
+
+        let displayValue;
+        let displayUnit;
+
+        if (distanceInMeters >= 1000) {
+            displayValue = distanceInMeters / 1000;
+            displayUnit = 'km';
+        } else if (distanceInMeters >= 1) {
+            displayValue = distanceInMeters;
+            displayUnit = 'm';
+        } else {
+            displayValue = distanceInMeters * 1000;
+            displayUnit = 'mm';
+        }
+
+        const scaleDisplay = `100px \u2248 ${displayValue.toFixed(2)} ${displayUnit}`; // \u2248 é o símbolo de "aproximadamente"
+
+        return {
+            zoomLevel,
+            resolution, // Map Units/Pixel
+            mpp, // Meters/Pixel
+            scaleDisplay: scaleDisplay // String formatada
+        };
     },
 
     /**
@@ -284,7 +329,7 @@ const lControl = {
             map.dragging.enable();
         });
 
-        
+
         function _configureOverlayControl() {
             // Pega o container do controle
             const container = overlayLayerControl.getContainer();

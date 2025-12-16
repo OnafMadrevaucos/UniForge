@@ -39,8 +39,35 @@ export default class SettingsForm extends EntryForm {
     }
 
     /**@inheritdoc */
-    prepareData() {
+    async prepareData() {
+        this.prepareGroups();
+
+        this.data.tilerHint = 'NodeTiler é uma ferramenta de geração de Tile Maps para uso com a biblioteca Leaflet. ' +
+            'Um Tile Map é em si um diretório localizado no \'diretório padrão\' abaixo, altere-o se desejar ' +
+            'que os arquivos gerados sejam armazenados em outro diretório.';
+
+        await this.prepareMetadata();
+
         return super.prepareData();
+    }
+
+    prepareGroups() {
+        this.data.leaflet = {};
+
+        const leaflet = uniforge.doc.settings.filter(s => s.group === 'leaflet');
+        for (const setting of leaflet.toArray()) {
+            this.data.leaflet[setting.tag] = setting.value;
+        }
+
+        this.data.leaflet.MAX_ZOOM = uniforge.constants.leaflet.MAX_ZOOM;
+        this.data.leaflet.UNIT_TO_METER_RATIO = uniforge.constants.leaflet.UNIT_TO_METER_RATIO;
+    }
+
+    async prepareMetadata() {
+        const filePath = await uniforge.path.join(uniforge.doc.settings.get('mainMap').value, 'metadata.json');
+
+        const data = await fetch(filePath);
+        this.data.metadata = await data.json();
     }
 
     /** @override */
@@ -101,6 +128,17 @@ export default class SettingsForm extends EntryForm {
         super.activateListeners();
 
         this.configureOptions();
+
+        const html = this.ui.app;
+
+        // NOVO: Listener para o botão de cálculo de escala
+        const calculateButton = html.querySelector('#calculateScaleButton');
+        if (calculateButton) {
+            calculateButton.addEventListener('click', this._onCalculateScale.bind(this));
+        }
+
+        // Aciona o cálculo inicial ao carregar
+        this._onCalculateScale();
 
         const executeProcButton = this.querySelector('#procedureButton');
         executeProcButton.addEventListener('click', (event) => { this.onExecuteProcClick(event); });
@@ -590,5 +628,88 @@ export default class SettingsForm extends EntryForm {
         dataIcon.dataset.tooltip = 'Escolha um assunto...';
         chapterIcon.classList.remove(...chapterIcon.classList);
         chapterIcon.className = 'fa-regular fa-file';
+    }
+
+    /**
+     * Lógica de cálculo da escala, espelhando a função em core.mjs.
+     * @param {number} zoomLevel - O nível de zoom.
+     * @param {number} maxZoom - O zoom máximo (Zmax).
+     * @param {number} unitToMeterRatio - Razão Map Unit para Metro.
+     * @returns {{zoomLevel: number, resolution: number, mpp: number, scaleDisplay: string}}
+     * @private
+     */
+    _calculateScaleLogic(zoomLevel, maxZoom, unitToMeterRatio) {
+        // Obter TILE_SIZE de uniforge.constants, se necessário, ou usar um padrão.
+        const TILE_SIZE = uniforge.constants.leaflet.TILE_SIZE || 256;
+
+        // 1. Resolução em Map Units por Pixel (Map Units / Pixel)
+        const resolution = 1 * Math.pow(2, maxZoom - zoomLevel);
+
+        // 2. Metros por Pixel (MPP)
+        const mpp = resolution * unitToMeterRatio;
+
+        // 3. Cálculo para exibição (distância no mapa que 100px na tela representa)
+        const distanceInMeters = mpp * 100;
+
+        let displayValue;
+        let displayUnit;
+
+        if (distanceInMeters >= 1000) {
+            displayValue = distanceInMeters / 1000;
+            displayUnit = 'km';
+        } else if (distanceInMeters >= 1) {
+            displayValue = distanceInMeters;
+            displayUnit = 'm';
+        } else {
+            // Se for menor que 1m, converte para milímetros.
+            displayValue = distanceInMeters * 1000;
+            displayUnit = 'mm';
+        }
+
+        const scaleDisplay = `100px \u2248 ${displayValue.toFixed(2)} ${displayUnit}`;
+
+        return {
+            zoomLevel,
+            resolution: resolution,
+            mpp: mpp,
+            scaleDisplay: scaleDisplay
+        };
+    }
+
+    /**
+     * Lida com o clique do botão de cálculo de escala e atualiza a lista de saída.
+     * @param {MouseEvent} [event] - O evento de clique (opcional).
+     * @private
+     */
+    _onCalculateScale(event) {
+        if (event) event.preventDefault();
+
+        const html = this.ui.app;
+
+        // 1. Obter valores atuais do formulário
+        const maxZoomInput = html.querySelector('#maxZoomInput');
+        const unitToMeterRatioInput = html.querySelector('#unitToMeterRatioInput');
+
+        let maxZoom = parseInt(maxZoomInput.value, 10);
+        let ratio = parseFloat(unitToMeterRatioInput.value);
+
+        // Validação básica
+        if (isNaN(maxZoom) || maxZoom < 0) maxZoom = 0;
+        if (isNaN(ratio) || ratio <= 0) ratio = 1;
+
+        // 2. Determinar o range de ZoomLevels (de 0 a Zmax)
+        const zoomLevels = Array.from({ length: maxZoom + 1 }, (_, i) => i);
+
+        const scaleOutputList = html.querySelector('#scaleOutputList');
+        scaleOutputList.innerHTML = ''; // Limpa a lista anterior
+
+        // 3. Iterar e calcular/exibir
+        for (const zoom of zoomLevels) {
+            const scaleData = this._calculateScaleLogic(zoom, maxZoom, ratio);
+
+            const listItem = document.createElement('li');
+            listItem.innerHTML = `**Z${scaleData.zoomLevel}**: Resolução: ${scaleData.resolution.toPrecision(4)} Map Units/px | ${scaleData.scaleDisplay}`;
+            scaleOutputList.appendChild(listItem);
+        }
     }
 }

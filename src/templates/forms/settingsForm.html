@@ -14,7 +14,8 @@
                 <div class="footer">
                     <div id="searchEntry" class="input-container search-bar flexrow">
                         <input type="text" id="searchInput" class="search-data" placeholder="Pesquisar opção...">
-                        <a id="clearSearch" data-tooltip="Limpar busca" data-tooltip-side="left" data-tooltip-block="top"><i class="fas fa-xmark"></i></a>
+                        <a id="clearSearch" data-tooltip="Limpar busca" data-tooltip-side="left"
+                            data-tooltip-block="top"><i class="fas fa-xmark"></i></a>
                     </div>
                 </div>
             </div>
@@ -85,7 +86,8 @@
                     </div>
                     <div id="searchEntry" class="input-container search-bar flexrow">
                         <input type="text" id="searchInput" class="search-data" placeholder="Pesquisar entrada...">
-                        <a id="clearSearch" data-tooltip="Limpar busca" data-tooltip-side="left" data-tooltip-block="top"><i class="fas fa-xmark"></i></a>
+                        <a id="clearSearch" data-tooltip="Limpar busca" data-tooltip-side="left"
+                            data-tooltip-block="top"><i class="fas fa-xmark"></i></a>
                     </div>
                 </div>
             </div>
@@ -141,42 +143,98 @@
             <div class="content flexcol">
                 <fieldset class="info-set flexcol">
                     <div>
-                        <h3>Mapas</h3>
+                        <h3>Mapa Padrão</h3>
                         <div class="data-group text">
-                            <span class="data-label">Mapa Padrão </span>
-                            <input id="defaultMapInput" class="data" type="text" readonly/>
-                            <a id="defaultMapButton" class="layer-item-select" data-tooltip="Selecionar Pasta" data-tooltip-side="left"><i class="fas fa-folder-open"></i></a>
-                            <a class="layer-item-delete" data-tooltip="Excluir Mapa" data-tooltip-side="left"><i class="fas fa-trash"></i></a>
+                            <span class="data-label">Local </span>
+                            <input id="defaultMapInput" class="data" type="text" value="{{leaflet.mainMap.value}}"
+                                readonly />
+                            <a id="defaultMapButton" class="layer-item-select" data-tooltip="Selecionar Pasta"
+                                data-tooltip-side="left"><i class="fas fa-folder-open"></i></a>
                         </div>
+
+                        <h4>Metadados</h4>
+                        <div class="data-group text">
+                            <span class="data-label">Nome Arquivo </span>
+                            <input class="data" type="text" value="{{metadata.name}}.{{metadata.format}}" readonly />
+                        </div>
+                        <div class="data-group text">
+                            <span class="data-label">Versão Tiler </span>
+                            <input class="data" type="text" value="{{metadata.version}}" readonly />
+                        </div>
+                        <div class="data-group text">
+                            <span class="data-label">Formato CRS </span>
+                            <input class="data" type="text" value="{{metadata.crs}}" readonly />
+                        </div>
+                        <div class="data-group text">
+                            <span class="data-label">Zoom Mínimo </span>
+                            <input class="data" type="text" value="{{metadata.minzoom}}" readonly />
+                        </div>
+                        <div class="data-group text">
+                            <span class="data-label">Zoom Máximo </span>
+                            <input class="data" type="text" value="{{metadata.maxzoom}}" readonly />
+                        </div>
+                    </div>
+                </fieldset>
+                <fieldset class="info-set flexcol">
+                    <div>
+                        <h3>Ferramentas</h3>
+                        <span class="hint">{{tilerHint}}</span>
+                        <h4>Node Tiler ®</h4>
                         <div class="data-group button flexrow">
                             <span class="data-label"></span>
-                            <button id="loadMapButton" class="data layer-item-select"><i class="fa-solid fa-table-cells-large"></i> Gerar TileMap</button>
-                        </div>
-                        <h4>Camadas</h4>
-                        <div class="data-group text">
-                            <span class="data-label">Rótulos </span>
-                            <input id="defaultLabelInput" type="file" class="data" accept="image/*"/>
-                            <a class="layer-item-delete" data-tooltip="Excluir Padrão" data-tooltip-side="left"><i class="fas fa-trash"></i></a>
+                            <button id="loadMapButton" class="data layer-item-select"><i
+                                    class="fa-solid fa-table-cells-large"></i> Gerar TileMap</button>
                         </div>
                         <div class="data-group text">
-                            <span class="data-label">Caminhos </span>
-                            <input id="defaultPathInput" type="file" class="data" accept="image/*"/>
-                            <a class="layer-item-delete" data-tooltip="Excluir Padrão" data-tooltip-side="left"><i class="fas fa-trash"></i></a>
-                        </div><div class="data-group text">
-                            <span class="data-label">Cidades </span>
-                            <input id="defaultCitiesInput" type="file" class="data" accept="image/*"/>
-                            <a class="layer-item-delete" data-tooltip="Excluir Padrão" data-tooltip-side="left"><i class="fas fa-trash"></i></a>
+                            <span class="data-label">Diretório Padrão </span>
+                            <input id="tilerFolderInput" class="data" type="text"
+                                value="{{leaflet.tilerOutputFolder.value}}" readonly />
+                            <a id="defaultTilerFolderMapButton" class="layer-item-select"
+                                data-tooltip="Selecionar Pasta" data-tooltip-side="left"><i
+                                    class="fas fa-folder-open"></i></a>
                         </div>
                     </div>
                 </fieldset>
                 <fieldset class="info-set flexcol">
                     <div>
-                        <h3>Elementos do Mapa</h3>                        
+                        <h3>Elementos do Mapa</h3>
                     </div>
                 </fieldset>
                 <fieldset class="info-set flexcol">
                     <div>
-                        <h3>Grid</h3>                        
+                        <h3>Escala</h3>
+                        <div class="form-group flexrow scale">
+                            <div class="flexcol">
+                                <span class="data-label">Zoom Máximo (Zmax)</span>
+                                <input id="maxZoomInput" class="data" type="number" min="0"
+                                    value="{{leaflet.MAX_ZOOM}}" data-key="MAX_ZOOM" />
+                                <span class="hint">Zoom onde 1 Map Unit = 1 Pixel (máxima resolução).</span>
+                            </div>
+                            <div class="flexcol">
+                                <span class="data-label">1 Map Unit</span>
+                                <input id="unitRatioInput" class="data" type="number" min="0.001" step="any"
+                                    value="{{leaflet.UNIT_TO_METER_RATIO}}" data-key="UNIT_TO_METER_RATIO" />
+                                <span class="hint">Define a conversão de unidades do mapa para metros.</span>
+                            </div>
+                            <div class="flexcol">
+                                <span class="data-label">Unidade</span>
+                                <input id="unitNameInput" class="data" type="text" value="{{leaflet.UNIT_NAME}}" data-key="UNIT_NAME" />
+                                <span class="hint">Define a conversão de unidades do mapa para metros.</span>
+                            </div>
+                            <div class="flexcol fixed" style="max-width: 100px;">
+                                <button id="calculateScaleButton" class="calculate-scale-button"
+                                    data-tooltip="Calcular Escala" data-tooltip-side="left">
+                                    <i class="fas fa-calculator"></i> Calcular
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="scale-output-container flexcol">
+                            <h4>Escalas Calculadas (100px na tela ≈ Distância no Mapa)</h4>
+                            <ul id="scaleOutputList" class="flexcol">
+                                <li>Clique em "Calcular" ou salve as configurações para gerar a tabela de escalas.</li>
+                            </ul>
+                        </div>
                     </div>
                 </fieldset>
                 <div class="footer flexrow">

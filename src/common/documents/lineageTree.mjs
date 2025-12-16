@@ -1,7 +1,7 @@
 import BaseDocument from "./base.mjs";
 
 export default class LineageTree extends BaseDocument{
-    constructor(data) {
+    constructor(data={}) {
         super();        
         this.#ltid = data?.ltid ?? uniforge.db.generateID();
 

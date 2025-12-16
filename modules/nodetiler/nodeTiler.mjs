@@ -27,6 +27,8 @@ function renderProgressBar(current, total, prefix = "") {
 }
 
 export default class NodeTiler {
+    version = "1.0.0";
+
     constructor(imagePath, leafletOptions = {}, options = {}) {
         const defaults = {
             tileSize: 256,
@@ -134,6 +136,8 @@ export default class NodeTiler {
  * Garante que o diretório esteja limpo antes de receber os tiles.
  */
     async _prepareOutputDirectory(dir) {
+        let error = null;
+
         try {
             const stat = await fs.stat(dir);
 
@@ -164,13 +168,24 @@ export default class NodeTiler {
                 await fs.mkdir(dir, { recursive: true });
                 return;
             }
-            throw err; // erro real, repassa
+            error = err;
+            throw error; // Erro real, repasse-o.
+        } finally {
+            // Se houver erro na limpeza do diretório, repasse-o.
+            if(error) throw error;
+
+            // Gera o diretório de overlays.
+            const overlayDir = path.join(dir, "overlay");
+            await fs.mkdir(overlayDir, { recursive: true });
+
+            // Copia a imagem para o diretório.
+            const imageName = path.basename(this.imagePath);
+            const destination = path.join(dir, `base.${imageName.split('.')[1]}`);
+
+            await fs.copyFile(this.imagePath, destination);
+
+            console.log("NodeTiler | 📁 Diretório pronto para receber tiles.");
         }
-
-        const imageName = path.basename(this.imagePath);
-        const destination = path.join(dir, imageName);
-
-        await fs.copyFile(this.imagePath, destination);
     }
 
     _onTileDone(z) {
@@ -235,6 +250,8 @@ export default class NodeTiler {
 
         const bounds = this._clampBoundsToImage(this.bounds, normalizedWidth, normalizedHeight);
 
+        const tilesDir = path.join(outputFolder, 'tiles');
+
         // Call ZoomEngine and pass onTileDone.
         const result = await ZoomEngine.processZoom({
             imageBuffer: this.normalizedImage,
@@ -244,7 +261,7 @@ export default class NodeTiler {
             maxZoom: this.maxZoom,
             tileSize: this.tileSize,
             bounds: bounds,
-            outputDir: outputFolder,
+            outputDir: tilesDir,
             pool: this.pool,
             isCancelled: () => this.cancelRequested,
             onTileDone: () => this._onTileDone(z),
@@ -289,9 +306,11 @@ export default class NodeTiler {
 
         const json = {
             name: path.basename(outputFolder),
-            version: "1.0.0",
+            version: this.version,
+            description: '',
+            attribution: "<a>Gerado com NodeTiler</a>",
             type: "overlay",
-            format: "png",
+            format: meta.format,
             minzoom: String(this.minZoom),
             maxzoom: String(this.maxZoom),
             profile: "custom",
@@ -307,8 +326,6 @@ export default class NodeTiler {
 
 
     async generateTiles(outputFolder = "./tiles") {
-        console.log('outputFolder: ' + outputFolder);
-
         this.cancelRequested = false;
         this.processedTiles = 0;
 

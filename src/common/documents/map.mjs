@@ -1,7 +1,7 @@
 import BaseDocument from "./base.mjs";
 
 export default class MapAtlas extends BaseDocument {
-    constructor(data) {
+    constructor(data={}) {
         super();
         this.#mid = data?.mid ?? uniforge.db.generateID();
 

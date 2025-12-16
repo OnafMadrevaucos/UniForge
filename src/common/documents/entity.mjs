@@ -2,7 +2,7 @@ import Entry from "./entry.mjs";
 import LineageTree from "./lineageTree.mjs";
 
 export default class Entity extends Entry {
-    constructor(data) {
+    constructor(data={}) {
         super(data);        
         this.#lineage = data?.lineage ?? new LineageTree({
             eid: this.eid,

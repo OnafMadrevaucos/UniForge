@@ -3,12 +3,14 @@ import BaseDocument from "./base.mjs";
 export default class Setting extends BaseDocument {
     constructor(data) {
         super();
+        this.#tag = data.tag;
 
         this.initialize(data);
     }
 
     #tag = '';
 
+    get _id() { return this.#tag; }
     get tag() { return this.#tag; }
     get group() { return this.data.group; }
     get value() { return this.data.value; }

@@ -59,10 +59,7 @@ function _parsePlaceholders(html, data) {
                 if (result && Object.prototype.hasOwnProperty.call(result, k)) {
                     // Se existir, obtenha o valor correspondente.
                     result = result[k];
-                } else {
-                    // Caso contrario, o valor encontrado pela regex é apenas um label.
-                    return data.labels[key];
-                }
+                } 
             }
             return result;
         } else {

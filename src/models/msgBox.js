@@ -1,58 +1,137 @@
+/**
+ * @fileoverview Classe para gerenciar e exibir mensagens de notificação (erros, avisos, informações)
+ * com limitação de mensagens visíveis e funcionalidade de fila de espera.
+ *
+ * Inclui logs de console aprimorados com a localização exata do código de chamada para facilitar a depuração.
+ * @module MsgBox
+ */
 export default class MsgBox {
+    /**
+     * Cria uma instância de MsgBox.
+     * @param {number} maxMessages O número máximo de mensagens que podem ser exibidas no DOM simultaneamente.
+     */
     constructor(maxMessages) {
-        this.queue = []
+        /**
+         * @private
+         * @type {HTMLElement[]} Array que armazena referências aos objetos de mensagem (divs) atualmente visíveis no DOM.
+         */
+        this.queue = [];
+
+        /**
+         * @private
+         * @type {Array<{message: string, style: 'error'|'warning'|'info'}>} Fila de mensagens esperando para serem exibidas
+         * porque o limite de mensagens visíveis foi atingido.
+         */
+        this.waitingQueue = [];
+
+        /**
+         * @private
+         * @type {number} Índice não utilizado. Mantido por compatibilidade com a implementação anterior.
+         */
         this.queueIdx = 0;
+
+        /**
+         * @private
+         * @type {number} O número máximo de mensagens permitidas no DOM.
+         */
         this.maxMessages = maxMessages;
     }
 
-    // Função para mostrar a mensagem de erro com animação.
-    showError(message, error) {  
-        // Se houver um erro, exibe a mensagem de erro no console.
-        // Caso contrário, exibe apenas a mensagem padrão.
-        if(error) console.error(error);    
+    /**
+     * @private
+     * @description Função auxiliar para extrair a localização (arquivo, linha, coluna) da chamada de log
+     * através da análise do stack trace de um novo objeto Error.
+     * @returns {string} Uma string formatada com a localização da chamada (ex: " [📍 arquivo.js:45:12]").
+     */
+    _getLocation() {
+        // Cria um novo objeto Error para obter a stack trace atual.
+        const error = new Error();
+        // Pula o cabeçalho da stack trace e as referências internas ao MsgBox.
+        const stackLines = error.stack.split('\n').splice(3);
+
+        let lines = '';
+        for (const line of stackLines) {
+            lines += `\n [📍 ${line}]`;
+        }
+        return lines;
+    }
+
+    /**
+     * Mostra uma mensagem de erro no painel do usuário e registra um erro no console.
+     * O log do console inclui a localização exata da chamada.
+     * @param {string} message A mensagem de erro a ser exibida para o usuário.
+     */
+    showError(message) {
+        const location = this._getLocation();
+
+        console.error(`UniForge | ${message}${location}`);
         this._showMsg(message, 'error');
     }
-    // Função para mostrar a mensagem de aviso com animação.
-    showWarning(message, warning=null) {
-        console.warn(warning ?? message);
+
+    /**
+     * Mostra uma mensagem de aviso no painel do usuário e registra um warning no console.
+     * O log do console inclui a localização exata da chamada.
+     * @param {string} message A mensagem de aviso a ser exibida para o usuário.
+     */
+    showWarning(message) {
+        const location = this._getLocation(false);
+        console.warn(`UniForge | ${message}${location}`);
         this._showMsg(message, 'warning');
     }
-    // Função para mostrar a mensagem de aviso com animação.
-    showInfo(message, info=null) {
-        console.info(info ?? message);
+
+    /**
+     * Mostra uma mensagem de informação no painel do usuário e registra uma info no console.
+     * @param {string} message A mensagem informativa a ser exibida para o usuário.
+     * @param {string|null} [info=null] Um texto opcional para o log do console, se diferente da mensagem da UI.
+     */
+    showInfo(message, info = null) {
+        console.info(`UniForge | ${info ?? message}`);
         this._showMsg(message, 'info');
     }
 
+    /**
+     * @private
+     * @description Lógica interna para gerenciar o limite de mensagens e a fila de espera.
+     * Adiciona a mensagem à fila de espera se o limite for atingido, senão a exibe imediatamente.
+     * @param {string} message O conteúdo da mensagem.
+     * @param {'error'|'warning'|'info'} style O estilo da mensagem (determina ícone e cor).
+     */
     _showMsg(message, style) {
         if (this.queue.length >= this.maxMessages) {
-            // Espera até que a última mensagem tenha desaparecido
-            const lastMessage = this.queue[this.queue.length - 1];
-            lastMessage.addEventListener('animationend', () => {
-                this._showNewMessage(message);
-            }, { once: true });
+            // Adiciona a mensagem à fila de espera
+            this.waitingQueue.push({ message, style });
         } else {
+            // Se houver espaço, mostra a mensagem imediatamente.
             this._getNewMessage(message, style);
         }
     }
 
-    // Função que exibe a nova mensagem
+    /**
+     * @private
+     * @description Cria e exibe o elemento DOM da nova mensagem.
+     * Também agenda a remoção automática da mensagem após 5 segundos.
+     * @param {string} message O conteúdo da mensagem.
+     * @param {'error'|'warning'|'info'} style O estilo da mensagem.
+     */
     _getNewMessage(message, style) {
         const messageContainer = document.getElementById('msgContainer');
         const messageObj = document.createElement('div');
         messageObj.classList.add('message', 'flexrow', style);
 
-        var icon = '<i class="fa-regular fa-circle-xmark"></i>';
+        let icon;
         switch (style) {
             case 'error': {
-                icon = '<i class="fa-solid fa-triangle-exclamation"></i>';                
+                icon = '<i class="fa-solid fa-triangle-exclamation"></i>';
             } break;
             case 'warning': {
-                icon = '<i class="fa-solid fa-circle-exclamation"></i>';                
+                icon = '<i class="fa-solid fa-circle-exclamation"></i>';
             } break;
             case 'info': {
-                icon = '<i class="fa-solid fa-circle-info"></i>';                
+                icon = '<i class="fa-solid fa-circle-info"></i>';
             } break;
-            default: break;
+            default: {
+                icon = '<i class="fa-regular fa-circle-xmark"></i>';
+            } break;
         }
 
         const closeBtn = document.createElement('a');
@@ -61,7 +140,6 @@ export default class MsgBox {
 
         // Adiciona um listener de clique ao botão de fechar
         closeBtn.addEventListener('click', () => {
-            // Remove a mensagem da tela e da fila
             this._removeMessage(messageObj);
         });
 
@@ -72,37 +150,62 @@ export default class MsgBox {
         messageObj.appendChild(msgBody);
         messageObj.appendChild(closeBtn);
 
-        this.queue.push(messageObj);
+        this.queue.push(messageObj); // Adiciona à fila de mensagens visíveis
 
         // Adicionar a nova mensagem à tela
         messageContainer.appendChild(messageObj);
 
-        // Mostrar a mensagem com animação
+        // Mostrar a mensagem com animação (timeout para iniciar a transição CSS)
         setTimeout(() => {
             messageObj.classList.add('show');
-        }, 10); // Atraso para iniciar a animação de slide
+        }, 10);
 
-        // Remover a mensagem após a animação de exibição (durante o fade-in)
+        // Remover a mensagem após o tempo de visibilidade
         setTimeout(() => {
             this._removeMessage(messageObj);
-        }, 5000); // Tempo para manter a mensagem visível (5 segundos)               
+        }, 5000);
     }
 
-    // Função para remover a mensagem após a animação
+    /**
+     * @private
+     * @description Inicia a animação de desaparecimento e remove o elemento do DOM e da fila.
+     * Aciona a verificação da fila de espera após a remoção.
+     * @param {HTMLElement} messageObj O objeto DOM da mensagem a ser removida.
+     */
     _removeMessage(messageObj) {
         const messageContainer = document.getElementById('msgContainer');
 
         messageObj.classList.remove('show');
         messageObj.classList.add('hide');
 
-        // Após o tempo da animação de slide out, removemos a mensagem da fila
+        // Após o tempo da animação de slide out, removemos a mensagem do DOM e da fila.
         setTimeout(() => {
-            // Se o objeto da mensagem ainda pertence ao conteiner, remova-o.
-            if(messageObj.parentNode === messageContainer)
+            // Verifica se a mensagem ainda é filha do container (evita erros se o container for removido)
+            if (messageObj.parentNode === messageContainer)
                 messageContainer.removeChild(messageObj);
-            
-            // Remover da lista de mensagens
-            this.queue = this.queue.filter(msg => msg !== messageContainer);
-        }, 300); // Espera a animação de desaparecimento terminar
+
+            // Remover da lista de mensagens visíveis
+            this.queue = this.queue.filter(msg => msg !== messageObj);
+
+            // Verifica a fila de espera para exibir a próxima mensagem
+            this._checkWaitingQueue();
+
+        }, 300); // Espera o tempo da animação de desaparecimento
+    }
+
+    /**
+     * @private
+     * @description Verifica se há mensagens na fila de espera e, se houver espaço, exibe a próxima.
+     */
+    _checkWaitingQueue() {
+        if (this.waitingQueue.length > 0) {
+            // Se houver mensagens na fila de espera E houver espaço na fila principal
+            if (this.queue.length < this.maxMessages) {
+                // Pega e remove a primeira mensagem da fila de espera (FIFO)
+                const nextMessage = this.waitingQueue.shift();
+                // Exibe a próxima mensagem
+                this._getNewMessage(nextMessage.message, nextMessage.style);
+            }
+        }
     }
 }

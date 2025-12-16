@@ -287,7 +287,13 @@ export default class BaseDialog extends Application {
     }
 
     _onClickButton(event) {
-        const id = event.target.id;
+        // Encontra o botão clicado.
+        const buttonElement = event.target.closest('.dialog-button');
+
+        // Verifica se o elemento encontrado é o botão.
+        if (!buttonElement) return;
+
+        const id = buttonElement.id; // Pega o ID do elemento <button>
         const button = this.buttons[id];
         this.submit(button, event);
     }

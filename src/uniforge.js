@@ -6,31 +6,13 @@ import { registerHook, triggerHook } from "./scripts/hooks.js";
 import DBManager from "./db/dbManager.js";
 import DBDocuments from "./db/dbDocuments.js";
 
+import * as esm from "./common/uniforge-esm.mjs";
 import lControl from "./common/leaflet/core.mjs";
 import PDFManager from "./scripts/managers/pdfManager.js";
 
 // Realiza as configurações iniciais da aplicação ao carregar o conteúdo do DOM.
 document.addEventListener('DOMContentLoaded', async () => {
     const cssname = await uniforge.path.join('css/styles.css');
-
-    const urls = Object.freeze({
-        // Urls de Imagens padrão usadas pelo sistema.
-        background: await uniforge.path.join('/ui/lib-background.png'),
-        blankImg: await uniforge.path.join('/ui/blank-image.svg'),
-
-        worldMap: await uniforge.path.join('/data/maps/world'),
-
-        mapOverlays: await uniforge.path.join('/data/maps/world/overlays'),
-
-        // Urls de Diretórios usados pelo sistema.
-        common: await uniforge.path.join('/common/'),
-        models: await uniforge.path.join('/models/'),
-        templates: await uniforge.path.join('/templates/'),
-        scripts: await uniforge.path.join('/scripts/'),
-        data: await uniforge.path.join('/data/'),
-        ui: await uniforge.path.join('/ui/'),
-        icons: await uniforge.path.join('/ui/icons/'),
-    });
 
     // Adiciona as propriedades restantes ao objeto uniforge.
     uniforge.utils.mergeObjects(uniforge, {
@@ -49,21 +31,6 @@ document.addEventListener('DOMContentLoaded', async () => {
          * @type {DBManager}
          */
         db: new DBManager(),
-
-        /**
-        * Urls de Imagens padrões usadas pelo sistema.
-        * 
-        * @type {Object}
-        * @property {string} background - Imagem utilizada como fundo das entradas da Biblioteca e das Timelines.
-        * @property {string} blankImg   - Imagem padrão usada para campos de imagem vazios.
-        * 
-        * @property {string} models - Diretório dos Forms e Dialogs usados pelo sistema.
-        * @property {string} templates - Diretório dos modelos HTML usados pelo sistema.
-        * @property {string} scripts - Diretório de scripts usados pelo sistema.
-        * @property {string} ui - Diretório de Imagens utilizadas pelo ui do sistema.
-        * @property {string} icons - Diretório de Ícones utilizadas pelo ui do sistema.
-        */
-        urls: urls,
 
         /**
          * Opções para editores Tiny MCE. 
@@ -202,6 +169,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         })
     });
+
     // Configura o estado inicial da aplicação, se ele ainda não foi criado.
     uniforge.state.init();
 
@@ -216,6 +184,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     uniforge.html.classList.add('uniforge');
 
     await refreshDocuments();
+
+    await configureURLs();
 
     configureTopBar();
 
@@ -258,6 +228,42 @@ async function refreshDocuments() {
     const data = await DBDocuments.UniForgeData();
     uniforge.doc = new DBDocuments(data);
     return uniforge.doc;
+}
+
+async function configureURLs() {
+    const worldMap = uniforge.doc.settings.get('mainMap');
+
+    /**
+    * @description Urls padrões usadas pelo sistema.
+    * 
+    * @type {Object}
+    * @property {string} background - Imagem utilizada como fundo das entradas da Biblioteca e das Timelines.
+    * @property {string} blankImg   - Imagem padrão usada para campos de imagem vazios.
+    * 
+    * @property {string} models - Diretório dos Forms e Dialogs usados pelo sistema.
+    * @property {string} templates - Diretório dos modelos HTML usados pelo sistema.
+    * @property {string} scripts - Diretório de scripts usados pelo sistema.
+    * @property {string} ui - Diretório de Imagens utilizadas pelo ui do sistema.
+    * @property {string} icons - Diretório de Ícones utilizadas pelo ui do sistema.
+    */
+    uniforge.urls = Object.freeze({
+        // Urls de Imagens padrão usadas pelo sistema.
+        background: await uniforge.path.join('/ui/lib-background.png'),
+        blankImg: await uniforge.path.join('/ui/blank-image.svg'),
+
+        worldMap: await uniforge.path.join(worldMap.value, 'tiles'),
+
+        mapOverlays: await uniforge.path.join(worldMap.value, 'overlays'),
+
+        // Urls de Diretórios usados pelo sistema.
+        common: await uniforge.path.join('/common/'),
+        models: await uniforge.path.join('/models/'),
+        templates: await uniforge.path.join('/templates/'),
+        scripts: await uniforge.path.join('/scripts/'),
+        data: await uniforge.path.join('/data/'),
+        ui: await uniforge.path.join('/ui/'),
+        icons: await uniforge.path.join('/ui/icons/'),
+    });
 }
 
 // Configura a ferramenta de mapas Leaflet.

@@ -91,7 +91,7 @@
     --info-blue: #345fba;
     --male-blue: #5279ad;
 
-    --red: #750c0c;
+    --red: #991c1c;
     --light-red: #e7b1b1;
     --hover-red: #cd9a9a;
     --border-red: #e39584;
@@ -99,6 +99,7 @@
     --highlight-red: #cc3232;
     --dark-red: #63120c;
     --header-red: #ff1a05;
+    --text-red: #ab2a21;
 
     --yellow: #e4a11a;
     --bright-yellow: #ffc100;
@@ -247,7 +248,7 @@ h1 {
     flex: 1;
     margin-bottom: 0px;
     margin-top: 0.5em;
-    color: var(--red);
+    color: var(--text-red);
     font-size: var(--heading-1-size);
     font-weight: 700;
     font-family: 'Cinzel', serif;
@@ -258,7 +259,7 @@ h1 {
 
 h2 {
     margin-bottom: 10px;
-    color: var(--red);
+    color: var(--text-red);
     font-size: var(--heading-2-size);
     font-weight: 700;
     font-family: 'Cinzel', serif;
@@ -267,7 +268,7 @@ h2 {
 }
 
 h4 {
-    color: var(--dark-red);
+    color: var(--text-red);
     font-variant: petite-caps;
     margin-block: 2px;
     text-align: center;
@@ -905,7 +906,7 @@ button.disabled:hover {
     text-align: center;
     font-size: var(--heading-2-size);
     font-weight: 700;
-    color: var(--dark-red);
+    color: var(--text-red);
     margin-block: 0.5vh;
 }
 
@@ -2290,6 +2291,12 @@ button.disabled:hover {
 }
 
 /* ------ Settings Form ------ */
+#settings .hint {
+    font-size: var(--small-size);
+    font-style: italic;
+    padding-block: 10px;
+}
+
 #settings.tabs-control .tabs-options button {
     background-color: transparent;
     border: none;
@@ -2398,6 +2405,9 @@ button.disabled:hover {
     gap: var(--default-gap-size);
 }
 
+#settings #leafletPanel .scale {
+    gap: 5px;
+}
 
 #settings .footer {
     margin-top: auto;
@@ -3447,7 +3457,7 @@ button.disabled:hover {
     border-bottom: 1px solid var(--blue);
     padding-bottom: 5px;
     margin-bottom: 15px;
-    color: var(--red);
+    color: var(--text-red);
 }
 
 #encyclo.entries .sidebar h3 {
@@ -3698,7 +3708,7 @@ button.disabled:hover {
     font-variant: small-caps;
     text-align: center;
     text-shadow: var(--text-shadow);
-    color: var(--dark-red);
+    color: var(--text-red);
 }
 
 .entries .info-set .data-group.entry {
@@ -4405,7 +4415,7 @@ button.disabled:hover {
 .link-tooltip .header h3 {
     flex: 1;
     margin-block: 2px;
-    color: var(--dark-red);
+    color: var(--text-red);
 }
 
 .link-tooltip .header a {
