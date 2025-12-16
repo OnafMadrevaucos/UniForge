@@ -42,7 +42,10 @@ export default class ProgressDialog extends BaseDialog {
                 onProgress: dialogData.onProgress ?? null,
                 onComplete: dialogData.onComplete ?? null
             },
-            options
+            uniforge.utils.mergeObjects(options, {
+                height: '150px',
+                width: '300px'
+            })
         );
 
         /**
@@ -77,7 +80,7 @@ export default class ProgressDialog extends BaseDialog {
         try {
             this.data.progress = this.progress;
 
-            await super.refreshDerivedTemplate();            
+            await super.refreshDerivedTemplate();
         } catch (error) {
             this._onCancel(error);
         }
@@ -86,11 +89,23 @@ export default class ProgressDialog extends BaseDialog {
     /* -------------------------------------------------------------------------------------------- */
     // Events Handlers
     /* -------------------------------------------------------------------------------------------- */
+    /**@inheritdoc */
+    _onCloseClick(event) {
+        event.preventDefault();
+        event.stopPropagation();
+
+        this._onCancel();
+
+        // Se não for sempre fechar, chama o super.
+        if (!this.alwaysClose) super._onCloseClick(event);
+    }
 
     _onCancel(error = null) {
         if (this.data.onCancel) {
             this.data.onCancel(this, error);
-        } else if(this.alwaysClose) this.close();
+
+            if (this.alwaysClose) this.close();
+        }
     }
 
     /* -------------------------------------------------------------------------------------------- */
@@ -118,7 +133,7 @@ export default class ProgressDialog extends BaseDialog {
         }
 
         if (data.value < 0) data.value = 0;
-        if (data.value > 100) data.value = 100;        
+        if (data.value > 100) data.value = 100;
 
         if (message !== null) {
             this.data.message = message;

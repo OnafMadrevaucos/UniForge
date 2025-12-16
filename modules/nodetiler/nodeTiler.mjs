@@ -188,7 +188,7 @@ export default class NodeTiler {
     }
 
     _onTileDone(z) {
-        if(this.cancelRequested) return; 
+        if (this.cancelRequested) return;
         this.processedTiles++;
 
         const percent = this.totalTiles > 0
@@ -270,7 +270,7 @@ export default class NodeTiler {
         });
 
         // If cancelled, return null.
-        if(this.cancelRequested) return null;
+        if (this.cancelRequested) return null;
 
         if (this._emitProgress) {
             this._emitProgress({ type: "zoom-done", zoom: z, result });
@@ -316,17 +316,24 @@ export default class NodeTiler {
         console.log("NodeTiler | Normalizando imagem base...");
         await this.normalizeImage();
 
-        for (let z = this.minNativeZoom; z <= this.maxNativeZoom; z++) {
-            if (this.cancelRequested) return null;
-            await this.generateZoom(z, outputFolder);
+        try {
+            for (let z = this.minNativeZoom; z <= this.maxNativeZoom; z++) {
+                if (this.cancelRequested) return null;
+                await this.generateZoom(z, outputFolder);
+            }
+        } catch (err) {
+            if (err.message.includes("cancel")) {
+                console.warn("NodeTiler | Tiling cancelado pelo usuário.");
+            } else {
+                throw err;
+            }
+        } finally {
+            if (this.pool) {
+                await this.pool.close().catch(() => { });
+                this.pool = null;
+            }
         }
-
-        if (this.pool) {
-            console.log("NodeTiler | Encerrando WorkerPool...");
-            await this.pool.close();
-            this.pool = null;
-        }
-
+        
         if (!this.cancelRequested) {
             if (this.generateMetadata) {
                 console.log("UniForge | Gerando metadata.json...");
@@ -339,12 +346,12 @@ export default class NodeTiler {
         if (this._emitProgress && !this.cancelRequested) this._emitProgress({ type: "complete" });
     }
 
-    cancel() {
+    async cancel() {
         console.info("\nNodeTiler | Processo de geração de tiles cancelado pelo usuário.");
         this.cancelRequested = true;
 
-        if (this.pool) {
-            this.pool.cancelAll(); // encerra workers imediatamente
-        }        
+        if (this.pool) {            
+            await this.pool.cancelAll(); // encerra workers imediatamente
+        }
     }
 }

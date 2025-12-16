@@ -1,21 +1,6 @@
-/**
- * zoomEngine.mjs — ZoomEngine com support a bounds e onTileDone
- *
- * Exports ZoomEngine.processZoom(opts)
- *
- * opts:
- *  normalizedImageBuffer, normalizedWidth, normalizedHeight,
- *  effectiveZoom, tileSize,
- *  stripeHeight (optional),
- *  pool (WorkerPool),
- *  expand (bool),
- *  bounds ([[minY,minX],[maxY,maxX]] in normalized-image pixels),
- *  outputFolder (folder for this zoom; engine writes x/y.png inside),
- *  maxTasksInFlight (optional),
- *  onTileDone (optional callback receiving { z, tx, ty })
- *
- * Returns { minTileX, maxTileX, minTileY, maxTileY, scaledWidth, scaledHeight }
- */
+// zoomEngine.mjs — ZoomEngine COM CANCELAMENTO SEGURO
+// Garante que TODAS as Promises sejam resolvidas ou rejeitadas
+// mesmo em cancelamento do usuário ou erro inesperado.
 
 import sharp from "sharp";
 import fs from "fs/promises";
@@ -35,7 +20,8 @@ export const ZoomEngine = {
       bounds,
       outputFolder,
       maxTasksInFlight = 32,
-      onTileDone
+      onTileDone,
+      isCancelled
     } = opts;
 
     if (!normalizedImageBuffer) throw new Error("ZoomEngine: normalizedImageBuffer required");
@@ -47,7 +33,6 @@ export const ZoomEngine = {
     const scaledWidth = Math.round(normalizedWidth * scale);
     const scaledHeight = Math.round(normalizedHeight * scale);
 
-    // bounds in normalized-image coords -> scale to output coords
     const [[minY, minX], [maxY, maxX]] = bounds;
     const scaledMinX = minX * scale;
     const scaledMaxX = maxX * scale;
@@ -69,97 +54,91 @@ export const ZoomEngine = {
 
     const stripeCount = Math.ceil(scaledHeight / stripeHeight);
 
-    for (let si = 0; si < stripeCount; si++) {
-      const stripeTop = si * stripeHeight;
-      const stripeHeightActual = Math.min(stripeHeight, scaledHeight - stripeTop);
-      const stripeBottom = stripeTop + stripeHeightActual;
+    try {
+      for (let si = 0; si < stripeCount; si++) {
+        if (isCancelled?.()) throw new Error("cancelled");
 
-      // skip stripes that don't intersect bounds
-      if (stripeBottom <= scaledMinY || stripeTop >= scaledMaxY) continue;
+        const stripeTop = si * stripeHeight;
+        const stripeHeightActual = Math.min(stripeHeight, scaledHeight - stripeTop);
+        const stripeBottom = stripeTop + stripeHeightActual;
 
-      // source stripe in normalized-image coords
-      const sourceTop = Math.floor(stripeTop / scale);
-      const sourceHeight = Math.ceil(stripeHeightActual / scale);
+        if (stripeBottom <= scaledMinY || stripeTop >= scaledMaxY) continue;
 
-      const srcTopClamped = Math.max(0, Math.min(normalizedHeight - 1, sourceTop));
-      const srcHeightClamped = Math.max(1, Math.min(normalizedHeight - srcTopClamped, sourceHeight));
+        const sourceTop = Math.floor(stripeTop / scale);
+        const sourceHeight = Math.ceil(stripeHeightActual / scale);
 
-      const stripeBuffer = await sharp(normalizedImageBuffer, { unlimited: true })
-        .extract({
-          left: 0,
-          top: srcTopClamped,
-          width: normalizedWidth,
-          height: srcHeightClamped
-        })
-        .resize({
-          width: scaledWidth,
-          height: stripeHeightActual,
-          kernel: sharp.kernel.lanczos3
-        })
-        .png()
-        .toBuffer();
+        const srcTopClamped = Math.max(0, Math.min(normalizedHeight - 1, sourceTop));
+        const srcHeightClamped = Math.max(1, Math.min(normalizedHeight - srcTopClamped, sourceHeight));
 
-      const tasks = [];
-      let inFlight = 0;
+        const stripeBuffer = await sharp(normalizedImageBuffer, { unlimited: true })
+          .extract({ left: 0, top: srcTopClamped, width: normalizedWidth, height: srcHeightClamped })
+          .resize({ width: scaledWidth, height: stripeHeightActual, kernel: sharp.kernel.lanczos3 })
+          .png()
+          .toBuffer();
 
-      for (let tx = tileX0; tx <= tileX1; tx++) {
-        for (let ty = tileY0; ty <= tileY1; ty++) {
+        const inFlight = new Set();
 
-          if (opts.isCancelled && opts.isCancelled()) {            
-            return { cancelled: true };
+        const enqueue = async (promise) => {
+          inFlight.add(promise);
+          try {
+            await promise;
+          } finally {
+            inFlight.delete(promise);
           }
+        };
 
-          // tile global bounds
-          const tileTopGlobal = ty * tileSize;
-          const tileBottomGlobal = tileTopGlobal + tileSize;
+        for (let tx = tileX0; tx <= tileX1; tx++) {
+          for (let ty = tileY0; ty <= tileY1; ty++) {
 
-          // check tile intersects current stripe AND intersects bounds area
-          if (tileBottomGlobal <= stripeTop || tileTopGlobal >= stripeTop + stripeHeightActual) continue;
-          const tileLeft = tx * tileSize;
-          const tileRight = tileLeft + tileSize;
+            if (isCancelled?.()) throw new Error("cancelled");
 
-          // Also ensure tile intersects scaled bounds horizontally
-          if (tileRight <= scaledMinX || tileLeft >= scaledMaxX) continue;
+            const tileTopGlobal = ty * tileSize;
+            const tileBottomGlobal = tileTopGlobal + tileSize;
+            if (tileBottomGlobal <= stripeTop || tileTopGlobal >= stripeTop + stripeHeightActual) continue;
 
-          const tileTopLocal = tileTopGlobal - stripeTop;
+            const tileLeft = tx * tileSize;
+            const tileRight = tileLeft + tileSize;
+            if (tileRight <= scaledMinX || tileLeft >= scaledMaxX) continue;
 
-          const tileFolder = path.join(outputFolder, String(tx));
-          await fs.mkdir(tileFolder, { recursive: true });
-          const outPath = path.join(tileFolder, `${ty}.png`);
+            const tileTopLocal = tileTopGlobal - stripeTop;
 
-          const task = {
-            zoomBuffer: stripeBuffer,
-            tileSize,
-            expand,
-            scaledWidth,
-            scaledHeight: stripeHeightActual,
-            left: tileLeft,
-            top: tileTopLocal,
-            output: outPath
-          };
+            const tileFolder = path.join(outputFolder, String(tx));
+            await fs.mkdir(tileFolder, { recursive: true });
+            const outPath = path.join(tileFolder, `${ty}.png`);
 
-          // schedule task -> when resolved call onTileDone
-          const p = pool.run(task).then(() => {
-            if (typeof onTileDone === "function") {
-              try { onTileDone({ z: effectiveZoom - /* we'll pass z as separate in caller if needed*/ 0, tx, ty }); }
-              catch (_) { }
+            const task = pool.run({
+              zoomBuffer: stripeBuffer,
+              tileSize,
+              expand,
+              scaledWidth,
+              scaledHeight: stripeHeightActual,
+              left: tileLeft,
+              top: tileTopLocal,
+              output: outPath
+            }).then(() => {
+              onTileDone?.({ z: effectiveZoom, tx, ty });
+            });
+
+            await enqueue(task);
+
+            if (inFlight.size >= maxTasksInFlight) {
+              await Promise.race(inFlight);
             }
-          });
-
-          tasks.push(p);
-          inFlight++;
-          if (inFlight >= maxTasksInFlight) {
-            // wait for the first wave to settle
-            await Promise.race(tasks);
-            inFlight = 0;
           }
         }
+
+        await Promise.allSettled(inFlight);
       }
 
-      await Promise.all(tasks);
-      // stripeBuffer goes out of scope and is GC-able
-    }
+      return { minTileX: tileX0, maxTileX: tileX1, minTileY: tileY0, maxTileY: tileY1, scaledWidth, scaledHeight };
 
-    return { minTileX: tileX0, maxTileX: tileX1, minTileY: tileY0, maxTileY: tileY1, scaledWidth, scaledHeight };
+    } catch (err) {
+      if (err.message === "cancelled") {
+        await pool.cancelAll?.();
+        return { cancelled: true };
+      }
+      await pool.cancelAll?.();
+      throw err;
+    }
   }
 };

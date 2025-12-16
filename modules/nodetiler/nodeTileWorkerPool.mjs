@@ -12,6 +12,8 @@ export class WorkerPool {
     this.load = new Map(); // worker -> load
     this.queue = [];
     this._initializeWorkers();
+
+    this.cancelled = false;
   }
 
   _initializeWorkers() {
@@ -20,33 +22,41 @@ export class WorkerPool {
 
   _spawnWorker() {
     const worker = new Worker(this.workerPath, { type: "module" });
-    this.workers.push(worker);
+
+    worker.on("message", (msg) => this._onMessage(worker, msg));
+    worker.on("error", (err) => this._onError(worker, err));
     this.load.set(worker, 0);
     worker._currentTask = null;
+  }
 
-    worker.on("message", (msg) => {
-      const task = worker._currentTask;
-      worker._currentTask = null;
-      if (task) {
-        if (msg && msg.error) task.reject(new Error(msg.error));
-        else task.resolve(msg || "done");
-      }
-      this.load.set(worker, Math.max(0, this.load.get(worker) - 1));
-      this._dispatchNext();
-    });
+  _onMessage(worker, msg) {
+    const task = worker._currentTask;
+    worker._currentTask = null;
+    if (task) {
+      if (msg && msg.error) task.reject(new Error(msg.error));
+      else task.resolve(msg || "done");
+    }
+    this.load.set(worker, Math.max(0, this.load.get(worker) - 1));
+    this._dispatchNext();
+  }
 
-    worker.on("error", (err) => {
-      const task = worker._currentTask;
-      worker._currentTask = null;
-      if (task) task.reject(err);
-      this._respawnBrokenWorker(worker);
-    });
 
-    worker.on("exit", (code) => {
-      if (code !== 0) {
-        this._respawnBrokenWorker(worker);
-      }
-    });
+  _onError(worker, err) {
+    const task = worker._currentTask;
+    worker._currentTask = null;
+    if (task) task.reject(err);
+
+    this._respawnBrokenWorker(worker);
+  }
+
+
+  _onExit(worker) {
+    const task = worker._currentTask;
+    worker._currentTask = null;
+
+    if (task) task.reject(new Error("Worker terminated"));
+
+    this.workers = this.workers.filter(w => w !== worker);
   }
 
   _respawnBrokenWorker(broken) {
@@ -70,6 +80,10 @@ export class WorkerPool {
   }
 
   run(data, transferList = null) {
+    if (this.cancelled) {
+      return Promise.reject(new Error("WorkerPool cancelled"));
+    }
+
     return new Promise((resolve, reject) => {
       this.queue.push({ data, resolve, reject, transferList });
       this._dispatchNext();
@@ -98,18 +112,22 @@ export class WorkerPool {
     }
   }
 
-  cancelAll() {    
-    for (const w of this.workers) {
-      try { w.terminate(); } catch { }
+  async cancelAll() {
+    this.cancelled = true;
+
+    for (const task of this.queue) {
+      task.reject(new Error("WorkerPool cancelled"));
     }
-    this.queue = [];
+
+    await this.close();
   }
 
   async close() {
     const promises = this.workers.map(w => w.terminate().catch(() => { }));
-    await Promise.all(promises);
-    this.workers = [];
-    this.queue.length = 0;
-    this.load.clear();
+    Promise.all(promises).then(() => {
+      this.workers = [];
+      this.queue.length = 0;
+      this.load.clear();
+    });
   }
 }

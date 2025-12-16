@@ -529,7 +529,10 @@ export default class SettingsForm extends EntryForm {
             message: "Preparando imagem...",
             indeterminate: true,
             cancelable: true,
-            onCancel: () => uniforge.tiler.cancel(),
+            onCancel: async () => {
+                document.body.style.cursor = 'wait';
+                uniforge.tiler.cancel().then(() => { document.body.style.cursor = 'default'; });
+            },
             onComplete: () => uniforge.ctrls.progressDialog.resetProgress()
         }, { alwaysClose: true });
 
