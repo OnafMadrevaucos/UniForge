@@ -12,8 +12,7 @@ import os from "os";
 import { fileURLToPath } from "url";
 
 import { WorkerPool } from "./nodeTileWorkerPool.mjs";
-import { ZoomEngine } from "./zoomEngine.mjs";
-import { zoom } from "d3";
+import ZoomEngine from "./zoomEngine.mjs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -80,8 +79,6 @@ export default class NodeTiler {
         // --- Internals ---
         this.pool = null;
         this.cancelRequested = false;
-
-        this.totalTiles = 0;
         this.processedTiles = 0;
 
         // Progress hook (renderer / main injeta)
@@ -169,30 +166,20 @@ export default class NodeTiler {
             }
             throw err; // erro real, repassa
         }
-    }
 
-    _computeTileCount(effectiveZoom, normalizedWidth, normalizedHeight) {
-        this.totalTiles = 0;
-        const scale = Math.pow(2, effectiveZoom);
+        const imageName = path.basename(this.imagePath);
+        const destination = path.join(dir, imageName);
 
-        const [[minY, minX], [maxY, maxX]] = this._clampBoundsToImage(this.bounds, normalizedWidth, normalizedHeight);
-        const scaledMinX = minX * scale; const scaledMaxX = maxX * scale;
-        const scaledMinY = minY * scale; const scaledMaxY = maxY * scale;
-
-        const minTileX = Math.max(0, Math.floor(scaledMinX / this.tileSize));
-        const maxTileX = Math.max(0, Math.floor((scaledMaxX - 1) / this.tileSize));
-        const minTileY = Math.max(0, Math.floor(scaledMinY / this.tileSize));
-        const maxTileY = Math.max(0, Math.floor((scaledMaxY - 1) / this.tileSize));
-
-        this.totalTiles = (maxTileX - minTileX + 1) * (maxTileY - minTileY + 1);
+        await fs.copyFile(this.imagePath, destination);
     }
 
     _onTileDone(z) {
         if (this.cancelRequested) return;
+        const totalTiles = ZoomEngine.totalTiles;
         this.processedTiles++;
 
-        const percent = this.totalTiles > 0
-            ? Math.round((this.processedTiles / this.totalTiles) * 100)
+        const percent = totalTiles > 0
+            ? Math.round((this.processedTiles / totalTiles) * 100)
             : 0;
 
         if (this._emitProgress) {
@@ -200,12 +187,12 @@ export default class NodeTiler {
                 type: "tile-progress",
                 zoom: z,
                 processed: this.processedTiles,
-                total: this.totalTiles,
+                total: totalTiles,
                 value: percent
             });
         }
 
-        renderProgressBar(this.processedTiles, this.totalTiles, `Zoom ${z}: `);
+        renderProgressBar(this.processedTiles, totalTiles, `Zoom ${z}: `);
     }
 
     canUseThreads() {
@@ -246,27 +233,24 @@ export default class NodeTiler {
         const stripeHeight = Math.max(1, this.tileSize * this.stripeHeightMultiplier);
         const maxTasksInFlight = Math.max(1, this.threadCount * this.maxTasksPerStripeFactor);
 
-        const zoomFolder = path.join(outputFolder, String(z));
-        await fs.mkdir(zoomFolder, { recursive: true });
-
-        // Precompute tile count for progress display.
-        this._computeTileCount(effectiveZoom, normalizedWidth, normalizedHeight);
+        const bounds = this._clampBoundsToImage(this.bounds, normalizedWidth, normalizedHeight);
 
         // Call ZoomEngine and pass onTileDone.
         const result = await ZoomEngine.processZoom({
-            normalizedImageBuffer: this.normalizedImage,
-            normalizedWidth,
-            normalizedHeight,
-            effectiveZoom,
+            imageBuffer: this.normalizedImage,
+            imageWidth: normalizedWidth,
+            imageHeight: normalizedHeight,
+            zoom: effectiveZoom,
+            maxZoom: this.maxZoom,
             tileSize: this.tileSize,
-            stripeHeight,
+            bounds: bounds,
+            outputDir: outputFolder,
             pool: this.pool,
-            expand: this.expand,
-            bounds: this._clampBoundsToImage(this.bounds, normalizedWidth, normalizedHeight),
-            outputFolder: zoomFolder,
-            maxTasksInFlight,
+            isCancelled: () => this.cancelRequested,
             onTileDone: () => this._onTileDone(z),
-            isCancelled: () => this.cancelRequested
+            stripeHeight,
+            expand: this.expand,
+            maxTasksInFlight
         });
 
         // If cancelled, return null.
@@ -282,28 +266,50 @@ export default class NodeTiler {
 
     async writeMetadata(outputFolder) {
         const meta = await sharp(this.normalizedImage).metadata();
+
+        const tileMatrix = [];
+
+        for (let z = this.minZoom; z <= this.maxZoom; z++) {
+            const factor = Math.pow(2, this.maxZoom - z);
+            const width = Math.ceil(meta.width / factor);
+            const height = Math.ceil(meta.height / factor);
+
+            tileMatrix.push({
+                id: String(z),
+                tile_size: [this.tileSize, this.tileSize],
+                origin: [0, 0],
+                extent: [0, -height, width, 0],
+                pixel_size: [factor, -factor],
+                matrix_size: [
+                    Math.ceil(width / this.tileSize),
+                    Math.ceil(height / this.tileSize)
+                ]
+            });
+        }
+
         const json = {
-            tileSize: this.tileSize,
-            minSide: this.minSide,
-            minZoom: this.minZoom,
-            maxZoom: this.maxZoom,
-            minNativeZoom: this.minNativeZoom,
-            maxNativeZoom: this.maxNativeZoom,
-            zoomOffset: this.zoomOffset,
-            bounds: this.bounds,
-            expand: this.expand,
-            multithread: this.useMultithreading,
-            threadCount: this.threadCount,
-            normalizedWidth: meta.width,
-            normalizedHeight: meta.height,
-            generatedAt: new Date().toISOString()
+            name: path.basename(outputFolder),
+            version: "1.0.0",
+            type: "overlay",
+            format: "png",
+            minzoom: String(this.minZoom),
+            maxzoom: String(this.maxZoom),
+            profile: "custom",
+            crs: "RASTER",
+            tile_matrix: tileMatrix
         };
-        await fs.writeFile(path.join(outputFolder, "metadata.json"), JSON.stringify(json, null, 2));
+
+        await fs.writeFile(
+            path.join(outputFolder, "metadata.json"),
+            JSON.stringify(json, null, 2)
+        );
     }
 
+
     async generateTiles(outputFolder = "./tiles") {
+        console.log('outputFolder: ' + outputFolder);
+
         this.cancelRequested = false;
-        this.totalTiles = 0;
         this.processedTiles = 0;
 
         // Prepara diretório limpo.
@@ -319,6 +325,8 @@ export default class NodeTiler {
         try {
             for (let z = this.minNativeZoom; z <= this.maxNativeZoom; z++) {
                 if (this.cancelRequested) return null;
+
+                this.processedTiles = 0;
                 await this.generateZoom(z, outputFolder);
             }
         } catch (err) {
@@ -333,7 +341,7 @@ export default class NodeTiler {
                 this.pool = null;
             }
         }
-        
+
         if (!this.cancelRequested) {
             if (this.generateMetadata) {
                 console.log("UniForge | Gerando metadata.json...");
@@ -350,7 +358,7 @@ export default class NodeTiler {
         console.info("\nNodeTiler | Processo de geração de tiles cancelado pelo usuário.");
         this.cancelRequested = true;
 
-        if (this.pool) {            
+        if (this.pool) {
             await this.pool.cancelAll(); // encerra workers imediatamente
         }
     }

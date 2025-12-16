@@ -664,8 +664,8 @@ button.disabled:hover {
 }
 
 .progress-dialog .progress-bar-bg {
-    flex: 1;
-    width: 100%;
+    flex: 0 0 90%;
+    border: var(--filled-border);
     border-radius: var(--default-border-radius);
     background-color: var(--blue);
     box-shadow: inset 1px 1px 4px 0px var(--grey);

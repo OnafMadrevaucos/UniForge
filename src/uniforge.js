@@ -6,10 +6,8 @@ import { registerHook, triggerHook } from "./scripts/hooks.js";
 import DBManager from "./db/dbManager.js";
 import DBDocuments from "./db/dbDocuments.js";
 
-import * as esm from "./common/uniforge-esm.mjs";
 import lControl from "./common/leaflet/core.mjs";
 import PDFManager from "./scripts/managers/pdfManager.js";
-import ProgressDialog from "./models/dialogs/progressDialog.js";
 
 // Realiza as configurações iniciais da aplicação ao carregar o conteúdo do DOM.
 document.addEventListener('DOMContentLoaded', async () => {
@@ -273,10 +271,10 @@ async function configureLeaflet() {
 }
 // Configura a ferramenta de geração de map tiles.
 function configureMapTiler() {
-    uniforge.tiler.emitProgress((data) => updateProgressDialog(data));
+    uniforge.tiler.emitProgress(async (data) => await updateProgressDialog(data));
 }
 // Atualiza o dialog conforme eventos.
-function updateProgressDialog(data) {
+async function updateProgressDialog(data) {
     const progressDialog = uniforge.ctrls.progressDialog;
 
     if (!progressDialog) return;
@@ -298,7 +296,8 @@ function updateProgressDialog(data) {
     }
 
     if (data.type === "complete") {
-        progressDialog.updateProgress(data, "Concluído!");
+        progressDialog.close();
+        uniforge.msgBox.showInfo("Map tiles gerados com sucesso.");
         return;
     }
 }

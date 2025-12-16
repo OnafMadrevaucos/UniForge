@@ -522,7 +522,7 @@ export default class SettingsForm extends EntryForm {
         event.stopPropagation();
         // Abre o diálogo de seleção da pasta.
         const imageData = await FilePickerDialog.configDialog(null, { canUpload: true, hasCaption: false, type: 'images' });
-        const outputFolder = imageData.folder;
+        const outputFolder = await uniforge.path.join('data', 'maps', imageData.name.toLowerCase().split('.')[0]);
 
         uniforge.ctrls.progressDialog = new ProgressDialog({
             title: "Gerando Map Tiles",
@@ -538,7 +538,7 @@ export default class SettingsForm extends EntryForm {
 
         await uniforge.ctrls.progressDialog.show(true);
 
-        const result = await uniforge.tiler.generateTiles(imageData.absolutePath, { outputFolder: outputFolder });
+        const result = await uniforge.tiler.generateTiles(imageData.absolutePath, { outputFolder: outputFolder, metadata: true });
 
         if (result instanceof Error) {
             uniforge.msgBox.showError("Um erro ocorreu ao gerar os tiles e o processo foi abortado.", result);

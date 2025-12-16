@@ -33,6 +33,7 @@ export class WorkerPool {
     const task = worker._currentTask;
     worker._currentTask = null;
     if (task) {
+      console.log(msg);
       if (msg && msg.error) task.reject(new Error(msg.error));
       else task.resolve(msg || "done");
     }

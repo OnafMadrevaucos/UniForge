@@ -197,6 +197,31 @@ export default class Dialogs extends BaseDialog {
   }
 
   /**
+   * Exibe uma caixa de diálogo de exibição de informação com um botão (Ok).
+   * 
+   * @static
+   * @param {string} title - Título do diálogo de confirmação.
+   * @param {string} message - Mensagem a ser exibida no corpo do diálogo.
+   * @returns {Promise} Retorna uma promessa que é resolvida se o usuário clicar em "Sim" ou rejeitada se clicar em "Não".
+   */
+  static async inform(title, message) {
+    return new Promise((resolve, reject) => {      
+      const dialog = new this({
+        title: title,
+        buttons: {
+          ok: {
+            label: "OK",
+            icon: "fas fa-check",
+            callback: () => resolve(true)
+          }
+        },
+        abort: () => reject(true)
+      }, { prompt: message, alwaysClose: true, width: '300px'});      
+      dialog.show(true);
+    });
+  }
+
+  /**
    * Exibe uma caixa de diálogo de confirmação com dois botões (Sim e Não).
    * 
    * @static
