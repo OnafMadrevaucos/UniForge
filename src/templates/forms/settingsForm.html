@@ -146,8 +146,7 @@
                         <h3>Mapa Padrão</h3>
                         <div class="data-group text">
                             <span class="data-label">Local </span>
-                            <input id="defaultMapInput" class="data" type="text" value="{{leaflet.mainMap.value}}"
-                                readonly />
+                            <input id="defaultMapInput" class="data" type="text" value="{{leaflet.mainMap}}" readonly />
                             <a id="defaultMapButton" class="layer-item-select" data-tooltip="Selecionar Pasta"
                                 data-tooltip-side="left"><i class="fas fa-folder-open"></i></a>
                         </div>
@@ -187,8 +186,8 @@
                         </div>
                         <div class="data-group text">
                             <span class="data-label">Diretório Padrão </span>
-                            <input id="tilerFolderInput" class="data" type="text"
-                                value="{{leaflet.tilerOutputFolder.value}}" readonly />
+                            <input id="tilerFolderInput" class="data" type="text" value="{{leaflet.tilerOutputFolder}}"
+                                readonly />
                             <a id="defaultTilerFolderMapButton" class="layer-item-select"
                                 data-tooltip="Selecionar Pasta" data-tooltip-side="left"><i
                                     class="fas fa-folder-open"></i></a>
@@ -203,25 +202,32 @@
                 <fieldset class="info-set flexcol">
                     <div>
                         <h3>Escala</h3>
-                        <div class="form-group flexrow scale">
-                            <div class="flexcol">
+                        <div class="data-complex scale">
+                            <div class="data-group">
                                 <span class="data-label">Zoom Máximo (Zmax)</span>
-                                <input id="maxZoomInput" class="data" type="number" min="0"
-                                    value="{{leaflet.MAX_ZOOM}}" data-key="MAX_ZOOM" />
-                                <span class="hint">Zoom onde 1 Map Unit = 1 Pixel (máxima resolução).</span>
+                                <div class="flexcol flex-2">
+                                    <input id="maxZoomInput" class="data dial" type="number" min="0"
+                                        value="{{leaflet.MAX_ZOOM}}" data-key="MAX_ZOOM" readonly />
+                                    <span class="hint">Zoom onde 1 Map Unit é equivalente a 1 pixel (máxima resolução).</span>
+                                </div>
                             </div>
-                            <div class="flexcol">
-                                <span class="data-label">1 Map Unit</span>
-                                <input id="unitRatioInput" class="data" type="number" min="0.001" step="any"
-                                    value="{{leaflet.UNIT_TO_METER_RATIO}}" data-key="UNIT_TO_METER_RATIO" />
-                                <span class="hint">Define a conversão de unidades do mapa para metros.</span>
+                            <div class="data-group">
+                                <span class="data-label">Distância Mínima</span>
+                                <div class="flexcol flex-2">
+                                    <input id="unitRatioInput" class="data dial" type="number" min="0.001" step="any"
+                                        value="{{leaflet.mapUnitRatio}}" data-key="mapUnitRatio" />
+                                    <span class="hint">Define a distância que 1 Map Unit representa no mapa, em pixels, enquanto no Zoom Máximo.</span>
+                                </div>
                             </div>
-                            <div class="flexcol">
+                            <div class="data-group">
                                 <span class="data-label">Unidade</span>
-                                <input id="unitNameInput" class="data" type="text" value="{{leaflet.UNIT_NAME}}" data-key="UNIT_NAME" />
-                                <span class="hint">Define a conversão de unidades do mapa para metros.</span>
+                                <div class="flexcol flex-2">
+                                    <input id="unitNameInput" class="data" type="text" value="{{leaflet.mapUnitName}}"
+                                        data-key="mapUnitName" />
+                                    <span class="hint">Define a unidade de medida usada para representar distâncias nos mapas.</span>
+                                </div>
                             </div>
-                            <div class="flexcol fixed" style="max-width: 100px;">
+                            <div class="data-group fixed">
                                 <button id="calculateScaleButton" class="calculate-scale-button"
                                     data-tooltip="Calcular Escala" data-tooltip-side="left">
                                     <i class="fas fa-calculator"></i> Calcular
@@ -237,15 +243,15 @@
                         </div>
                     </div>
                 </fieldset>
-                <div class="footer flexrow">
-                    <div class="fixed buttons flexrow">
-                        <button id="cancelButton" class="cancel-entry disabled">
-                            <i class="fas fa-square-xmark"></i> Cancelar
-                        </button>
-                        <button id="saveButton" class="disabled">
-                            <i class="fa-regular fa-floppy-disk"></i> Salvar
-                        </button>
-                    </div>
+            </div>
+            <div class="footer flexrow">
+                <div class="fixed buttons flexrow">
+                    <button id="cancelButton" class="cancel-entry disabled">
+                        <i class="fas fa-square-xmark"></i> Cancelar
+                    </button>
+                    <button id="saveButton" class="disabled">
+                        <i class="fa-regular fa-floppy-disk"></i> Salvar
+                    </button>
                 </div>
             </div>
         </div>

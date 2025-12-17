@@ -325,7 +325,18 @@ select:disabled {
     background-color: var(--dark-grey);
 }
 
-.leaflet-container a,
+.uniforge .leaflet-container .leaflet-control-attribution {
+    background-color: var(--red);
+    color: var(--light-text-color);
+    padding: 2px 5px;
+    border-top-left-radius: var(--default-border-radius);
+    font-weight: 900;
+}
+.uniforge .leaflet-container .leaflet-control-attribution a {
+    color: var(--light-text-color);
+}
+
+.leaflet-container a:not(.leaflet-control-attribution>a),
 button {
     padding: 10px 15px;
     margin: 10px auto;
@@ -715,8 +726,9 @@ button.disabled:hover {
     background-color: transparent !important;
 }
 
-.leaflet-touch .leaflet-control-layers a {
-    padding: 0;
+.leaflet-container.leaflet-touch .leaflet-control-layers a {
+    height: 1.5em;
+    width: 1.5em;
 }
 
 .leaflet-touch .leaflet-control-layers .leaflet-control-layers-list {
@@ -2296,6 +2308,13 @@ button.disabled:hover {
     font-style: italic;
     padding-block: 10px;
 }
+#settings .data-group .hint {
+
+}
+
+#settings.tabs-control {
+    overflow-y: auto;
+}
 
 #settings.tabs-control .tabs-options button {
     background-color: transparent;
@@ -2319,6 +2338,7 @@ button.disabled:hover {
     flex: 100%;
     border-radius: var(--default-border-radius);
     color: var(--light-text-color);
+    overflow-y: auto;
 }
 
 #settings .settings-container .panel {
@@ -2327,10 +2347,12 @@ button.disabled:hover {
         url('../ui/settings.jpg');
     padding-inline: 5px;
     flex: 1;
+    overflow-y: auto;
 }
 
 #settings .content {
     gap: var(--big-gap-size);
+    overflow-y: scroll;
 }
 
 #settings .content::before {

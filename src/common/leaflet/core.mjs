@@ -35,7 +35,7 @@ const lControl = {
         VIEW_WIDTH: 3840,
         VIEW_HEIGHT: 2160,
 
-        UNIT_TO_METER_RATIO: 165000 // 1 Map Unit = 165000 unidades'
+        UNIT_TO_METER_RATIO: 1500 // 1 Map Unit = 1500 unidades de distância.
     },
 
     /**
@@ -127,6 +127,12 @@ const lControl = {
     }),
 
     /**
+    * Objeto L.CRS customizado com a função de distância em metros.
+    * @type {L.CRS.Simple|null}
+    */
+    CustomCRS: null, // Nova propriedade para armazenar o CRS customizado
+
+    /**
     * Controle de desenho no mapa.
     * 
     * @extends {L.Control.Draw}
@@ -157,6 +163,7 @@ const lControl = {
         var mapMinZoom = lControl.constants.MIN_ZOOM;
         var mapMaxZoom = lControl.constants.MAX_ZOOM;
         var mapMaxResolution = lControl.constants.MAX_RESOLUTION;
+        var unitRatio = lControl.constants.UNIT_TO_METER_RATIO;
         var mapMinResolution = Math.pow(2, mapMaxZoom) * mapMaxResolution;
 
         var tileExtent = lControl.constants.TILE_EXTENT;
@@ -171,9 +178,20 @@ const lControl = {
             return Math.log(scale * mapMinResolution) / Math.LN2;
         };
 
+        crs.distance = function (latlng1, latlng2) {
+            // Calcula a distância euclidiana em Map Units (X, Y)
+            const dx = latlng2.lng - latlng1.lng;
+            const dy = latlng2.lat - latlng1.lat;
+
+            const distanceInMapUnits = Math.sqrt(dx * dx + dy * dy);
+
+            // Converte para metros usando a razão: 1 Map Unit = 1500 metros
+            return distanceInMapUnits * unitRatio;
+        };
+
         let worldMap;
         const map = lControl.map = L.map('map', {
-            crs: crs, // Usando o sistema de coordenadas simples do Leaflet para imagens personalizadas.            
+            crs: L.CRS.Simple, // Usando o sistema de coordenadas simples do Leaflet para imagens personalizadas.            
             maxZoom: mapMaxZoom,
             minZoom: mapMinZoom,
             //zoomSnap: 0.1,
@@ -187,9 +205,10 @@ const lControl = {
             crs.unproject(L.point(mapExtent[0], mapExtent[1]))
         ]];
 
-        map.setView(L.latLng(2160, 3840), mapMinZoom);
+        map.setView(L.latLng(4054, 6000), mapMinZoom);
 
         worldMap = L.tileLayer(`file://${worldMapURL}/{z}/{x}/{y}.png`, {
+            crs: L.CRS.Simple,
             minZoom: mapMinZoom, maxZoom: mapMaxZoom,
             tileSize: L.point(tileSize, tileSize),
             noWrap: true,

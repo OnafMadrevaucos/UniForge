@@ -60,7 +60,6 @@ export default class SettingsForm extends EntryForm {
         }
 
         this.data.leaflet.MAX_ZOOM = uniforge.constants.leaflet.MAX_ZOOM;
-        this.data.leaflet.UNIT_TO_METER_RATIO = uniforge.constants.leaflet.UNIT_TO_METER_RATIO;
     }
 
     async prepareMetadata() {
@@ -634,11 +633,11 @@ export default class SettingsForm extends EntryForm {
      * Lógica de cálculo da escala, espelhando a função em core.mjs.
      * @param {number} zoomLevel - O nível de zoom.
      * @param {number} maxZoom - O zoom máximo (Zmax).
-     * @param {number} unitToMeterRatio - Razão Map Unit para Metro.
+     * @param {number} unitRatio - Razão Map Unit para Metro.
      * @returns {{zoomLevel: number, resolution: number, mpp: number, scaleDisplay: string}}
      * @private
      */
-    _calculateScaleLogic(zoomLevel, maxZoom, unitToMeterRatio) {
+    _calculateScaleLogic(zoomLevel, maxZoom, unitRatio, displayUnit) {
         // Obter TILE_SIZE de uniforge.constants, se necessário, ou usar um padrão.
         const TILE_SIZE = uniforge.constants.leaflet.TILE_SIZE || 256;
 
@@ -646,24 +645,20 @@ export default class SettingsForm extends EntryForm {
         const resolution = 1 * Math.pow(2, maxZoom - zoomLevel);
 
         // 2. Metros por Pixel (MPP)
-        const mpp = resolution * unitToMeterRatio;
+        const mpp = resolution * unitRatio;
 
         // 3. Cálculo para exibição (distância no mapa que 100px na tela representa)
         const distanceInMeters = mpp * 100;
 
         let displayValue;
-        let displayUnit;
 
         if (distanceInMeters >= 1000) {
             displayValue = distanceInMeters / 1000;
-            displayUnit = 'km';
         } else if (distanceInMeters >= 1) {
             displayValue = distanceInMeters;
-            displayUnit = 'm';
         } else {
             // Se for menor que 1m, converte para milímetros.
             displayValue = distanceInMeters * 1000;
-            displayUnit = 'mm';
         }
 
         const scaleDisplay = `100px \u2248 ${displayValue.toFixed(2)} ${displayUnit}`;
@@ -688,10 +683,12 @@ export default class SettingsForm extends EntryForm {
 
         // 1. Obter valores atuais do formulário
         const maxZoomInput = html.querySelector('#maxZoomInput');
-        const unitToMeterRatioInput = html.querySelector('#unitToMeterRatioInput');
+        const unitToMeterRatioInput = html.querySelector('#unitRatioInput');
+        const unitNameInput = html.querySelector('#unitNameInput');
 
         let maxZoom = parseInt(maxZoomInput.value, 10);
         let ratio = parseFloat(unitToMeterRatioInput.value);
+        const unitName = unitNameInput.value;
 
         // Validação básica
         if (isNaN(maxZoom) || maxZoom < 0) maxZoom = 0;
@@ -705,7 +702,7 @@ export default class SettingsForm extends EntryForm {
 
         // 3. Iterar e calcular/exibir
         for (const zoom of zoomLevels) {
-            const scaleData = this._calculateScaleLogic(zoom, maxZoom, ratio);
+            const scaleData = this._calculateScaleLogic(zoom, maxZoom, ratio, unitName);
 
             const listItem = document.createElement('li');
             listItem.innerHTML = `**Z${scaleData.zoomLevel}**: Resolução: ${scaleData.resolution.toPrecision(4)} Map Units/px | ${scaleData.scaleDisplay}`;
