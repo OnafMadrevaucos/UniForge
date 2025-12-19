@@ -1947,6 +1947,19 @@ button.disabled:hover {
     opacity: 1;
 }
 
+.dialog .side-panel .config-group .options {
+    display: grid;
+}
+
+.dialog .side-panel .config-group .options button {
+    width: 32px;
+}
+
+.dialog .side-panel .config-group .options img{
+    width: 32px;
+    height: 32px;
+    border-radius: var(--default-border-radius);
+}
 
 .dialog .dialog-overlay {
     position: fixed;
