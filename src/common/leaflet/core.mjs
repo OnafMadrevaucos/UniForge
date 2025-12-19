@@ -466,7 +466,7 @@ const lControl = {
         }
 
         async function _onDrawCreated(e) {
-            const link = await LinkDialog.configDialog(null);
+            const link = await LinkDialog.configDialog(null, { hasSidePanel: true });
             // Se o link foi criado, obtenha-o.
             if (link) {
                 const item = uniforge.doc[link.type].get(link.id);

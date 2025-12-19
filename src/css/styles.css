@@ -1594,7 +1594,6 @@ button.disabled:hover {
 .dialog .main .folder-list .folder.created.selected .fa-trash {
     z-index: 1150;
 }
-
 .dialog .main .folder-list .folder.created.selected .fa-trash:hover {
     background-color: var(--dark-blue);
     color: var(--light-text-color);
@@ -1911,6 +1910,43 @@ button.disabled:hover {
     background: var(--focus-red);
     color: var(--background-color);
 }
+
+.dialog .main .config a{
+    margin-left: auto;
+    padding: 5px;
+}
+.dialog .main .config a.active,
+.dialog .main .config a:hover {
+    color: var(--focus-red);
+    cursor: pointer;
+}
+
+.dialog .side-panel {
+    height: 85%;
+    width: 200px;
+    position: absolute;
+    top: 10%;
+    left: 102.5%;
+    background-color: var(--background-color);
+    border-radius: var(--default-border-radius);
+    opacity: 0;
+    transition: opacity 0.3s ease-in-out;
+}
+.dialog .side-panel::after {
+    content: "";
+    position: absolute;
+    top: 12%;
+    right: 100%;
+    margin-top: -10px;
+    border-width: 15px;
+    border-style: solid;
+    border-color: transparent var(--background-color) transparent transparent;
+}
+
+.dialog .side-panel.active {
+    opacity: 1;
+}
+
 
 .dialog .dialog-overlay {
     position: fixed;

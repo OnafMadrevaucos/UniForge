@@ -43,9 +43,9 @@ export default class MsgBox {
      * através da análise do stack trace de um novo objeto Error.
      * @returns {string} Uma string formatada com a localização da chamada (ex: " [📍 arquivo.js:45:12]").
      */
-    _getLocation() {
+    _getLocation(err=null) {
         // Cria um novo objeto Error para obter a stack trace atual.
-        const error = new Error();
+        const error = err ?? new Error();
         // Pula o cabeçalho da stack trace e as referências internas ao MsgBox.
         const stackLines = error.stack.split('\n').splice(3);
 
@@ -59,10 +59,11 @@ export default class MsgBox {
     /**
      * Mostra uma mensagem de erro no painel do usuário e registra um erro no console.
      * O log do console inclui a localização exata da chamada.
-     * @param {string} message A mensagem de erro a ser exibida para o usuário.
+     * @param {string} message      - A mensagem de erro a ser exibida para o usuário.
+     * @param {Error|null} error    - O erro a ser exibido no console.
      */
-    showError(message) {
-        const location = this._getLocation();
+    showError(message, error=null) {
+        const location = this._getLocation(error);
 
         console.error(`UniForge | ${message}${location}`);
         this._showMsg(message, 'error');

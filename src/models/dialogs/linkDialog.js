@@ -12,7 +12,30 @@ export default class LinkDialog extends BaseDialog {
 
         this.sourceType = options?.type ?? null;
 
+        this.hasSidePanel = options?.hasSidePanel ?? false;
+
+        this.leafletMarker = options.marker ?? null;
+
         this.template = 'linkDialog'; // Define o template do diálogo.
+    }
+
+    /**
+    * Propriedade que retorna um objeto com referências para elementos do formulário.
+    * 
+    * @returns {Object}  - Um objeto com as seguintes propriedades:
+    * 
+    *  - overlay: O elemento HTML que contém o formulário.
+    *  - form: O elemento HTML que representa o formulário.
+    *  - header: O elemento HTML que contém o título do formulário.
+    *  - close_btn: O elemento HTML que fecha o formulário.
+    *  - content: O elemento HTML que contém o conteúdo do formulário.
+    *  - side_panel: O elemento HTML usado para conter informações extras.
+   */
+    get ui() {
+        return {
+            side_panel: document.querySelector(this.query.side_panel),
+            ...super.ui
+        };
     }
 
     /**
@@ -27,9 +50,11 @@ export default class LinkDialog extends BaseDialog {
      *  - main_editor: Seletor para o principal editor Tiny MCE da aplicação.
      *  - flavor_editor: Seletor para o editor Tiny MCE de floreio da aplicação.
      *  - event_editor: Seletor para o editor Tiny MCE de eventos da aplicação.
+     *  - side_panel: Seletor para o panel lateral do diálogo.
     */
     get query() {
         const query = {
+            side_panel: `#SidePanel-${this.uuid}`,
             flavor_editor: `FlavorEditor-${this.uuid}`
         }
         return uniforge.utils.mergeObjects(super.query, query);
@@ -54,6 +79,36 @@ export default class LinkDialog extends BaseDialog {
 
             content = content ?? ''; // Se o conteúdo for nulo, faça o conteúdo vazio.
             this.flavorEditor.setContent(content);
+        }
+    }
+
+    /**
+     * Renderiza o panel lateral do diálogo.
+     * 
+     * @async
+     * @returns {HTMLElement} - O conteiner do panel lateral.
+     */
+    async _preparePanel() {
+        try {
+            const html = await uniforge.utils.loadTemplate('./templates/parts/sidePanel.html');
+
+            const parsedHtml = uniforge.parser.parseHTML(html.outerHTML, this.data);
+            html.id = `SidePanel-${this.uuid}`;
+            html.outerHTML = parsedHtml;
+
+            return html;
+        } catch (error) {
+            this.msgBox.showError(error.message, error);
+        }
+    }
+
+    /**@inheritdoc */
+    async prepareDerivedTemplate(dialog, header, main) {
+        await super.prepareDerivedTemplate(dialog, header, main);
+
+        if (this.hasSidePanel) {
+            const sidePanel = await this._preparePanel();
+            dialog.appendChild(sidePanel);
         }
     }
 
@@ -149,6 +204,11 @@ export default class LinkDialog extends BaseDialog {
 
     async configureElements() {
         await this.configureFlavorTinyMCE();
+
+        if (this.hasSidePanel) {
+            const configureIconDiv = this.querySelector('#configureIcon');
+            configureIconDiv.classList.remove('hidden');
+        }
     }
 
     clearElements() {
@@ -204,25 +264,38 @@ export default class LinkDialog extends BaseDialog {
         const folders = this.querySelectorAll('.folder');
         const itemsList = this.querySelectorAll('.entry-item');
 
-        sidebar.addEventListener('click', (event) => { this._onSidebarClick(event); });
+        sidebar.addEventListener('click', (event) => { this.onSidebarClick(event); });
 
         folders.forEach(item => {
             const folderHeader = item.querySelector('.folder-header');
             folderHeader.addEventListener('click', (event) => {
-                this._onFolderClick(event);
+                this.onFolderClick(event);
             });
         });
 
         itemsList.forEach(item => {
-            item.addEventListener('dblclick', (event) => { this._onEntryItemDoubleClick(event); });
+            item.addEventListener('dblclick', (event) => { this.onEntryItemDoubleClick(event); });
         });
+
+        const searchInput = this.querySelector('#searchInput');
+        if (searchInput) {
+            searchInput.addEventListener('input', (event) => { this.onSearchInput(event); });
+
+            const clearSearch = this.querySelector('#clearSearch');
+            clearSearch.addEventListener('click', (event) => { this.onClearSearch(event); });
+        }
+
+        if (this.hasSidePanel) {
+            const configureIcon = this.querySelector('#configureIcon a');
+            configureIcon.addEventListener('click', (event) => { this.onConfigureIconClick(event); });
+        }
     }
 
     /**
     * Gerencia cliques no sidebar.
     * @param {MouseEvent} event - O evento de clique.
     */
-    _onSidebarClick(event) {
+    onSidebarClick(event) {
         event.stopPropagation();
         if (event.target.classList.contains('sidebar')) this.clearElements();
     }
@@ -231,7 +304,7 @@ export default class LinkDialog extends BaseDialog {
    * Gerencia cliques em pastas.
    * @param {MouseEvent} event - O evento de clique.
    */
-    _onFolderClick(event) {
+    onFolderClick(event) {
         event.stopPropagation();
         const clickedFolder = event.target.closest('.folder');
         const isSelected = clickedFolder.classList.contains('selected');
@@ -245,47 +318,13 @@ export default class LinkDialog extends BaseDialog {
             folderIcon.classList.add('fas', 'fa-folder-open');
         }
     }
-    /**
-     * Remove a seleção de todas as pastas.
-     * @private
-     */
-    _clearFolderList() {
-        const folders = this.querySelectorAll('.folder');
-        folders.forEach(item => {
-            item.classList.remove('selected');
-            const folderIcon = item.querySelector('.fas');
-            folderIcon.classList.remove(...folderIcon.classList);
-            folderIcon.classList.add('fas', 'fa-folder');
-        });
-        this._clearEntryList();
-    }
-
-    /**
-     * Remove a seleção de todas as entradas.
-     * @private
-     */
-    _clearEntryList() {
-        const itemsList = this.querySelectorAll('.entry-item');
-        itemsList.forEach(item => {
-            item.classList.remove('selected');
-            const itemIcon = item.querySelector('.fas');
-            itemIcon.classList.remove(...itemIcon.classList);
-            itemIcon.classList.add('fas', 'fa-file');
-        });
-    }
-
-    _resetGroups() {
-        this._toggleEventGroups(false);
-        this._toggleLineageGroups(false);
-        this._toggleTimelineGroups(false);
-    }
 
     /**
     * Gerencia cliques duplos em itens de entrada.
     * @inheritdoc
     * @param {MouseEvent} event - O evento de clique duplo.
     */
-    async _onEntryItemDoubleClick(event) {
+    async onEntryItemDoubleClick(event) {
         const item = event.target.closest('.entry-item');
         const folder = event.target.closest('.folder-list');
         const itemId = item.dataset.id;
@@ -389,6 +428,137 @@ export default class LinkDialog extends BaseDialog {
         itemIcon.classList.add('fas', 'fa-eye');
     }
 
+    onSearchInput(event) {
+        const filter = event.target.value.trim().toLowerCase();
+
+        const folders = this.querySelectorAll('.folder');
+        const entries = this.querySelectorAll('.entry-item');
+
+        // Se busca estiver vazia, mostrar tudo e restaurar textos.
+        if (filter === '') {
+            entries.forEach(e => {
+                e.style.display = '';
+                uniforge.parser.removeHighlight(e);
+            });
+
+            folders.forEach(f => {
+                f.style.display = '';
+                uniforge.parser.removeHighlight(f);
+            });
+
+            return;
+        }
+
+        // 1) Filtra e realça entries.
+        entries.forEach(entry => {
+            const span = entry.querySelector('span');
+            const label = entry.dataset.label ?? span.textContent;
+
+            // Guarda texto original (uma vez só).
+            if (!span.dataset.originalText) {
+                span.dataset.originalText = span.innerHTML;
+            }
+
+            const match = label.toLowerCase().includes(filter);
+            entry.style.display = match ? '' : 'none';
+
+            // Realce.
+            if (match) {
+                span.innerHTML = uniforge.parser.applyHighlight(label, filter);
+            } else {
+                uniforge.parser.removeHighlight(entry);
+            }
+        });
+
+        // 2) Folders aparecem se:
+        //    - elas mesmas combinam; ou
+        //    - possuem ao menos um entry visível;
+        folders.forEach(folder => {
+            const span = folder.querySelector('.folder-header span');
+            const folderLabel = folder.dataset.label ?? span.textContent;
+
+            if (!span.dataset.originalText) {
+                span.dataset.originalText = span.innerHTML;
+            }
+
+            const folderMatches = folderLabel.toLowerCase().includes(filter);
+
+            // Procura entries visíveis dentro desta pasta.
+            const visibleEntries = folder.querySelectorAll('.entry-item:not([style*="display: none"])');
+            const hasVisibleChild = visibleEntries.length > 0;
+
+            // Exibição final.
+            folder.style.display = (folderMatches || hasVisibleChild) ? '' : 'none';
+
+            // Realce se combinar.
+            if (folderMatches) {
+                span.innerHTML = uniforge.parser.applyHighlight(folderLabel, filter);
+            } else {
+                uniforge.parser.removeHighlight(folder);
+            }
+        });
+
+        const emptyListSpan = this.querySelector('#emptyListSpan');
+
+        // Verifica se há algum item visível.
+        const anyFolderVisible = Array.from(folders)
+            .some(folder => folder.style.display !== 'none');
+
+        // Se nenhum folder visível, mostrar mensagem de lista vazia.
+        if (!anyFolderVisible) emptyListSpan.classList.remove('hidden');
+        else emptyListSpan.classList.add('hidden');
+
+    }
+
+    onClearSearch(event) {
+        const searchInput = this.querySelector('#searchInput');
+        searchInput.value = '';
+
+        this._onSearchInput({ target: searchInput });
+    }
+
+    onConfigureIconClick(event) {
+        event.stopPropagation();
+        const button = event.target.closest('a');
+
+        button.classList.toggle('active');
+        this.ui.side_panel.classList.toggle('active');
+    }
+
+    /**
+     * Remove a seleção de todas as pastas.
+     * @private
+     */
+    _clearFolderList() {
+        const folders = this.querySelectorAll('.folder');
+        folders.forEach(item => {
+            item.classList.remove('selected');
+            const folderIcon = item.querySelector('.fas');
+            folderIcon.classList.remove(...folderIcon.classList);
+            folderIcon.classList.add('fas', 'fa-folder');
+        });
+        this._clearEntryList();
+    }
+
+    /**
+     * Remove a seleção de todas as entradas.
+     * @private
+     */
+    _clearEntryList() {
+        const itemsList = this.querySelectorAll('.entry-item');
+        itemsList.forEach(item => {
+            item.classList.remove('selected');
+            const itemIcon = item.querySelector('.fas');
+            itemIcon.classList.remove(...itemIcon.classList);
+            itemIcon.classList.add('fas', 'fa-file');
+        });
+    }
+
+    _resetGroups() {
+        this._toggleEventGroups(false);
+        this._toggleTimelineGroups(false);
+    }
+
     /**
    * Configura o editor TinyMCE com funcionalidades inline.
    * @protected
@@ -455,31 +625,84 @@ export default class LinkDialog extends BaseDialog {
         }
     }
 
-    static async configDialog(source, options = {}) {
-        return new Promise((resolve, reject) => {
-            options = uniforge.utils.mergeObjects(options, { source: source, alwaysClose: true });
-            const dialog = new this({
-                title: 'Novo Vínculo',
-                buttons: {
-                    cancel: {
-                        label: "Cancelar",
-                        icon: "fas fa-xmark",
-                        callback: () => resolve(null)
-                    },
-                    link: {
-                        label: "Vincular",
-                        icon: "fas fa-link",
-                        callback: (html, event) => {
-                            const button = event.target.closest('.dialog-button');
-                            const item = JSON.parse(button.dataset.item);
+    async generateMarkerIcon({ color, icon }) {
+        function loadImage(src) {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                img.onload = () => resolve(img);
+                img.onerror = reject;
+                img.src = src;
+            });
+        }
 
-                            resolve(item);
-                        }
-                    }
-                },
-                abort: () => resolve(null)
-            }, options);
-            dialog.show(true);
+        const canvas = document.createElement('canvas');
+        canvas.width = 64;
+        canvas.height = 64;
+
+        const ctx = canvas.getContext('2d');
+
+        // === PIN BASE ===
+        const pinImg = await loadImage(`./assets/markers/${color}.svg`);
+        ctx.drawImage(pinImg, 0, 0, 64, 64);
+
+        // === ÍCONE INTERNO (opcional) ===
+        if (icon !== 'none') {
+            const iconImg = await loadImage(`./assets/icons/${icon}.png`);
+            const size = 28;
+            ctx.drawImage(
+                iconImg,
+                (64 - size) / 2,
+                (64 - size) / 2 - 6,
+                size,
+                size
+            );
+        }
+
+        const url = await canvas.toDataURL('image/png');
+
+        return L.icon({
+            iconUrl: url,
+            iconSize: [32, 32],
+            iconAnchor: [16, 32],
+            popupAnchor: [0, -32]
         });
     }
+
+    async _updateMarkerIcon() {
+        if (!this.leafletMarker) return;
+
+        const icon = await this.generateMarkerIcon(this.markerConfig);
+        this.leafletMarker.setIcon(icon);
+
+        const preview = this.ui.side_panel.querySelector('#markerPreview');
+        preview.src = icon.options.iconUrl;
+    }    
+
+    static async configDialog(source, options = {}) {
+    return new Promise((resolve, reject) => {
+        options = uniforge.utils.mergeObjects(options, { source: source, alwaysClose: true });
+        const dialog = new this({
+            title: 'Novo Vínculo',
+            buttons: {
+                cancel: {
+                    label: "Cancelar",
+                    icon: "fas fa-xmark",
+                    callback: () => resolve(null)
+                },
+                link: {
+                    label: "Vincular",
+                    icon: "fas fa-link",
+                    callback: (html, event) => {
+                        const button = event.target.closest('.dialog-button');
+                        const item = JSON.parse(button.dataset.item);
+
+                        resolve(item);
+                    }
+                }
+            },
+            abort: () => resolve(null)
+        }, options);
+        dialog.show(true);
+    });
+}
 }
