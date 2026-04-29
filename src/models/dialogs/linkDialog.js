@@ -12,31 +12,8 @@ export default class LinkDialog extends BaseDialog {
 
         this.sourceType = options?.type ?? null;
 
-        this.hasSidePanel = options?.hasSidePanel ?? false;
-
-        this.leafletMarker = options.marker ?? null;
-
         this.template = 'linkDialog'; // Define o template do diálogo.
-    }
-
-    /**
-    * Propriedade que retorna um objeto com referências para elementos do formulário.
-    * 
-    * @returns {Object}  - Um objeto com as seguintes propriedades:
-    * 
-    *  - overlay: O elemento HTML que contém o formulário.
-    *  - form: O elemento HTML que representa o formulário.
-    *  - header: O elemento HTML que contém o título do formulário.
-    *  - close_btn: O elemento HTML que fecha o formulário.
-    *  - content: O elemento HTML que contém o conteúdo do formulário.
-    *  - side_panel: O elemento HTML usado para conter informações extras.
-   */
-    get ui() {
-        return {
-            side_panel: document.querySelector(this.query.side_panel),
-            ...super.ui
-        };
-    }
+    }    
 
     /**
      * Retorna um objeto com seletores para elementos da aplicação.
@@ -54,7 +31,6 @@ export default class LinkDialog extends BaseDialog {
     */
     get query() {
         const query = {
-            side_panel: `#SidePanel-${this.uuid}`,
             flavor_editor: `FlavorEditor-${this.uuid}`
         }
         return uniforge.utils.mergeObjects(super.query, query);
@@ -79,36 +55,6 @@ export default class LinkDialog extends BaseDialog {
 
             content = content ?? ''; // Se o conteúdo for nulo, faça o conteúdo vazio.
             this.flavorEditor.setContent(content);
-        }
-    }
-
-    /**
-     * Renderiza o panel lateral do diálogo.
-     * 
-     * @async
-     * @returns {HTMLElement} - O conteiner do panel lateral.
-     */
-    async _preparePanel() {
-        try {
-            const html = await uniforge.utils.loadTemplate('./templates/parts/sidePanel.html');
-
-            const parsedHtml = uniforge.parser.parseHTML(html.outerHTML, this.data);
-            html.id = `SidePanel-${this.uuid}`;
-            html.outerHTML = parsedHtml;
-
-            return html;
-        } catch (error) {
-            this.msgBox.showError(error.message, error);
-        }
-    }
-
-    /**@inheritdoc */
-    async prepareDerivedTemplate(dialog, header, main) {
-        await super.prepareDerivedTemplate(dialog, header, main);
-
-        if (this.hasSidePanel) {
-            const sidePanel = await this._preparePanel();
-            dialog.appendChild(sidePanel);
         }
     }
 
@@ -203,12 +149,7 @@ export default class LinkDialog extends BaseDialog {
     }
 
     async configureElements() {
-        await this.configureFlavorTinyMCE();
-
-        if (this.hasSidePanel) {
-            const configureIconDiv = this.querySelector('#configureIcon');
-            configureIconDiv.classList.remove('hidden');
-        }
+        await this.configureFlavorTinyMCE();       
     }
 
     clearElements() {
@@ -283,12 +224,7 @@ export default class LinkDialog extends BaseDialog {
 
             const clearSearch = this.querySelector('#clearSearch');
             clearSearch.addEventListener('click', (event) => { this.onClearSearch(event); });
-        }
-
-        if (this.hasSidePanel) {
-            const configureIcon = this.querySelector('#configureIcon a');
-            configureIcon.addEventListener('click', (event) => { this.onConfigureIconClick(event); });
-        }
+        }       
     }
 
     /**
@@ -515,14 +451,6 @@ export default class LinkDialog extends BaseDialog {
         searchInput.value = '';
 
         this._onSearchInput({ target: searchInput });
-    }
-
-    onConfigureIconClick(event) {
-        event.stopPropagation();
-        const button = event.target.closest('a');
-
-        button.classList.toggle('active');
-        this.ui.side_panel.classList.toggle('active');
     }
 
     /**

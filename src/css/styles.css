@@ -332,6 +332,7 @@ select:disabled {
     border-top-left-radius: var(--default-border-radius);
     font-weight: 900;
 }
+
 .uniforge .leaflet-container .leaflet-control-attribution a {
     color: var(--light-text-color);
 }
@@ -570,6 +571,7 @@ button.disabled:hover {
 /* ------ Scroll ------ */
 ::-webkit-scrollbar {
     width: 4px;
+    height: 4px;
 }
 
 ::-webkit-scrollbar-thumb {
@@ -769,6 +771,11 @@ button.disabled:hover {
     padding: 0;
 }
 
+.leaflet-container .leaflet-control-container .leaflet-top.leaflet-right .leaflet-control button.active {
+    background-color: var(--background-color);
+    color: var(--red);
+}
+
 .leaflet-container .leaflet-div-icon {
     background: var(--grey);
     border-radius: 50%;
@@ -966,7 +973,20 @@ button.disabled:hover {
     text-shadow: none;
 }
 
-/* ------ Tools Topbar ------*/
+/* ------ Tools Container ------ */
+.tools-container {
+    background-color: var(--dark-blue);
+    background-image: url('../ui/denim065.png');
+    padding: 4px 8px;
+    border-radius: 8px;
+    align-self: center;
+    justify-content: center;
+    transition: transform 0.5s ease-in-out;
+    z-index: 1001;
+    border: 2px solid var(--light-text-color);
+}
+
+/* ------ Time Panel ------ */
 #toolsTopbar {
     position: absolute;
     top: 0;
@@ -977,29 +997,23 @@ button.disabled:hover {
     z-index: 1000;
 }
 
-#toolsTopbar .tools-container {
+.tools-container.time-panel {
     flex: 0;
     width: 35%;
     height: 64px;
-    gap: var(--big-gap-size);
-    background-color: var(--dark-blue);
-    background-image: url('../ui/denim065.png');
-    padding: 4px 8px;
     border-radius: 0 0 8px 8px;
-    align-self: center;
-    justify-content: center;
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+    gap: var(--big-gap-size);
     transform: translateY(-100%);
-    transition: transform 0.5s ease-in-out;
-    z-index: 1001;
-    border: 2px solid var(--light-text-color);
     border-top: none;
 }
 
-#toolsTopbar .tools-container.visible {
+.time-panel.visible {
     transform: translateY(0%);
 }
 
-#toolsTopbar .tools-container .buttons-tool {
+.time-panel .buttons-tool {
     flex: 1;
     gap: var(--big-gap-size);
     justify-content: center;
@@ -1009,7 +1023,7 @@ button.disabled:hover {
     border-bottom: none;
 }
 
-#toolsTopbar .tools-container button {
+.time-panel button {
     height: 46px;
     width: 50px;
     margin: 4px 0;
@@ -1020,32 +1034,32 @@ button.disabled:hover {
     padding: 0;
 }
 
-#toolsTopbar .tools-container button.disabled {
+.time-panel button.disabled {
     background-color: var(--dark-blue);
     color: var(--disabled-text-color);
 }
 
-#toolsTopbar .tools-container button:hover {
+.time-panel button:hover {
     color: var(--light-text-color);
     background-color: var(--dark-red);
 }
 
-#toolsTopbar .tools-container .time-tool .year-container[data-tooltip]::after {
+.time-panel .time-tool .year-container[data-tooltip]::after {
     font-weight: 700;
     left: 0;
 }
 
-#toolsTopbar .tools-container button[data-tooltip]::after {
+.time-panel button[data-tooltip]::after {
     right: 50%;
 }
 
-#toolsTopbar .tools-container .time-tool {
+.time-panel .time-tool {
     flex: 0 0 75%;
     justify-content: center;
     gap: var(--default-gap-size);
 }
 
-#toolsTopbar .tools-container .time-tool .year-container {
+.time-panel .time-tool .year-container {
     flex: 1;
     align-content: center;
     align-self: center;
@@ -1057,14 +1071,14 @@ button.disabled:hover {
     padding-inline: 5px;
 }
 
-#toolsTopbar .tools-container .time-tool .year-container input {
+.time-panel .time-tool .year-container input {
     width: 75%;
     text-align: center;
     font-weight: bold;
     background-color: var(--dark-blue);
 }
 
-#toolsTopbar .tools-container .time-tool .year-container span {
+.time-panel .time-tool .year-container span {
     font-size: var(--default-size);
     color: var(--light-text-color);
     font-weight: 700;
@@ -1259,6 +1273,67 @@ button.disabled:hover {
 .tab-icon {
     font-size: 20px;
     display: none;
+}
+
+/* ------ Map Objects Panel ------ */
+#mapObjectsPanel {
+    position: absolute;
+    bottom: 0;
+    width: 750px;
+    z-index: 1001;
+}
+
+.tools-container.map-objects-panel {
+    height: 85px;
+    width: var(--fill-width);
+    border-bottom: none;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+    gap: var(--default-gap-size);
+    transform: translateY(100%);
+    transition: transform 0.3s ease-in-out;
+}
+
+.map-objects-panel.active {
+    transform: translateY(0);
+}
+
+.map-objects-panel .config-group {
+    flex: 1;
+    border: var(--data-group-border);
+    border-radius: var(--default-border-radius);
+    margin: 5px;
+}
+
+.map-objects-panel .config-group .label {
+    color: var(--red);
+    font-variant: small-caps;
+}
+
+.map-objects-panel .config-group .options {
+    height: 32px;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    justify-content: space-evenly;
+    gap: var(--default-gap-size);
+}
+
+.map-objects-panel .config-group .options a {    
+    border-radius: var(--default-border-radius);
+    padding: 2px; 
+    line-height: 0;   
+}
+
+.map-objects-panel .config-group .options a:hover,
+.map-objects-panel .config-group .options a.active {
+    border: var(--filled-border);
+}
+
+.map-objects-panel .config-group .options img {
+    width: 32px;
+    height: 32px;
+    border-radius: var(--default-border-radius);
 }
 
 /* ------ Application Controls ------ */
@@ -1537,7 +1612,7 @@ button.disabled:hover {
 }
 
 .dialog .main .chapter-dialog .icon-list .icon-item .item-content {
-    gap: 5px;
+    gap: var(--default-gap-size);
 }
 
 .dialog .main .chapter-dialog .icon-list .icon-item .item-content i {
@@ -1594,6 +1669,7 @@ button.disabled:hover {
 .dialog .main .folder-list .folder.created.selected .fa-trash {
     z-index: 1150;
 }
+
 .dialog .main .folder-list .folder.created.selected .fa-trash:hover {
     background-color: var(--dark-blue);
     color: var(--light-text-color);
@@ -1615,7 +1691,7 @@ button.disabled:hover {
 }
 
 .dialog .main .file-dialog .current-dir {
-    gap: 5px;
+    gap: var(--default-gap-size);
 }
 
 .dialog .main .file-dialog .current-dir button#goBackButton {
@@ -1909,56 +1985,6 @@ button.disabled:hover {
 .dialog .buttons button:hover {
     background: var(--focus-red);
     color: var(--background-color);
-}
-
-.dialog .main .config a{
-    margin-left: auto;
-    padding: 5px;
-}
-.dialog .main .config a.active,
-.dialog .main .config a:hover {
-    color: var(--focus-red);
-    cursor: pointer;
-}
-
-.dialog .side-panel {
-    height: 85%;
-    width: 200px;
-    position: absolute;
-    top: 10%;
-    left: 102.5%;
-    background-color: var(--background-color);
-    border-radius: var(--default-border-radius);
-    opacity: 0;
-    transition: opacity 0.3s ease-in-out;
-}
-.dialog .side-panel::after {
-    content: "";
-    position: absolute;
-    top: 12%;
-    right: 100%;
-    margin-top: -10px;
-    border-width: 15px;
-    border-style: solid;
-    border-color: transparent var(--background-color) transparent transparent;
-}
-
-.dialog .side-panel.active {
-    opacity: 1;
-}
-
-.dialog .side-panel .config-group .options {
-    display: grid;
-}
-
-.dialog .side-panel .config-group .options button {
-    width: 32px;
-}
-
-.dialog .side-panel .config-group .options img{
-    width: 32px;
-    height: 32px;
-    border-radius: var(--default-border-radius);
 }
 
 .dialog .dialog-overlay {
@@ -2280,7 +2306,7 @@ button.disabled:hover {
 
 .tabs-control .tabs-options button {
     flex: 1;
-    gap: 5px;
+    gap: var(--default-gap-size);
     justify-content: center;
     align-items: center;
     border: none;
@@ -2357,9 +2383,8 @@ button.disabled:hover {
     font-style: italic;
     padding-block: 10px;
 }
-#settings .data-group .hint {
 
-}
+#settings .data-group .hint {}
 
 #settings.tabs-control {
     overflow-y: auto;
@@ -2477,7 +2502,7 @@ button.disabled:hover {
 }
 
 #settings #leafletPanel .scale {
-    gap: 5px;
+    gap: var(--default-gap-size);
 }
 
 #settings .footer {
@@ -2656,7 +2681,7 @@ button.disabled:hover {
 .timeline .content div {
     z-index: 1;
     color: var(--light-text-color);
-    gap: 5px;
+    gap: var(--default-gap-size);
 }
 
 .timeline .content .time-manager {

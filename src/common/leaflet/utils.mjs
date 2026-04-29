@@ -6,12 +6,13 @@ const iconMap = {
 }
 
 const options = {
-    marker: function (iconUrl) {
+
+    marker: function (markerURL) {
         return {
             icon: L.icon({
-                iconUrl: iconUrl, // URL do ícone do marcador.
+                iconUrl: markerURL, // URL do ícone do marcador.
                 iconSize: [32, 32],
-                iconAnchor: [2, 32],
+                iconAnchor: [16, 32],
                 popupAnchor: [0, -32]
             })
         }
@@ -63,8 +64,9 @@ const options = {
 }
 
 const drawer = {
-    marker: function (map, iconUrl) {
-        return new L.Draw.Marker(map, options.marker(iconUrl));
+    marker: function (map, markerURL) {
+        this.markerObj = new L.Draw.Marker(map, options.marker(markerURL));
+        return this.markerObj;
     },
     polygon: function (map, withIntersection = false) {
         return new L.Draw.Polygon(map, options.polygon(withIntersection));
@@ -74,7 +76,9 @@ const drawer = {
     },
     rectangle: function (map) {
         return new L.Draw.Rectangle(map, options.regularShape());
-    }
+    },
+
+    markerObj: null
 }
 
 function _zoomIn(map) {
@@ -139,41 +143,48 @@ function _onCircleDraw(map) {
     });
 }
 
-async function _onMarkerDraw(map) {
-    const iconUrl = uniforge.urls.icons.join('marker.png'); // URL do ícone do marcador.
-    // Ativar o desenho de marcador.
-    const markerDrawer = drawer.marker(map, iconUrl);
+async function _onMarkerDraw(map, event) {
+    const target = event.target;
+    const button = target.closest('button');
+    const mapObjectsPanel = document.querySelector('#mapObjectsPanel div');   
+    
+    // Desativa todas as opções de desenho.
+    mapObjectsPanel.querySelectorAll('.marker-options').forEach(option => option.classList.remove('active'));
 
-    // Evento para desativar após o clique inicial (impedindo início imediato).
-    map.on('click', function startDrawing() {
-        markerDrawer.enable();
-        map.off('click', startDrawing); // Remover o evento para evitar múltiplos cliques.
-    });
+    button.classList.toggle('active');
+
+    if(!button.classList.contains('active')) {
+        if(drawer.markerObj) drawer.markerObj.disable();
+        mapObjectsPanel.classList.remove('active');        
+    }
+    else {
+        mapObjectsPanel.classList.add('active');
+    }    
 }
 
-function onAddDraw(map) {
+function onAddDrawControl(map) {
     const container = L.DomUtil.create('div', 'leaflet-bar flexcol');
 
     // Cria um botão de Polígono.
-    const polygonButton = L.DomUtil.create('button', 'leaflet-draw-button', container);
+    const polygonButton = L.DomUtil.create('button', 'leaflet-draw-button polygon', container);
     polygonButton.innerHTML = `<i class="${iconMap.polygon}"></i>`; // Emoji de atualização ou seu ícone customizado.
     // Adiciona um evento de clique ao botão.
     L.DomEvent.on(polygonButton, 'click', _onPolygonDraw.bind(this, map));
 
     // Cria um botão de Retângulo.
-    const retangleButton = L.DomUtil.create('button', 'leaflet-draw-button', container);
+    const retangleButton = L.DomUtil.create('button', 'leaflet-draw-button retangle', container);
     retangleButton.innerHTML = `<i class="${iconMap.rectangle}"></i>`; // Emoji de atualização ou seu ícone customizado.
     // Adiciona um evento de clique ao botão.
     L.DomEvent.on(retangleButton, 'click', _onRetangleDraw.bind(this, map));
 
     // Cria um botão de Círculo.
-    const circleButton = L.DomUtil.create('button', 'leaflet-draw-button', container);
+    const circleButton = L.DomUtil.create('button', 'leaflet-draw-button circle', container);
     circleButton.innerHTML = `<i class="${iconMap.circle}"></i>`; // Emoji de atualização ou seu ícone customizado.
     // Adiciona um evento de clique ao botão.
     L.DomEvent.on(circleButton, 'click', _onCircleDraw.bind(this, map));
 
     // Cria um botão de Marcador.
-    const markerButton = L.DomUtil.create('button', 'leaflet-draw-button', container);
+    const markerButton = L.DomUtil.create('button', 'leaflet-draw-button marker', container);
     markerButton.innerHTML = `<i class="${iconMap.marker}"></i>`; // Emoji de atualização ou seu ícone customizado.
     // Adiciona um evento de clique ao botão
     L.DomEvent.on(markerButton, 'click', _onMarkerDraw.bind(this, map));
@@ -227,11 +238,12 @@ function onCreateTile(coords) {
 
 const utils = {
     onAddMain: onAddMain,
-    onAddDraw: onAddDraw,
+    onAddDrawControl: onAddDrawControl,
     onAddLayer: onAddLayer,
     onCreateTile: onCreateTile,
     iconMap: iconMap,
     options: options,
     drawer: drawer
 }
+
 export default utils;

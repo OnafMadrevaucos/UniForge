@@ -49,7 +49,8 @@ const utils = {
     isEmpty: utilsEsm.helpers.isEmpty,
     timeSince: utilsEsm.helpers.timeSince,
     getFontAwesomeIcons: utilsEsm.helpers.getFontAwesomeIcons,
-    formatFileSize: utilsEsm.helpers.formatFileSize
+    formatFileSize: utilsEsm.helpers.formatFileSize,
+    refreshMarker: leafletEsm.utils.default.refreshMarker
 };
 
 const parser = {
@@ -68,8 +69,7 @@ const parser = {
 
 const leaflet = {
     core: leafletEsm.core,
-    draw: leafletEsm.draw,
-    grid: leafletEsm.grid 
+    drawer: leafletEsm.utils.default.drawer
 }
 
 const state = {

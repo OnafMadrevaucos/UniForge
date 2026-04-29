@@ -141,7 +141,7 @@ const lControl = {
         options: {
             position: 'topright' // Posição no canto superior esquerdo.            
         },
-        onAdd: utils.onAddDraw
+        onAdd: utils.onAddDrawControl
     }),
 
     TransparentGridLayer: L.GridLayer.extend({
@@ -467,12 +467,13 @@ const lControl = {
 
         async function _onDrawCreated(e) {
             const link = await LinkDialog.configDialog(null, { hasSidePanel: true });
-            // Se o link foi criado, obtenha-o.
-            if (link) {
-                const item = uniforge.doc[link.type].get(link.id);
-                // Verifica se o item obtido é válido.
-                if (item) {
-                    try {
+            try {
+                // Se o link foi criado, obtenha-o.
+                if (link) {
+                    const item = uniforge.doc[link.type].get(link.id);
+                    // Verifica se o item obtido é válido.
+                    if (item) {
+
                         let layer = e.layer;
                         const latlngs = layer._latlngs || layer._latlng;
                         layer.source = item; // Atribui o item como fonte da camada desenhada.
@@ -493,7 +494,7 @@ const lControl = {
                             mid: lControl.constants.DEFAULT_OVERLAY,
                             epoch: uniforge.time.y.value,
                             type: layer.type,
-                            icon: utils.iconMap[layer.type],
+                            icon: (layer.type === 'marker') ? layer.options.icon.options.iconUrl : null,
                             source: `${layer.source.type}{${layer.source._id}}`,
                             points: points,
                         }
@@ -508,12 +509,24 @@ const lControl = {
 
                         // Comita a transação.
                         await uniforge.db.commitTransaction();
-                    } catch (error) {
-                        // Se ocorrer um erro ao adicionar a camada desenhada, faça o rollback da transação.
-                        await uniforge.db.rollbackTransaction();
-                        console.error('Erro ao adicionar a camada desenhada:', error);
                     }
                 }
+            } catch (error) {
+                // Se ocorrer um erro ao adicionar a camada desenhada, faça o rollback da transação.
+                await uniforge.db.rollbackTransaction();
+                console.error('Erro ao adicionar a camada desenhada:', error);
+            }
+            finally {
+                const markerButton = document.querySelector('.leaflet-draw-button.marker');
+                markerButton.classList.remove('active');
+
+                const mapObjectsPanel = document.querySelector('#mapObjectsPanel div');
+                mapObjectsPanel.classList.remove('active');
+
+                // Desativa todas as opções de desenho.
+                mapObjectsPanel.querySelectorAll('.config-group .options.markers a').forEach(option => option.classList.remove('active'));
+
+                if(utils.drawer.markerObj) utils.drawer.markerObj.disable();
             }
         }
 
@@ -541,7 +554,7 @@ const lControl = {
 
         footer.appendChild(typeIcon);
 
-        if (layer.type === 'marker') {
+        if (layer.mType === 'marker') {
             const coordsSpan = document.createElement('span');
             coordsSpan.classList.add('layer-popup-coords');
             coordsSpan.innerText = `Y: ${layer._latlng.lat.toFixed(2)}, X: ${layer._latlng.lng.toFixed(2)}`;
@@ -565,7 +578,7 @@ const lControl = {
         const elementsOfEpoch = elements.filter(element => element.epoch === epoch);
         elementsOfEpoch.forEach((elementData) => {
             let element;
-            switch (elementData.type) {
+            switch (elementData.mType) {
                 case 'circle': {
                     const points = elementData.points.split(';').map(point => {
                         const coords = point.split(',').map(Number);
@@ -575,10 +588,16 @@ const lControl = {
                     element = L.circle(points, utils.options.regularShape(false));
                 } break;
                 case 'marker': {
-                    const iconUrl = uniforge.urls.icons.join('marker.png'); // URL do ícone do marcador.
+                    const markerUrl = elementData.icon; // URL do ícone do marcador.
                     const point = L.latLng(elementData.points.split(',').map(Number));
 
-                    element = L.marker(point, utils.options.marker(iconUrl));
+                    element = L.marker(point);
+                    element.setIcon(L.icon({
+                        iconUrl: markerUrl,
+                        iconSize: [32, 32], // Tamanho do ícone (ajuste conforme necessário).
+                        iconAnchor: [16, 32], // Ponto de ancoragem do ícone (ajuste conforme necessário).
+                        popupAnchor: [0, -32] // Ponto de ancoragem do popup (ajuste conforme necessário).
+                    }));
                 } break;
                 case 'polygon': {
                     const points = elementData.points.split(';').map(point => {
@@ -602,7 +621,7 @@ const lControl = {
                 }
             }
 
-            element.type = elementData.type; // Armazena o tipo do elemento.
+            element.type = elementData.mType; // Armazena o tipo do elemento.
             element.source = _getSource(elementData.source); // Obtém a fonte do elemento.
 
             element = lControl.createPopup(element); // Cria o elemento com o popup configurado.
@@ -615,7 +634,7 @@ const lControl = {
         });
 
         function _getSource(source) {
-            const pattern = /^(entry|event|lineage|timeline)\{([a-zA-Z0-9]{16})\}$/;
+            const pattern = /^(entry|event|entity|lineage|timeline)\{([a-zA-Z0-9]{16})\}$/;
             const match = source.match(pattern);
             if (match) {
                 const type = match[1];

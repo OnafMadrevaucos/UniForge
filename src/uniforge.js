@@ -21,7 +21,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         */
         constants: {
             APP_NAME: 'UniForge',
-            APP_VERSION: '0.7.9',
+            APP_VERSION: '0.8.6',
             CSS_NAME: cssname,
             leaflet: lControl.constants
         },
@@ -127,7 +127,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             leaflet: null,
             msgBox: new MsgBox(6),
             tooltip: new LinkTooltip(),
-            progressDialog: null
+            progressDialog: null,
+            marker: null
         },
 
         lineageEditor: Object.freeze({
@@ -187,7 +188,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     await configureURLs();
 
-    configureTopBar();
+    await configureToolsBars();
 
     configureForms();
 
@@ -263,6 +264,7 @@ async function configureURLs() {
         data: await uniforge.path.join('/data/'),
         ui: await uniforge.path.join('/ui/'),
         icons: await uniforge.path.join('/ui/icons/'),
+        markers: await uniforge.path.join('/ui/icons/markers/'),
     });
 }
 
@@ -308,11 +310,52 @@ async function updateProgressDialog(data) {
     }
 }
 // Configura os elementos da Topbar de Ferramentas
-function configureTopBar() {
+async function configureToolsBars() {
     const currentYearInput = document.getElementById('currentYear');
     const timeEraSpan = document.getElementById('timeEra');
     currentYearInput.value = uniforge.time.y.label;
     timeEraSpan.textContent = uniforge.time.era;
+
+    const markersPath = '/ui/icons/markers';
+    const markers = await uniforge.fs.listFiles(markersPath);
+
+    uniforge.ctrls.currentMarkerIcon = 'blue_battle.svg';
+
+    const mapObjectsPanel = document.querySelector('#mapObjectsPanel div');
+
+    const markersOptions = mapObjectsPanel.querySelector('.options.markers');
+    markers.forEach(m => {
+        const name = m.name.split('.')[0];
+
+        const img = document.createElement('img');
+        img.src = '.' + m.path;
+
+        const option = createElement('a', { 'data-marker': name, 'class': 'marker-option' }, [img]);
+        markersOptions.appendChild(option);
+    });
+
+    /*
+    const baseOptions = mapObjectsPanel.querySelector('.options.bases');
+    bases.forEach(bf => {
+        const name = bf.name.split('.')[0];
+
+        const img = document.createElement('img');
+        img.src = '.' + bf.path;
+
+        const option = createElement('a', { 'data-base': name, 'class': 'base-option' }, [img]);
+        baseOptions.appendChild(option);
+    });
+
+    const signOptions = mapObjectsPanel.querySelector('.options.signs');
+    signs.forEach(sf => {
+        const name = sf.name.split('.')[0];
+
+        const img = document.createElement('img');
+        img.src = '.' + sf.path;
+        const option = createElement('a', { 'data-sign': name, 'class': 'base-option' }, [img]);
+        signOptions.appendChild(option);
+    });
+    */
 }
 
 function calculateZoomForTileScaleSimple(desiredTileScale) {
@@ -382,6 +425,11 @@ function activateMainListeners() {
             renderForm(tab.getAttribute('data-target'));
         });
     });
+
+    const baseOptions = document.querySelectorAll('.map-objects-panel .config-group .markers a');
+    baseOptions.forEach(option => {
+        option.addEventListener('click', (event) => { onMarkerIconClick(event); });
+    });
 }
 /** 
  * ------------------------------------------------------------------
@@ -415,6 +463,23 @@ function onChangeTimeInput(event) {
     } else {
         event.target.value = uniforge.time.y.label;
     }
+}
+
+async function onMarkerIconClick(event) {
+    event.stopPropagation();
+    const option = event.currentTarget;
+    const marker = option.getAttribute('data-marker');
+
+    option.classList.toggle('active');
+
+    const options = option.parentElement.querySelectorAll('a');
+    options.forEach(opt => {
+        if (opt !== option) {
+            opt.classList.remove('active');
+        }
+    });
+
+    await startMarkerDrawing(marker);
 }
 
 function onNewMapElement() {
@@ -466,6 +531,16 @@ async function recoverForm(form) {
         uniforge.msgBox.showError(error.message);
     }
 }
+
+async function startMarkerDrawing(marker) {
+    const map = uniforge.leaflet.core.default.map;
+    const markerURL = uniforge.urls.markers.join(`${marker}.png`);
+
+    if(uniforge.ctrls.marker) uniforge.ctrls.marker.disable();        
+    
+    uniforge.ctrls.marker = uniforge.leaflet.drawer.marker(map, markerURL);
+    uniforge.ctrls.marker.enable();    
+};
 
 function _setTime(year) {
     const currentYearInput = document.getElementById('currentYear');

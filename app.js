@@ -156,6 +156,14 @@ app.whenReady().then(() => {
   ipcMain.handle('read-dir', (event, filePath) => readDir(filePath));
 
   /**
+   * Manipulador para listar os arquivos de um diretório.
+   * @param {Electron.IpcMainEvent} event - O evento IPC recebido.
+   * @param {string} filePath - O caminho do diretório a ser lido.
+   * @returns {Buffer} - O conteúdo do diretório lido.
+   */
+  ipcMain.handle('list-files', (event, filePath) => listFiles(filePath));
+
+  /**
    * Manipulador para buscar templates de arquivos.
    * @param {string} fileName - Nome do arquivo do template.
    */
@@ -171,7 +179,7 @@ app.whenReady().then(() => {
    * Manipulador para cancelar a geração de tiles de mapas.
    */
   ipcMain.on('tiler-cancel', () => {
-    if(activeTiler) activeTiler.cancel();
+    if (activeTiler) activeTiler.cancel();
   });
 
   console.log('UniForge | Criando requisição de Renders.');
@@ -406,6 +414,33 @@ function readDir(dir) {
   });
 
   return { folders: folders, files: files };
+}
+
+/**
+ * Lista todos os arquivos de um diretório em sincronia.
+ * @param {string} dir    - O caminho absoluto do diretório a ser lido.
+ * @returns {Buffer}      - Os arquivos do diretório lido.
+ */
+function listFiles(dir) {
+  const fullDir = path.join(__srcname, dir);
+  const dirData = fs.readdirSync(fullDir);
+  const files = [];
+
+  dirData.forEach((item) => {
+    const filePath = path.join(fullDir, item);
+    const stats = fs.statSync(filePath);
+
+    if (!stats.isDirectory()) {
+      const file = {
+        name: item,
+        path: path.join(dir, item),
+      };
+
+      files.push(file);
+    }
+  });
+
+  return files;
 }
 
 /**

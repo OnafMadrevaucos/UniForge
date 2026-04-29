@@ -65,6 +65,7 @@ export default class DBDocuments {
 
         // Adiciona umas propriedades utilitárias para facilitar o acesso.
         this.entry = this.entries;
+        this.entity = this.entries;
         this.event = this.events;
         this.lineage = this.lineages;
         this.timeline = this.timelines;

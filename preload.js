@@ -47,6 +47,10 @@ contextBridge.exposeInMainWorld('fs', {
   readDir: (path) => {
     const result = ipcRenderer.invoke('read-dir', path);
     return result;
+  },
+  listFiles:(path) => {
+    const result = ipcRenderer.invoke('list-files', path);
+    return result;
   }
 });
 console.log('UniForge | Configurando pré-carregamentos de Manipulador de Arquivos.');
