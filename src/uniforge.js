@@ -429,7 +429,7 @@ function activateMainListeners() {
     const baseOptions = document.querySelectorAll('.map-objects-panel .config-group .markers a');
     baseOptions.forEach(option => {
         option.addEventListener('click', (event) => { onMarkerIconClick(event); });
-    });
+    });    
 }
 /** 
  * ------------------------------------------------------------------

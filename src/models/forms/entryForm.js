@@ -890,8 +890,8 @@ export default class EntryForm extends SidebarForm {
         deleteIcon.addEventListener('click', (event) => { this.onOpenDialogClick(event, item); });
     });
 
-    yesBtn.addEventListener('click', (event) => { this.onDeleteClick(event); });
-    noBtn.addEventListener('click', (event) => { this.onCancelSidebarDialogClick(event); });
+    if(yesBtn) yesBtn.addEventListener('click', (event) => { this.onDeleteClick(event); });
+    if(noBtn) noBtn.addEventListener('click', (event) => { this.onCancelSidebarDialogClick(event); });
 
     if (this.isEventForm) {
       const newEventButton = this.querySelector('#newEventButton');

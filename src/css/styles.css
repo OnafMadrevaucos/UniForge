@@ -870,6 +870,7 @@ button.disabled:hover {
     height: fit-content;
     width: var(--fill-width);
     padding-right: 5px;
+    gap: var(--default-gap-size);
 }
 
 .leaflet-container .leaflet-popup-pane .leaflet-popup .leaflet-popup-content .layer-popup-footer span {
@@ -890,6 +891,10 @@ button.disabled:hover {
 .leaflet-container .leaflet-popup-pane .leaflet-popup .leaflet-popup-content .layer-popup-footer a:hover {
     cursor: default;
     text-shadow: none;
+}
+.leaflet-container .leaflet-popup-pane .leaflet-popup .leaflet-popup-content .layer-popup-footer a.layer-popup-delete:hover {
+    cursor: pointer;
+    background-color: var(--dark-red);
 }
 
 .leaflet-container .leaflet-popup-pane .leaflet-popup a.leaflet-popup-close-button {

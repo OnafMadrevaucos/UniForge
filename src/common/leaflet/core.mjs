@@ -348,6 +348,24 @@ const lControl = {
             map.dragging.enable();
         });
 
+        let eventHandlerAssigned = false
+
+        map.on('popupopen', function () {
+            const link = document.querySelector('a.layer-popup-delete');
+            if (!eventHandlerAssigned && link) {
+                link.addEventListener('click', lControl.deleteElement);
+                eventHandlerAssigned = true;
+            }
+        })
+
+        map.on('popupclose', function () {
+            const link = document.querySelector('a.layer-popup-delete');
+            if (link) {
+                link.removeEventListener('click', lControl.deleteElement);
+                eventHandlerAssigned = false;
+            }
+        })
+
 
         function _configureOverlayControl() {
             // Pega o container do controle
@@ -473,13 +491,10 @@ const lControl = {
                     const item = uniforge.doc[link.type].get(link.id);
                     // Verifica se o item obtido é válido.
                     if (item) {
-
                         let layer = e.layer;
                         const latlngs = layer._latlngs || layer._latlng;
                         layer.source = item; // Atribui o item como fonte da camada desenhada.
-                        layer.type = e.layerType; // Tipo de camada desenhada (círculo, retângulo, polígono, etc.).
-
-                        layer = lControl.createPopup(layer); // Cria o elemento para a camada desenhada.
+                        layer.type = e.layerType; // Tipo de camada desenhada (círculo, retângulo, polígono, etc.).                        
 
                         // Abre uma transação no banco de dados para adicionar o elemento.
                         await uniforge.db.beginTransaction();
@@ -494,7 +509,7 @@ const lControl = {
                             mid: lControl.constants.DEFAULT_OVERLAY,
                             epoch: uniforge.time.y.value,
                             type: layer.type,
-                            icon: (layer.type === 'marker') ? layer.options.icon.options.iconUrl : null,
+                            icon: (layer.type === 'marker') ? layer.options.icon.options.iconUrl : layer.type,
                             source: `${layer.source.type}{${layer.source._id}}`,
                             points: points,
                         }
@@ -502,6 +517,9 @@ const lControl = {
                         // Adiciona o elemento ao banco de dados.
                         const result = await uniforge.db.addMapElement(data);
                         layer._id = result.addedId;
+                        layer._leaflet_id = lControl.mapElements.getLayerId(layer); // Armazena o ID do elemento para referência futura.
+
+                        layer = lControl.createPopup(layer); // Cria o elemento para a camada desenhada.
 
                         lControl.mapElements.addLayer(layer);
                         // Adiciona a camada desenhada ao grupo de elementos do mapa.
@@ -526,7 +544,7 @@ const lControl = {
                 // Desativa todas as opções de desenho.
                 mapObjectsPanel.querySelectorAll('.config-group .options.markers a').forEach(option => option.classList.remove('active'));
 
-                if(utils.drawer.markerObj) utils.drawer.markerObj.disable();
+                if (utils.drawer.markerObj) utils.drawer.markerObj.disable();
             }
         }
 
@@ -552,9 +570,16 @@ const lControl = {
         const typeIcon = document.createElement('a');
         typeIcon.innerHTML = `<i class="${utils.iconMap[layer.type]}"></i>`;
 
-        footer.appendChild(typeIcon);
+        const deleteButton = document.createElement('a');
+        deleteButton.dataset.meid = layer._id;
+        deleteButton.dataset.leafletId = layer._leaflet_id;
+        deleteButton.classList.add('layer-popup-delete');
+        deleteButton.innerHTML = `<i class="fas fa-trash"></i>`;
 
-        if (layer.mType === 'marker') {
+        footer.appendChild(typeIcon);
+        footer.appendChild(deleteButton);
+
+        if (layer.type === 'marker') {
             const coordsSpan = document.createElement('span');
             coordsSpan.classList.add('layer-popup-coords');
             coordsSpan.innerText = `Y: ${layer._latlng.lat.toFixed(2)}, X: ${layer._latlng.lng.toFixed(2)}`;
@@ -622,13 +647,13 @@ const lControl = {
             }
 
             element.type = elementData.mType; // Armazena o tipo do elemento.
-            element.source = _getSource(elementData.source); // Obtém a fonte do elemento.
+            element.source = _getSource(elementData.source); // Obtém a fonte do elemento. 
+
+            element._id = elementData._id;
+            element._leaflet_id = lControl.mapElements.getLayerId(element); // Armazena o ID do elemento.
 
             element = lControl.createPopup(element); // Cria o elemento com o popup configurado.
             lControl.mapElements.addLayer(element);
-
-            element._id = elementData._id;
-            element._leaflet_id = element._leaflet_id; // Armazena o ID do elemento.
 
             _updateLayerControl();
         });
@@ -644,6 +669,33 @@ const lControl = {
             } else {
                 return null;
             }
+        }
+    },
+
+    deleteElement: async function (event) {
+        event.stopPropagation();
+        if (await Dialogs.confirm('Apagar Elemento', 'Deseja remover o elemento?')) {            
+            let meid = null;
+            let layerId = null;
+
+            const layerItem = event.target.closest('.layer-item');
+            if (layerItem) {                
+                meid = layerItem.id;
+                layerId = Number(layerItem.dataset.leafletId);
+            }
+            else {
+                const deleteButton = event.target.closest('a.layer-popup-delete');
+                meid = deleteButton.dataset.meid;
+                layerId = Number(deleteButton.dataset.leafletId);
+            }
+
+            if(!meid) return;            
+
+            uniforge.db.deleteMapElement(meid);
+            lControl.mapElements.removeLayer(layerId);
+
+            await uniforge.db.rebuildDocs();
+            _updateLayerControl();
         }
     }
 }
@@ -675,7 +727,7 @@ function _updateLayerControl() {
         deleteButton.classList.add('layer-item-delete');
         deleteButton.innerHTML = '<i class="fa-solid fa-trash"></i>';
 
-        deleteButton.addEventListener('click', _onDeleteLayerItem);
+        deleteButton.addEventListener('click', lControl.deleteElement);
 
         li.appendChild(content);
         li.appendChild(deleteButton);
@@ -685,21 +737,6 @@ function _updateLayerControl() {
 
         mapElementsList.appendChild(li);
     })
-
-    async function _onDeleteLayerItem(event) {
-        event.stopPropagation();
-        if (await Dialogs.confirm('Apagar Elemento', 'Deseja remover o elemento?')) {
-            const layerItem = event.target.closest('.layer-item');
-            const meid = layerItem.id;
-            const layerId = Number(layerItem.dataset.leafletId);
-
-            uniforge.db.deleteMapElement(meid);
-            lControl.mapElements.removeLayer(layerId);
-
-            await uniforge.db.rebuildDocs();
-            _updateLayerControl();
-        }
-    }
 
     function _onLayerItemMouseLeave(event) {
         event.stopPropagation();
