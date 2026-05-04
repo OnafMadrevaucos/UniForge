@@ -168,6 +168,44 @@ document.addEventListener('DOMContentLoaded', async () => {
                 IMAGE_TOP_MARGIN: 20,
                 IMAGE_DIAMETER: 40
             }
+        }),
+        markerToolBar: Object.freeze({
+            constants: {
+                colors: {
+                    red: {
+                        label: 'Vermelho',
+                        value: [255, 0, 0]
+                    },
+                    blue: {
+                        label: 'Azul',
+                        value: [0, 0, 255]
+                    },
+                    green: {
+                        label: 'Verde',
+                        value: [0, 255, 0]
+                    },
+                    yellow: {
+                        label: 'Amarelo',
+                        value: [255, 255, 0]
+                    },
+                    purple: {
+                        label: 'Roxo',
+                        value: [128, 0, 128]
+                    },
+                    orange: {
+                        label: 'Laranja',
+                        value: [255, 165, 0]
+                    },
+                    black: {
+                        label: 'Preto',
+                        value: [0, 0, 0]
+                    },
+                    white: {
+                        label: 'Branco',
+                        value: [255, 255, 255]
+                    }
+                }
+            }
         })
     });
 
@@ -247,25 +285,46 @@ async function configureURLs() {
     * @property {string} ui - Diretório de Imagens utilizadas pelo ui do sistema.
     * @property {string} icons - Diretório de Ícones utilizadas pelo ui do sistema.
     */
-    uniforge.urls = Object.freeze({
+    uniforge.urls = {
+        relativePath: {
+            background: '/ui/lib-background.png',
+            blankImg: '/ui/blank-image.svg',
+            worldMap: worldMap.value ? `/${worldMap.value}/tiles` : null,
+            mapOverlays: worldMap.value ? `/${worldMap.value}/overlays` : null,
+            common: '/common/',
+            models: '/models/',
+            templates: '/templates/',
+            scripts: '/scripts/',
+            data: '/data/',
+            ui: '/ui/',
+            icons: '/ui/icons/',
+            signs: '/ui/icons/markers/signs/',
+            markers: '/ui/icons/markers/',
+        },
+    };
+
+    uniforge.urls = uniforge.utils.mergeObjects(uniforge.urls, {
+
         // Urls de Imagens padrão usadas pelo sistema.
-        background: await uniforge.path.join('/ui/lib-background.png'),
-        blankImg: await uniforge.path.join('/ui/blank-image.svg'),
+        background: await uniforge.path.join(uniforge.urls.relativePath.background),
+        blankImg: await uniforge.path.join(uniforge.urls.relativePath.blankImg),
 
-        worldMap: await uniforge.path.join(worldMap.value, 'tiles'),
-
-        mapOverlays: await uniforge.path.join(worldMap.value, 'overlays'),
+        worldMap: await uniforge.path.join(uniforge.urls.relativePath.worldMap),
+        mapOverlays: await uniforge.path.join(uniforge.urls.relativePath.mapOverlays),
 
         // Urls de Diretórios usados pelo sistema.
-        common: await uniforge.path.join('/common/'),
-        models: await uniforge.path.join('/models/'),
-        templates: await uniforge.path.join('/templates/'),
-        scripts: await uniforge.path.join('/scripts/'),
-        data: await uniforge.path.join('/data/'),
-        ui: await uniforge.path.join('/ui/'),
-        icons: await uniforge.path.join('/ui/icons/'),
-        markers: await uniforge.path.join('/ui/icons/markers/'),
+        common: await uniforge.path.join(uniforge.urls.relativePath.common),
+        models: await uniforge.path.join(uniforge.urls.relativePath.models),
+        templates: await uniforge.path.join(uniforge.urls.relativePath.templates),
+        scripts: await uniforge.path.join(uniforge.urls.relativePath.scripts),
+        data: await uniforge.path.join(uniforge.urls.relativePath.data),
+        ui: await uniforge.path.join(uniforge.urls.relativePath.ui),
+        icons: await uniforge.path.join(uniforge.urls.relativePath.icons),
+        signs: await uniforge.path.join(uniforge.urls.relativePath.signs),
+        markers: await uniforge.path.join(uniforge.urls.relativePath.markers),
     });
+
+    Object.freeze(uniforge.urls);
 }
 
 // Configura a ferramenta de mapas Leaflet.
@@ -316,46 +375,31 @@ async function configureToolsBars() {
     currentYearInput.value = uniforge.time.y.label;
     timeEraSpan.textContent = uniforge.time.era;
 
-    const markersPath = '/ui/icons/markers';
-    const markers = await uniforge.fs.listFiles(markersPath);
+    const signsPath = uniforge.urls.relativePath.signs;
+    const signs = await uniforge.fs.listFiles(signsPath);
 
     uniforge.ctrls.currentMarkerIcon = 'blue_battle.svg';
 
     const mapObjectsPanel = document.querySelector('#mapObjectsPanel div');
 
-    const markersOptions = mapObjectsPanel.querySelector('.options.markers');
-    markers.forEach(m => {
-        const name = m.name.split('.')[0];
-
+    const markersOptions = mapObjectsPanel.querySelector('.options.marker');
+    signs.forEach(s => {
+        const name = s.name.split('.')[0];
         const img = document.createElement('img');
-        img.src = '.' + m.path;
+        img.src = '.' + s.path;
 
         const option = createElement('a', { 'data-marker': name, 'class': 'marker-option' }, [img]);
         markersOptions.appendChild(option);
     });
 
-    /*
-    const baseOptions = mapObjectsPanel.querySelector('.options.bases');
-    bases.forEach(bf => {
-        const name = bf.name.split('.')[0];
+    const colorOptions = mapObjectsPanel.querySelector('.options.color');
+    const colors = uniforge.markerToolBar.constants.colors;
+    Object.entries(colors).forEach(([key, color]) => {
+        const option = createElement('a', { 'data-color': key, 'class': 'color-option' });
+        option.style.backgroundColor = `rgb(${color.value.join(',')})`;
 
-        const img = document.createElement('img');
-        img.src = '.' + bf.path;
-
-        const option = createElement('a', { 'data-base': name, 'class': 'base-option' }, [img]);
-        baseOptions.appendChild(option);
+        colorOptions.appendChild(option);
     });
-
-    const signOptions = mapObjectsPanel.querySelector('.options.signs');
-    signs.forEach(sf => {
-        const name = sf.name.split('.')[0];
-
-        const img = document.createElement('img');
-        img.src = '.' + sf.path;
-        const option = createElement('a', { 'data-sign': name, 'class': 'base-option' }, [img]);
-        signOptions.appendChild(option);
-    });
-    */
 }
 
 function calculateZoomForTileScaleSimple(desiredTileScale) {
@@ -426,10 +470,16 @@ function activateMainListeners() {
         });
     });
 
-    const baseOptions = document.querySelectorAll('.map-objects-panel .config-group .markers a');
+    const searchMarkerInput = document.querySelector("#searchMarkerInput");
+    searchMarkerInput.addEventListener('input', (event) => { onMarkerSearchChange(event); });
+
+    const clearMarkerSearchButton = document.querySelector("#clearMarkerSearchButton");
+    clearMarkerSearchButton.addEventListener('click', (event) => { onClearMarkerSearchClick(event); });
+
+    const baseOptions = document.querySelectorAll('.map-objects-panel .config-group .options a');
     baseOptions.forEach(option => {
         option.addEventListener('click', (event) => { onMarkerIconClick(event); });
-    });    
+    });
 }
 /** 
  * ------------------------------------------------------------------
@@ -465,12 +515,40 @@ function onChangeTimeInput(event) {
     }
 }
 
+function onMarkerSearchChange(event) {
+    event.stopPropagation();
+    const input = event.currentTarget;
+
+    const markersOptions = mapObjectsPanel.querySelectorAll('.options.marker a');
+    markersOptions.forEach(option => {
+        if (input.value === "" || option.dataset.marker.includes(input.value)) {
+            option.classList.remove('hidden');
+        } else {
+            option.classList.add('hidden');
+        }
+    });
+}
+function onClearMarkerSearchClick(event) {
+    event.stopPropagation();
+    const toolsSearchBar = document.querySelector('.map-objects-panel .tools-search-bar');
+    const input = toolsSearchBar.querySelector('input');
+
+    input.value = "";
+    
+    const markersOptions = mapObjectsPanel.querySelectorAll('.options.marker a');
+    markersOptions.forEach(option => {
+        option.classList.remove('hidden');
+    });
+}
+
 async function onMarkerIconClick(event) {
     event.stopPropagation();
     const option = event.currentTarget;
-    const marker = option.getAttribute('data-marker');
 
     option.classList.toggle('active');
+
+    const signMarker = document.querySelector('.map-objects-panel .config-group .options.marker .active');
+    const colorMarker = document.querySelector('.map-objects-panel .config-group .options.color .active');
 
     const options = option.parentElement.querySelectorAll('a');
     options.forEach(opt => {
@@ -479,11 +557,11 @@ async function onMarkerIconClick(event) {
         }
     });
 
-    await startMarkerDrawing(marker);
-}
-
-function onNewMapElement() {
-
+    if (signMarker && colorMarker) {
+        const marker = `${colorMarker.getAttribute('data-color')}_${signMarker.getAttribute('data-marker')}`;
+        await startMarkerDrawing(marker);
+    }
+    else if (uniforge.ctrls.marker) uniforge.ctrls.marker.disable();
 }
 
 /** 
@@ -500,7 +578,6 @@ function onNewMapElement() {
  * @returns {Promise<void>}             - Uma promessa que resolve quando o formulário for renderizado e exibido.
  * @throws {Error}                      - Se ocorrer um erro ao renderizar o formulário.
  */
-
 async function renderForm(targetId, showAfter = true) {
     try {
         const form = new uniforge.forms[targetId]();
@@ -512,6 +589,7 @@ async function renderForm(targetId, showAfter = true) {
         uniforge.msgBox.showError(error.message);
     }
 }
+
 /**
  * Renderiza um formulário baseado em um ID de template
  * e o exibe na tela.
@@ -521,11 +599,9 @@ async function renderForm(targetId, showAfter = true) {
  * @returns {Promise<void>}             - Uma promessa que resolve quando o formulário for renderizado e exibido.
  * @throws {Error}                      - Se ocorrer um erro ao renderizar o formulário.
  */
-
 async function recoverForm(form) {
     try {
         if (!form) throw new Error(`O formulário '${form}' não foi encontrado.`);
-
         await form.show(true);
     } catch (error) {
         uniforge.msgBox.showError(error.message);
@@ -536,31 +612,31 @@ async function startMarkerDrawing(marker) {
     const map = uniforge.leaflet.core.default.map;
     const markerURL = uniforge.urls.markers.join(`${marker}.png`);
 
-    if(uniforge.ctrls.marker) uniforge.ctrls.marker.disable();        
-    
+    if (uniforge.ctrls.marker) uniforge.ctrls.marker.disable();
+
     uniforge.ctrls.marker = uniforge.leaflet.drawer.marker(map, markerURL);
-    uniforge.ctrls.marker.enable();    
+    uniforge.ctrls.marker.enable();
 };
 
 function _setTime(year) {
     const currentYearInput = document.getElementById('currentYear');
     const timeEraSpan = document.getElementById('timeEra');
 
-    // Armazena o valor antigo do Ano
+    // Armazena o valor antigo do Ano.
     const oldValue = uniforge.time.y.value;
 
     uniforge.time.y.value = Number(year);
-    // Não existe ano 0, salte ou para 1 ou para -1
+    // Não existe ano 0, salte ou para 1 ou para -1.
     if (uniforge.time.y.value == 0) {
-        if (uniforge.time.y.value > oldValue) { // O ano está avançando
+        if (uniforge.time.y.value > oldValue) { // O ano está avançando.
             uniforge.time.y.value = 1;
-        } else { // O ano está retroagindo
+        } else { // O ano está retroagindo.
             uniforge.time.y.value = -1;
         }
     }
     uniforge.time.y.label = (Math.abs(uniforge.time.y.value)).toString();
 
-    // Altera a era para antes da Tríade dos Heróis (ano negativo) ou depois da Tríade (ano positivo)
+    // Altera a era para antes da Tríade dos Heróis (ano negativo) ou depois da Tríade (ano positivo).
     uniforge.time.era = (uniforge.time.y.value > 0 ? 'd.T.' : 'a.T.');
 
     currentYearInput.value = uniforge.time.y.label;
@@ -571,11 +647,11 @@ function _setTime(year) {
     uniforge.ctrls.leaflet.loadElements(mid, uniforge.time.y.value);
 }
 
-// Função para criar um elemento com classes e atributos
+// Função para criar um elemento com classes e atributos.
 function createElement(tag, attributes = {}, children = []) {
     const element = document.createElement(tag);
 
-    // Adiciona os atributos ao elemento
+    // Adiciona os atributos ao elemento.
     for (const [key, value] of Object.entries(attributes)) {
         if (key === 'class') {
             element.className = value;
@@ -584,7 +660,7 @@ function createElement(tag, attributes = {}, children = []) {
         }
     }
 
-    // Adiciona os filhos ao elemento
+    // Adiciona os filhos ao elemento.
     children.forEach(child => {
         if (typeof child === 'string') {
             element.appendChild(document.createTextNode(child));

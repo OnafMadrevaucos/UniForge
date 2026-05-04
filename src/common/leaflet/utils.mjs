@@ -146,7 +146,7 @@ function _onCircleDraw(map) {
 async function _onMarkerDraw(map, event) {
     const target = event.target;
     const button = target.closest('button');
-    const mapObjectsPanel = document.querySelector('#mapObjectsPanel div');   
+    const mapObjectsPanel = document.querySelector('#mapObjectsPanel');   
     
     // Desativa todas as opções de desenho.
     mapObjectsPanel.querySelectorAll('.marker-options').forEach(option => option.classList.remove('active'));

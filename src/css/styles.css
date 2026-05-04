@@ -1283,9 +1283,13 @@ button.disabled:hover {
 /* ------ Map Objects Panel ------ */
 #mapObjectsPanel {
     position: absolute;
-    bottom: 0;
+    bottom: -10em;
     width: 750px;
     z-index: 1001;
+    transition: bottom 0.3s ease-in-out;
+}
+#mapObjectsPanel.active {
+    bottom: 0px;
 }
 
 .tools-container.map-objects-panel {
@@ -1294,28 +1298,45 @@ button.disabled:hover {
     border-bottom: none;
     border-bottom-left-radius: 0;
     border-bottom-right-radius: 0;
-    gap: var(--default-gap-size);
-    transform: translateY(100%);
-    transition: transform 0.3s ease-in-out;
+    gap: var(--default-gap-size);    
 }
 
-.map-objects-panel.active {
-    transform: translateY(0);
+.map-objects-panel .tools-search-bar {
+    position: absolute;
+    bottom: 95px;
+    left: 10px;
+    width: 200px;
+    padding: 5px;
+    background-color: var(--dark-red);
+    border: var(--filled-border);
+    border-top-left-radius: var(--default-border-radius);
+    border-top-right-radius: var(--default-border-radius); 
+    gap: var(--default-gap-size);       
+}
+.map-objects-panel .tools-search-bar input {
+    width: var(--fill-width);
 }
 
-.map-objects-panel .config-group {
-    flex: 1;
+.map-objects-panel .tools-content .config-group {  
+    flex: 1;  
     border: var(--data-group-border);
     border-radius: var(--default-border-radius);
     margin: 5px;
+    padding-inline: 5px;
+
+    overflow-y: hidden;
+    overflow-x: scroll;
+}
+.map-objects-panel .tools-content .config-group.markers {    
+    flex: 2;
 }
 
-.map-objects-panel .config-group .label {
+.map-objects-panel .tools-content .config-group .label {
     color: var(--red);
     font-variant: small-caps;
 }
 
-.map-objects-panel .config-group .options {
+.map-objects-panel .tools-content .config-group .options {
     height: 32px;
     display: flex;
     flex-direction: row;
@@ -1323,19 +1344,34 @@ button.disabled:hover {
     justify-content: space-evenly;
     gap: var(--default-gap-size);
 }
+.map-objects-panel .tools-content .config-group .options.marker {
+    width: 450px;
+}
+.map-objects-panel .tools-content .config-group .options.color {
+    width: 200px;
+    gap: var(--big-gap-size);
+}
 
-.map-objects-panel .config-group .options a {    
+.map-objects-panel .tools-content .config-group .options a {    
+    height: 32px;
+    width: 32px;
+    min-width: 32px;
+
     border-radius: var(--default-border-radius);
     padding: 2px; 
     line-height: 0;   
 }
 
-.map-objects-panel .config-group .options a:hover,
-.map-objects-panel .config-group .options a.active {
+.map-objects-panel .tools-content .config-group .options a:hover,
+.map-objects-panel .tools-content .config-group .options a.active {
     border: var(--filled-border);
 }
 
-.map-objects-panel .config-group .options img {
+.map-objects-panel .tools-content .config-group .options input {
+    flex: 1;
+}
+
+.map-objects-panel .tools-content .config-group .options img {
     width: 32px;
     height: 32px;
     border-radius: var(--default-border-radius);

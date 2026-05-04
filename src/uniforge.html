@@ -69,17 +69,23 @@
     </div>
 
     <div id="mapObjectsPanel">
-        <div class="tools-container map-objects-panel flexrow">
-            <fieldset class="config-group">
-                <legend class="label">Marcadores</legend>
-                <div class="options markers">
-                </div>
-            </fieldset>
-            <fieldset class="config-group">
-                <legend class="label">Opções</legend>
-                <div class="options settings">
-                </div>
-            </fieldset>
+        <div class="tools-container map-objects-panel">
+            <div class="tools-search-bar flexrow">
+                <input id="searchMarkerInput" type="text" placeholder="Buscar marcador..."/>
+                <a id="clearMarkerSearchButton"><i class="fas fa-trash"></i></a>
+            </div>
+            <div class="tools-content flexrow">
+                <fieldset class="config-group markers">
+                    <legend class="label">Ícones</legend>
+                    <div class="options marker">
+                    </div>
+                </fieldset>
+                <fieldset class="config-group colors">
+                    <legend class="label">Cores</legend>
+                    <div class="options color">
+                    </div>
+                </fieldset>
+            </div>            
         </div>
     </div>
 
