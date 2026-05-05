@@ -889,11 +889,15 @@ button.disabled:hover {
     padding: 2px 5px;
 }
 
-.leaflet-container .leaflet-popup-pane .leaflet-popup .leaflet-popup-content .layer-popup-footer a:hover {
-    cursor: default;
-    text-shadow: none;
+.leaflet-container .leaflet-popup-pane .leaflet-popup .leaflet-popup-content .layer-popup-footer a {
+    max-width: 22.5px;
 }
-.leaflet-container .leaflet-popup-pane .leaflet-popup .leaflet-popup-content .layer-popup-footer a.layer-popup-delete:hover {
+.leaflet-container .leaflet-popup-pane .leaflet-popup .leaflet-popup-content .layer-popup-footer a.disabled {
+    pointer-events: none;
+    background-color: var(--dark-blue);
+    color: var(--disabled-text-color);
+}
+.leaflet-container .leaflet-popup-pane .leaflet-popup .leaflet-popup-content .layer-popup-footer a:hover {
     cursor: pointer;
     background-color: var(--dark-red);
 }
@@ -1644,10 +1648,20 @@ button.disabled:hover {
     padding: 5px;
     gap: var(--default-gap-size);
 }
+.dialog .link-dialog .content .link-list .link-item.selected {
+    background-color: var(--dark-red);
+}
 .dialog .link-dialog .content .link-list .link-item:hover {
     cursor: pointer;
     border: var(--filled-border);
     text-shadow: var(--text-shadow);
+}
+.dialog .main .link-dialog .footer {
+    width: var(--fill-width);
+    margin-top: auto;
+}
+.dialog .main .link-dialog .footer .search-bar {
+    border: none;
 }
 
 .dialog .main .file-dialgo,

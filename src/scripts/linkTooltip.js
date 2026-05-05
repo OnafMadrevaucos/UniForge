@@ -1,9 +1,14 @@
 import CustomDate from "../common/primitives/date.mjs";
 export class LinkTooltip {
+  constructor (keyword = 'linked-text') {
+    // Armazena o seletor dos links para uso futuro.
+    this.keyword = keyword;
+  }
+
   forgeLink(link, text, callback) {
 
     const linkSpan = document.createElement('span');
-    linkSpan.classList.add('linked-text');
+    linkSpan.classList.add(this.keyword);
     linkSpan.dataset.id = link.id;
     linkSpan.dataset.type = link.type;
     linkSpan.textContent = text;
@@ -14,11 +19,11 @@ export class LinkTooltip {
   }
 
   _showLinkTooltip(event) {
-    const span = event.target.closest('.linked-text');
+    const element = event.target.closest(`.${this.keyword}`);
 
     const link = {
-      id: span.dataset.id ?? null,
-      type: span.dataset.type ?? null
+      id: element.dataset.id ?? null,
+      type: element.dataset.type ?? null
     }
 
     let data = null;

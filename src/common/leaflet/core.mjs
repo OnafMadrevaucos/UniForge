@@ -1,6 +1,8 @@
 import utils from "./utils.mjs";
 import LinkDialog from "../../models/dialogs/linkDialog.js";
 import Dialogs from "../../models/dialogs/dialog.js";
+import SimpleEntryForm from "../../models/forms/simpleEntryForm.js";
+import ArticleForm from "../../models/forms/articleForm.js";
 
 const lControl = {
     /**
@@ -348,24 +350,30 @@ const lControl = {
             map.dragging.enable();
         });
 
-        let eventHandlerAssigned = false
+        let eventHandlerAssigned = false;
+        let closedByButton = false;
 
-        map.on('popupopen', function () {
-            const link = document.querySelector('a.layer-popup-delete');
-            if (!eventHandlerAssigned && link) {
-                link.addEventListener('click', lControl.deleteElement);
-                eventHandlerAssigned = true;
-            }
-        })
+        // Adicione um listener para o evento de quando o Popup do elemento for aberto.
+        map.on('popupopen', function (event) {
+            const popup = event.popup._container;
 
-        map.on('popupclose', function () {
-            const link = document.querySelector('a.layer-popup-delete');
-            if (link) {
-                link.removeEventListener('click', lControl.deleteElement);
-                eventHandlerAssigned = false;
-            }
-        })
+            if (!popup) return;
 
+            popup.addEventListener('click', (e) => {
+                const showBtn = e.target.closest('.layer-popup-show');
+                const deleteBtn = e.target.closest('.layer-popup-delete');
+
+                if (showBtn) {
+                    showBtn.classList.add('disabled');
+                    lControl.showEntry(e);
+                }
+
+                if (deleteBtn) {
+                    deleteBtn.classList.add('disabled');
+                    lControl.deleteElement(e);
+                }
+            });
+        });
 
         function _configureOverlayControl() {
             // Pega o container do controle
@@ -538,11 +546,13 @@ const lControl = {
                 const markerButton = document.querySelector('.leaflet-draw-button.marker');
                 markerButton.classList.remove('active');
 
-                const mapObjectsPanel = document.querySelector('#mapObjectsPanel div');
+                const mapObjectsPanel = document.querySelector('#mapObjectsPanel');
                 mapObjectsPanel.classList.remove('active');
 
-                // Desativa todas as opções de desenho.
-                mapObjectsPanel.querySelectorAll('.config-group .options.markers a').forEach(option => option.classList.remove('active'));
+                // Desativa todas as opções de desenho do ícone do Marcador.
+                mapObjectsPanel.querySelectorAll('.tools-container .tools-content .config-group .marker a').forEach(option => option.classList.remove('active'));
+                // Desativa todas as opções de desenho da cor do Marcador.
+                mapObjectsPanel.querySelectorAll('.tools-container .tools-content .config-group .color a').forEach(option => option.classList.remove('active'));
 
                 if (utils.drawer.markerObj) utils.drawer.markerObj.disable();
             }
@@ -567,8 +577,11 @@ const lControl = {
         const footer = document.createElement('div');
         footer.classList.add('layer-popup-footer', 'flexrow');
 
-        const typeIcon = document.createElement('a');
-        typeIcon.innerHTML = `<i class="${utils.iconMap[layer.type]}"></i>`;
+        const showButton = document.createElement('a');
+        showButton.dataset.id = layer.source._id;
+        showButton.dataset.type = layer.source.type;
+        showButton.classList.add('layer-popup-show');
+        showButton.innerHTML = `<i class="fas fa-eye"></i>`;
 
         const deleteButton = document.createElement('a');
         deleteButton.dataset.meid = layer._id;
@@ -576,7 +589,7 @@ const lControl = {
         deleteButton.classList.add('layer-popup-delete');
         deleteButton.innerHTML = `<i class="fas fa-trash"></i>`;
 
-        footer.appendChild(typeIcon);
+        footer.appendChild(showButton);
         footer.appendChild(deleteButton);
 
         if (layer.type === 'marker') {
@@ -674,12 +687,14 @@ const lControl = {
 
     deleteElement: async function (event) {
         event.stopPropagation();
-        if (await Dialogs.confirm('Apagar Elemento', 'Deseja remover o elemento?')) {            
+        const deleteBtn = event.target.closest('.layer-popup-delete');
+
+        if (await Dialogs.confirm('Apagar Elemento', 'Deseja remover o elemento?')) {
             let meid = null;
             let layerId = null;
 
             const layerItem = event.target.closest('.layer-item');
-            if (layerItem) {                
+            if (layerItem) {
                 meid = layerItem.id;
                 layerId = Number(layerItem.dataset.leafletId);
             }
@@ -689,13 +704,34 @@ const lControl = {
                 layerId = Number(deleteButton.dataset.leafletId);
             }
 
-            if(!meid) return;            
+            if (!meid) return;
 
             uniforge.db.deleteMapElement(meid);
             lControl.mapElements.removeLayer(layerId);
 
             await uniforge.db.rebuildDocs();
             _updateLayerControl();
+        }
+
+        deleteBtn.classList.remove('disabled');
+    },
+    showEntry: async function (event) {
+        event.stopPropagation();
+        const showBtn = event.target.closest('.layer-popup-show');
+
+        let id = null;
+        let type = null;
+
+        const button = event.target.closest('.layer-popup-show');
+        if (button) {
+            id = button.dataset.id;
+            type = button.dataset.type;
+
+            const data = uniforge.doc[type].get(id);
+            if (data) {
+                const form = new ArticleForm(data, type === 'timeline', button);
+                form.show(true);
+            }
         }
     }
 }

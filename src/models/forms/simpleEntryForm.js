@@ -266,6 +266,22 @@ export default class SimpleEntryForm extends BaseForm {
    */
   close() {
     this.sourceBtn.classList.remove('disabled');
+
+    // Limpa o conteúdo do editor principal, se houver.
+    if (this.mainEditor) {
+      this.mainEditor.remove();
+    }
+
+    // Limpa o conteúdo do editor de floreio, se houver.
+    if (this.flavorEditor) {
+      this.flavorEditor.remove();
+    }
+
+    // Limpa o conteúdo do editor de eventos, se houver.
+    if (this.eventEditor) {
+      this.eventEditor.remove();
+    }
+
     super.close();
 
     if (this.onCloseCallback) this.onCloseCallback();

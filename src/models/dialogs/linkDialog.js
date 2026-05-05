@@ -15,10 +15,12 @@ export default class LinkDialog extends BaseDialog {
 
         this.template = 'linkDialog'; // Define o template do diálogo.
 
+        this.selectedItem = null; // Armazena o item selecionado no diálogo.
+
         /**
         * @type {LinkTooltip} - O tooltip de links do Artigo.
         */
-        this.tooltip = new LinkTooltip();
+        this.tooltip = new LinkTooltip('link-item');
     }
 
     /**
@@ -179,20 +181,34 @@ export default class LinkDialog extends BaseDialog {
     }
 
     configureLists() {
+        const entryTypes = {
+            entries: 'entry',
+            events: 'event',
+            lineages: 'lineage',
+            timelines: 'timeline'
+        };
+
         const linkGroups = this.querySelectorAll('.link-group');
         linkGroups.forEach(group => {
             const type = group.dataset.type;
+            // Verifica se o tipo do grupo é válido.
+            if (!entryTypes[type]) return;
+
             const list = group.querySelector('.link-list');
             if (list) {
+                // Busca as entradas da pasta.
                 const folder = this.data.folders.find(f => f._id === type);
                 if (folder && folder.entries?.length > 0) {
+                    // Ordena as entradas alfabeticamente pelo título.
+                    folder.entries.sort((a, b) => a._label.localeCompare(b._label));
+                    // Cria um item para cada entrada na pasta.
                     folder.entries.forEach(e => {
                         const data = uniforge.doc[type].get(e._id);
 
                         const item = document.createElement('div');
-                        item.classList.add(`${type}-item`, 'link-item', 'linked-text', 'flexrow');
+                        item.classList.add(`${type}-item`, 'link-item', 'flexrow');
                         item.dataset.id = data._id;
-                        item.dataset.type = type;
+                        item.dataset.type = entryTypes[type];
 
                         const icon = document.createElement('i');
                         icon.className = data.entryType.icon;
@@ -253,6 +269,8 @@ export default class LinkDialog extends BaseDialog {
         linkItems.forEach(linkItem => {
             linkItem.addEventListener('mouseover', (event) => { this.onTooltipMouseOver(event); });
             linkItem.addEventListener('mouseout', () => { this.onTooltipMouseOut(); });
+
+            linkItem.addEventListener('click', (event) => { this.onListItemClick(event); });
         });
     }
 
@@ -261,108 +279,55 @@ export default class LinkDialog extends BaseDialog {
     * @inheritdoc
     * @param {MouseEvent} event - O evento de clique duplo.
     */
-    async onEntryItemDoubleClick(event) {
-        const item = event.target.closest('.entry-item');
-        const folder = event.target.closest('.folder-list');
-        const itemId = item.dataset.id;
+    async onListItemClick(event) {
+        const element = event.target.closest('.link-item');
 
-        this._resetGroups();
+        const link = {
+            id: element.dataset.id ?? null,
+            type: element.dataset.type ?? null
+        }
 
         let data = null;
-        switch (folder.id) {
-            case 'entryList':
-                data = uniforge.doc.entries.get(itemId);
+
+        switch (link.type) {
+            case 'entry':
+                data = uniforge.doc.entries.get(link.id);
                 break;
-            case 'eventList':
-                data = uniforge.doc.events.get(itemId);
-                this._toggleEventGroups(true);
+            case 'event':
+                data = uniforge.doc.events.get(link.id);
                 break;
-            case 'lineageList':
-                data = uniforge.doc.lineages.get(itemId);
-                this._toggleLineageGroups(true);
+            case 'lineage':
+                data = uniforge.doc.lineages.get(link.id);
                 break;
-            case 'timelineList':
-                data = uniforge.doc.timelines.get(itemId);
-                this._toggleTimelineGroups(true);
+            case 'timeline':
+                data = uniforge.doc.timelines.get(link.id);
                 break;
-            default:
-                throw new Error('A pasta selecionada é inválida.');
         }
 
-        const titleInput = this.querySelector('#titleInput');
-        const entryType = this.querySelector('#entryType');
-        const founderInput = this.querySelector('#founderInput');
-        const relevance = this.querySelector('#relevance');
-        const startDateInput = this.querySelector('#startDateInput');
-        const endDateInput = this.querySelector('#endDateInput');
+        // Verifica se a entrada foi encontrada. Se não, não exibe o tooltip.
+        if (!data) return;
 
-        titleInput.value = data.title;
-        entryType.value = data.etid;
+        const button = this.querySelector('#link.dialog-button');
 
-        this.flavorEditor = data.flavor; // Define o conteúdo do editor de floreio.
+        // Remove a seleção de todos os itens.
+        this.querySelectorAll('.link-item').forEach(item => item.classList.remove('selected'));
 
-        if (data.type === 'event') {
-            relevance.value = data.relevance;
-
-            const calendar = uniforge.doc.calendars.get(data.clid);
-            if (!calendar) throw new Error('Calendário informado não encontrado.');
-
-            const startDate = new CustomDate(calendar, { day: data.s_day, month: data.s_month, year: data.s_year });
-            startDateInput.value = startDate.toString('MMn DD, YYYYs');
-
-            if (data.e_day) {
-                const endDate = new CustomDate(calendar, { day: data.e_day, month: data.e_month, year: data.e_year });
-                endDateInput.value = endDate.toString('MMn DD, YYYYs');
-            } else {
-                endDateInput.value = '—';
-            }
+        // Se o item clicado já estava selecionado, desmarca ele. 
+        if (this.selectedItem && this.selectedItem.dataset.id == element.dataset.id) {
+            // Desmarca o item clicado.
+            this.selectedItem = null;
+            // Remove registro do item selecionado do botão de confirmação.
+            button.dataset.item = null;
         }
-
-        if (data.type === 'lineage') {
-            founderInput.value = data.founder;
+        // Senão, marca o item clicado como selecionado.
+        else {            
+            // Marca o item clicado como selecionado.
+            element.classList.add('selected');
+            // Guarda o item selecionado.
+            this.selectedItem = element;
+            // Registra o item selecionado no botão de confirmação.
+            button.dataset.item = JSON.stringify(link);
         }
-
-        if (data.type === 'timeline' && !data.events.isEmpty()) {
-            const calendar = uniforge.doc.calendars.get(data.events.first().clid);
-            if (!calendar) throw new Error('Calendário informado não encontrado.');
-
-            // Mostra a data de fim do último somente se houver mais de um evento na Linha do Tempo.
-            // Caso contrário, as datas serão idênticas, pois first() e last() retornam o mesmo valor.
-            if (data.events.size > 1) {
-                const sortedEvents = data.events.sort((a, b) => {
-                    const startDateA = new CustomDate(calendar, { day: a.s_day, month: a.s_month, year: a.s_year });
-                    const startDateB = new CustomDate(calendar, { day: b.s_day, month: b.s_month, year: b.s_year });
-                    return startDateA.ticks - startDateB.ticks;
-                });
-
-                const firstEvent = sortedEvents.first();
-                const lastEvent = sortedEvents.last();
-
-                const startDate = new CustomDate(calendar, { day: firstEvent.s_day, month: firstEvent.s_month, year: firstEvent.s_year });
-                const endDate = new CustomDate(calendar, { day: lastEvent.s_day, month: lastEvent.s_month, year: lastEvent.s_year });
-
-                startDateInput.value = startDate.toString('MMn DD, YYYYs');
-                endDateInput.value = endDate.toString('MMn DD, YYYYs');
-            } else {
-                const startDate = new CustomDate(calendar, { day: data.events.first().s_day, month: data.events.first().s_month, year: data.events.first().s_year });
-
-                startDateInput.value = startDate.toString('MMn DD, YYYYs');
-                endDateInput.value = '—';
-            }
-        }
-
-        // Foca no campo de Título.    
-        titleInput.focus();
-
-        const linkButton = this.querySelector('#link');
-        linkButton.dataset.item = JSON.stringify({ id: itemId, type: data.type });
-
-        this._clearEntryList();
-
-        item.classList.add('selected');
-        const itemIcon = item.querySelector('.fas');
-        itemIcon.classList.remove(...itemIcon.classList);
-        itemIcon.classList.add('fas', 'fa-eye');
     }
 
     onSearchInput(event) {
@@ -452,107 +417,7 @@ export default class LinkDialog extends BaseDialog {
         searchInput.value = '';
 
         this._onSearchInput({ target: searchInput });
-    }
-
-    /**
-     * Remove a seleção de todas as pastas.
-     * @private
-     */
-    _clearFolderList() {
-        const folders = this.querySelectorAll('.folder');
-        folders.forEach(item => {
-            item.classList.remove('selected');
-            const folderIcon = item.querySelector('.fas');
-            folderIcon.classList.remove(...folderIcon.classList);
-            folderIcon.classList.add('fas', 'fa-folder');
-        });
-        this._clearEntryList();
-    }
-
-    /**
-     * Remove a seleção de todas as entradas.
-     * @private
-     */
-    _clearEntryList() {
-        const itemsList = this.querySelectorAll('.entry-item');
-        itemsList.forEach(item => {
-            item.classList.remove('selected');
-            const itemIcon = item.querySelector('.fas');
-            itemIcon.classList.remove(...itemIcon.classList);
-            itemIcon.classList.add('fas', 'fa-file');
-        });
-    }
-
-    _resetGroups() {
-        this._toggleEventGroups(false);
-        this._toggleTimelineGroups(false);
-    }
-
-    /**
-   * Configura o editor TinyMCE com funcionalidades inline.
-   * @protected
-   * @param {Object} editor - Instância do editor TinyMCE.
-   */
-    _setupInlineTinyMCE(editor) {
-        // Número máximo de caractéres do editor Tiny MCE de floreio.
-        const maxCharacters = 255;
-
-        // Sobrescreve o método setContent para limitar o conteúdo
-        const originalSetContent = editor.setContent;
-
-        editor.setContent = function (content, ...args) {
-            // Salva a posição atual do cursor
-            const bookmark = editor.selection.getBookmark(2);
-
-            const plainTextContent = editor.dom.create('div', null, content).innerText; // Remove tags HTML
-            if (plainTextContent.length > maxCharacters) {
-                const truncatedText = plainTextContent.substring(0, maxCharacters);
-                const truncatedHtml = editor.dom.create('div', null, truncatedText).innerHTML;
-                originalSetContent.call(editor, truncatedHtml, ...args);
-            } else {
-                originalSetContent.call(editor, content, ...args);
-            }
-
-            // Restaura o cursor para a posição salva
-            if (bookmark) {
-                editor.selection.moveToBookmark(bookmark);
-            }
-        };
-    }
-
-    _toggleEventGroups(show = false) {
-        const relevanceGroup = this.querySelector('#relevanceGroup');
-        const dateGroup = this.querySelector('#dateGroup');
-
-        if (show) {
-            relevanceGroup.classList.remove('hidden');
-            dateGroup.classList.remove('hidden');
-        } else {
-            relevanceGroup.classList.add('hidden');
-            dateGroup.classList.add('hidden');
-        }
-    }
-    _toggleLineageGroups(show = false) {
-        const founderGroup = this.querySelector('#founderGroup');
-
-        if (show) {
-            founderGroup.classList.remove('hidden');
-        } else {
-            founderGroup.classList.add('hidden');
-        }
-    }
-    _toggleTimelineGroups(show = false) {
-        const entryTypeGroup = this.querySelector('#entryTypeGroup');
-        const dateGroup = this.querySelector('#dateGroup');
-
-        if (show) {
-            entryTypeGroup.classList.add('hidden');
-            dateGroup.classList.remove('hidden');
-        } else {
-            entryTypeGroup.classList.remove('hidden');
-            dateGroup.classList.add('hidden');
-        }
-    }
+    }    
 
     async generateMarkerIcon({ color, icon }) {
         function loadImage(src) {
@@ -622,7 +487,7 @@ export default class LinkDialog extends BaseDialog {
                         label: "Vincular",
                         icon: "fas fa-link",
                         callback: (html, event) => {
-                            const button = event.target.closest('.dialog-button');
+                            const button = event.target.closest('#link.dialog-button');
                             const item = JSON.parse(button.dataset.item);
 
                             resolve(item);

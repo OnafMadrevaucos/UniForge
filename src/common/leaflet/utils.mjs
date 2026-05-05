@@ -146,20 +146,25 @@ function _onCircleDraw(map) {
 async function _onMarkerDraw(map, event) {
     const target = event.target;
     const button = target.closest('button');
-    const mapObjectsPanel = document.querySelector('#mapObjectsPanel');   
-    
+    const mapObjectsPanel = document.querySelector('#mapObjectsPanel');
+
     // Desativa todas as opções de desenho.
     mapObjectsPanel.querySelectorAll('.marker-options').forEach(option => option.classList.remove('active'));
 
     button.classList.toggle('active');
 
-    if(!button.classList.contains('active')) {
-        if(drawer.markerObj) drawer.markerObj.disable();
+    if (!button.classList.contains('active')) {
+        if (drawer.markerObj) drawer.markerObj.disable();
         mapObjectsPanel.classList.remove('active');        
+
+        // Desativa todas as opções de desenho do ícone do Marcador.
+        mapObjectsPanel.querySelectorAll('.tools-container .tools-content .config-group .marker a').forEach(option => option.classList.remove('active'));
+        // Desativa todas as opções de desenho da cor do Marcador.
+        mapObjectsPanel.querySelectorAll('.tools-container .tools-content .config-group .color a').forEach(option => option.classList.remove('active'));
     }
     else {
         mapObjectsPanel.classList.add('active');
-    }    
+    }
 }
 
 function onAddDrawControl(map) {

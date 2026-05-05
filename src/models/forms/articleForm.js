@@ -4,7 +4,7 @@ import BaseForm from "./baseForm.js";
 import { TimelineManager } from "../../scripts/managers/timelineManager.js";
 
 export default class ArticleForm extends BaseForm {
-    constructor(data, isTimeline = false) {
+    constructor(data, isTimeline = false, sourceBtn = null) {
         super(`Artigo - ${data.title}`, {
             width: '50vw'
         });
@@ -23,6 +23,11 @@ export default class ArticleForm extends BaseForm {
         * @type {boolean} - Indica se o formulário representa uma Timeline.
         */
         this.isTimeline = isTimeline;
+
+        /**
+         * @type {HTMLElement|null} - O botão que originou a abertura do formulário, caso exista.
+         */
+        this.sourceBtn = sourceBtn;
 
         // Dados da Entrada vizualizada.
         this.entry = data;
@@ -48,6 +53,13 @@ export default class ArticleForm extends BaseForm {
         const app = doc.body.firstChild;
 
         return app.querySelector('.content').innerHTML;
+    }
+
+    /** @inheritdoc */
+    close() {
+        // Habilita o botão de origem, caso exista.
+        if (this.sourceBtn) this.sourceBtn.classList.remove('disabled');
+        super.close();
     }
 
     /**@inheritdoc */
@@ -118,8 +130,8 @@ export default class ArticleForm extends BaseForm {
 
     /**@inheritdoc */
     configureContent() {
-        if(this.isTimeline) this.timeManager.loadTimeline(this.entry);
-     }
+        if (this.isTimeline) this.timeManager.loadTimeline(this.entry);
+    }
 
     /* ---------------------------------------------------------------------------------------------------------------- */
     // LISTENERS
