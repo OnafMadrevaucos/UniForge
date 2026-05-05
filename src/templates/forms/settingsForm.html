@@ -54,7 +54,16 @@
                             </div>
                             <div class="data-group external-connection text hidden">
                                 <span class="data-label">Caminho Conexão </span>
-                                <input type="text" class="data" />
+                                <div class="data-complex flexcol flex-2">
+                                    <input id="externalConnectionPathInput" type="text" class="data"
+                                        value="{{database.externalCon}}" data-key="externalCon" />
+                                    <div class="data-complex buttons flexrow">
+                                        <button id="testConnectionButton"><i class="fas fa-cloud-arrow-up"></i> Testar
+                                            Conexão</button>
+                                            <button id="createConnectionButton"><i class="fa-solid fa-plug"></i> Criar
+                                            Conexão</button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -64,14 +73,14 @@
                         <h3>Ferramentas de Debug</h3>
                         <div class="data-group exec combo">
                             <span class="data-label">Executar Stored Procedure </span>
-                            <div class="data-complex flexcol">
+                            <div class="data-complex flexcol flex-2">
                                 <select id="procedureName" class="data" name="procedureName"></select>
                                 <button id="procedureButton"><i class="fas fa-cloud-arrow-up"></i> Executar</button>
                             </div>
                         </div>
                         <div class="data-group exec combo">
                             <span class="data-label">Excluir Tabela </span>
-                            <div class="data-complex flexcol">
+                            <div class="data-complex flexcol flex-2">
                                 <select id="tableName" class="data" name="tableName"></select>
                                 <button id="deleteTableButton"><i class="fas fa-cloud-arrow-up"></i> Executar</button>
                             </div>
@@ -79,13 +88,13 @@
                         <div class="data-group query">
                             <h4 class="data-label">Executar Comando </h4>
                             <textarea id="queryText"></textarea>
-                            <div class="footer flexrow">
+                            <div class="footer flexrow flex-2">
                                 <button id="queryButton"><i class="fas fa-cloud-arrow-up"></i> Executar</button>
                             </div>
                         </div>
                         <div class="data-group combo">
                             <span class="data-label">Recriar Banco de Dados </span>
-                            <div class="data-complex flexcol">
+                            <div class="data-complex flexcol flex-2">
                                 <button id="resetDatabaseButton"><i class="fas fa-arrows-rotate"></i> Recriar </button>
                             </div>
                         </div>

@@ -52,6 +52,12 @@ export default class SettingsForm extends EntryForm {
     }
 
     prepareGroups() {
+        const database = uniforge.doc.settings.filter(s => s.group === 'database');
+        this.data.database = {};
+        for (const setting of database.toArray()) {
+            this.data.database[setting.tag] = setting.value;
+        }
+
         this.data.leaflet = {};
 
         const leaflet = uniforge.doc.settings.filter(s => s.group === 'leaflet');
@@ -114,7 +120,7 @@ export default class SettingsForm extends EntryForm {
 
         this.configureDatabasePanel();
         await this.configureLeafletPanel();
-    }    
+    }
 
     /**
    * Configura o conteúdo do panel de Banco de Dados.
@@ -151,8 +157,12 @@ export default class SettingsForm extends EntryForm {
 
             allTablesSelect.appendChild(option);
         });
+
+        const externalConnectionSwitch = this.querySelector('#externalConnectionSwitch input#checkbox');
+        externalConnectionSwitch.checked = (this.data.database.activeExternalCon === 'true');
+        externalConnectionSwitch.dispatchEvent(new Event('change')); // Dispara o evento de mudança para atualizar a interface.
     }
-    
+
     /**
      * Configura o conteúdo do panel do módulo do Leaflet®.
      */
@@ -194,9 +204,15 @@ export default class SettingsForm extends EntryForm {
 
         // ------------------------------------------------------------------------------------------------
         // Eventos do painel de Banco de Dados ------------------------------------------------------------      
-        
-        const externalConnectionSwitch = this.querySelector('#externalConnectionSwitch');
+
+        const externalConnectionSwitch = this.querySelector('#externalConnectionSwitch input#checkbox');
         externalConnectionSwitch.addEventListener('change', (event) => { this.onExternalConnectionSwitchChange(event); });
+
+        const testConnectionButton = this.querySelector('#testConnectionButton');
+        testConnectionButton.addEventListener('click', (event) => { this.onTestConnectionClick(event); });
+
+        const createConnectionButton = this.querySelector('#createConnectionButton');
+        createConnectionButton.addEventListener('click', (event) => { this.onCreateConnectionClick(event); });
 
         const executeProcButton = this.querySelector('#procedureButton');
         executeProcButton.addEventListener('click', (event) => { this.onExecuteProcClick(event); });
@@ -238,8 +254,8 @@ export default class SettingsForm extends EntryForm {
         this._onCalculateScale();
 
         // ------------------------------------------------------------------------------------------------
-    }   
-    
+    }
+
     /**
    * Configura os ouvidores de Eventos do menu de opções do formulário.
    */
@@ -288,7 +304,7 @@ export default class SettingsForm extends EntryForm {
     }
 
     /**
-    * Trata o evento de registro de uma nova seção.
+    * Trata o evento de ativação de uma Conexão Externa.
     * @param {Event} event      - Evento de clique no switch de conexão externa.
     */
     onExternalConnectionSwitchChange(event) {
@@ -300,6 +316,19 @@ export default class SettingsForm extends EntryForm {
         } else {
             externalConnectionGroup.classList.add('hidden');
         }
+
+        uniforge.settings.set('activeExternalCon', isChecked.toString());
+    }
+
+    async onTestConnectionClick(event) {
+        const externalConnectionPathInput = this.querySelector('#externalConnectionPathInput');
+        const connectionPath = externalConnectionPathInput.value;
+        
+        this.msgBox.showError(`Esta funcionalidade ainda não foi implementada. O caminho configurado é: \'${connectionPath}\'`);
+    }
+
+    onCreateConnectionClick(event) {
+        this.msgBox.showError('Esta funcionalidade ainda não foi implementada.');
     }
 
     /**

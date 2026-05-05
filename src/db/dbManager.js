@@ -769,6 +769,26 @@ export default class DBManager {
     }
 
     /**
+     * Atualiza uma Configuração com a TAG informada.
+     * @param {Object} data             - Os dados a serem atualizados.
+     * @param {string} data.tag         - A TAG da Configuração a ser atualizada.
+     * @param {string} data.value       - O valor da Configuração a ser atualizada.
+     * @returns {Promise<Object>} A resposta do banco de dados.
+     */
+    async updateSettings(data) {
+        const updateSet = this.buildUpdateSet([
+            ['tag', data.tag],
+            ['value', data.value]
+        ]);
+
+        let query = `UPDATE settings SET ${updateSet} WHERE tag = ?`;
+        let params = [data.tag];
+        this.results = await this.#execQuery(query, params);
+
+        return this.result;
+    }
+
+    /**
      * Deleta a Seção com o ID especificado e todas as suas Entradas, Eventos e Linhagens.
      * @param {number} sid - O ID da Seção a ser deletada.
      * @returns {Promise<Object>} A resposta do banco de dados, com as queries executadas para deletar a Seção e as Entradas.

@@ -9,6 +9,7 @@ import DBDocuments from "./db/dbDocuments.js";
 import * as esm from "./common/uniforge-esm.mjs";
 import lControl from "./common/leaflet/core.mjs";
 import PDFManager from "./scripts/managers/pdfManager.js";
+import { set } from "./common/primitives/set.mjs";
 
 // Realiza as configurações iniciais da aplicação ao carregar o conteúdo do DOM.
 document.addEventListener('DOMContentLoaded', async () => {
@@ -229,6 +230,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Inicia o gerenciador de banco de dados.
     uniforge.db.init();
 
+    uniforge.settings = Object.freeze(configureSettings());
+
     // Atalho para o Controle de Mensagens para o Usuário
     uniforge.msgBox = uniforge.ctrls.msgBox;
     // Atalho para o Controle de Tooltips de Entradas
@@ -281,6 +284,22 @@ async function refreshDocuments() {
     const data = await DBDocuments.UniForgeData();
     uniforge.doc = new DBDocuments(data);
     return uniforge.doc;
+}
+
+function configureSettings() {
+    const settings = {
+        get: (tag) => {
+            const setting = uniforge.doc.settings.get(tag);
+            return setting ? setting.value : null;
+        },
+        set: async (tag, value) => {
+            const setting = uniforge.doc.settings.get(tag);
+            if (setting) setting.value = value;
+
+            return await uniforge.db.updateSettings(setting);
+        }
+    }
+    return settings;
 }
 
 async function configureURLs() {

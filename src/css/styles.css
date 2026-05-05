@@ -1322,6 +1322,9 @@ button.disabled:hover {
 .map-objects-panel .tools-search-bar input {
     width: var(--fill-width);
 }
+.map-objects-panel .tools-search-bar a {
+    color: var(--light-text-color);
+}
 
 .map-objects-panel .tools-content .config-group {  
     flex: 1;  
@@ -2118,12 +2121,20 @@ button.disabled:hover {
     gap: var(--default-gap-size);
     justify-content: space-between;
 }
+.data-complex.buttons {
+    justify-content: flex-end;
+}
 
 .data-group {
     width: var(--fill-width);
     display: flex;
     flex-direction: row;
     margin-block: 5px;
+}
+
+.data-group button {
+    margin: 2px;
+    width: auto;
 }
 
 .data-group:disabled {
@@ -2139,7 +2150,6 @@ button.disabled:hover {
 
 .data-group.buttons {
     gap: var(--default-gap-size);
-    ;
 }
 
 .data-group .icon-container {
@@ -2528,22 +2538,6 @@ button.disabled:hover {
 
 #settings #mainPanel .sidebar {
     box-shadow: none;
-}
-
-#settings #databasePanel .exec .data-label {
-    flex: 0.25;
-}
-
-#settings #databasePanel .exec .data-complex {
-    flex: 1;
-}
-
-#settings #databasePanel .exec .data-complex * {
-    margin: 0;
-}
-
-#settings #databasePanel .exec .data-complex button {
-    align-self: flex-end;
 }
 
 #settings #databasePanel .query {
