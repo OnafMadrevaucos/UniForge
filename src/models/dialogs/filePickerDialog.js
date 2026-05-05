@@ -606,9 +606,9 @@ export default class FilePickerDialog extends BaseDialog {
                             const absolutePath = filePickerInput.dataset.absolutePath;
                             const folder = filePickerInput.dataset.folder;
 
-                            let name = null;
-                            let ext = null;
-                            let src = null;
+                            let name = uniforge.defaults.emptyString;
+                            let ext = uniforge.defaults.emptyString;
+                            let src = uniforge.defaults.emptyString;
 
                             if (type !== 'folder') {
                                 name = filePickerInput.dataset.name;

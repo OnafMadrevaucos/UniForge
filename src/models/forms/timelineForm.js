@@ -87,7 +87,7 @@ export default class TimelineForm extends SidebarForm {
    */
     set flavorEditor(content) {
         if (this.flavorEditor && content !== undefined) {
-            if (content !== null && !(typeof content === 'string')) throw new TypeError('O conteúdo deve ser uma string.');
+            if (!content.isEmpty() && !(typeof content === 'string')) throw new TypeError('O conteúdo deve ser uma string.');
 
             content = content ?? ''; // Se o conteúdo for nulo, faça o conteúdo vazio.
             this.flavorEditor.setContent(content);
@@ -100,7 +100,7 @@ export default class TimelineForm extends SidebarForm {
      */
     set eventEditor(content) {
         if (this.eventEditor && content !== undefined) {
-            if (content !== null && !(typeof content === 'string')) throw new TypeError('O conteúdo deve ser uma string.');
+            if (!content.isEmpty() && !(typeof content === 'string')) throw new TypeError('O conteúdo deve ser uma string.');
 
             content = content ?? ''; // Se o conteúdo for nulo, faça o conteúdo vazio.
             this.eventEditor.setContent(content);
@@ -149,8 +149,8 @@ export default class TimelineForm extends SidebarForm {
         titleInput.value = '';
 
         // Limpa todos os editores Tiny MCE inicializados.
-        this.flavorEditor = '';
-        this.eventEditor = '';
+        this.flavorEditor = uniforge.defaults.emptyString;
+        this.eventEditor = uniforge.defaults.emptyString;
     }
     /* ---------------------------------------------------------------------------------------------------------------- */
     // INTERFACE DE USUÁRIO

@@ -113,68 +113,8 @@ export default class SettingsForm extends EntryForm {
         await super.configureContent(form);
 
         this.configureDatabasePanel();
-        this.configureEncycloPanel();
         await this.configureLeafletPanel();
-    }
-
-    /* ---------------------------------------------------------------------------------------------------------------- */
-    // LISTENERS
-    /**
-    * Configura ouvintes de eventos básicos para o formulário.
-    * @inheritdoc
-    */
-    activateListeners() {
-        super.activateListeners();
-
-        this.configureOptions();
-
-        const html = this.ui.app;
-
-        // NOVO: Listener para o botão de cálculo de escala
-        const calculateButton = html.querySelector('#calculateScaleButton');
-        if (calculateButton) {
-            calculateButton.addEventListener('click', this._onCalculateScale.bind(this));
-        }
-
-        // Aciona o cálculo inicial ao carregar
-        this._onCalculateScale();
-
-        const executeProcButton = this.querySelector('#procedureButton');
-        executeProcButton.addEventListener('click', (event) => { this.onExecuteProcClick(event); });
-
-        const deleteTableButton = this.querySelector('#deleteTableButton');
-        deleteTableButton.addEventListener('click', (event) => { this.onDeleteTableClick(event); });
-
-        const queryButton = this.querySelector('#queryButton');
-        queryButton.addEventListener('click', (event) => { this.onExecuteQuery(event); });
-
-        const resetDatabaseButton = this.querySelector('#resetDatabaseButton');
-        resetDatabaseButton.addEventListener('click', (event) => { this.onResetDatabaseClick(event); });
-
-        // O panel padrão é sempre o panel de Banco de Dados
-        this.configureDatabasePanel();
-
-        const newChapterButton = this.querySelector('#newChapterButton');
-        newChapterButton.addEventListener('click', (event) => { this.onNewChapterClick(event) });
-
-        const defaultMapButton = this.querySelector('#defaultMapButton');
-        defaultMapButton.addEventListener('click', (event) => { this.onDefaultMapClick(event) });
-
-        const loadMapButton = this.querySelector('#loadMapButton');
-        loadMapButton.addEventListener('click', (event) => { this.onLoadMapClick(event) });
-    }
-
-    /**
-   * Configura o menu de opções do formulário.
-   */
-    configureOptions() {
-        const options = this.querySelector('.tabs-options');
-        const buttons = options.querySelectorAll('button');
-
-        buttons.forEach(button => {
-            button.addEventListener('click', (event) => { this.onOptionButtonClick(event); });
-        });
-    }
+    }    
 
     /**
    * Configura o conteúdo do panel de Banco de Dados.
@@ -212,11 +152,7 @@ export default class SettingsForm extends EntryForm {
             allTablesSelect.appendChild(option);
         });
     }
-    /**
-     * Configura o conteúdo do panel da Enciclopédia de Dados.
-     */
-    async configureEncycloPanel() {
-    }
+    
     /**
      * Configura o conteúdo do panel do módulo do Leaflet®.
      */
@@ -238,6 +174,82 @@ export default class SettingsForm extends EntryForm {
             // Atribuir os arquivos ao input
             defaultMapInput.files = dataTransfer.files;
         }
+    }
+
+    /* ---------------------------------------------------------------------------------------------------------------- */
+    // LISTENERS
+    /**
+    * Configura ouvintes de eventos básicos para o formulário.
+    * @inheritdoc
+    */
+    activateListeners() {
+        super.activateListeners();
+
+        this.configureOptionsListeners();
+
+        const html = this.ui.app;
+
+        // ------------------------------------------------------------------------------------------------
+        // Eventos do painel de Configurações Gerais ------------------------------------------------------
+
+        // ------------------------------------------------------------------------------------------------
+        // Eventos do painel de Banco de Dados ------------------------------------------------------------      
+        
+        const externalConnectionSwitch = this.querySelector('#externalConnectionSwitch');
+        externalConnectionSwitch.addEventListener('change', (event) => { this.onExternalConnectionSwitchChange(event); });
+
+        const executeProcButton = this.querySelector('#procedureButton');
+        executeProcButton.addEventListener('click', (event) => { this.onExecuteProcClick(event); });
+
+        const deleteTableButton = this.querySelector('#deleteTableButton');
+        deleteTableButton.addEventListener('click', (event) => { this.onDeleteTableClick(event); });
+
+        const queryButton = this.querySelector('#queryButton');
+        queryButton.addEventListener('click', (event) => { this.onExecuteQuery(event); });
+
+        const resetDatabaseButton = this.querySelector('#resetDatabaseButton');
+        resetDatabaseButton.addEventListener('click', (event) => { this.onResetDatabaseClick(event); });
+
+        // O panel padrão é sempre o panel de Banco de Dados
+        this.configureDatabasePanel();
+
+        // ------------------------------------------------------------------------------------------------
+        // Eventos do painel de Capítulos -----------------------------------------------------------------
+
+        const newChapterButton = this.querySelector('#newChapterButton');
+        newChapterButton.addEventListener('click', (event) => { this.onNewChapterClick(event) });
+
+        // ------------------------------------------------------------------------------------------------
+        // Eventos do painel do Leaflet® ------------------------------------------------------------------
+
+        const defaultMapButton = this.querySelector('#defaultMapButton');
+        defaultMapButton.addEventListener('click', (event) => { this.onDefaultMapClick(event) });
+
+        const loadMapButton = this.querySelector('#loadMapButton');
+        loadMapButton.addEventListener('click', (event) => { this.onLoadMapClick(event) });
+
+        // Listener para o botão de cálculo de escala
+        const calculateButton = html.querySelector('#calculateScaleButton');
+        if (calculateButton) {
+            calculateButton.addEventListener('click', this._onCalculateScale.bind(this));
+        }
+
+        // Aciona o cálculo inicial ao carregar
+        this._onCalculateScale();
+
+        // ------------------------------------------------------------------------------------------------
+    }   
+    
+    /**
+   * Configura os ouvidores de Eventos do menu de opções do formulário.
+   */
+    configureOptionsListeners() {
+        const options = this.querySelector('.tabs-options');
+        const buttons = options.querySelectorAll('button');
+
+        buttons.forEach(button => {
+            button.addEventListener('click', (event) => { this.onOptionButtonClick(event); });
+        });
     }
 
     /**
@@ -272,6 +284,21 @@ export default class SettingsForm extends EntryForm {
                 this.controlStates(this.states.newEntry);
             } else
                 this.controlStates(this.states.default);
+        }
+    }
+
+    /**
+    * Trata o evento de registro de uma nova seção.
+    * @param {Event} event      - Evento de clique no switch de conexão externa.
+    */
+    onExternalConnectionSwitchChange(event) {
+        const isChecked = event.target.checked;
+
+        const externalConnectionGroup = this.querySelector('#databasePanel .external-connection');
+        if (isChecked) {
+            externalConnectionGroup.classList.remove('hidden');
+        } else {
+            externalConnectionGroup.classList.add('hidden');
         }
     }
 

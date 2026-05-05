@@ -43,32 +43,54 @@
             </div>
         </div>
         <div id="databasePanel" class="panel flexcol hidden">
-            <div class="data-group exec combo">
-                <span class="data-label">Executar Stored Procedure </span>
-                <div class="data-complex flexcol">
-                    <select id="procedureName" class="data" name="procedureName"></select>
-                    <button id="procedureButton"><i class="fas fa-cloud-arrow-up"></i> Executar</button>
-                </div>
-            </div>
-            <div class="data-group exec combo">
-                <span class="data-label">Excluir Tabela </span>
-                <div class="data-complex flexcol">
-                    <select id="tableName" class="data" name="tableName"></select>
-                    <button id="deleteTableButton"><i class="fas fa-cloud-arrow-up"></i> Executar</button>
-                </div>
-            </div>
-            <div class="data-group query">
-                <span class="data-label">Executar Comando </span>
-                <textarea id="queryText"></textarea>
-                <div class="footer flexrow">
-                    <button id="queryButton"><i class="fas fa-cloud-arrow-up"></i> Executar</button>
-                </div>
-            </div>
-            <div class="data-group combo">
-                <span class="data-label">Recriar Banco de Dados </span>
-                <div class="data-complex flexcol">
-                    <button id="resetDatabaseButton"><i class="fas fa-arrows-rotate"></i> Recriar </button>
-                </div>
+            <div class="content flexcol">
+                <fieldset class="info-set flexcol">
+                    <div>
+                        <h3>Conexão Externa</h3>
+                        <div class="data-complex external-connection-group">
+                            <div class="data-group check">
+                                <span class="data-label">Ativar </span>
+                                <switch id="externalConnectionSwitch" />
+                            </div>
+                            <div class="data-group external-connection text hidden">
+                                <span class="data-label">Caminho Conexão </span>
+                                <input type="text" class="data" />
+                            </div>
+                        </div>
+                    </div>
+                </fieldset>
+                <fieldset class="info-set flexcol">
+                    <div>
+                        <h3>Ferramentas de Debug</h3>
+                        <div class="data-group exec combo">
+                            <span class="data-label">Executar Stored Procedure </span>
+                            <div class="data-complex flexcol">
+                                <select id="procedureName" class="data" name="procedureName"></select>
+                                <button id="procedureButton"><i class="fas fa-cloud-arrow-up"></i> Executar</button>
+                            </div>
+                        </div>
+                        <div class="data-group exec combo">
+                            <span class="data-label">Excluir Tabela </span>
+                            <div class="data-complex flexcol">
+                                <select id="tableName" class="data" name="tableName"></select>
+                                <button id="deleteTableButton"><i class="fas fa-cloud-arrow-up"></i> Executar</button>
+                            </div>
+                        </div>
+                        <div class="data-group query">
+                            <h4 class="data-label">Executar Comando </h4>
+                            <textarea id="queryText"></textarea>
+                            <div class="footer flexrow">
+                                <button id="queryButton"><i class="fas fa-cloud-arrow-up"></i> Executar</button>
+                            </div>
+                        </div>
+                        <div class="data-group combo">
+                            <span class="data-label">Recriar Banco de Dados </span>
+                            <div class="data-complex flexcol">
+                                <button id="resetDatabaseButton"><i class="fas fa-arrows-rotate"></i> Recriar </button>
+                            </div>
+                        </div>
+                    </div>
+                </fieldset>
             </div>
         </div>
         <div id="chapterPanel" class="panel flexrow hidden">
@@ -208,7 +230,8 @@
                                 <div class="flexcol flex-2">
                                     <input id="maxZoomInput" class="data dial" type="number" min="0"
                                         value="{{leaflet.MAX_ZOOM}}" data-key="MAX_ZOOM" readonly />
-                                    <span class="hint">Zoom onde 1 Map Unit é equivalente a 1 pixel (máxima resolução).</span>
+                                    <span class="hint">Zoom onde 1 Map Unit é equivalente a 1 pixel (máxima
+                                        resolução).</span>
                                 </div>
                             </div>
                             <div class="data-group">
@@ -216,7 +239,8 @@
                                 <div class="flexcol flex-2">
                                     <input id="unitRatioInput" class="data dial" type="number" min="0.001" step="any"
                                         value="{{leaflet.mapUnitRatio}}" data-key="mapUnitRatio" />
-                                    <span class="hint">Define a distância que 1 Map Unit representa no mapa, em pixels, enquanto no Zoom Máximo.</span>
+                                    <span class="hint">Define a distância que 1 Map Unit representa no mapa, em pixels,
+                                        enquanto no Zoom Máximo.</span>
                                 </div>
                             </div>
                             <div class="data-group">
@@ -224,7 +248,8 @@
                                 <div class="flexcol flex-2">
                                     <input id="unitNameInput" class="data" type="text" value="{{leaflet.mapUnitName}}"
                                         data-key="mapUnitName" />
-                                    <span class="hint">Define a unidade de medida usada para representar distâncias nos mapas.</span>
+                                    <span class="hint">Define a unidade de medida usada para representar distâncias nos
+                                        mapas.</span>
                                 </div>
                             </div>
                             <div class="data-group fixed">

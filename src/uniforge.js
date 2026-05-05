@@ -18,13 +18,27 @@ document.addEventListener('DOMContentLoaded', async () => {
     uniforge.utils.mergeObjects(uniforge, {
         /**
          * Constantes usadas pela aplicação.
+         * @type {Object}
+         * @property {string} APP_NAME - O nome da aplicação.
+         * @property {string} APP_VERSION - A versão atual da aplicação.
+         * @property {string} CSS_NAME - O nome do arquivo CSS usado pela aplicação.
+         * @property {Object} leaflet - Constantes relacionadas ao controle de mapas Leaflet.     
         */
-        constants: {
+        constants: Object.freeze({
             APP_NAME: 'UniForge',
-            APP_VERSION: '0.8.6',
+            APP_VERSION: '0.8.9',
             CSS_NAME: cssname,
-            leaflet: lControl.constants
-        },
+            leaflet: lControl.constants,
+        }),
+
+        /**
+         * Strings usadas pela aplicação.
+         * @type {Object}
+         * @property {string} emptyString - String vazia padrão, usada para evitar várias definições de string vazias.
+        */
+        defaults: Object.freeze({
+            emptyString: ''
+        }),
 
         /**
          * Instância do gerenciador de banco de dados.
@@ -518,24 +532,33 @@ function onChangeTimeInput(event) {
 function onMarkerSearchChange(event) {
     event.stopPropagation();
     const input = event.currentTarget;
+    // Padroniza e remove espaços em branco do filtro para melhorar a busca.
+    const filter = input.value.trim().toLowerCase();
 
+    // Obtém todas as opções de marcadores.
     const markersOptions = mapObjectsPanel.querySelectorAll('.options.marker a');
     markersOptions.forEach(option => {
-        if (input.value === "" || option.dataset.marker.includes(input.value)) {
+        // Se o filtro estiver vazio ou a opção contém o filtro, mostra a opção.
+        if (filter.isEmpty() || option.dataset.marker.includes(filter)) {
             option.classList.remove('hidden');
-        } else {
+        }
+        // Senão, esconde a opção. 
+        else {
             option.classList.add('hidden');
         }
-    });
+    });    
 }
 function onClearMarkerSearchClick(event) {
     event.stopPropagation();
     const toolsSearchBar = document.querySelector('.map-objects-panel .tools-search-bar');
     const input = toolsSearchBar.querySelector('input');
 
-    input.value = "";
-    
+    // Limpa o input de busca.
+    input.value = uniforge.defaults.emptyString;
+
+    // Obtém todas as opções de marcadores.
     const markersOptions = mapObjectsPanel.querySelectorAll('.options.marker a');
+    // Mostra todas as opções de marcadores.
     markersOptions.forEach(option => {
         option.classList.remove('hidden');
     });

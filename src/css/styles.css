@@ -1024,13 +1024,14 @@ button.disabled:hover {
 }
 
 .time-panel .buttons-tool {
-    flex: 1;
+    flex: 0;
     gap: var(--big-gap-size);
     justify-content: center;
     border: 2px groove var(--dark-blue);
     border-left: none;
     border-top: none;
     border-bottom: none;
+    padding-inline: 5px;
 }
 
 .time-panel button {
@@ -1054,6 +1055,12 @@ button.disabled:hover {
     background-color: var(--dark-red);
 }
 
+.time-panel .time-tool {
+    flex: 2;
+    justify-content: center;
+    gap: var(--default-gap-size);
+}
+
 .time-panel .time-tool .year-container[data-tooltip]::after {
     font-weight: 700;
     left: 0;
@@ -1061,12 +1068,6 @@ button.disabled:hover {
 
 .time-panel button[data-tooltip]::after {
     right: 50%;
-}
-
-.time-panel .time-tool {
-    flex: 0 0 75%;
-    justify-content: center;
-    gap: var(--default-gap-size);
 }
 
 .time-panel .time-tool .year-container {
@@ -2527,13 +2528,6 @@ button.disabled:hover {
 
 #settings #mainPanel .sidebar {
     box-shadow: none;
-}
-
-#settings #databasePanel .data-group {
-    background-color: var(--background-color);
-    border-radius: var(--default-border-radius);
-    box-shadow: var(--small-shadow);
-    padding: 15px;
 }
 
 #settings #databasePanel .exec .data-label {

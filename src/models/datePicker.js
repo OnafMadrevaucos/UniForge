@@ -283,7 +283,7 @@ export default class DatePicker {
     this.#currentDate.clearDate(); 
 
     this.dateDisplay.textContent = 'Selecione uma data';
-    this.#hiddenInput.value = null;
+    this.#hiddenInput.value = uniforge.defaults.emptyString;;
 
     const day = this.calendarContent.querySelector('.day.selected');
     if(day) day.classList.remove('selected');

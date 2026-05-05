@@ -197,7 +197,7 @@ export default class SimpleEntryForm extends BaseForm {
    */
   set mainEditor(content) {
     if (this.mainEditor && content !== undefined) {
-      if (content !== null && !(typeof content === 'string')) throw new TypeError('O conteúdo deve ser uma string.');
+      if (!content.isEmpty() && !(typeof content === 'string')) throw new TypeError('O conteúdo deve ser uma string.');
 
       content = content ?? ''; // Se o conteúdo for nulo, faça o conteúdo vazio.
       this.mainEditor.setContent(content);
@@ -210,7 +210,7 @@ export default class SimpleEntryForm extends BaseForm {
    */
   set flavorEditor(content) {
     if (this.flavorEditor && content !== undefined) {
-      if (content !== null && !(typeof content === 'string')) throw new TypeError('O conteúdo deve ser uma string.');
+      if (!content.isEmpty() && !(typeof content === 'string')) throw new TypeError('O conteúdo deve ser uma string.');
 
       content = content ?? ''; // Se o conteúdo for nulo, faça o conteúdo vazio.
       this.flavorEditor.setContent(content);
@@ -223,7 +223,7 @@ export default class SimpleEntryForm extends BaseForm {
    */
   set eventEditor(content) {
     if (this.eventEditor && content !== undefined) {
-      if (content !== null && !(typeof content === 'string')) throw new TypeError('O conteúdo deve ser uma string.');
+      if (!content.isEmpty() && !(typeof content === 'string')) throw new TypeError('O conteúdo deve ser uma string.');
 
       content = content ?? ''; // Se o conteúdo for nulo, faça o conteúdo vazio.
       this.eventEditor.setContent(content);
@@ -463,7 +463,7 @@ export default class SimpleEntryForm extends BaseForm {
     this.flavorEditor = '';
 
     if (this.hasEvent) {
-      this.eid = null;
+      this.eid = uniforge.defaults.emptyString;;
       this.#events = [];
 
       const entryTypeSelect = this.querySelector('#entryType');
@@ -705,7 +705,7 @@ export default class SimpleEntryForm extends BaseForm {
       const confirm = await Dialogs.confirm('Apagar Imagem', 'Deseja remover a imagem?')
       if (confirm) {
 
-        this.selectedImg.rawData = null;
+        this.selectedImg.rawData = uniforge.defaults.emptyString;;
 
         displayedImage.src = this.blankImgUrl;
         displayedImage.classList.add('empty');

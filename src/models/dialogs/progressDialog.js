@@ -118,14 +118,14 @@ export default class ProgressDialog extends BaseDialog {
      * @param {number} value   Percentual entre 0 e 100
      * @param {string} message Mensagem opcional
      */
-    async updateProgress(data, message = null) {
+    async updateProgress(data, message = uniforge.defaults.emptyString) {
         if (this._completed) return;
 
         this.progress = data.value;
 
         if (this.indeterminate) {
             // Se estiver indeterminado, ignora valores numéricos
-            if (message !== null) {
+            if (!message.isEmpty()) {
                 this.data.message = message;
                 await this.refreshDerivedTemplate();
             }
@@ -135,7 +135,7 @@ export default class ProgressDialog extends BaseDialog {
         if (data.value < 0) data.value = 0;
         if (data.value > 100) data.value = 100;
 
-        if (message !== null) {
+        if (!message.isEmpty()) {
             this.data.message = message;
         }
 

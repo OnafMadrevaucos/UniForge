@@ -59,7 +59,7 @@ export default class LinkDialog extends BaseDialog {
      */
     set flavorEditor(content) {
         if (this.flavorEditor && content !== undefined) {
-            if (content !== null && !(typeof content === 'string')) throw new TypeError('O conteúdo deve ser uma string.');
+            if (!content.isEmpty() && !(typeof content === 'string')) throw new TypeError('O conteúdo deve ser uma string.');
 
             content = content ?? ''; // Se o conteúdo for nulo, faça o conteúdo vazio.
             this.flavorEditor.setContent(content);
@@ -317,7 +317,7 @@ export default class LinkDialog extends BaseDialog {
             // Desmarca o item clicado.
             this.selectedItem = null;
             // Remove registro do item selecionado do botão de confirmação.
-            button.dataset.item = null;
+            button.dataset.item = uniforge.defaults.emptyString;
         }
         // Senão, marca o item clicado como selecionado.
         else {            

@@ -58,6 +58,8 @@ export default class EntryForm extends SidebarForm {
     /**
      * Objeto com os dados da imagem da entrada.
      * @type {Object}
+     * @property {string|null} rawData - Os dados brutos da imagem, em formato base64 ou URL.
+     * @property {string} ext - A extensão da imagem.
      */
     this.selectedImg = {
       rawData: null,
@@ -87,7 +89,7 @@ export default class EntryForm extends SidebarForm {
 
     this.documentClass = Entry;
 
-    this.selection.event = null; // ID do Evento selecionado na EventTab.
+    this.selection.event = uniforge.defaults.emptyString;; // ID do Evento selecionado na EventTab.
   }
 
   /* ---------------------------------------------------------------------------------------------------------------- */
@@ -247,7 +249,7 @@ export default class EntryForm extends SidebarForm {
    */
   set mainEditor(content) {
     if (this.mainEditor && content !== undefined) {
-      if (content !== null && !(typeof content === 'string')) throw new TypeError('O conteúdo deve ser uma string.');
+      if (!content.isEmpty() && !(typeof content === 'string')) throw new TypeError('O conteúdo deve ser uma string.');
 
       content = content ?? ''; // Se o conteúdo for nulo, faça o conteúdo vazio.
       this.mainEditor.setContent(content);
@@ -260,7 +262,7 @@ export default class EntryForm extends SidebarForm {
    */
   set flavorEditor(content) {
     if (this.flavorEditor && content !== undefined) {
-      if (content !== null && !(typeof content === 'string')) throw new TypeError('O conteúdo deve ser uma string.');
+      if (!content.isEmpty() && !(typeof content === 'string')) throw new TypeError('O conteúdo deve ser uma string.');
 
       content = content ?? ''; // Se o conteúdo for nulo, faça o conteúdo vazio.
       this.flavorEditor.setContent(content);
@@ -273,7 +275,7 @@ export default class EntryForm extends SidebarForm {
    */
   set eventEditor(content) {
     if (this.eventEditor && content !== undefined) {
-      if (content !== null && !(typeof content === 'string')) throw new TypeError('O conteúdo deve ser uma string.');
+      if (!content.isEmpty() && !(typeof content === 'string')) throw new TypeError('O conteúdo deve ser uma string.');
 
       content = content ?? ''; // Se o conteúdo for nulo, faça o conteúdo vazio.
       this.eventEditor.setContent(content);
@@ -349,8 +351,11 @@ export default class EntryForm extends SidebarForm {
       // ESTADO DE HABILITAÇÃO DE NOVA ENTRADA. 
       // Ex.: Após a seleção de uma pasta.
       case this.states.newEntry: {
-        titleInput.disabled = true;
-        infoSet.disabled = true;
+        // Não pode ser uma tela de Configurações.
+        if (!this.isSettings) {
+          titleInput.disabled = true;
+          infoSet.disabled = true;
+        }
 
         // Habilita recipiente de imagens caso haja um.
         if (imageContainer)
@@ -490,9 +495,11 @@ export default class EntryForm extends SidebarForm {
           // Desativa recipiente de imagens.
           imageContainer.classList.add('disabled');
 
-        // As entradas de dados nesse estado estão desativadas.
-        titleInput.disabled = true;
-        infoSet.disabled = true;
+        // As entradas de dados nesse estado estão desativadas e a tela não é de Configurações.
+        if (!this.isSettings) {
+          titleInput.disabled = true;
+          infoSet.disabled = true;
+        }
 
         // -----------------------------------------------------------------------
         //    Configuração dos Estados dos Botões.
@@ -890,8 +897,8 @@ export default class EntryForm extends SidebarForm {
         deleteIcon.addEventListener('click', (event) => { this.onOpenDialogClick(event, item); });
     });
 
-    if(yesBtn) yesBtn.addEventListener('click', (event) => { this.onDeleteClick(event); });
-    if(noBtn) noBtn.addEventListener('click', (event) => { this.onCancelSidebarDialogClick(event); });
+    if (yesBtn) yesBtn.addEventListener('click', (event) => { this.onDeleteClick(event); });
+    if (noBtn) noBtn.addEventListener('click', (event) => { this.onCancelSidebarDialogClick(event); });
 
     if (this.isEventForm) {
       const newEventButton = this.querySelector('#newEventButton');
@@ -989,7 +996,7 @@ export default class EntryForm extends SidebarForm {
       const confirm = await Dialogs.confirm('Apagar Imagem', 'Deseja remover a imagem?')
       if (confirm) {
 
-        this.selectedImg.rawData = null;
+        this.selectedImg.rawData = uniforge.defaults.emptyString;
 
         displayedImage.src = this.blankImgUrl;
         displayedImage.classList.add('empty');

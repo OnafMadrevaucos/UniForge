@@ -2467,7 +2467,7 @@ export default class DBManager {
         const withNulls = updateOptions.withNulls || false;
 
         const updateSet = columns
-            .filter(([label, value]) => label.trim() && (withNulls || value !== null && value !== undefined && value !== '')) // Remove colunas ou valores vazios
+            .filter(([label, value]) => label.trim() && (withNulls || !value.isEmpty())) // Remove colunas ou valores vazios
             .map(([label, value]) => {
                 if (value === undefined || value === '') value = null;
 
@@ -2485,7 +2485,7 @@ export default class DBManager {
 
     buildWhereClause(conditions) {
         const whereClause = conditions
-            .filter(([column, value]) => column.trim() && value !== null && value !== undefined && value !== '') // Remove colunas ou valores vazios
+            .filter(([column, value]) => column.trim() && !value.isEmpty()) // Remove colunas ou valores vazios
             .map(([column, value]) => `${column} = ${typeof value === 'string' ? `'${value}'` : value}`) // Formata cada dupla
             .join(' AND '); // Junta tudo com ' AND '
         return whereClause;
