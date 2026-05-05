@@ -1,11 +1,12 @@
 import BaseDialog from "./baseDialog.js";
 import CustomDate from "../../common/primitives/date.mjs";
+import { LinkTooltip } from "../../scripts/linkTooltip.js";
 
 export default class LinkDialog extends BaseDialog {
     constructor(dialogData = {}, options = {}) {
         super(dialogData, uniforge.utils.mergeObjects(options, {
             height: '500px',
-            width: '675px'
+            width: '350px'
         }));
 
         this.sourceId = options?.id ?? null;
@@ -13,7 +14,12 @@ export default class LinkDialog extends BaseDialog {
         this.sourceType = options?.type ?? null;
 
         this.template = 'linkDialog'; // Define o template do diálogo.
-    }    
+
+        /**
+        * @type {LinkTooltip} - O tooltip de links do Artigo.
+        */
+        this.tooltip = new LinkTooltip();
+    }
 
     /**
      * Retorna um objeto com seletores para elementos da aplicação.
@@ -149,7 +155,7 @@ export default class LinkDialog extends BaseDialog {
     }
 
     async configureElements() {
-        await this.configureFlavorTinyMCE();       
+        this.configureLists();
     }
 
     clearElements() {
@@ -172,28 +178,60 @@ export default class LinkDialog extends BaseDialog {
         this._clearFolderList();
     }
 
-    /**
-    * Configura o editor TinyMCE para o texto de floreio da Entrada.
-    */
-    async configureFlavorTinyMCE() {
-        if (this.flavorEditor) {
-            tinymce.remove(this.query.flavor_editor);
-        } else {
-            // Trata o id do container do editor, inserindo o uuid do formulário.
-            const div = this.querySelector('#linkFlavorEditor');
-            div.id = this.query.flavor_editor;
-        }
+    configureLists() {
+        const linkGroups = this.querySelectorAll('.link-group');
+        linkGroups.forEach(group => {
+            const type = group.dataset.type;
+            const list = group.querySelector('.link-list');
+            if (list) {
+                const folder = this.data.folders.find(f => f._id === type);
+                if (folder && folder.entries?.length > 0) {
+                    folder.entries.forEach(e => {
+                        const data = uniforge.doc[type].get(e._id);
 
-        const options = uniforge.utils.mergeObjects(uniforge.tinymceOptions.simple, {
-            selector: `div#${this.query.flavor_editor}`,
-            placeholder: "Descrição da Entrada...",
-            init_instance_callback: (editor) => {
-                editor.setContent(""); // Garante que o editor seja iniciado vazio.
-            },
-            setup: (editor) => { this._setupInlineTinyMCE(editor); }
+                        const item = document.createElement('div');
+                        item.classList.add(`${type}-item`, 'link-item', 'linked-text', 'flexrow');
+                        item.dataset.id = data._id;
+                        item.dataset.type = type;
+
+                        const icon = document.createElement('i');
+                        icon.className = data.entryType.icon;
+
+                        const nameSpan = document.createElement('span');
+                        nameSpan.textContent = data._label;
+
+                        item.appendChild(icon);
+                        item.appendChild(nameSpan);
+
+                        list.appendChild(item);
+                    });
+                }
+            }
         });
+    }
 
-        await tinymce.init(options);
+    /**
+     * Configura o evento de mouseover e mouseout para exibir tooltips nos links
+     * de Entradas no formulário.
+     * 
+     * @listens mouseover
+     */
+    onTooltipMouseOver(event) {
+        const linkItem = event.target.closest('.link-item');
+        if (linkItem) {
+            this.tooltip._showLinkTooltip(event, linkItem.dataset.id);
+        } else {
+            this.tooltip._hideLinkTooltip();
+        }
+    }
+    /**
+     * Configura o evento de mouseover e mouseout para exibir tooltips nos links
+     * de Entradas no formulário.
+     * 
+     * @listens mouseout
+     */
+    onTooltipMouseOut() {
+        this.tooltip._hideLinkTooltip();
     }
 
     /**
@@ -201,58 +239,21 @@ export default class LinkDialog extends BaseDialog {
     * @protected
     */
     activateListeners() {
-        const sidebar = this.querySelector('.sidebar');
-        const folders = this.querySelectorAll('.folder');
-        const itemsList = this.querySelectorAll('.entry-item');
-
-        sidebar.addEventListener('click', (event) => { this.onSidebarClick(event); });
-
-        folders.forEach(item => {
-            const folderHeader = item.querySelector('.folder-header');
-            folderHeader.addEventListener('click', (event) => {
-                this.onFolderClick(event);
-            });
-        });
-
-        itemsList.forEach(item => {
-            item.addEventListener('dblclick', (event) => { this.onEntryItemDoubleClick(event); });
-        });
-
         const searchInput = this.querySelector('#searchInput');
         if (searchInput) {
             searchInput.addEventListener('input', (event) => { this.onSearchInput(event); });
 
             const clearSearch = this.querySelector('#clearSearch');
             clearSearch.addEventListener('click', (event) => { this.onClearSearch(event); });
-        }       
-    }
-
-    /**
-    * Gerencia cliques no sidebar.
-    * @param {MouseEvent} event - O evento de clique.
-    */
-    onSidebarClick(event) {
-        event.stopPropagation();
-        if (event.target.classList.contains('sidebar')) this.clearElements();
-    }
-
-    /**
-   * Gerencia cliques em pastas.
-   * @param {MouseEvent} event - O evento de clique.
-   */
-    onFolderClick(event) {
-        event.stopPropagation();
-        const clickedFolder = event.target.closest('.folder');
-        const isSelected = clickedFolder.classList.contains('selected');
-
-        this._clearFolderList();
-
-        if (!isSelected) {
-            clickedFolder.classList.add('selected');
-            const folderIcon = clickedFolder.querySelector('.fas');
-            folderIcon.classList.remove(...folderIcon.classList);
-            folderIcon.classList.add('fas', 'fa-folder-open');
         }
+
+        const tooltip = this.tooltip;
+
+        const linkItems = this.querySelectorAll('.link-item');
+        linkItems.forEach(linkItem => {
+            linkItem.addEventListener('mouseover', (event) => { this.onTooltipMouseOver(event); });
+            linkItem.addEventListener('mouseout', () => { this.onTooltipMouseOut(); });
+        });
     }
 
     /**
@@ -604,33 +605,33 @@ export default class LinkDialog extends BaseDialog {
 
         const preview = this.ui.side_panel.querySelector('#markerPreview');
         preview.src = icon.options.iconUrl;
-    }    
+    }
 
     static async configDialog(source, options = {}) {
-    return new Promise((resolve, reject) => {
-        options = uniforge.utils.mergeObjects(options, { source: source, alwaysClose: true });
-        const dialog = new this({
-            title: 'Novo Vínculo',
-            buttons: {
-                cancel: {
-                    label: "Cancelar",
-                    icon: "fas fa-xmark",
-                    callback: () => resolve(null)
-                },
-                link: {
-                    label: "Vincular",
-                    icon: "fas fa-link",
-                    callback: (html, event) => {
-                        const button = event.target.closest('.dialog-button');
-                        const item = JSON.parse(button.dataset.item);
+        return new Promise((resolve, reject) => {
+            options = uniforge.utils.mergeObjects(options, { source: source, alwaysClose: true });
+            const dialog = new this({
+                title: 'Novo Vínculo',
+                buttons: {
+                    cancel: {
+                        label: "Cancelar",
+                        icon: "fas fa-xmark",
+                        callback: () => resolve(null)
+                    },
+                    link: {
+                        label: "Vincular",
+                        icon: "fas fa-link",
+                        callback: (html, event) => {
+                            const button = event.target.closest('.dialog-button');
+                            const item = JSON.parse(button.dataset.item);
 
-                        resolve(item);
+                            resolve(item);
+                        }
                     }
-                }
-            },
-            abort: () => resolve(null)
-        }, options);
-        dialog.show(true);
-    });
-}
+                },
+                abort: () => resolve(null)
+            }, options);
+            dialog.show(true);
+        });
+    }
 }
