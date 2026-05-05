@@ -333,28 +333,22 @@ export default class LinkDialog extends BaseDialog {
     onSearchInput(event) {
         const filter = event.target.value.trim().toLowerCase();
 
-        const folders = this.querySelectorAll('.folder');
-        const entries = this.querySelectorAll('.entry-item');
+        const linkItems = this.querySelectorAll('.link-item');
 
         // Se busca estiver vazia, mostrar tudo e restaurar textos.
-        if (filter === '') {
-            entries.forEach(e => {
-                e.style.display = '';
-                uniforge.parser.removeHighlight(e);
-            });
-
-            folders.forEach(f => {
-                f.style.display = '';
-                uniforge.parser.removeHighlight(f);
-            });
+        if (filter.isEmpty()) {
+            linkItems.forEach(l => {
+                l.style.display = uniforge.defaults.emptyString;
+                uniforge.parser.removeHighlight(l);
+            });            
 
             return;
         }
 
         // 1) Filtra e realça entries.
-        entries.forEach(entry => {
-            const span = entry.querySelector('span');
-            const label = entry.dataset.label ?? span.textContent;
+        linkItems.forEach(item => {
+            const span = item.querySelector('span');
+            const label = item.dataset.label ?? span.textContent;
 
             // Guarda texto original (uma vez só).
             if (!span.dataset.originalText) {
@@ -362,61 +356,24 @@ export default class LinkDialog extends BaseDialog {
             }
 
             const match = label.toLowerCase().includes(filter);
-            entry.style.display = match ? '' : 'none';
+            item.style.display = match ? uniforge.defaults.emptyString : 'none';
 
             // Realce.
             if (match) {
                 span.innerHTML = uniforge.parser.applyHighlight(label, filter);
             } else {
-                uniforge.parser.removeHighlight(entry);
+                uniforge.parser.removeHighlight(item);
             }
-        });
-
-        // 2) Folders aparecem se:
-        //    - elas mesmas combinam; ou
-        //    - possuem ao menos um entry visível;
-        folders.forEach(folder => {
-            const span = folder.querySelector('.folder-header span');
-            const folderLabel = folder.dataset.label ?? span.textContent;
-
-            if (!span.dataset.originalText) {
-                span.dataset.originalText = span.innerHTML;
-            }
-
-            const folderMatches = folderLabel.toLowerCase().includes(filter);
-
-            // Procura entries visíveis dentro desta pasta.
-            const visibleEntries = folder.querySelectorAll('.entry-item:not([style*="display: none"])');
-            const hasVisibleChild = visibleEntries.length > 0;
-
-            // Exibição final.
-            folder.style.display = (folderMatches || hasVisibleChild) ? '' : 'none';
-
-            // Realce se combinar.
-            if (folderMatches) {
-                span.innerHTML = uniforge.parser.applyHighlight(folderLabel, filter);
-            } else {
-                uniforge.parser.removeHighlight(folder);
-            }
-        });
+        });        
 
         const emptyListSpan = this.querySelector('#emptyListSpan');
-
-        // Verifica se há algum item visível.
-        const anyFolderVisible = Array.from(folders)
-            .some(folder => folder.style.display !== 'none');
-
-        // Se nenhum folder visível, mostrar mensagem de lista vazia.
-        if (!anyFolderVisible) emptyListSpan.classList.remove('hidden');
-        else emptyListSpan.classList.add('hidden');
-
     }
 
     onClearSearch(event) {
         const searchInput = this.querySelector('#searchInput');
         searchInput.value = '';
 
-        this._onSearchInput({ target: searchInput });
+        this.onSearchInput({ target: searchInput });
     }    
 
     async generateMarkerIcon({ color, icon }) {
