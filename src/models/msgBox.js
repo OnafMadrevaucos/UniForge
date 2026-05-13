@@ -39,11 +39,21 @@ export default class MsgBox {
 
     /**
      * @private
+     * @type {Object<string, number>} Mapeamento de nível de mensagem para seus respectivos tipos.
+     */
+    types = {
+        error: "error",
+        warning: "warning",
+        info: "info",
+    };
+
+    /**
+     * @private
      * @description Função auxiliar para extrair a localização (arquivo, linha, coluna) da chamada de log
      * através da análise do stack trace de um novo objeto Error.
      * @returns {string} Uma string formatada com a localização da chamada (ex: " [📍 arquivo.js:45:12]").
      */
-    _getLocation(err=null) {
+    _getLocation(err = null) {
         // Cria um novo objeto Error para obter a stack trace atual.
         const error = err ?? new Error();
         // Pula o cabeçalho da stack trace e as referências internas ao MsgBox.
@@ -62,22 +72,25 @@ export default class MsgBox {
      * @param {string} message      - A mensagem de erro a ser exibida para o usuário.
      * @param {Error|null} error    - O erro a ser exibido no console.
      */
-    showError(message, error=null) {
+    showError(message, error = null) {
         const location = this._getLocation(error);
 
         console.error(`UniForge | ${message}${location}`);
-        this._showMsg(message, 'error');
+        this._showMsg(message, this.types.error);
     }
 
     /**
      * Mostra uma mensagem de aviso no painel do usuário e registra um warning no console.
      * O log do console inclui a localização exata da chamada.
      * @param {string} message A mensagem de aviso a ser exibida para o usuário.
+     * @param {boolean} showLocation Se true, exibe a localização da chamada no console.
      */
-    showWarning(message) {
-        const location = this._getLocation(false);
-        console.warn(`UniForge | ${message}${location}`);
-        this._showMsg(message, 'warning');
+    showWarning(message, showLocation = true) {
+        if (showLocation) {
+            const location = this._getLocation();
+            console.warn(`UniForge | ${message}${location}`);
+        }
+        this._showMsg(message, this.types.warning);
     }
 
     /**
@@ -87,7 +100,7 @@ export default class MsgBox {
      */
     showInfo(message, info = null) {
         console.info(`UniForge | ${info ?? message}`);
-        this._showMsg(message, 'info');
+        this._showMsg(message, this.types.info);
     }
 
     /**
@@ -95,7 +108,7 @@ export default class MsgBox {
      * @description Lógica interna para gerenciar o limite de mensagens e a fila de espera.
      * Adiciona a mensagem à fila de espera se o limite for atingido, senão a exibe imediatamente.
      * @param {string} message O conteúdo da mensagem.
-     * @param {'error'|'warning'|'info'} style O estilo da mensagem (determina ícone e cor).
+     * @param {string} style O estilo da mensagem (determina ícone e cor).
      */
     _showMsg(message, style) {
         if (this.queue.length >= this.maxMessages) {
@@ -112,7 +125,7 @@ export default class MsgBox {
      * @description Cria e exibe o elemento DOM da nova mensagem.
      * Também agenda a remoção automática da mensagem após 5 segundos.
      * @param {string} message O conteúdo da mensagem.
-     * @param {'error'|'warning'|'info'} style O estilo da mensagem.
+     * @param {string} style O estilo da mensagem.
      */
     _getNewMessage(message, style) {
         const messageContainer = document.getElementById('msgContainer');
@@ -121,13 +134,13 @@ export default class MsgBox {
 
         let icon;
         switch (style) {
-            case 'error': {
+            case this.types.error: {
                 icon = '<i class="fa-solid fa-triangle-exclamation"></i>';
             } break;
-            case 'warning': {
+            case this.types.warning: {
                 icon = '<i class="fa-solid fa-circle-exclamation"></i>';
             } break;
-            case 'info': {
+            case this.types.info: {
                 icon = '<i class="fa-solid fa-circle-info"></i>';
             } break;
             default: {
