@@ -24,6 +24,12 @@ export default class BaseDialog extends Application {
         this.data = data;
 
         /** 
+         * Função a ser executada se o diálogo for fechado inesperadamente.
+         * @type {Function}
+        */
+        this.abort = data.abort;
+
+        /** 
          * Conjunto de botões do diálogo.
          * @type {Object<string, {label: string, icon: string, callback: Function}>}
          */
@@ -210,7 +216,7 @@ export default class BaseDialog extends Application {
         if (this.activateListeners) this.activateListeners();
     }
 
-    submit(button, event) {
+    async submit(button, event) {
         const target = this.dialog;
         try {
             if (button?.callback) {
@@ -226,15 +232,22 @@ export default class BaseDialog extends Application {
     }
 
     close() {
-        if (this._closed) return;
-        this._closed = true;
+        // Se o diálogo ja foi fechado, ignora.
+        if (this._closed) return; 
 
+        // Remove o diálogo do DOM, caso ele ainda exista.
         if (this.element) {
             this.element.remove();
             this.element = null;
         }
 
+        // Remove o overlay do DOM, caso ele ainda exista.
         this.ui.overlay.remove();
+
+        // Após executar o processo de fechamento, marca o diálogo como fechado para evitar múltiplas execuções.
+        this._closed = true;
+
+        // Chama o método de fechamento da classe pai para garantir que quaisquer processos adicionais sejam executados.
         super.close();
     }
 

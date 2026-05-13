@@ -320,7 +320,7 @@ export default class LinkDialog extends BaseDialog {
             button.dataset.item = uniforge.defaults.emptyString;
         }
         // Senão, marca o item clicado como selecionado.
-        else {            
+        else {
             // Marca o item clicado como selecionado.
             element.classList.add('selected');
             // Guarda o item selecionado.
@@ -340,7 +340,7 @@ export default class LinkDialog extends BaseDialog {
             linkItems.forEach(l => {
                 l.style.display = uniforge.defaults.emptyString;
                 uniforge.parser.removeHighlight(l);
-            });            
+            });
 
             return;
         }
@@ -364,7 +364,7 @@ export default class LinkDialog extends BaseDialog {
             } else {
                 uniforge.parser.removeHighlight(item);
             }
-        });        
+        });
 
         const emptyListSpan = this.querySelector('#emptyListSpan');
     }
@@ -374,7 +374,7 @@ export default class LinkDialog extends BaseDialog {
         searchInput.value = '';
 
         this.onSearchInput({ target: searchInput });
-    }    
+    }
 
     async generateMarkerIcon({ color, icon }) {
         function loadImage(src) {
@@ -431,23 +431,32 @@ export default class LinkDialog extends BaseDialog {
 
     static async configDialog(source, options = {}) {
         return new Promise((resolve, reject) => {
-            options = uniforge.utils.mergeObjects(options, { source: source, alwaysClose: true });
+            options = uniforge.utils.mergeObjects(options, { source: source, alwaysClose: false });
             const dialog = new this({
                 title: 'Novo Vínculo',
                 buttons: {
                     cancel: {
                         label: "Cancelar",
                         icon: "fas fa-xmark",
-                        callback: () => resolve(null)
+                        callback: () => { 
+                            resolve(null); 
+                            return true;
+                        }
                     },
                     link: {
                         label: "Vincular",
                         icon: "fas fa-link",
                         callback: (html, event) => {
                             const button = event.target.closest('#link.dialog-button');
-                            const item = JSON.parse(button.dataset.item);
 
-                            resolve(item);
+                            if (button.dataset.item) {
+                                const item = JSON.parse(button.dataset.item);
+                                resolve(item);
+                                return true;
+                            }
+                            
+                            uniforge.ctrls.msgBox.showWarning('É necessário selecionar um item para vincular.', false);
+                            return false;
                         }
                     }
                 },

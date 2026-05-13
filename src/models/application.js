@@ -71,6 +71,8 @@ export default class Application {
         main: ''
     };
 
+    #observer = null;
+
     /**
     * Obtém as configurações padrões da aplicação.
     */
@@ -151,6 +153,15 @@ export default class Application {
         return this.#html;
     }
 
+    /**
+     * Obtém o observador de alteração da aplicação no DOM.
+     * 
+     * @returns {MutationObserver} - O observador usado pela aplicação.
+     */
+    get observer() {
+        return this.#observer;
+    }
+
     /** 
     * Estado de arraste do diálogo.
     * @type {Boolean}
@@ -226,6 +237,18 @@ export default class Application {
         this.state.maximized = value;
     }
 
+    /**
+     * Define o observador usado pelo formulário.
+     * 
+     * @param {MutationObserver} value - O observador usado pelo formulário.
+     */
+    set observer(value) {
+        // Desconecta o observador anterior, se existir, para evitar vazamento de memória.
+        if (this.#observer) this.#observer.disconnect();
+        // Define o novo observador.
+        this.#observer = value;
+    }
+
     prepareBaseData() {
         const baseData = {
             title: this.title,
@@ -246,7 +269,7 @@ export default class Application {
      * @throws {Error}           - Se ocorrer um erro ao renderizar o formulário.
     */
     async prepareTemplate() {
-        const classes = this.defaultOptions.classes;        
+        const classes = this.defaultOptions.classes;
 
         const container = document.createElement('div');
         container.id = `${this.style}Container-${this.uuid}`;
@@ -264,8 +287,29 @@ export default class Application {
         main.classList.add('main', 'flexcol');
 
         await this.prepareDerivedTemplate(container, header, main);
-                
+
         this.html.app = container.outerHTML;
+    }
+
+    prepareObserver() {
+        this.observer = new MutationObserver(() => {
+            // Elemento foi removido do DOM.
+            if (!document.body.contains(this.ui.app)) {
+
+                // Executa abort caso exista.
+                if (this.abort && typeof this.abort === 'function') {
+                    this.abort();
+                }
+
+                // Desconecta o observador (se existir) para evitar vazamento de memória.
+                this.observer?.disconnect();
+            }
+        });
+
+        this.observer.observe(document.body, {
+            childList: true,
+            subtree: true
+        });
     }
 
     /**
@@ -273,7 +317,7 @@ export default class Application {
     * TODO: Utilizar a biblioteca Handlebars para renderizar templates.
     */
     parseTemplate(html) {
-        if(html instanceof HTMLElement) html = html.innerHTML;
+        if (html instanceof HTMLElement) html = html.innerHTML;
         return uniforge.parser.parseHTML(html, this.data);
     }
 
@@ -284,7 +328,7 @@ export default class Application {
     * @returns {Boolean} - Uma flag indicando se o form foi renderizado (true) ou não (false).
     */
     async render() {
-        try {  
+        try {
             // Função para obter os dados comuns à toda aplicação.
             this.data = this.prepareBaseData();
 
@@ -297,7 +341,10 @@ export default class Application {
             // Prepara o HTML da aplicação para renderização (Substitui pseudo-elements).
             this.html.app = this.parseTemplate(this.html.app);
 
-            this.rendered = true;           
+            this.rendered = true;
+
+            // Prepara um observador para monitorar a remoção da aplicação do DOM.
+            this.prepareObserver();
 
             return this.rendered;
         } catch (error) {
@@ -327,8 +374,8 @@ export default class Application {
         this.html.main = await this.refreshDerivedTemplate();
 
         // Prepara o HTML da aplicação para renderização (Substitui pseudo-elements).
-        const innerMain = this.parseTemplate(this.html.main); 
-        
+        const innerMain = this.parseTemplate(this.html.main);
+
         main.innerHTML = innerMain;
 
         // Configura os conteúdos específicos da aplicação.
@@ -341,11 +388,11 @@ export default class Application {
 
     async configure() {
         try {
-        // Ativa os ouvintes de eventos básicos.
-        this.activateBaseListeners();
+            // Ativa os ouvintes de eventos básicos.
+            this.activateBaseListeners();
 
-        // Configura os conteúdos específicos da aplicação.
-        if(await this.initialize()) this.configured = true;
+            // Configura os conteúdos específicos da aplicação.
+            if (await this.initialize()) this.configured = true;
 
         } catch (error) {
             this.msgBox.showError(error.message, error);
@@ -426,16 +473,16 @@ export default class Application {
         let doc = null;
 
         // Verifica se o container da aplicação foi renderizado corretamente.
-        if(!this.html.app || this.html.app.isEmpty())
+        if (!this.html.app || this.html.app.isEmpty())
             throw new Error('O formulário precisa ter um container.');
 
-         // Obtém o elemento HTML do container da aplicação.
-         doc = parser.parseFromString(this.html.app, 'text/html');
-         const container = doc.body.firstChild;
+        // Obtém o elemento HTML do container da aplicação.
+        doc = parser.parseFromString(this.html.app, 'text/html');
+        const container = doc.body.firstChild;
 
         // Adiciona o container ao DOM.
         document.body.appendChild(container);
-    }    
+    }
     /* ---------------------------------------------------------------------------------------------------------------- */
     // LISTENERS
     /**
