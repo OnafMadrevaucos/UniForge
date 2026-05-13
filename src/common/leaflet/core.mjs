@@ -223,124 +223,26 @@ const lControl = {
         // Ajusta a visualização inicial para se ajustar aos limites da imagem.
         map.fitBounds(bounds);
 
+        // Define o ID do mapa como o mapa padrão.
         map.mid = lControl.constants.DEFAULT_OVERLAY; // Define o ID do mapa como o mapa padrão.
 
-        const mapElements = lControl.mapElements = new L.FeatureGroup();
+        // Configura os elementos do mapa.
+        const mapElements = lControl.mapElements = _configureMapElements();
 
-        const snapGuideLayer = new L.FeatureGroup();
-        lControl.snapGuideLayer = snapGuideLayer;s
-
-        /**
-       * Instância da camada de armazenagem a imagem que representa os caminhos do Mapa.
-       * @type {L.ImageOverlay}
-       *        
-       */
-        const paths = lControl.overlay = L.imageOverlay(`${uniforge.urls.mapOverlays}/paths.png`, bounds, {
-            zIndex: 1,
-            interactive: false
-        });
-        paths.addTo(map);
-        paths.bringToFront();
-
-        /**
-        * Instância da camada de armazenagem a imagem que representa as cidades do Mapa.
-        * @type {L.ImageOverlay}
-        *        
-        */
-        const cities = lControl.overlay = L.imageOverlay(`${uniforge.urls.mapOverlays}/cities.png`, bounds, {
-            zIndex: 2,
-            interactive: false
-        });
-        cities.addTo(map);
-        cities.bringToFront();
-
-        /**
-        * Instância da camada de armazenagem a imagem que representa os nomes do Mapa.
-        * @type {L.ImageOverlay}
-        *        
-        */
-        const labels = lControl.overlay = L.imageOverlay(`${uniforge.urls.mapOverlays}/labels.png`, bounds, {
-            zIndex: 3,
-            interactive: false
-        });
-        labels.addTo(map);
-        labels.bringToFront();
-
-        const overlayLayerControl = L.control.layers(null, {
-            "Caminhos": paths,
-            "Cidades": cities,
-            "Nomes": labels
-        }).addTo(map);
-
+        // Configura o controle de camadas sobrepostas (caminhos, cidades e nomes).
         _configureOverlayControl();
 
-        const scaleControl = L.control({
-            position: 'bottomleft'
-        });
+        // Configura o controle principal.
+        _configureMainControl();
 
-        scaleControl.onAdd = function () {
+        // Configura o controle de desenho customizado.
+        _configureCustomDrawControl(mapElements);
 
-            this._div = L.DomUtil.create(
-                'div',
-                'leaflet-control-scale-line',
-            );
+        // Configura o controle de camadas.
+        _configureLayerControl();
 
-            this.update();
-
-            return this._div;
-        };
-
-        scaleControl.update = function () {
-
-            const zoom = map.getZoom();
-
-            const scale =
-                lControl.getScaleForZoom(zoom);
-
-            this._div.innerHTML = scale.scaleDisplay;
-        };
-
-        scaleControl.addTo(map);
-
-        // Grupo para armazenar as camadas desenhadas.
-        map.addLayer(mapElements);
-        map.addLayer(snapGuideLayer);
-
-        const main = new lControl.MainControl();
-
-        lControl.CustomDrawControl.edit = {
-            featureGroup: mapElements
-        };
-
-        const layerControl = new lControl.LayerControl();
-
-        uniforge.utils.mergeObjects(L.drawLocal.draw.handlers, {
-            circle: {
-                tooltip: {
-                    start: 'Clique e arraste para desenhar um círculo.'
-                },
-                radius: 'Raio'
-            },
-            marker: {
-                tooltip: {
-                    start: 'Clique no mapa para adicionar um marcador.'
-                }
-            },
-            polygon: {
-                tooltip: {
-                    start: 'Clique para comecar a desenhar uma forma.',
-                    cont: 'Clique para continuar desenhando.',
-                    end: 'Clique no primeiro ponto para fechar esta forma.'
-                }
-            },
-            rectangle: {
-                tooltip: {
-                    start: 'Clique e arraste para desenhar um retângulo.'
-                }
-            },
-        });
-
-        const draw = new lControl.CustomDrawControl();
+        // Configura o controle de escala.
+        const scaleControl = _configureScaleControl();
 
         const grid = new lControl.TransparentGridLayer({
             tileSize: lControl.constants.TILE_SIZE,
@@ -350,10 +252,6 @@ const lControl = {
 
         grid.addTo(map);
         grid.bringToFront();
-
-        map.addControl(main);
-        map.addControl(layerControl);
-        map.addControl(draw);
 
         L.GeometryUtil.geodesicArea = function (latLngs) {
             let area = 0;
@@ -386,52 +284,126 @@ const lControl = {
 
         lControl.loadElements(map.mid, uniforge.time.y.value); // Carrega os elementos do mapa do banco de dados.
 
-        _onZoomEnd();
+        // Atualiza a escala inicialmente.
+        scaleControl.update();
 
-        //map.on('moveend', _checkMapVisibility);
-        map.on('mousedown', _onUserMapClick);
-        map.on('draw:created', _onDrawCreated);
+        // Ativa os ouvintes de eventos do mapa do Leaflet.
+        _activateEventsListener();
 
-        map.on('zoomend', _onZoomEnd);
+        // -------------------------------------------------------------------------------------------------------------------------
+        // Funções auxiliares.
+        // -------------------------------------------------------------------------------------------------------------------------
 
-        // Adicione um listener para o evento 'draw:started' para desabilitar o arrastre do mapa quando estiver desenhando um polígono.
-        map.on('draw:drawstart', function (e) {
-            if (e.layerType === 'polygon') {
-                map.dragging.disable();
-            }
-        });
+        function _configureMapElements() {
+            const mapElements = new L.FeatureGroup();
 
-        // Adicione um listener para o evento 'draw:stopped' para habilitar o arrastre do mapa.
-        map.on('draw:drawstop', function (e) {
-            map.dragging.enable();
-        });
+            // Grupo para armazenar as camadas desenhadas.
+            map.addLayer(mapElements);
 
-        let eventHandlerAssigned = false;
-        let closedByButton = false;
+            // Configura o grupo de camadas para as ferramentas de desenho do Leaflet.pm.
+            map.pm.setGlobalOptions({
+                layerGroup: mapElements,
+                exitModeOnEscape: true
+            });
 
-        // Adicione um listener para o evento de quando o Popup do elemento for aberto.
-        map.on('popupopen', function (event) {
-            const popup = event.popup._container;
-
-            if (!popup) return;
-
-            popup.addEventListener('click', (e) => {
-                const showBtn = e.target.closest('.layer-popup-show');
-                const deleteBtn = e.target.closest('.layer-popup-delete');
-
-                if (showBtn) {
-                    showBtn.classList.add('disabled');
-                    lControl.showEntry(e);
-                }
-
-                if (deleteBtn) {
-                    deleteBtn.classList.add('disabled');
-                    lControl.deleteElement(e);
+            map.pm.setLang('pt_br', {
+                tooltips: {
+                    firstVertex: 'Clique para começar a desenhar uma forma.',
+                    continueLine: 'Clique para continuar desenhando.',
+                    finishPoly: 'Clique no primeiro ponto para fechar esta forma.'
                 }
             });
-        });
+
+            return mapElements;
+        }
+
+        function _configureMainControl() {
+            const mainControl = new lControl.MainControl();
+            map.addControl(mainControl);
+
+            return mainControl;
+        }
+
+        function _configureCustomDrawControl(mapElements) {
+            lControl.CustomDrawControl.edit = {
+                featureGroup: mapElements
+            };
+
+            uniforge.utils.mergeObjects(L.drawLocal.draw.handlers, {
+                circle: {
+                    tooltip: {
+                        start: 'Clique e arraste para desenhar um círculo.'                        
+                    },
+                    radius: 'Raio'
+                },
+                marker: {
+                    tooltip: {
+                        start: 'Clique no mapa para adicionar um marcador.'
+                    }
+                },
+                rectangle: {
+                    tooltip: {
+                        start: 'Clique e arraste para desenhar um retângulo.'
+                    }
+                },
+            });
+
+            const drawControl = new lControl.CustomDrawControl();
+            map.addControl(drawControl);
+
+            return drawControl;
+        }
+
+        function _configureLayerControl() {
+            const layerControl = new lControl.LayerControl();
+            map.addControl(layerControl);
+
+            return layerControl;
+        }
 
         function _configureOverlayControl() {
+
+            /**
+            * Instância da camada de armazenagem a imagem que representa os caminhos do Mapa.
+            * @type {L.ImageOverlay}
+            *        
+            */
+            const paths = lControl.overlay = L.imageOverlay(`${uniforge.urls.mapOverlays}/paths.png`, bounds, {
+                zIndex: 1,
+                interactive: false
+            });
+            paths.addTo(map);
+            paths.bringToFront();
+
+            /**
+            * Instância da camada de armazenagem a imagem que representa as cidades do Mapa.
+            * @type {L.ImageOverlay}
+            *        
+            */
+            const cities = lControl.overlay = L.imageOverlay(`${uniforge.urls.mapOverlays}/cities.png`, bounds, {
+                zIndex: 2,
+                interactive: false
+            });
+            cities.addTo(map);
+            cities.bringToFront();
+
+            /**
+            * Instância da camada de armazenagem a imagem que representa os nomes do Mapa.
+            * @type {L.ImageOverlay}
+            *        
+            */
+            const labels = lControl.overlay = L.imageOverlay(`${uniforge.urls.mapOverlays}/labels.png`, bounds, {
+                zIndex: 3,
+                interactive: false
+            });
+            labels.addTo(map);
+            labels.bringToFront();
+            const overlayLayerControl = L.control.layers(null, {
+                "Caminhos": paths,
+                "Cidades": cities,
+                "Nomes": labels
+            }).addTo(map);
+
             // Pega o container do controle
             const container = overlayLayerControl.getContainer();
 
@@ -459,6 +431,102 @@ const lControl = {
             document.addEventListener('click', (e) => {
                 if (!container.contains(e.target)) {
                     list.classList.add('hidden');
+                }
+            });
+
+            return overlayLayerControl;
+        }
+
+        function _configureScaleControl() {
+            const scaleControl = L.control({
+                position: 'bottomleft'
+            });
+
+            scaleControl.onAdd = function () {
+
+                this._div = L.DomUtil.create(
+                    'div',
+                    'leaflet-control-scale-line',
+                );
+
+                this.update();
+
+                return this._div;
+            };
+
+            scaleControl.update = function () {
+
+                const zoom = map.getZoom();
+
+                const scale =
+                    lControl.getScaleForZoom(zoom);
+
+                this._div.innerHTML = scale.scaleDisplay;
+            };
+
+            scaleControl.addTo(map);
+
+            return scaleControl;
+        }
+
+        function _activateEventsListener() {
+            //map.on('moveend', _checkMapVisibility);
+            map.on('mousedown', _onUserMapClick);
+            map.on('draw:created', (event) => _onDrawCreated(event, false));
+            map.on('pm:create', (event) => _onDrawCreated(event, true));
+
+            map.on('zoomend', _onZoomEnd);
+
+            // Adicione um listener para o evento 'draw:drawstart' para desabilitar o arrastre do mapa quando estiver desenhando um polígono.
+            map.on('draw:drawstart', function (e) {
+                if (e.layerType === 'polygon') {
+                    map.dragging.disable();
+                }
+            });
+            // Adicione um listener para o evento 'pm:drawstart' para desabilitar o arrastre do mapa quando estiver desenhando um polígono.
+            map.on('pm:drawstart', function (e) {
+                if (e.shape === 'Polygon') {
+                    map.dragging.disable();
+                }
+            });
+
+            // Adicione um listener para o evento 'draw:drawstop' para habilitar o arrastre do mapa.
+            map.on('draw:drawstop', function (e) {
+                map.dragging.enable();
+            });
+            // Adicione um listener para o evento 'pm:drawend' para habilitar o arrastre do mapa.
+            map.on('pm:drawend', function (e) {
+                map.dragging.enable();
+            });
+
+            // Adicione um listener para o evento de quando o Popup do elemento for aberto.
+            map.on('popupopen', function (event) {
+                const popup = event.popup._container;
+
+                if (!popup) return;
+
+                popup.addEventListener('click', (e) => {
+                    const showBtn = e.target.closest('.layer-popup-show');
+                    const deleteBtn = e.target.closest('.layer-popup-delete');
+
+                    if (showBtn) {
+                        showBtn.classList.add('disabled');
+                        lControl.showEntry(e);
+                    }
+
+                    if (deleteBtn) {
+                        deleteBtn.classList.add('disabled');
+                        lControl.deleteElement(e);
+                    }
+                });
+            });
+
+            // Adicione um listener para o evento de clique do botão direito para remover o ultimo vertice de um polígono.
+            map.getContainer().addEventListener('contextmenu', (event) => {               
+                const drawInstance = map.pm.Draw.Polygon;
+                if (drawInstance && drawInstance.enabled()) {
+                    event.preventDefault();                    
+                    drawInstance._removeLastVertex();
                 }
             });
         }
@@ -547,7 +615,15 @@ const lControl = {
             lControl.clickLatLang = e.latlng;  // Ponto de clique do usuário.
         }
 
-        async function _onDrawCreated(e) {
+        async function _onDrawCreated(e, isPM) {
+            let layer = e.layer;
+
+            const removeLayer = () => {
+                if (layer && lControl.map.hasLayer(layer)) {
+                    lControl.map.removeLayer(layer);
+                }
+            };
+
             const link = await LinkDialog.configDialog(null, { hasSidePanel: true });
             try {
                 // Se o link foi criado, obtenha-o.
@@ -558,7 +634,7 @@ const lControl = {
                         let layer = e.layer;
                         const latlngs = layer._latlngs || layer._latlng;
                         layer.source = item; // Atribui o item como fonte da camada desenhada.
-                        layer.type = e.layerType; // Tipo de camada desenhada (círculo, retângulo, polígono, etc.).                        
+                        layer.type = isPM ? e.shape.toLowerCase() : e.layerType; // Tipo de camada desenhada (círculo, retângulo, polígono, etc.).                        
 
                         // Abre uma transação no banco de dados para adicionar o elemento.
                         await uniforge.db.beginTransaction();
@@ -592,6 +668,10 @@ const lControl = {
                         // Comita a transação.
                         await uniforge.db.commitTransaction();
                     }
+                }
+                // Se o link foi cancelado, remove a camada desenhada.
+                else {
+                    removeLayer();
                 }
             } catch (error) {
                 // Se ocorrer um erro ao adicionar a camada desenhada, faça o rollback da transação.

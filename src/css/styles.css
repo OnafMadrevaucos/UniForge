@@ -894,11 +894,13 @@ button.disabled:hover {
 .leaflet-container .leaflet-popup-pane .leaflet-popup .leaflet-popup-content .layer-popup-footer a {
     max-width: 22.5px;
 }
+
 .leaflet-container .leaflet-popup-pane .leaflet-popup .leaflet-popup-content .layer-popup-footer a.disabled {
     pointer-events: none;
     background-color: var(--dark-blue);
     color: var(--disabled-text-color);
 }
+
 .leaflet-container .leaflet-popup-pane .leaflet-popup .leaflet-popup-content .layer-popup-footer a:hover {
     cursor: pointer;
     background-color: var(--dark-red);
@@ -1296,6 +1298,7 @@ button.disabled:hover {
     z-index: 1001;
     transition: bottom 0.3s ease-in-out;
 }
+
 #mapObjectsPanel.active {
     bottom: 0px;
 }
@@ -1306,7 +1309,7 @@ button.disabled:hover {
     border-bottom: none;
     border-bottom-left-radius: 0;
     border-bottom-right-radius: 0;
-    gap: var(--default-gap-size);    
+    gap: var(--default-gap-size);
 }
 
 .map-objects-panel .tools-search-bar {
@@ -1318,18 +1321,20 @@ button.disabled:hover {
     background-color: var(--dark-red);
     border: var(--filled-border);
     border-top-left-radius: var(--default-border-radius);
-    border-top-right-radius: var(--default-border-radius); 
-    gap: var(--default-gap-size);       
+    border-top-right-radius: var(--default-border-radius);
+    gap: var(--default-gap-size);
 }
+
 .map-objects-panel .tools-search-bar input {
     width: var(--fill-width);
 }
+
 .map-objects-panel .tools-search-bar a {
     color: var(--light-text-color);
 }
 
-.map-objects-panel .tools-content .config-group {  
-    flex: 1;  
+.map-objects-panel .tools-content .config-group {
+    flex: 1;
     border: var(--data-group-border);
     border-radius: var(--default-border-radius);
     margin: 5px;
@@ -1338,7 +1343,20 @@ button.disabled:hover {
     overflow-y: hidden;
     overflow-x: scroll;
 }
-.map-objects-panel .tools-content .config-group.markers {    
+
+.marker-icon,
+.marker-icon:focus {
+    background-color: var(--light-grey);
+    border: 1px solid var(--dark-grey);
+    border-radius: 50%;
+    margin: -8px 0 0 -8px !important;
+    width: 14px !important;
+    height: 14px !important;
+    outline: 0;
+    transition: opacity ease 0.3s;
+}
+
+.map-objects-panel .tools-content .config-group.markers {
     flex: 2;
 }
 
@@ -1355,23 +1373,25 @@ button.disabled:hover {
     justify-content: space-evenly;
     gap: var(--default-gap-size);
 }
+
 .map-objects-panel .tools-content .config-group .options.marker {
     width: 450px;
 }
+
 .map-objects-panel .tools-content .config-group .options.color {
     width: 200px;
     gap: var(--big-gap-size);
 }
 
-.map-objects-panel .tools-content .config-group .options a {    
+.map-objects-panel .tools-content .config-group .options a {
     height: 32px;
     width: 32px;
     min-width: 32px;
 
     border: var(--invisible-border);
     border-radius: var(--default-border-radius);
-    padding: 2px; 
-    line-height: 0;   
+    padding: 2px;
+    line-height: 0;
 }
 
 .map-objects-panel .tools-content .config-group .options a:hover,
@@ -1640,12 +1660,14 @@ button.disabled:hover {
     color: var(--red);
     font-variant: petite-caps;
 }
+
 .dialog .link-dialog .content .link-group .link-list {
     display: flex;
     flex-direction: row;
     flex-wrap: wrap;
     gap: var(--default-gap-size);
 }
+
 .dialog .link-dialog .content .link-list .link-item {
     width: fit-content;
     background-color: var(--blue);
@@ -1654,18 +1676,22 @@ button.disabled:hover {
     padding: 5px;
     gap: var(--default-gap-size);
 }
+
 .dialog .link-dialog .content .link-list .link-item.selected {
     background-color: var(--dark-red);
 }
+
 .dialog .link-dialog .content .link-list .link-item:hover {
     cursor: pointer;
     border: var(--filled-border);
     text-shadow: var(--text-shadow);
 }
+
 .dialog .main .link-dialog .footer {
     width: var(--fill-width);
     margin-top: auto;
 }
+
 .dialog .main .link-dialog .footer .search-bar {
     border: none;
 }
@@ -2123,6 +2149,7 @@ button.disabled:hover {
     gap: var(--default-gap-size);
     justify-content: space-between;
 }
+
 .data-complex.buttons {
     justify-content: flex-end;
 }
@@ -2478,8 +2505,6 @@ button.disabled:hover {
     font-style: italic;
     padding-block: 10px;
 }
-
-#settings .data-group .hint {}
 
 #settings.tabs-control {
     overflow-y: auto;
@@ -4684,6 +4709,8 @@ button.disabled:hover {
     height: 20px;
 }
 */
+
+
 
 /* ------ Tools ------ */
 

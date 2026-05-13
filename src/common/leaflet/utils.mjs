@@ -5,32 +5,49 @@ const iconMap = {
     marker: 'fas fa-location-pin'
 }
 
+/**
+ * Opções de configuração para os desenhos de polígonos, marcadores e formas regulares (círculos e retângulos).
+ * Cada função retorna um objeto de opções específico para o tipo de desenho, permitindo personalização como ícones, cores e restrições de interseção.
+ * 
+ * @property {Function} marker - Retorna opções para o desenho de marcadores, incluindo o ícone personalizado.
+ * @property {Function} polygon - Retorna opções para o desenho de polígonos, com a possibilidade de permitir ou restringir interseção e personalizar o ícone.
+ * @property {Function} regularShape - Retorna opções para o desenho de formas regulares (círculos e retângulos), permitindo personalização de cor e estilo.
+ */
 const options = {
-
     marker: function (markerURL) {
         return {
-            icon: L.icon({
-                iconUrl: markerURL, // URL do ícone do marcador.
-                iconSize: [32, 32],
-                iconAnchor: [16, 32],
-                popupAnchor: [0, -32]
-            })
-        }
+            continueDrawing: false,
+            snappable: false,
+            markerStyle: {
+                icon: L.icon({
+                    iconUrl: markerURL, // URL do ícone do marcador.
+                    iconSize: [32, 32],
+                    iconAnchor: [16, 32],
+                    popupAnchor: [0, -32]
+                })
+            },
+        };
     },
     polygon: function (withIntersection = false, isDrawer = true) {
         const iconUrl = uniforge.urls.icons.join('polygon.png'); // URL do ícone do marcador.
 
         if (isDrawer) {
             return {
-                allowIntersection: withIntersection, // Restringe a interseção de polígonos.
-                showArea: true,
-                icon: L.icon({
-                    iconUrl: iconUrl, // URL do ícone do marcador.
-                    iconSize: [16, 16],
-                    iconAnchor: [8, 8],
-                    popupAnchor: [0, -32]
-                }),
-                shapeOptions: {
+                snappable: true,
+                snapDistance: 20,
+                allowSelfIntersection: withIntersection,
+                removeLastVertex: true,
+                finishOn: 'dblclick',
+                templineStyle: {
+                    color: 'var(--red)', // Cor da linha temporária.
+                    weight: 5,
+                },
+                hintlineStyle: {
+                    color: 'var(--red)', // Cor do polígono.           
+                    weight: 5,
+                    dashArray: '5, 10',
+                },
+                pathOptions: {
                     color: 'var(--red)', // Cor do polígono.           
                     weight: 5,
                     dashArray: '5, 10',
@@ -47,7 +64,16 @@ const options = {
     regularShape: function (isDrawer = true) {
         if (isDrawer) {
             return {
-                shapeOptions: {
+                templineStyle: {
+                    color: 'var(--red)', // Cor da linha temporária.
+                    weight: 5,
+                },
+                hintlineStyle: {
+                    color: 'var(--red)', // Cor do polígono.           
+                    weight: 5,
+                    dashArray: '5, 10',
+                },
+                pathOptions: {
                     color: 'var(--red)', // Cor do polígono.           
                     weight: 5,
                     dashArray: '5, 10',
@@ -65,17 +91,16 @@ const options = {
 
 const drawer = {
     marker: function (map, markerURL) {
-        this.markerObj = new L.Draw.Marker(map, options.marker(markerURL));
-        return this.markerObj;
+        map.pm.enableDraw('Marker', options.marker(markerURL)); // Permite interseção de polígonos.
     },
-    polygon: function (map, withIntersection = false) {
-        return new L.Draw.Polygon(map, options.polygon(withIntersection));
+    polygon: function (map) {
+        map.pm.enableDraw('Polygon', options.polygon(false)); // Permite interseção de polígonos.
     },
     circle: function (map) {
-        return new L.Draw.Circle(map, options.regularShape());
+        map.pm.enableDraw('Circle', options.regularShape(false)); // Permite interseção de polígonos.
     },
     rectangle: function (map) {
-        return new L.Draw.Rectangle(map, options.regularShape());
+        map.pm.enableDraw('Rectangle', options.regularShape(false)); // Permite interseção de polígonos.
     },
 
     markerObj: null
@@ -109,36 +134,27 @@ function onAddMain(map) {
 }
 
 function _onPolygonDraw(map) {
-    const iconUrl = uniforge.urls.icons.join('polygon.png'); // URL do ícone do marcador.
-
-    // Ativar o desenho de polígono.
-    const polygonDrawer = drawer.polygon(map);
+    const iconUrl = uniforge.urls.icons.join('polygon.png'); // URL do ícone do marcador.    
 
     // Evento para desativar após o clique inicial (impedindo início imediato).
     map.on('click', function startDrawing() {
-        polygonDrawer.enable();
+        drawer.polygon(map, options);
         map.off('click', startDrawing); // Remover o evento para evitar múltiplos cliques.
     });
 }
 
 function _onRetangleDraw(map) {
-    // Ativar o desenho de retângulo.
-    const retangleDrawer = drawer.rectangle(map);
-
     // Evento para desativar após o clique inicial (impedindo início imediato).
     map.on('click', function startDrawing() {
-        retangleDrawer.enable();
+        drawer.rectangle(map, options);
         map.off('click', startDrawing); // Remover o evento para evitar múltiplos cliques.
     });
 }
 
 function _onCircleDraw(map) {
-    // Ativar o desenho de círculo.
-    const circleDrawer = drawer.circle(map);
-
     // Evento para desativar após o clique inicial (impedindo início imediato).
     map.on('click', function startDrawing() {
-        circleDrawer.enable();
+        drawer.circle(map, options);
         map.off('click', startDrawing); // Remover o evento para evitar múltiplos cliques.
     });
 }
