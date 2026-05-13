@@ -221,7 +221,10 @@ export default class BaseDialog extends Application {
         try {
             if (button?.callback) {
                 const closing = button.callback.call(this, target, event);
-                if (closing || this.alwaysClose) this.close();
+                if (closing || this.alwaysClose) {
+                    this.state.secureClose = true;
+                    this.close();
+                };
             } else {
                 this.msgBox.showWarning('Botão não possui callback definido.');
                 this.close();

@@ -41,6 +41,7 @@ export default class Application {
          * @property {boolean} rendered     - Indica o estado da renderização da aplicação.
          * @property {boolean} configured   - Indica o estado de configuração dos elementos da aplicação.
          * @property {boolean} maximized    - Indica se a aplicação está maximizada.
+         * @property {boolean} secureClose  - Indica se a aplicação foi fechada de forma segura.
          */
         this.state = {
             isDragging: false,
@@ -52,7 +53,8 @@ export default class Application {
             // Estado de renderização do diálogo.
             rendered: false,
             configured: false,
-            maximized: true
+            maximized: true,
+            secureClose: false
         };
 
         /**
@@ -297,7 +299,7 @@ export default class Application {
             if (!document.body.contains(this.ui.app)) {
 
                 // Executa abort caso exista.
-                if (this.abort && typeof this.abort === 'function') {
+                if (!this.state.secureClose && this.abort && typeof this.abort === 'function') {
                     this.abort();
                 }
 
