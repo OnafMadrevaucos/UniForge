@@ -155,7 +155,7 @@ async function _onMarkerDraw(map, event) {
 
     if (!button.classList.contains('active')) {
         if (drawer.markerObj) drawer.markerObj.disable();
-        mapObjectsPanel.classList.remove('active');        
+        mapObjectsPanel.classList.remove('active');
 
         // Desativa todas as opções de desenho do ícone do Marcador.
         mapObjectsPanel.querySelectorAll('.tools-container .tools-content .config-group .marker a').forEach(option => option.classList.remove('active'));
@@ -248,7 +248,7 @@ const utils = {
     onCreateTile: onCreateTile,
     iconMap: iconMap,
     options: options,
-    drawer: drawer
+    drawer: drawer,
 }
 
 export default utils;

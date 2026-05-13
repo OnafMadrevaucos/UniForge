@@ -30,6 +30,7 @@
     "jspdf": "^3.0.1",
     "leaflet": "^1.9.4",
     "leaflet-draw": "^1.0.4",
+    "leaflet-snap": "^0.0.4",
     "lodash-es": "^4.17.21",
     "path": "^0.12.7",
     "sharp": "^0.34.5",

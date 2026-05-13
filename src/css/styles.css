@@ -792,6 +792,8 @@ button.disabled:hover {
 }
 
 .leaflet-container .leaflet-control-scale-line {
+    width: 75px;
+    left: 50px;
     border: 2px solid var(--dark-redT87);
     border-top: none;
     background: var(--blueT50);

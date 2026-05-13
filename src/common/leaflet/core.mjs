@@ -37,24 +37,24 @@ const lControl = {
         VIEW_WIDTH: 3840,
         VIEW_HEIGHT: 2160,
 
-        UNIT_TO_METER_RATIO: 1500 // 1 Map Unit = 1500 unidades de distância.
+        UNIT_TO_KM_RATIO: 1.5 // 1 Map Unit = 1.5 km
     },
 
     /**
-    * Calcula a resolução (Map Units por Pixel) e a escala (Metros por Pixel) para um ZoomLevel.
+    * Calcula a resolução (Map Units por Pixel) e a escala (Km por Pixel) para um ZoomLevel.
     * @param {number} zoomLevel - O nível de zoom para o qual calcular a escala.
     * @returns {{zoomLevel: number, resolution: number, mpp: number, scaleDisplay: string}} Objeto com a resolução e a escala.
     */
     getScaleForZoom(zoomLevel) {
         // Puxa as constantes globais.
-        const { MAX_ZOOM, UNIT_TO_METER_RATIO } = this.constants;
+        const { MAX_ZOOM, UNIT_TO_KM_RATIO } = this.constants;
 
         // 1. Resolução em Map Units por Pixel (Map Units / Pixel)
         // Fórmula Rz = 1 * 2 ^ (Zmax - Z)
         const resolution = 1 * Math.pow(2, MAX_ZOOM - zoomLevel);
 
         // 2. Metros por Pixel (MPP)
-        const mpp = resolution * UNIT_TO_METER_RATIO;
+        const mpp = resolution * UNIT_TO_KM_RATIO;
 
         // 3. Cálculo para exibição (distância no mapa que 100px na tela representa)
         const distanceInMeters = mpp * 100;
@@ -62,18 +62,15 @@ const lControl = {
         let displayValue;
         let displayUnit;
 
-        if (distanceInMeters >= 1000) {
-            displayValue = distanceInMeters / 1000;
-            displayUnit = 'km';
-        } else if (distanceInMeters >= 1) {
+        if (distanceInMeters >= 1) {
             displayValue = distanceInMeters;
-            displayUnit = 'm';
+            displayUnit = 'km';
         } else {
             displayValue = distanceInMeters * 1000;
-            displayUnit = 'mm';
+            displayUnit = 'm';
         }
 
-        const scaleDisplay = `100px \u2248 ${displayValue.toFixed(2)} ${displayUnit}`; // \u2248 é o símbolo de "aproximadamente"
+        const scaleDisplay = `${displayValue} ${displayUnit}`; // \u2248 é o símbolo de "aproximadamente"
 
         return {
             zoomLevel,
@@ -188,12 +185,13 @@ const lControl = {
             const distanceInMapUnits = Math.sqrt(dx * dx + dy * dy);
 
             // Converte para metros usando a razão: 1 Map Unit = 1500 metros
-            return distanceInMapUnits * unitRatio;
+            //return distanceInMapUnits * unitRatio;
+            return distanceInMapUnits;
         };
 
         let worldMap;
         const map = lControl.map = L.map('map', {
-            crs: L.CRS.Simple, // Usando o sistema de coordenadas simples do Leaflet para imagens personalizadas.            
+            crs: crs, // Usando o sistema de coordenadas simples do Leaflet para imagens personalizadas.            
             maxZoom: mapMaxZoom,
             minZoom: mapMinZoom,
             //zoomSnap: 0.1,
@@ -228,6 +226,9 @@ const lControl = {
         map.mid = lControl.constants.DEFAULT_OVERLAY; // Define o ID do mapa como o mapa padrão.
 
         const mapElements = lControl.mapElements = new L.FeatureGroup();
+
+        const snapGuideLayer = new L.FeatureGroup();
+        lControl.snapGuideLayer = snapGuideLayer;s
 
         /**
        * Instância da camada de armazenagem a imagem que representa os caminhos do Mapa.
@@ -273,14 +274,37 @@ const lControl = {
 
         _configureOverlayControl();
 
-        const scale = L.control.scale({
-            imperial: false
+        const scaleControl = L.control({
+            position: 'bottomleft'
         });
-        scale.addTo(map);
 
+        scaleControl.onAdd = function () {
+
+            this._div = L.DomUtil.create(
+                'div',
+                'leaflet-control-scale-line',
+            );
+
+            this.update();
+
+            return this._div;
+        };
+
+        scaleControl.update = function () {
+
+            const zoom = map.getZoom();
+
+            const scale =
+                lControl.getScaleForZoom(zoom);
+
+            this._div.innerHTML = scale.scaleDisplay;
+        };
+
+        scaleControl.addTo(map);
 
         // Grupo para armazenar as camadas desenhadas.
         map.addLayer(mapElements);
+        map.addLayer(snapGuideLayer);
 
         const main = new lControl.MainControl();
 
@@ -327,16 +351,48 @@ const lControl = {
         grid.addTo(map);
         grid.bringToFront();
 
-
         map.addControl(main);
         map.addControl(layerControl);
         map.addControl(draw);
 
+        L.GeometryUtil.geodesicArea = function (latLngs) {
+            let area = 0;
+
+            const points = latLngs;
+
+            for (let i = 0, len = points.length; i < len; i++) {
+
+                const p1 = points[i];
+                const p2 = points[(i + 1) % len];
+
+                area += (p1.lng * p2.lat);
+                area -= (p2.lng * p1.lat);
+            }
+
+            return Math.abs(area / 2);
+        };
+
+        L.GeometryUtil.readableDistance = function (distance, isMetric, useFeet, isNautical) {
+            const distanceKm = (distance * lControl.constants.UNIT_TO_KM_RATIO);
+            return `${distanceKm.toFixed(2)} km`;
+        };
+
+        L.GeometryUtil.readableArea = function (area) {
+            // converte unidades do mapa para km²
+            const kmsPerUnit = lControl.constants.UNIT_TO_KM_RATIO;
+            const areaInSquareKms = area * Math.pow(kmsPerUnit, 2);
+            return `${areaInSquareKms.toFixed(2)} km²`;
+        };
+
         lControl.loadElements(map.mid, uniforge.time.y.value); // Carrega os elementos do mapa do banco de dados.
+
+        _onZoomEnd();
 
         //map.on('moveend', _checkMapVisibility);
         map.on('mousedown', _onUserMapClick);
         map.on('draw:created', _onDrawCreated);
+
+        map.on('zoomend', _onZoomEnd);
 
         // Adicione um listener para o evento 'draw:started' para desabilitar o arrastre do mapa quando estiver desenhando um polígono.
         map.on('draw:drawstart', function (e) {
@@ -556,6 +612,10 @@ const lControl = {
 
                 if (utils.drawer.markerObj) utils.drawer.markerObj.disable();
             }
+        }
+
+        function _onZoomEnd() {
+            scaleControl.update();
         }
 
         return lControl;
