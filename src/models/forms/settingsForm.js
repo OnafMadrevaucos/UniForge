@@ -4,6 +4,7 @@ import ChapterDialog from "../dialogs/chapterDialog.js";
 import DBManager from "../../db/dbManager.js";
 import FilePickerDialog from "../dialogs/filePickerDialog.js";
 import ProgressDialog from "../dialogs/progressDialog.js";
+import Slider from "../slider.js";
 
 /**
   * Formulário de configurações do sistema.
@@ -36,6 +37,8 @@ export default class SettingsForm extends EntryForm {
         * @type {boolean}
         */
         this.isEventForm = false;
+
+        this.slider = new Slider('testSlider', this, { linkedLabel: 'slider-span', labelMask: 'Valor: {value}' });
     }
 
     /**@inheritdoc */
@@ -201,6 +204,7 @@ export default class SettingsForm extends EntryForm {
 
         // ------------------------------------------------------------------------------------------------
         // Eventos do painel de Configurações Gerais ------------------------------------------------------
+        this.slider.activateBaseListeners();
 
         // ------------------------------------------------------------------------------------------------
         // Eventos do painel de Banco de Dados ------------------------------------------------------------      

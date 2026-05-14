@@ -94,16 +94,16 @@ const drawer = {
         map.pm.enableDraw('Marker', options.marker(markerURL)); // Permite interseção de polígonos.
     },
     polygon: function (map) {
-        map.pm.enableDraw('Polygon', options.polygon(false)); // Permite interseção de polígonos.
+        map.pm.enableDraw('Polygon', options.polygon()); // Permite interseção de polígonos.
     },
     circle: function (map) {
-        map.pm.enableDraw('Circle', options.regularShape(false)); // Permite interseção de polígonos.
+        map.pm.enableDraw('Circle', options.regularShape()); // Permite interseção de polígonos.
     },
     rectangle: function (map) {
-        map.pm.enableDraw('Rectangle', options.regularShape(false)); // Permite interseção de polígonos.
+        map.pm.enableDraw('Rectangle', options.regularShape()); // Permite interseção de polígonos.
     },
 
-    markerObj: null
+    current: null
 }
 
 function _zoomIn(map) {
@@ -133,8 +133,19 @@ function onAddMain(map) {
     return container;
 }
 
-function _onPolygonDraw(map) {
-    const iconUrl = uniforge.urls.icons.join('polygon.png'); // URL do ícone do marcador.    
+function _onPolygonDraw(map, event) {
+    const target = event.target;
+    const button = target.closest('button');
+    const mapShapesContainer = document.querySelector('.map-objects-container.regular-shapes');
+
+    button.classList.toggle('active');
+
+    if (!button.classList.contains('active')) {
+        mapShapesContainer.classList.remove('active');       
+    }
+    else {
+        mapShapesContainer.classList.add('active');
+    }
 
     // Evento para desativar após o clique inicial (impedindo início imediato).
     map.on('click', function startDrawing() {
@@ -143,7 +154,8 @@ function _onPolygonDraw(map) {
     });
 }
 
-function _onRetangleDraw(map) {
+
+function _onRetangleDraw(map, event) {
     // Evento para desativar após o clique inicial (impedindo início imediato).
     map.on('click', function startDrawing() {
         drawer.rectangle(map, options);
@@ -151,7 +163,7 @@ function _onRetangleDraw(map) {
     });
 }
 
-function _onCircleDraw(map) {
+function _onCircleDraw(map, event) {
     // Evento para desativar após o clique inicial (impedindo início imediato).
     map.on('click', function startDrawing() {
         drawer.circle(map, options);
@@ -162,24 +174,24 @@ function _onCircleDraw(map) {
 async function _onMarkerDraw(map, event) {
     const target = event.target;
     const button = target.closest('button');
-    const mapObjectsPanel = document.querySelector('#mapObjectsPanel');
+    const mapMarkersContainer = document.querySelector('.map-objects-container.marker');
 
     // Desativa todas as opções de desenho.
-    mapObjectsPanel.querySelectorAll('.marker-options').forEach(option => option.classList.remove('active'));
+    mapMarkersContainer.querySelectorAll('.marker-options').forEach(option => option.classList.remove('active'));
 
     button.classList.toggle('active');
 
     if (!button.classList.contains('active')) {
-        if (drawer.markerObj) drawer.markerObj.disable();
-        mapObjectsPanel.classList.remove('active');
+        if (drawer.current) drawer.current.disable();
+        mapMarkersContainer.classList.remove('active');
 
         // Desativa todas as opções de desenho do ícone do Marcador.
-        mapObjectsPanel.querySelectorAll('.tools-container .tools-content .config-group .marker a').forEach(option => option.classList.remove('active'));
+        mapMarkersContainer.querySelectorAll('.tools-container .tools-content .config-group .marker a').forEach(option => option.classList.remove('active'));
         // Desativa todas as opções de desenho da cor do Marcador.
-        mapObjectsPanel.querySelectorAll('.tools-container .tools-content .config-group .color a').forEach(option => option.classList.remove('active'));
+        mapMarkersContainer.querySelectorAll('.tools-container .tools-content .config-group .color a').forEach(option => option.classList.remove('active'));
     }
     else {
-        mapObjectsPanel.classList.add('active');
+        mapMarkersContainer.classList.add('active');
     }
 }
 

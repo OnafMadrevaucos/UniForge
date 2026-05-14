@@ -26,6 +26,9 @@ export function parseHTML(html, data) {
     // Substitui as tags <switch>
     html = _parseSwitchTags(html);
 
+    // Substitui as tags <slider>
+    html = _parseSliderTags(html);
+
     // Substitui os placeholders
     html = _parsePlaceholders(html, data);
 
@@ -87,6 +90,29 @@ function _parseSwitchTags(html) {
             <input type="checkbox" id="checkbox">
             <div class="slider"></div>
         </label>`;
+    });
+    return html;
+}
+
+/**
+* Substitui todas as tags <slider> no HTML pelo código de um slider estilizado.
+* @param {string} html - A string HTML contendo as tags <slider>.
+* @returns {string} - A string HTML modificada com as tags <slider> substituídas.
+*/
+function _parseSliderTags(html) {
+    console.log('UniForge | Substituindo tags de Slider...');
+
+    const regex = /<slider\s*(?:id="([^"]+)")?\s*(?:class="([^"]+)")?\s*\/?>/g;
+    html = html.replace(regex, (match, id, classes) => {
+        console.log(`Correspondência encontrada: ${match}`);
+        console.log(`ID: ${id ?? 'none'}, Classes: ${classes ?? 'none'}`);
+        return `
+        <div ${id ? `id="${id}"` : ''} ${classes ? `class="slider-container ${classes}"` : 'class="slider-container"'}>
+            <div class="slider-track" id="slider">
+                <div class="slider-fill"></div>
+                <div class="slider-thumb"></div>
+            </div>
+        </div>`;        
     });
     return html;
 }

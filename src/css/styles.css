@@ -943,6 +943,11 @@ button.disabled:hover {
     margin-block: 0.5vh;
 }
 
+.layer-control-wrapper div.layer-control-search-bar {
+    bottom: 212px;
+    border-bottom: none;
+}
+
 .layer-control-wrapper .layer-control-content {
     flex: 1;
     width: var(--fill-width);
@@ -1291,16 +1296,27 @@ button.disabled:hover {
 }
 
 /* ------ Map Objects Panel ------ */
-#mapObjectsPanel {
+.map-objects-container {
     position: absolute;
     bottom: -10em;
+    left: 10em;
     width: 750px;
     z-index: 1001;
     transition: bottom 0.3s ease-in-out;
 }
 
-#mapObjectsPanel.active {
+.map-objects-container.active {
     bottom: 0px;
+}
+
+.map-objects-container div#shapeSizeSlider {
+    padding-inline: 15px;
+}
+
+.map-objects-container span#shapeSizeSpan {
+    position: absolute;
+    bottom: 0.8em;
+    font-size: 12px;
 }
 
 .tools-container.map-objects-panel {
@@ -1312,6 +1328,7 @@ button.disabled:hover {
     gap: var(--default-gap-size);
 }
 
+.layer-control-wrapper .layer-control-search-bar,
 .map-objects-panel .tools-search-bar {
     position: absolute;
     bottom: 95px;
@@ -1325,10 +1342,12 @@ button.disabled:hover {
     gap: var(--default-gap-size);
 }
 
+.layer-control-wrapper .layer-control-search-bar input,
 .map-objects-panel .tools-search-bar input {
     width: var(--fill-width);
 }
 
+.layer-control-wrapper .layer-control-search-bar a,
 .map-objects-panel .tools-search-bar a {
     color: var(--light-text-color);
 }
@@ -1342,6 +1361,27 @@ button.disabled:hover {
 
     overflow-y: hidden;
     overflow-x: scroll;
+}
+
+.map-objects-panel .tools-content .config-colors {
+    align-self: center;
+    gap: var(--default-gap-size);
+}
+
+.map-objects-panel .tools-content .shape-canvas {
+    flex: 1;
+    justify-content: center;
+    background-color: var(--light-grey);
+    padding: 5px;
+    border-radius: var(--default-border-radius);
+    box-shadow: inset 1px 1px 4px 1px var(--dark-grey);
+}
+.map-objects-panel .tools-content .shape-canvas .shape-preview {
+    height: 75%;
+    flex: 0.5;
+    background-color: var(--redT50);
+    border: 5px solid var(--dark-red);
+    border-radius: var(--default-border-radius);
 }
 
 .marker-icon,
@@ -4128,7 +4168,171 @@ button.disabled:hover {
     color: var(--light-text-color);
 }
 
-/* ------ TinyMCE Editor ------*/
+/* ------ Slider ------ */
+.slider-container {
+    align-self: center;
+}
+.slider-track {
+    width: 100%;
+    height: 6px;
+    background: var(--light-blue);
+    border-radius: 10px;
+    position: relative;
+    margin-block: 18px;
+    margin-inline: 5px;
+}
+
+.slider-fill {
+    height: 100%;
+    background: var(--dark-redT87);
+    border-radius: 10px;
+    width: 0%;
+}
+
+.slider-thumb {
+    width: 18px;
+    height: 18px;
+    background: var(--light-grey);
+    border-radius: 50%;
+    position: absolute;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    cursor: pointer;
+    left: 0%;
+}
+
+.slider-value {
+    margin-top: 10px;
+    font-size: 18px;
+}
+
+/* ------ Color Picker ------ */
+.color-picker {
+    position: relative;
+    width: fit-content;
+    user-select: none;
+}
+
+.color-picker-preview {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    border: 2px solid #d1d5db;
+    cursor: pointer;
+    background-image:
+        linear-gradient(45deg, #ddd 25%, transparent 25%),
+        linear-gradient(-45deg, #ddd 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, #ddd 75%),
+        linear-gradient(-45deg, transparent 75%, #ddd 75%);
+    background-size: 12px 12px;
+    background-position:
+        0 0,
+        0 6px,
+        6px -6px,
+        -6px 0;
+}
+
+.color-picker-popup {
+    position: fixed;
+    top: 52px;
+    left: 0;
+    width: 260px;
+    padding: 12px;
+    border-radius: 14px;
+    background: #1f2937;
+    box-shadow:
+        0 10px 30px rgba(0, 0, 0, .25);
+    display: none;
+    z-index: 999;
+}
+
+.color-picker.open .color-picker-popup {
+    display: block;
+}
+
+.color-picker-spectrum {
+    position: relative;
+    width: 100%;
+    height: 180px;
+    border-radius: 10px;
+    cursor: crosshair;
+    overflow: hidden;
+}
+
+.color-picker-spectrum-cursor {
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    border: 2px solid white;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, .4);
+    pointer-events: none;
+}
+
+.color-picker-hue,
+.color-picker-alpha {
+    position: relative;
+    width: 100%;
+    height: 14px;
+    margin-top: 12px;
+    border-radius: 999px;
+    cursor: pointer;
+}
+
+.color-picker-hue {
+    background:
+        linear-gradient(to right,
+            #ff0000,
+            #ffff00,
+            #00ff00,
+            #00ffff,
+            #0000ff,
+            #ff00ff,
+            #ff0000);
+}
+
+.color-picker-alpha {
+    background-image:
+        linear-gradient(45deg, #ddd 25%, transparent 25%),
+        linear-gradient(-45deg, #ddd 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, #ddd 75%),
+        linear-gradient(-45deg, transparent 75%, #ddd 75%);
+    background-size: 12px 12px;
+    background-position:
+        0 0,
+        0 6px,
+        6px -6px,
+        -6px 0;
+    overflow: hidden;
+}
+
+.color-picker-hue-thumb,
+.color-picker-alpha-thumb {
+    position: absolute;
+    top: 50%;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: white;
+    border: 2px solid rgba(0, 0, 0, .25);
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+}
+
+.color-picker-display {
+
+    margin-top: 14px;
+
+    color: white;
+
+    font-family: monospace;
+    font-size: 14px;
+
+    text-align: center;
+}
+
+/* ------ TinyMCE Editor ------ */
 .tox.tox-tinymce {
     box-shadow: var(--small-shadow);
     border: none;

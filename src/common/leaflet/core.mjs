@@ -332,7 +332,7 @@ const lControl = {
             uniforge.utils.mergeObjects(L.drawLocal.draw.handlers, {
                 circle: {
                     tooltip: {
-                        start: 'Clique e arraste para desenhar um círculo.'                        
+                        start: 'Clique e arraste para desenhar um círculo.'
                     },
                     radius: 'Raio'
                 },
@@ -497,6 +497,12 @@ const lControl = {
             // Adicione um listener para o evento 'pm:drawend' para habilitar o arrastre do mapa.
             map.on('pm:drawend', function (e) {
                 map.dragging.enable();
+
+                const buttons = document.querySelectorAll('button.leaflet-draw-button');
+                buttons.forEach(button => button.classList.remove('active'));
+
+                const containers = document.querySelectorAll('div.map-objects-container');
+                containers.forEach(container => container.classList.remove('active'));
             });
 
             // Adicione um listener para o evento de quando o Popup do elemento for aberto.
@@ -522,94 +528,14 @@ const lControl = {
             });
 
             // Adicione um listener para o evento de clique do botão direito para remover o ultimo vertice de um polígono.
-            map.getContainer().addEventListener('contextmenu', (event) => {               
+            map.getContainer().addEventListener('contextmenu', (event) => {
                 const drawInstance = map.pm.Draw.Polygon;
                 if (drawInstance && drawInstance.enabled()) {
-                    event.preventDefault();                    
+                    event.preventDefault();
                     drawInstance._removeLastVertex();
                 }
             });
-        }
-
-        // Função para calcular os pontos ao redor da uniforge.mapOverlay com um padding (0.0 a 1.0).
-        function _checkMapVisibility() {
-
-            // Função para calcular a quantidade de pontos com base na precisão e no tamanho da uniforge.mapOverlay.
-            var _calculatePrecision = function (bounds) {
-                const southWest = bounds.getSouthWest();
-                const northEast = bounds.getNorthEast();
-
-                // Calculando a diferença de latitude e longitude.
-                const latDiff = northEast.lat - southWest.lat;
-                const lngDiff = northEast.lng - southWest.lng;
-
-                // Calculando a quantidade mínima de pontos para cobrir a uniforge.mapOverlay.
-                const totalArea = latDiff * lngDiff;  // Área da uniforge.mapOverlay.
-                const desiredPoints = Math.max(lControl.constants.MIN_POINTS, Math.sqrt(totalArea) * 100); // Ajuste para gerar pelo menos 1000 pontos.
-
-                // Determinando o número de pontos para latitude e longitude.
-                const latPoints = Math.ceil(Math.sqrt(desiredPoints * (latDiff / totalArea)));
-                const lngPoints = Math.ceil(Math.sqrt(desiredPoints * (lngDiff / totalArea)));
-
-                return { latPoints, lngPoints };
-            }
-
-            var _getWatcherPoints = function (bounds, paddingRatio) {
-                const southWest = bounds.getSouthWest();
-                const northEast = bounds.getNorthEast();
-
-                // Calculando o número de pontos baseado na precisão.
-                const { latPoints, lngPoints } = _calculatePrecision(bounds);
-
-                // Calculando a diferença de latitude e longitude.
-                const latDiff = northEast.lat - southWest.lat;
-                const lngDiff = northEast.lng - southWest.lng;
-
-                // Calculando os limites com o padding de 25%.
-                const paddingLat = latDiff * paddingRatio;
-                const paddingLng = lngDiff * paddingRatio;
-
-                const points = [];
-
-                // Gerando os pontos ao longo das bordas, considerando o padding e a precisão.
-                for (let i = 0; i < latPoints; i++) {
-                    for (let j = 0; j < lngPoints; j++) {
-                        const lat = southWest.lat + paddingLat + (i * latDiff / (latPoints - 1)) - paddingLat;
-                        const lng = southWest.lng + paddingLng + (j * lngDiff / (lngPoints - 1)) - paddingLng;
-                        points.push(L.latLng(lat, lng));
-                    }
-                }
-
-                return points;
-            }
-
-            var mapBounds = map.getBounds(); // Obtém os limites da área visível do mapa.
-            var imageBounds = overlay.getBounds(); // Obtém os limites da uniforge.mapOverlay.
-
-            // Calculando os 8 pontos ao redor da uniforge.mapOverlay.
-            var points = _getWatcherPoints(imageBounds, 0.85); // 25% de padding  .
-            var isVisible = mapBounds.intersects(points);
-
-            // Se nenhum ponto da uniforge.mapOverlay estiver visível, ajustar a posição do mapa.
-            if (!isVisible) {
-                // Encontrar o ponto mais próximo do centro da tela.
-                var closestPoint = points[0];
-                var closestDistance = map.distance(lControl.clickLatLang, points[0]);
-
-                points.forEach(function (point) {
-                    var distance = map.distance(lControl.clickLatLang, point);
-                    if (distance < closestDistance) {
-                        closestPoint = point;
-                        closestDistance = distance;
-                    }
-                });
-
-                // Ajusta o mapa para garantir que pelo menos um ponto da uniforge.mapOverlay esteja visível.
-                map.setView(closestPoint, map.getZoom(), {
-                    animate: true
-                });
-            }
-        }
+        }        
 
         function _onUserMapClick(e) {
             lControl.clickLatLang = e.latlng;  // Ponto de clique do usuário.
@@ -696,6 +622,86 @@ const lControl = {
 
         function _onZoomEnd() {
             scaleControl.update();
+        }
+
+        // Função para calcular os pontos ao redor da uniforge.mapOverlay com um padding (0.0 a 1.0).
+        function _checkMapVisibility() {
+
+            // Função para calcular a quantidade de pontos com base na precisão e no tamanho da uniforge.mapOverlay.
+            var _calculatePrecision = function (bounds) {
+                const southWest = bounds.getSouthWest();
+                const northEast = bounds.getNorthEast();
+
+                // Calculando a diferença de latitude e longitude.
+                const latDiff = northEast.lat - southWest.lat;
+                const lngDiff = northEast.lng - southWest.lng;
+
+                // Calculando a quantidade mínima de pontos para cobrir a uniforge.mapOverlay.
+                const totalArea = latDiff * lngDiff;  // Área da uniforge.mapOverlay.
+                const desiredPoints = Math.max(lControl.constants.MIN_POINTS, Math.sqrt(totalArea) * 100); // Ajuste para gerar pelo menos 1000 pontos.
+
+                // Determinando o número de pontos para latitude e longitude.
+                const latPoints = Math.ceil(Math.sqrt(desiredPoints * (latDiff / totalArea)));
+                const lngPoints = Math.ceil(Math.sqrt(desiredPoints * (lngDiff / totalArea)));
+
+                return { latPoints, lngPoints };
+            }
+
+            var _getWatcherPoints = function (bounds, paddingRatio) {
+                const southWest = bounds.getSouthWest();
+                const northEast = bounds.getNorthEast();
+
+                // Calculando o número de pontos baseado na precisão.
+                const { latPoints, lngPoints } = _calculatePrecision(bounds);
+
+                // Calculando a diferença de latitude e longitude.
+                const latDiff = northEast.lat - southWest.lat;
+                const lngDiff = northEast.lng - southWest.lng;
+
+                // Calculando os limites com o padding de 25%.
+                const paddingLat = latDiff * paddingRatio;
+                const paddingLng = lngDiff * paddingRatio;
+
+                const points = [];
+
+                // Gerando os pontos ao longo das bordas, considerando o padding e a precisão.
+                for (let i = 0; i < latPoints; i++) {
+                    for (let j = 0; j < lngPoints; j++) {
+                        const lat = southWest.lat + paddingLat + (i * latDiff / (latPoints - 1)) - paddingLat;
+                        const lng = southWest.lng + paddingLng + (j * lngDiff / (lngPoints - 1)) - paddingLng;
+                        points.push(L.latLng(lat, lng));
+                    }
+                }
+
+                return points;
+            }
+
+            var mapBounds = map.getBounds(); // Obtém os limites da área visível do mapa.
+            var imageBounds = overlay.getBounds(); // Obtém os limites da uniforge.mapOverlay.
+
+            // Calculando os 8 pontos ao redor da uniforge.mapOverlay.
+            var points = _getWatcherPoints(imageBounds, 0.85); // 25% de padding  .
+            var isVisible = mapBounds.intersects(points);
+
+            // Se nenhum ponto da uniforge.mapOverlay estiver visível, ajustar a posição do mapa.
+            if (!isVisible) {
+                // Encontrar o ponto mais próximo do centro da tela.
+                var closestPoint = points[0];
+                var closestDistance = map.distance(lControl.clickLatLang, points[0]);
+
+                points.forEach(function (point) {
+                    var distance = map.distance(lControl.clickLatLang, point);
+                    if (distance < closestDistance) {
+                        closestPoint = point;
+                        closestDistance = distance;
+                    }
+                });
+
+                // Ajusta o mapa para garantir que pelo menos um ponto da uniforge.mapOverlay esteja visível.
+                map.setView(closestPoint, map.getZoom(), {
+                    animate: true
+                });
+            }
         }
 
         return lControl;
@@ -879,7 +885,7 @@ const lControl = {
 function _updateLayerControl() {
     const iconMap = utils.iconMap;
     const mapElementsList = document.querySelector('#mapElementsList');
-    mapElementsList.innerHTML = ''; // Limpa a lista atual.
+    mapElementsList.innerHTML = ''; // Limpa a lista atual.    
 
     lControl.mapElements.eachLayer(function (layer) {
         const li = document.createElement('li');
@@ -913,6 +919,28 @@ function _updateLayerControl() {
 
         mapElementsList.appendChild(li);
     })
+
+    function _onObjectsSearchChange(event) {
+        event.stopPropagation();
+        const input = event.currentTarget;
+        // Padroniza e remove espaços em branco do filtro para melhorar a busca.
+        const filter = input.value.trim().toLowerCase();
+
+        // Obtém todas os items de Objetos do Mapa.
+        const objectsItems = document.querySelectorAll('#mapElementsList li');
+        objectsItems.forEach(item => {
+            const meid = item.dateset.id;
+            const mapElement = uniforge.docs.maps[map.mid].elements[meid];
+            // Se o filtro estiver vazio ou a opção contém o filtro, mostra a opção.
+            if (filter.isEmpty() || mapElement.includes(filter)) {
+                item.classList.remove('hidden');
+            }
+            // Senão, esconde a opção. 
+            else {
+                item.classList.add('hidden');
+            }
+        });
+    }
 
     function _onLayerItemMouseLeave(event) {
         event.stopPropagation();

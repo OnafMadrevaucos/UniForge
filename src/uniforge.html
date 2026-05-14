@@ -64,15 +64,19 @@
 
     <div id="layerControl" class="layer-control-wrapper flexcol">
         <h3 class="layer-control-title">Objetos</h3>
+        <div class="layer-control-search-bar flexrow">
+            <input id="searchLayerObjectsInput" type="text" placeholder="Buscar marcador..." />
+            <a id="clearLayerObjectsSearchButton"><i class="fas fa-trash"></i></a>
+        </div>
         <div class="layer-control-content flexcol">
             <ul id="mapElementsList" class="map-elements flexcol"></ul>
         </div>
     </div>
 
-    <div id="mapObjectsPanel">
+    <div class="map-objects-container marker">
         <div class="tools-container map-objects-panel">
             <div class="tools-search-bar flexrow">
-                <input id="searchMarkerInput" type="text" placeholder="Buscar marcador..."/>
+                <input id="searchMarkerInput" type="text" placeholder="Buscar marcador..." />
                 <a id="clearMarkerSearchButton"><i class="fas fa-trash"></i></a>
             </div>
             <div class="tools-content flexrow">
@@ -86,7 +90,66 @@
                     <div class="options color">
                     </div>
                 </fieldset>
-            </div>            
+            </div>
+        </div>
+    </div>
+
+    <div class="map-objects-container regular-shapes">
+        <div class="tools-container map-objects-panel">
+            <div class="tools-content flexrow">
+                <fieldset class="config-group shapes">
+                    <legend class="label">Tamanho</legend>
+                    <div class="options size flexrow">
+                        <slider id="shapeSizeSlider" />
+                        <span id="shapeSizeSpan">5 px</span>
+                    </div>
+                </fieldset>
+                <fieldset class="config-group line">
+                    <legend class="label">Linha</legend>
+                    <div class="data-group options line">
+                        <combo id="entryType" value="lineTypes" />
+                    </div>
+                </fieldset>
+                <div class="config-colors flexcol">
+                    <div id="fillColorPicker" class="color-picker">
+                        <div class="color-picker-preview"></div>
+                        <div class="color-picker-popup">
+                            <div class="color-picker-spectrum">
+                                <div class="color-picker-spectrum-cursor"></div>
+                            </div>
+                            <div class="color-picker-hue">
+                                <div class="color-picker-hue-thumb"></div>
+                            </div>
+                            <div class="color-picker-alpha">
+                                <div class="color-picker-alpha-thumb"></div>
+                            </div>
+                            <div class="color-picker-display"></div>
+                        </div>
+                    </div>
+                    <div id="borderColorPicker" class="color-picker">
+                        <div class="color-picker-preview"></div>
+                        <div class="color-picker-popup">
+                            <div class="color-picker-spectrum">
+                                <div class="color-picker-spectrum-cursor"></div>
+                            </div>
+                            <div class="color-picker-hue">
+                                <div class="color-picker-hue-thumb"></div>
+                            </div>
+                            <div class="color-picker-alpha">
+                                <div class="color-picker-alpha-thumb"></div>
+                            </div>
+                            <div class="color-picker-display"></div>
+                        </div>
+                    </div>
+                </div>
+                <fieldset class="config-group preview flexcol">
+                    <legend class="label">Prévia</legend>
+                    <div class="shape-canvas flexrow">
+                        <div class="shape-preview">
+                        </div>
+                    </div>
+                </fieldset>
+            </div>
         </div>
     </div>
 

@@ -10,6 +10,8 @@ import * as esm from "./common/uniforge-esm.mjs";
 import lControl from "./common/leaflet/core.mjs";
 import PDFManager from "./scripts/managers/pdfManager.js";
 import { set } from "./common/primitives/set.mjs";
+import Slider from "./models/slider.js";
+import ColorPicker from "./models/colorPicker.js";
 
 // Realiza as configurações iniciais da aplicação ao carregar o conteúdo do DOM.
 document.addEventListener('DOMContentLoaded', async () => {
@@ -221,6 +223,75 @@ document.addEventListener('DOMContentLoaded', async () => {
                     }
                 }
             }
+        }),
+        shapesToolBar: Object.freeze({
+            constants: {
+                lineTypes: {
+                    solid: {
+                        _id: 'solid',
+                        _label: 'Sólida',
+                        style: {
+                            line: 'solid'
+                        }
+                    },
+                    short_dotted: {
+                        _id: 'short_dotted',
+                        _label: 'Pontilhado Curto',
+                        style: {
+                            line: 'dotted',
+                            dashArray: '5, 5'
+                        }
+                    },
+                    dotted: {
+                        _id: 'dotted',
+                        _label: 'Pontilhado',
+                        style: {
+                            line: 'dotted',
+                            dashArray: '5, 10'
+                        }
+                    },
+                    long_dotted: {
+                        _id: 'long_dotted',
+                        _label: 'Pontilhado Longo',
+                        style: {
+                            line: 'dotted',
+                            dashArray: '10, 10'
+                        }
+                    },
+                    short_dashed: {
+                        _id: 'short_dashed',
+                        _label: 'Traçado Curto',
+                        style: {
+                            line: 'dashed',
+                            dashArray: '5, 5'
+                        }
+                    },
+                    dashed: {
+                        _id: 'dashed',
+                        _label: 'Traçado',
+                        style: {
+                            line: 'dashed',
+                            dashArray: '5, 10'
+                        }
+                    },
+                    long_dashed: {
+                        _id: 'long_dashed',
+                        _label: 'Traçado Longo',
+                        style: {
+                            line: 'dashed',
+                            dashArray: '10, 10'
+                        }
+                    },
+                    double_dashed: {
+                        _id: 'double_dashed',
+                        _label: 'Traçado Duplo',
+                        style: {
+                            line: 'double',
+                            dashArray: '5, 10'
+                        }
+                    }
+                }
+            }
         })
     });
 
@@ -242,6 +313,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     await refreshDocuments();
 
     await configureURLs();
+
+    parseBody();
 
     await configureToolsBars();
 
@@ -279,6 +352,11 @@ function checkState() {
  * FUNÇÕES DE CONFIGURAÇÕES 
  * ------------------------------------------------------------------
  * */
+function parseBody() {
+    uniforge.html.innerHTML = uniforge.parser.parseHTML(uniforge.html.innerHTML, { lineTypes: uniforge.shapesToolBar.constants.lineTypes });
+}
+
+
 // Recarrega os documentos do banco de dados.
 async function refreshDocuments() {
     const data = await DBDocuments.UniForgeData();
@@ -413,9 +491,9 @@ async function configureToolsBars() {
 
     uniforge.ctrls.currentMarkerIcon = 'blue_battle.svg';
 
-    const mapObjectsPanel = document.querySelector('#mapObjectsPanel div');
+    const mapMarkersContainer = document.querySelector('.map-objects-container.marker div');
 
-    const markersOptions = mapObjectsPanel.querySelector('.options.marker');
+    const markersOptions = mapMarkersContainer.querySelector('.options.marker');
     signs.forEach(s => {
         const name = s.name.split('.')[0];
         const img = document.createElement('img');
@@ -425,7 +503,7 @@ async function configureToolsBars() {
         markersOptions.appendChild(option);
     });
 
-    const colorOptions = mapObjectsPanel.querySelector('.options.color');
+    const colorOptions = mapMarkersContainer.querySelector('.options.color');
     const colors = uniforge.markerToolBar.constants.colors;
     Object.entries(colors).forEach(([key, color]) => {
         const option = createElement('a', { 'data-color': key, 'class': 'color-option' });
@@ -503,6 +581,12 @@ function activateMainListeners() {
         });
     });
 
+    const searchLayerObjectsInput = document.querySelector("#searchLayerObjectsInput");
+    searchLayerObjectsInput.addEventListener('input', (event) => { onObjectsSearchChange(event); });
+
+    const clearLayerObjectsSearchButton = document.querySelector("#clearLayerObjectsSearchButton");
+    clearLayerObjectsSearchButton.addEventListener('click', (event) => { onClearObjectsSearchClick(event); });
+
     const searchMarkerInput = document.querySelector("#searchMarkerInput");
     searchMarkerInput.addEventListener('input', (event) => { onMarkerSearchChange(event); });
 
@@ -513,6 +597,15 @@ function activateMainListeners() {
     baseOptions.forEach(option => {
         option.addEventListener('click', (event) => { onMarkerIconClick(event); });
     });
+
+    const shapeSizeSlider = new Slider('shapeSizeSlider', document, { min: 1, max: 10, value: 5, linkedLabel: 'shapeSizeSpan', labelMask: '{value} px' });
+    shapeSizeSlider.config();
+    shapeSizeSlider.addEventListener('change', (event) => { console.log("Slide works!"); });
+
+    const fillColorPicker = new ColorPicker('fillColorPicker', document, { value: '#cc1f1f80'});
+    fillColorPicker.config();
+    const borderColorPicker = new ColorPicker('borderColorPicker', document, { value: '#63120c'});
+    borderColorPicker.config();
 }
 /** 
  * ------------------------------------------------------------------
@@ -548,6 +641,30 @@ function onChangeTimeInput(event) {
     }
 }
 
+function onObjectsSearchChange(event) {
+    event.stopPropagation();
+    const input = event.currentTarget;
+    // Padroniza e remove espaços em branco do filtro para melhorar a busca.
+    const filter = input.value.trim().toLowerCase();
+
+    // Obtém todas os items de Objetos do Mapa.
+    const objectsItems = document.querySelectorAll('#mapElementsList li');
+    objectsItems.forEach(item => {
+        const span = item.querySelector('.layer-item-content span');
+        if (span) {
+            const title = span.textContent.toLowerCase();
+            // Se o filtro estiver vazio ou a opção contém o filtro, mostra a opção.
+            if (filter.isEmpty() || title.includes(filter)) {
+                item.classList.remove('hidden');
+            }
+            // Senão, esconde a opção. 
+            else {
+                item.classList.add('hidden');
+            }
+        }
+    });
+}
+
 function onMarkerSearchChange(event) {
     event.stopPropagation();
     const input = event.currentTarget;
@@ -555,7 +672,7 @@ function onMarkerSearchChange(event) {
     const filter = input.value.trim().toLowerCase();
 
     // Obtém todas as opções de marcadores.
-    const markersOptions = mapObjectsPanel.querySelectorAll('.options.marker a');
+    const markersOptions = mapMarkersContainer.querySelectorAll('.options.marker a');
     markersOptions.forEach(option => {
         // Se o filtro estiver vazio ou a opção contém o filtro, mostra a opção.
         if (filter.isEmpty() || option.dataset.marker.includes(filter)) {
@@ -565,18 +682,32 @@ function onMarkerSearchChange(event) {
         else {
             option.classList.add('hidden');
         }
-    });    
+    });
+}
+
+function onClearObjectsSearchClick(event) {
+    event.stopPropagation();
+    const input = document.querySelector('#searchLayerObjectsInput');
+
+    // Limpa o input de busca.
+    input.value = uniforge.defaults.emptyString;
+
+    // Obtém todas os items de Objetos do Mapa.
+    const objectsItems = document.querySelectorAll('#mapElementsList li');
+    // Mostra todas as opções de Objetos.
+    objectsItems.forEach(item => {
+        item.classList.remove('hidden');
+    });
 }
 function onClearMarkerSearchClick(event) {
     event.stopPropagation();
-    const toolsSearchBar = document.querySelector('.map-objects-panel .tools-search-bar');
-    const input = toolsSearchBar.querySelector('input');
+    const input = toolsSearchBar.querySelector('#searchMarkerInput');
 
     // Limpa o input de busca.
     input.value = uniforge.defaults.emptyString;
 
     // Obtém todas as opções de marcadores.
-    const markersOptions = mapObjectsPanel.querySelectorAll('.options.marker a');
+    const markersOptions = mapMarkersContainer.querySelectorAll('.options.marker a');
     // Mostra todas as opções de marcadores.
     markersOptions.forEach(option => {
         option.classList.remove('hidden');
