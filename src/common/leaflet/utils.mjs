@@ -89,21 +89,75 @@ const options = {
     }
 }
 
+var drawInstance = null;
+
 const drawer = {
     marker: function (map, markerURL) {
+        if(drawInstance && drawInstance.enabled()) drawInstance.disable();
+
         map.pm.enableDraw('Marker', options.marker(markerURL)); // Permite interseção de polígonos.
+        drawInstance = map.pm.Draw.Marker;
+
+        return drawInstance;
     },
     polygon: function (map) {
+        if(drawInstance && drawInstance.enabled()) drawInstance.disable();
+
         map.pm.enableDraw('Polygon', options.polygon()); // Permite interseção de polígonos.
+        drawInstance = map.pm.Draw.Polygon;
+
+        return drawInstance;
     },
     circle: function (map) {
-        map.pm.enableDraw('Circle', options.regularShape()); // Permite interseção de polígonos.
+        if(drawInstance && drawInstance.enabled()) drawInstance.disable();
+
+        map.pm.enableDraw('Circle', options.regularShape()); // Permite interseção de círculos.
+        drawInstance = map.pm.Draw.Circle;
+
+        return drawInstance;
     },
     rectangle: function (map) {
-        map.pm.enableDraw('Rectangle', options.regularShape()); // Permite interseção de polígonos.
-    },
+        if(drawInstance && drawInstance.enabled()) drawInstance.disable();
 
-    current: null
+        map.pm.enableDraw('Rectangle', options.regularShape()); // Permite interseção de retângulos.
+        drawInstance = map.pm.Draw.Rectangle;
+
+        return drawInstance;
+    }
+}
+
+const style = {
+    templineStyle: {
+        color: 'var(--red)', // Cor da linha temporária.
+        weight: 5,
+    },
+    hintlineStyle: {
+        color: 'var(--red)', // Cor do polígono.           
+        weight: 5,
+        dashArray: '5, 10',
+    },
+    pathOptions: {
+        color: 'var(--red)', // Cor do polígono.           
+        weight: 5,
+        dashArray: '5, 10',
+    }
+};
+
+function _updateStyle(map, options) {
+    style.templineStyle = options.templineStyle ?? style.templineStyle;
+    style.hintlineStyle = options.hintlineStyle ?? style.hintlineStyle;
+    style.pathOptions = options.pathOptions ?? style.pathOptions;
+
+    if (!map) return;
+
+    map.pm.setGlobalOptions(style);
+
+    // 3. O SEGREDO: Aplica na instância de desenho que está ATIVA agora
+    // Isso impede que o polígono desapareça ao mudar o estilo no meio do desenho
+    const activeShape = map.pm.Draw.getActiveShape();
+    if (activeShape) {
+        map.pm.Draw[activeShape].setOptions(style);
+    }
 }
 
 function _zoomIn(map) {
@@ -114,6 +168,69 @@ function _zoomIn(map) {
 function _zoomOut(map) {
     map.zoomOut();
     console.log('Zoom Out');
+}
+
+function _setupCustomButtons(map) {
+    // Inicializa o Geoman sem os controles padrão (vamos criar os nossos)
+    map.pm.addControls({
+        position: 'topright',
+        cutPolygon: false,
+        drawMarker: false,
+        drawCircleMarker: false,
+        drawPolyline: false,
+        drawRectangle: false,
+        drawPolygon: false,
+        drawCircle: false,
+        drawText: false,
+        editMode: false,
+        dragMode: false,
+        removalMode: false,
+        rotateMode: false,
+    });
+
+    map.pm.Toolbar.createCustomControl({
+        name: 'drawPolygonCustom',
+        block: 'draw',
+        title: 'Desenhar Região',
+        className: iconMap.polygon, // Sua classe de ícone
+        onClick: (event) => {
+            if(event) _onPolygonDraw(map, event);
+        },
+        toggle: true // Comportamento de liga/desliga
+    });
+
+    map.pm.Toolbar.createCustomControl({
+        name: 'drawRectangleCustom',
+        block: 'draw',
+        title: 'Desenhar Retângulo',
+        className: iconMap.rectangle, // Sua classe de ícone
+        onClick: (event) => {
+            if(event) _onRectangleDraw(map, event);
+        },
+        toggle: true // Comportamento de liga/desliga
+    });
+
+    map.pm.Toolbar.createCustomControl({
+        name: 'drawCircleCustom',
+        block: 'draw',
+        title: 'Desenhar Círculo',
+        className: iconMap.circle, // Sua classe de ícone
+        onClick: (event) => {
+            if(event) _onCircleDraw(map, event);
+        },
+        toggle: true // Comportamento de liga/desliga
+    });
+
+    map.pm.Toolbar.createCustomControl({
+        name: 'drawMarkerCustom',
+        block: 'draw',
+        title: 'Posicionar Marcador',
+        className: iconMap.marker, // Sua classe de ícone
+        onClick: (event) => {
+            if(event) _onMarkerDraw(map, event);
+        },
+        toggle: true // Comportamento de liga/desliga
+    });
 }
 
 function onAddMain(map) {
@@ -135,45 +252,59 @@ function onAddMain(map) {
 
 function _onPolygonDraw(map, event) {
     const target = event.target;
-    const button = target.closest('button');
+    const button = target.closest('.leaflet-buttons-control-button');
     const mapShapesContainer = document.querySelector('.map-objects-container.regular-shapes');
 
-    button.classList.toggle('active');
-
-    if (!button.classList.contains('active')) {
-        mapShapesContainer.classList.remove('active');       
+    if (button.classList.contains('active')) {
+        button.classList.remove('active');
+        mapShapesContainer.classList.remove('active');
     }
     else {
+        button.classList.add('active');
         mapShapesContainer.classList.add('active');
     }
 
-    // Evento para desativar após o clique inicial (impedindo início imediato).
-    map.on('click', function startDrawing() {
-        drawer.polygon(map, options);
-        map.off('click', startDrawing); // Remover o evento para evitar múltiplos cliques.
-    });
+    drawer.polygon(map, options);
 }
 
 
-function _onRetangleDraw(map, event) {
-    // Evento para desativar após o clique inicial (impedindo início imediato).
-    map.on('click', function startDrawing() {
-        drawer.rectangle(map, options);
-        map.off('click', startDrawing); // Remover o evento para evitar múltiplos cliques.
-    });
+function _onRectangleDraw(map, event) {
+     const target = event.target;
+    const button = target.closest('.leaflet-buttons-control-button');
+    const mapShapesContainer = document.querySelector('.map-objects-container.regular-shapes');
+
+    if (button.classList.contains('active')) {
+        button.classList.remove('active');
+        mapShapesContainer.classList.remove('active');
+    }
+    else {
+        button.classList.add('active');
+        mapShapesContainer.classList.add('active');
+    }
+
+    drawer.rectangle(map, options);
 }
 
 function _onCircleDraw(map, event) {
-    // Evento para desativar após o clique inicial (impedindo início imediato).
-    map.on('click', function startDrawing() {
-        drawer.circle(map, options);
-        map.off('click', startDrawing); // Remover o evento para evitar múltiplos cliques.
-    });
+    const target = event.target;
+    const button = target.closest('.leaflet-buttons-control-button');
+    const mapShapesContainer = document.querySelector('.map-objects-container.regular-shapes');
+
+    if (button.classList.contains('active')) {
+        button.classList.remove('active');
+        mapShapesContainer.classList.remove('active');
+    }
+    else {
+        button.classList.add('active');
+        mapShapesContainer.classList.add('active');
+    }
+
+    drawer.circle(map, options);
 }
 
 async function _onMarkerDraw(map, event) {
     const target = event.target;
-    const button = target.closest('button');
+    const button = target.closest('.leaflet-buttons-control-button');
     const mapMarkersContainer = document.querySelector('.map-objects-container.marker');
 
     // Desativa todas as opções de desenho.
@@ -182,7 +313,7 @@ async function _onMarkerDraw(map, event) {
     button.classList.toggle('active');
 
     if (!button.classList.contains('active')) {
-        if (drawer.current) drawer.current.disable();
+        if (drawer.drawInstance) drawer.drawInstance.disable();
         mapMarkersContainer.classList.remove('active');
 
         // Desativa todas as opções de desenho do ícone do Marcador.
@@ -208,7 +339,7 @@ function onAddDrawControl(map) {
     const retangleButton = L.DomUtil.create('button', 'leaflet-draw-button retangle', container);
     retangleButton.innerHTML = `<i class="${iconMap.rectangle}"></i>`; // Emoji de atualização ou seu ícone customizado.
     // Adiciona um evento de clique ao botão.
-    L.DomEvent.on(retangleButton, 'click', _onRetangleDraw.bind(this, map));
+    L.DomEvent.on(retangleButton, 'click', _onRectangleDraw.bind(this, map));
 
     // Cria um botão de Círculo.
     const circleButton = L.DomUtil.create('button', 'leaflet-draw-button circle', container);
@@ -270,13 +401,20 @@ function onCreateTile(coords) {
 }
 
 const utils = {
+    setupCustomButtons: _setupCustomButtons,
+
     onAddMain: onAddMain,
     onAddDrawControl: onAddDrawControl,
     onAddLayer: onAddLayer,
     onCreateTile: onCreateTile,
+
     iconMap: iconMap,
     options: options,
-    drawer: drawer,
+    drawer: {...drawer, drawInstance},
+    drawStyle: {
+        style,
+        update: _updateStyle
+    }
 }
 
 export default utils;

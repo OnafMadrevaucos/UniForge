@@ -141,43 +141,38 @@ export default class ColorPicker {
     }
 
     updateHue() {
-
         this.hueThumb.style.left = `${(this.hue / 360) * 100}%`;
     }
 
     updateAlpha() {
-
-        const solid =
-            this.#hslaToHexa(1);
+        const solid = this.#hslaToHexa(1);
 
         this.alphaSlider.style.background = `linear-gradient(to right, transparent, ${solid})`;
-
         this.alphaThumb.style.left = `${this.alpha * 100}%`;
     }
 
     setValue(value, propagate = true) {
+        // Verifica se o valor é uma variável CSS e resolve seu valor.
+        value = this.resolveCSSVariable(value);
 
-        if (!this.#isValidHexa(value))
-            return;
+        // Verifica se o valor é um HEX váldido.
+        if (!this.#isValidHexa(value)) return;
 
         const hex = value.substring(1, 7);
-
         const alphaHex = value.substring(7, 9);
 
         const r = parseInt(hex.substring(0, 2), 16);
-
         const g = parseInt(hex.substring(2, 4), 16);
-
         const b = parseInt(hex.substring(4, 6), 16);
 
-        const alpha = parseInt(alphaHex, 16) / 255;
+        const alpha = alphaHex ? parseInt(alphaHex, 16) / 255 : 1;
 
         const hsl = this.#rgbToHsl(r, g, b);
 
         this.hue = hsl.h;
         this.saturation = hsl.s;
         this.lightness = hsl.l;
-        this.alpha = alpha;
+        this.alpha = alpha;        
 
         this.update(propagate);
     }
@@ -391,6 +386,32 @@ export default class ColorPicker {
         this.update(true);
     }
 
+    resolveCSSVariable(value, element = document.documentElement) {
+        // Se não for uma string, retorne o valor bruto.
+        if (typeof value !== 'string') return value;
+
+        // Remove os espaços em branco.
+        value = value.trim();      
+
+        // Verifica se é uma variárivel CSS.
+        if (!this.#isCSSVariable(value)) return value;
+
+        // Extrai o nome da variável e o fallback.
+        const match = value.match(/^var\(\s*(--[\w-]+)(?:\s*,\s*(.+))?\s*\)$/);
+        // Não encontrou os dados da variável, retorne o valor bruto.
+        if (!match) return value;
+
+        // Extrai o nome da variável e o fallback.
+        const variable = match[1];
+        const fallback = match[2];
+
+        // Resolve a variável CSS.
+        const resolved = getComputedStyle(element).getPropertyValue(variable).trim();
+
+        // Retorna o valor resolvido ou o fallback.
+        return resolved || fallback || value;
+    }
+
     onOutsideClick(event) {
 
         if (!this.colorPicker.contains(event.target))
@@ -516,7 +537,15 @@ export default class ColorPicker {
         };
     }
 
+    #isCSSVariable(value) {
+        if (typeof value !== 'string')
+            return false;
+
+        value = value.trim();
+        return /^var\(\s*--[\w-]+(?:\s*,\s*.+)?\s*\)$/.test(value);
+    }
+
     #isValidHexa(value) {
-        return /^#([A-Fa-f0-9]{8})$/.test(value);
+        return /^#(?:[A-Fa-f0-9]{3}|[A-Fa-f0-9]{4}|[A-Fa-f0-9]{6}|[A-Fa-f0-9]{8})$/.test(value);
     }
 }

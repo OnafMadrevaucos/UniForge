@@ -310,7 +310,8 @@ const lControl = {
                 tooltips: {
                     firstVertex: 'Clique para começar a desenhar uma forma.',
                     continueLine: 'Clique para continuar desenhando.',
-                    finishPoly: 'Clique no primeiro ponto para fechar esta forma.'
+                    finishPoly: 'Clique no primeiro ponto para fechar esta forma.',
+                    placeMarker: "Escolha uma posição para o marcador.",
                 }
             });
 
@@ -325,33 +326,7 @@ const lControl = {
         }
 
         function _configureCustomDrawControl(mapElements) {
-            lControl.CustomDrawControl.edit = {
-                featureGroup: mapElements
-            };
-
-            uniforge.utils.mergeObjects(L.drawLocal.draw.handlers, {
-                circle: {
-                    tooltip: {
-                        start: 'Clique e arraste para desenhar um círculo.'
-                    },
-                    radius: 'Raio'
-                },
-                marker: {
-                    tooltip: {
-                        start: 'Clique no mapa para adicionar um marcador.'
-                    }
-                },
-                rectangle: {
-                    tooltip: {
-                        start: 'Clique e arraste para desenhar um retângulo.'
-                    }
-                },
-            });
-
-            const drawControl = new lControl.CustomDrawControl();
-            map.addControl(drawControl);
-
-            return drawControl;
+            utils.setupCustomButtons(map);
         }
 
         function _configureLayerControl() {
@@ -472,17 +447,10 @@ const lControl = {
         function _activateEventsListener() {
             //map.on('moveend', _checkMapVisibility);
             map.on('mousedown', _onUserMapClick);
-            map.on('draw:created', (event) => _onDrawCreated(event, false));
             map.on('pm:create', (event) => _onDrawCreated(event, true));
 
             map.on('zoomend', _onZoomEnd);
 
-            // Adicione um listener para o evento 'draw:drawstart' para desabilitar o arrastre do mapa quando estiver desenhando um polígono.
-            map.on('draw:drawstart', function (e) {
-                if (e.layerType === 'polygon') {
-                    map.dragging.disable();
-                }
-            });
             // Adicione um listener para o evento 'pm:drawstart' para desabilitar o arrastre do mapa quando estiver desenhando um polígono.
             map.on('pm:drawstart', function (e) {
                 if (e.shape === 'Polygon') {
@@ -490,19 +458,11 @@ const lControl = {
                 }
             });
 
-            // Adicione um listener para o evento 'draw:drawstop' para habilitar o arrastre do mapa.
-            map.on('draw:drawstop', function (e) {
-                map.dragging.enable();
-            });
             // Adicione um listener para o evento 'pm:drawend' para habilitar o arrastre do mapa.
             map.on('pm:drawend', function (e) {
                 map.dragging.enable();
 
-                const buttons = document.querySelectorAll('button.leaflet-draw-button');
-                buttons.forEach(button => button.classList.remove('active'));
-
-                const containers = document.querySelectorAll('div.map-objects-container');
-                containers.forEach(container => container.classList.remove('active'));
+                _onDrawEnd();
             });
 
             // Adicione um listener para o evento de quando o Popup do elemento for aberto.
@@ -527,6 +487,11 @@ const lControl = {
                 });
             });
 
+            map.on('pm:vertexadded', () => {
+                const currentStyle = utils.drawStyle.style;
+                utils.drawStyle.update(map, currentStyle);
+            });
+
             // Adicione um listener para o evento de clique do botão direito para remover o ultimo vertice de um polígono.
             map.getContainer().addEventListener('contextmenu', (event) => {
                 const drawInstance = map.pm.Draw.Polygon;
@@ -535,7 +500,7 @@ const lControl = {
                     drawInstance._removeLastVertex();
                 }
             });
-        }        
+        }
 
         function _onUserMapClick(e) {
             lControl.clickLatLang = e.latlng;  // Ponto de clique do usuário.
@@ -605,19 +570,16 @@ const lControl = {
                 console.error('Erro ao adicionar a camada desenhada:', error);
             }
             finally {
-                const markerButton = document.querySelector('.leaflet-draw-button.marker');
-                markerButton.classList.remove('active');
-
-                const mapObjectsPanel = document.querySelector('#mapObjectsPanel');
-                mapObjectsPanel.classList.remove('active');
-
-                // Desativa todas as opções de desenho do ícone do Marcador.
-                mapObjectsPanel.querySelectorAll('.tools-container .tools-content .config-group .marker a').forEach(option => option.classList.remove('active'));
-                // Desativa todas as opções de desenho da cor do Marcador.
-                mapObjectsPanel.querySelectorAll('.tools-container .tools-content .config-group .color a').forEach(option => option.classList.remove('active'));
-
-                if (utils.drawer.markerObj) utils.drawer.markerObj.disable();
+                if (utils.drawer.drawInstance) utils.drawer.drawInstance.disable();
             }
+        }
+
+        function _onDrawEnd() {
+            const buttons = document.querySelectorAll('a.leaflet-buttons-control-button');
+            buttons.forEach(button => button.classList.remove('active'));
+
+            const containers = document.querySelectorAll('div.map-objects-container');
+            containers.forEach(container => container.classList.remove('active'));
         }
 
         function _onZoomEnd() {

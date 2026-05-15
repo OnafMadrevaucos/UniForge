@@ -145,7 +145,14 @@ document.addEventListener('DOMContentLoaded', async () => {
             msgBox: new MsgBox(6),
             tooltip: new LinkTooltip(),
             progressDialog: null,
-            marker: null
+            marker: null,
+            sliders: {
+                shapeSizeSlider: null
+            },
+            colorPickers: {
+                fillColorPicker: null,
+                borderColorPicker: null
+            }
         },
 
         lineageEditor: Object.freeze({
@@ -598,13 +605,13 @@ function activateMainListeners() {
         option.addEventListener('click', (event) => { onMarkerIconClick(event); });
     });
 
-    const shapeSizeSlider = new Slider('shapeSizeSlider', document, { min: 1, max: 10, value: 5, linkedLabel: 'shapeSizeSpan', labelMask: '{value} px' });
+    const shapeSizeSlider = uniforge.ctrls.sliders.shapeSizeSlider = new Slider('shapeSizeSlider', document, { min: 1, max: 10, value: 5, linkedLabel: 'shapeSizeSpan', labelMask: '{value}px' });
     shapeSizeSlider.config();
-    shapeSizeSlider.addEventListener('change', (event) => { console.log("Slide works!"); });
+    shapeSizeSlider.addEventListener('change', (event) => { onShapeSizeSliderChange(event); });
 
-    const fillColorPicker = new ColorPicker('fillColorPicker', document, { value: '#cc1f1f80'});
+    const fillColorPicker = uniforge.ctrls.colorPickers.fillColorPicker = new ColorPicker('fillColorPicker', document, { value: 'var(--red)' });
     fillColorPicker.config();
-    const borderColorPicker = new ColorPicker('borderColorPicker', document, { value: '#63120c'});
+    const borderColorPicker = uniforge.ctrls.colorPickers.borderColorPicker = new ColorPicker('borderColorPicker', document, { value: 'var(--dark-red)' });
     borderColorPicker.config();
 }
 /** 
@@ -737,6 +744,16 @@ async function onMarkerIconClick(event) {
     else if (uniforge.ctrls.marker) uniforge.ctrls.marker.disable();
 }
 
+function onShapeSizeSliderChange(event) {
+    const size = uniforge.ctrls.sliders.shapeSizeSlider.getValue(true);
+
+    uniforge.leaflet.drawStyle.style.templineStyle.weight = size;
+    uniforge.leaflet.drawStyle.style.hintlineStyle.weight = size;
+    uniforge.leaflet.drawStyle.style.pathOptions.weight = size;
+
+    uniforge.leaflet.drawStyle.update(uniforge.leaflet.core.default.map, uniforge.leaflet.drawStyle.style);
+}
+
 /** 
  * ------------------------------------------------------------------
  * FUNÇÕES DE CONTROLE INTERNO DA PÁGINA 
@@ -785,10 +802,11 @@ async function startMarkerDrawing(marker) {
     const map = uniforge.leaflet.core.default.map;
     const markerURL = uniforge.urls.markers.join(`${marker}.png`);
 
+    // O controlador de Marker já está ativo. 
     if (uniforge.ctrls.marker) uniforge.ctrls.marker.disable();
 
+    // Ativa o controle de posicionamento de Markers.
     uniforge.ctrls.marker = uniforge.leaflet.drawer.marker(map, markerURL);
-    uniforge.ctrls.marker.enable();
 };
 
 function _setTime(year) {

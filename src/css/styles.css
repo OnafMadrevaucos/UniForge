@@ -396,6 +396,7 @@ button[type="submit"] {
     display: block;
 }
 
+.leaflet-pm-toolbar.leaflet-control .button-container a.leaflet-buttons-control-button:hover,
 button:hover {
     cursor: pointer;
     background-color: var(--dark-red);
@@ -712,9 +713,30 @@ button.disabled:hover {
     z-index: 1000 !important;
 }
 
+.leaflet-pm-toolbar.leaflet-control {
+    height: 32px;
+}
+.leaflet-pm-toolbar.leaflet-control .button-container {
+    height: var(--fill-height);
+    width: 48px;
+}
+.leaflet-pm-toolbar.leaflet-control .button-container a.leaflet-buttons-control-button {
+    width: var(--fill-width);
+    height: auto;
+    padding: 0;
+    margin: 5px 0;
+    border-radius: var(--default-border-radius);
+}
+.leaflet-pm-toolbar.leaflet-control .button-container a.leaflet-buttons-control-button:hover {
+    text-shadow: none;
+}
+
+
+.leaflet-control .button-container a.leaflet-buttons-control-button,
 .leaflet-container .leaflet-control-layers a,
 .leaflet-bar button {
-    width: 3em;
+    width: 48px;
+    height: 32px;
     font-size: 16px;
     margin: 5px 0;
     padding: 5px;
@@ -772,6 +794,7 @@ button.disabled:hover {
     padding: 0;
 }
 
+.leaflet-pm-toolbar.leaflet-control .button-container a.leaflet-buttons-control-button.active,
 .leaflet-container .leaflet-control-container .leaflet-top.leaflet-right .leaflet-control button.active {
     background-color: var(--background-color);
     color: var(--red);
@@ -1310,12 +1333,12 @@ button.disabled:hover {
 }
 
 .map-objects-container div#shapeSizeSlider {
+    flex: 1;
     padding-inline: 15px;
 }
 
 .map-objects-container span#shapeSizeSpan {
-    position: absolute;
-    bottom: 0.8em;
+    align-self: center;
     font-size: 12px;
 }
 

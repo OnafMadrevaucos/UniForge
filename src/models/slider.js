@@ -155,8 +155,11 @@ export default class Slider {
      * Retorna o valor atual do Slider.
      * @returns {number}
      */
-    getValue() {
-        return this.value;
+    getValue(withMask = false) {
+        if(withMask)
+            return this.labelMask.replace('{value}', this.value);
+        else
+            return this.value;
     }
 
     /**

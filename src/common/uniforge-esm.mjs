@@ -69,7 +69,8 @@ const parser = {
 
 const leaflet = {
     core: leafletEsm.core,
-    drawer: leafletEsm.utils.default.drawer,    
+    drawer: leafletEsm.utils.default.drawer,   
+    drawStyle: leafletEsm.utils.default.drawStyle 
 }
 
 const state = {
