@@ -5,6 +5,12 @@ const iconMap = {
     marker: 'fas fa-location-pin'
 }
 
+const defaultHintlineStyle = {
+    color: 'var(--light-text-color)',
+    dashArray: '5, 10',
+    weight: 3
+}
+
 /**
  * Opções de configuração para os desenhos de polígonos, marcadores e formas regulares (círculos e retângulos).
  * Cada função retorna um objeto de opções específico para o tipo de desenho, permitindo personalização como ícones, cores e restrições de interseção.
@@ -29,8 +35,6 @@ const options = {
         };
     },
     polygon: function (withIntersection = false, isDrawer = true) {
-        const iconUrl = uniforge.urls.icons.join('polygon.png'); // URL do ícone do marcador.
-
         if (isDrawer) {
             return {
                 snappable: true,
@@ -38,14 +42,11 @@ const options = {
                 allowSelfIntersection: withIntersection,
                 removeLastVertex: true,
                 finishOn: 'dblclick',
+                hintlineStyle: defaultHintlineStyle,
                 templineStyle: {
-                    color: 'var(--red)', // Cor da linha temporária.
-                    weight: 5,
-                },
-                hintlineStyle: {
                     color: 'var(--red)', // Cor do polígono.           
                     weight: 5,
-                    dashArray: '5, 10',
+                    dashArray: '5, 10'
                 },
                 pathOptions: {
                     color: 'var(--red)', // Cor do polígono.           
@@ -53,110 +54,112 @@ const options = {
                     dashArray: '5, 10',
                 }
             }
-        } else {
-            return {
-                color: 'var(--red)', // Cor do polígono.           
-                weight: 5,
-                dashArray: '5, 10',
-            }
+        }
+        else {
+            return { ...style };
         }
     },
     regularShape: function (isDrawer = true) {
         if (isDrawer) {
             return {
-                templineStyle: {
-                    color: 'var(--red)', // Cor da linha temporária.
-                    weight: 5,
-                },
-                hintlineStyle: {
-                    color: 'var(--red)', // Cor do polígono.           
-                    weight: 5,
-                    dashArray: '5, 10',
-                },
+                hintlineStyle: defaultHintlineStyle,
                 pathOptions: {
                     color: 'var(--red)', // Cor do polígono.           
                     weight: 5,
                     dashArray: '5, 10',
                 }
             }
-        } else {
-            return {
-                color: 'var(--red)', // Cor do polígono.           
-                weight: 5,
-                dashArray: '5, 10',
-            }
+        }
+        else {
+            return { ...style };
         }
     }
 }
 
-var drawInstance = null;
-
 const drawer = {
     marker: function (map, markerURL) {
-        if(drawInstance && drawInstance.enabled()) drawInstance.disable();
+        if (state.drawInstance && state.drawInstance.enabled()) state.drawInstance.disable();
 
         map.pm.enableDraw('Marker', options.marker(markerURL)); // Permite interseção de polígonos.
-        drawInstance = map.pm.Draw.Marker;
+        state.drawInstance = map.pm.Draw.Marker;
 
-        return drawInstance;
+        return state.drawInstance;
     },
     polygon: function (map) {
-        if(drawInstance && drawInstance.enabled()) drawInstance.disable();
+        if (state.drawInstance && state.drawInstance.enabled()) state.drawInstance.disable();
 
         map.pm.enableDraw('Polygon', options.polygon()); // Permite interseção de polígonos.
-        drawInstance = map.pm.Draw.Polygon;
+        state.drawInstance = map.pm.Draw.Polygon;
 
-        return drawInstance;
+        return state.drawInstance;
     },
     circle: function (map) {
-        if(drawInstance && drawInstance.enabled()) drawInstance.disable();
+        if (state.drawInstance && state.drawInstance.enabled()) state.drawInstance.disable();
 
         map.pm.enableDraw('Circle', options.regularShape()); // Permite interseção de círculos.
-        drawInstance = map.pm.Draw.Circle;
+        state.drawInstance = map.pm.Draw.Circle;
 
-        return drawInstance;
+        return state.drawInstance;
     },
     rectangle: function (map) {
-        if(drawInstance && drawInstance.enabled()) drawInstance.disable();
+        if (state.drawInstance && state.drawInstance.enabled()) state.drawInstance.disable();
 
         map.pm.enableDraw('Rectangle', options.regularShape()); // Permite interseção de retângulos.
-        drawInstance = map.pm.Draw.Rectangle;
+        state.drawInstance = map.pm.Draw.Rectangle;
 
-        return drawInstance;
+        return state.drawInstance;
     }
 }
 
 const style = {
-    templineStyle: {
-        color: 'var(--red)', // Cor da linha temporária.
-        weight: 5,
-    },
-    hintlineStyle: {
-        color: 'var(--red)', // Cor do polígono.           
-        weight: 5,
-        dashArray: '5, 10',
-    },
-    pathOptions: {
-        color: 'var(--red)', // Cor do polígono.           
-        weight: 5,
-        dashArray: '5, 10',
-    }
+    fillColor: 'var(--red)',
+    fillOpacity: 0.5,
+    color: 'var(--red)', // Cor do polígono.
+    opacity: 1,
+    weight: 5,
+    dashArray: '5, 10',
 };
 
-function _updateStyle(map, options) {
-    style.templineStyle = options.templineStyle ?? style.templineStyle;
-    style.hintlineStyle = options.hintlineStyle ?? style.hintlineStyle;
-    style.pathOptions = options.pathOptions ?? style.pathOptions;
+const state = {
+    drawInstance: null,
+    blockEvents: false
+};
 
-    if (!map) return;
+function _updateStyle(map, newStyle) {
+    // Gera o objeto de opções com os estilos do desenho.    
+    var drawOptions = {
+        templineStyle: {
+            ...style,
+            ...(newStyle ?? {})
+        },
+        pathOptions: {
+            ...style,
+            ...(newStyle ?? {})
+        },
+        hintlineStyle: { ...defaultHintlineStyle }
+    };
 
-    map.pm.setGlobalOptions(style);
+    // Verifica se a instância do mapa do Leaflet foi enviada corretamente.
+    if (!map) return;    
 
-    // 3. O SEGREDO: Aplica na instância de desenho que está ATIVA agora
-    // Isso impede que o polígono desapareça ao mudar o estilo no meio do desenho
+    // Caso não exista desenho ativo, apenas atualiza as opções globais.
+    if (!state.drawInstance.enabled()) {
+        map.pm.setGlobalOptions(drawOptions);
+        return;
+    }
+
     const activeShape = map.pm.Draw.getActiveShape();
-    if (activeShape) {
-        map.pm.Draw[activeShape].setOptions(style);
+
+    // ------------------------------------------------------
+    // SALVA OS VÉRTICES ATUAIS
+    // ------------------------------------------------------
+
+    // Obtém a camada de desenho ativa.
+    const workingLayer = state.drawInstance._workingLayer ?? state.drawInstance._layer;
+
+    // Verifica se a camada de desenho ativa possui latlngs.
+    if (workingLayer) {
+        workingLayer.setStyle(drawOptions.templineStyle);
     }
 }
 
@@ -194,7 +197,7 @@ function _setupCustomButtons(map) {
         title: 'Desenhar Região',
         className: iconMap.polygon, // Sua classe de ícone
         onClick: (event) => {
-            if(event) _onPolygonDraw(map, event);
+            if (event) _onPolygonDraw(map, event);
         },
         toggle: true // Comportamento de liga/desliga
     });
@@ -205,7 +208,7 @@ function _setupCustomButtons(map) {
         title: 'Desenhar Retângulo',
         className: iconMap.rectangle, // Sua classe de ícone
         onClick: (event) => {
-            if(event) _onRectangleDraw(map, event);
+            if (event) _onRectangleDraw(map, event);
         },
         toggle: true // Comportamento de liga/desliga
     });
@@ -216,7 +219,7 @@ function _setupCustomButtons(map) {
         title: 'Desenhar Círculo',
         className: iconMap.circle, // Sua classe de ícone
         onClick: (event) => {
-            if(event) _onCircleDraw(map, event);
+            if (event) _onCircleDraw(map, event);
         },
         toggle: true // Comportamento de liga/desliga
     });
@@ -227,7 +230,7 @@ function _setupCustomButtons(map) {
         title: 'Posicionar Marcador',
         className: iconMap.marker, // Sua classe de ícone
         onClick: (event) => {
-            if(event) _onMarkerDraw(map, event);
+            if (event) _onMarkerDraw(map, event);
         },
         toggle: true // Comportamento de liga/desliga
     });
@@ -269,7 +272,7 @@ function _onPolygonDraw(map, event) {
 
 
 function _onRectangleDraw(map, event) {
-     const target = event.target;
+    const target = event.target;
     const button = target.closest('.leaflet-buttons-control-button');
     const mapShapesContainer = document.querySelector('.map-objects-container.regular-shapes');
 
@@ -313,7 +316,7 @@ async function _onMarkerDraw(map, event) {
     button.classList.toggle('active');
 
     if (!button.classList.contains('active')) {
-        if (drawer.drawInstance) drawer.drawInstance.disable();
+        if (state.drawInstance) state.drawInstance.disable();
         mapMarkersContainer.classList.remove('active');
 
         // Desativa todas as opções de desenho do ícone do Marcador.
@@ -410,7 +413,8 @@ const utils = {
 
     iconMap: iconMap,
     options: options,
-    drawer: {...drawer, drawInstance},
+    drawer: drawer,
+    state: state,
     drawStyle: {
         style,
         update: _updateStyle

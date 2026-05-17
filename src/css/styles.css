@@ -967,8 +967,8 @@ button.disabled:hover {
 }
 
 .layer-control-wrapper div.layer-control-search-bar {
-    bottom: 212px;
-    border-bottom: none;
+    bottom: 235px;
+    border-radius: var(--default-border-radius);
 }
 
 .layer-control-wrapper .layer-control-content {
@@ -1321,11 +1321,14 @@ button.disabled:hover {
 /* ------ Map Objects Panel ------ */
 .map-objects-container {
     position: absolute;
-    bottom: -10em;
+    bottom: -6em;
     left: 10em;
     width: 750px;
     z-index: 1001;
     transition: bottom 0.3s ease-in-out;
+}
+.map-objects-container.marker {
+    bottom: -10em;
 }
 
 .map-objects-container.active {
@@ -1342,6 +1345,30 @@ button.disabled:hover {
     font-size: 12px;
 }
 
+.map-objects-container .toggle-tab {
+    position: absolute;
+    top: 0px;
+    left: 15px;
+    width: 50px;
+    height: 25px;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--dark-red);
+    border: var(--filled-border);
+    border-bottom: none;
+    border-radius: 4px 4px 0 0;
+    cursor: pointer;
+    color: var(--light-text-color);
+    transform: translateY(-100%);
+    transition: all 0.05s ease-in-out;
+    padding-block: 2px;
+}
+
+.map-objects-container.active .toggle-tab,
+.map-objects-container .toggle-tab:hover {
+    height: 28px;
+}
+
 .tools-container.map-objects-panel {
     height: 85px;
     width: var(--fill-width);
@@ -1349,6 +1376,11 @@ button.disabled:hover {
     border-bottom-left-radius: 0;
     border-bottom-right-radius: 0;
     gap: var(--default-gap-size);
+}
+
+.marker .map-objects-panel .tools-search-bar {
+    border-bottom: none;
+    left: 15px;     
 }
 
 .layer-control-wrapper .layer-control-search-bar,
@@ -1359,7 +1391,7 @@ button.disabled:hover {
     width: 200px;
     padding: 5px;
     background-color: var(--dark-red);
-    border: var(--filled-border);
+    border: var(--filled-border);    
     border-top-left-radius: var(--default-border-radius);
     border-top-right-radius: var(--default-border-radius);
     gap: var(--default-gap-size);

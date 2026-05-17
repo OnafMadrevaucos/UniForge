@@ -418,14 +418,12 @@ const lControl = {
             });
 
             scaleControl.onAdd = function () {
-
                 this._div = L.DomUtil.create(
                     'div',
                     'leaflet-control-scale-line',
                 );
 
                 this.update();
-
                 return this._div;
             };
 
@@ -459,11 +457,7 @@ const lControl = {
             });
 
             // Adicione um listener para o evento 'pm:drawend' para habilitar o arrastre do mapa.
-            map.on('pm:drawend', function (e) {
-                map.dragging.enable();
-
-                _onDrawEnd();
-            });
+            map.on('pm:drawend', e => _onDrawEnd());
 
             // Adicione um listener para o evento de quando o Popup do elemento for aberto.
             map.on('popupopen', function (event) {
@@ -485,12 +479,7 @@ const lControl = {
                         lControl.deleteElement(e);
                     }
                 });
-            });
-
-            map.on('pm:vertexadded', () => {
-                const currentStyle = utils.drawStyle.style;
-                utils.drawStyle.update(map, currentStyle);
-            });
+            });            
 
             // Adicione um listener para o evento de clique do botão direito para remover o ultimo vertice de um polígono.
             map.getContainer().addEventListener('contextmenu', (event) => {
@@ -506,8 +495,11 @@ const lControl = {
             lControl.clickLatLang = e.latlng;  // Ponto de clique do usuário.
         }
 
-        async function _onDrawCreated(e, isPM) {
+        async function _onDrawCreated(e, isPM) {    
             let layer = e.layer;
+
+            // Atualiza o estilo da camada desenhada.
+            layer.setStyle(utils.drawStyle.style);
 
             const removeLayer = () => {
                 if (layer && lControl.map.hasLayer(layer)) {
@@ -543,6 +535,7 @@ const lControl = {
                             icon: (layer.type === 'marker') ? layer.options.icon.options.iconUrl : layer.type,
                             source: `${layer.source.type}{${layer.source._id}}`,
                             points: points,
+                            style: JSON.stringify(utils.drawStyle.style)
                         }
 
                         // Adiciona o elemento ao banco de dados.
@@ -570,11 +563,13 @@ const lControl = {
                 console.error('Erro ao adicionar a camada desenhada:', error);
             }
             finally {
-                if (utils.drawer.drawInstance) utils.drawer.drawInstance.disable();
+                if (utils.state.drawInstance) utils.state.drawInstance.disable();
             }
         }
 
         function _onDrawEnd() {
+            map.dragging.enable();
+
             const buttons = document.querySelectorAll('a.leaflet-buttons-control-button');
             buttons.forEach(button => button.classList.remove('active'));
 
@@ -723,7 +718,8 @@ const lControl = {
         const elements = uniforge.doc.maps.get(mid).elements || [];
         const elementsOfEpoch = elements.filter(element => element.epoch === epoch);
         elementsOfEpoch.forEach((elementData) => {
-            let element;
+            let element;           
+
             switch (elementData.mType) {
                 case 'circle': {
                     const points = elementData.points.split(';').map(point => {
@@ -731,7 +727,10 @@ const lControl = {
                         return L.latLng(coords[0], coords[1]);
                     });
 
-                    element = L.circle(points, utils.options.regularShape(false));
+                    const elementStyle = JSON.parse(elementData.style) ?? utils.options.regularShape(false, false);
+
+                    element = L.circle(points, elementStyle);
+                    element.setStyle(elementStyle);                    
                 } break;
                 case 'marker': {
                     const markerUrl = elementData.icon; // URL do ícone do marcador.
@@ -751,7 +750,10 @@ const lControl = {
                         return L.latLng(coords[0], coords[1]);
                     });
 
-                    element = L.polygon(points, utils.options.polygon(false, false));
+                    const elementStyle = JSON.parse(elementData.style) ?? utils.options.polygon(false, false);
+
+                    element = L.polygon(points, elementStyle);
+                    element.setStyle(elementStyle);
                 } break;
                 case 'rectangle': {
                     const points = elementData.points.split(';').map(point => {
@@ -759,7 +761,10 @@ const lControl = {
                         return L.latLng(coords[0], coords[1]);
                     });
 
-                    element = L.rectangle(points, utils.options.regularShape(false));
+                    const elementStyle = JSON.parse(elementData.style) ?? utils.options.regularShape(false, false);
+
+                    element = L.rectangle(points, elementStyle);
+                    element.setStyle(elementStyle);
                 } break;
                 default: {
                     console.warn(`Tipo de elemento desconhecido: ${elementData.type}`);
@@ -771,7 +776,7 @@ const lControl = {
             element.source = _getSource(elementData.source); // Obtém a fonte do elemento. 
 
             element._id = elementData._id;
-            element._leaflet_id = lControl.mapElements.getLayerId(element); // Armazena o ID do elemento.
+            element._leaflet_id = lControl.mapElements.getLayerId(element); // Armazena o ID do elemento.            
 
             element = lControl.createPopup(element); // Cria o elemento com o popup configurado.
             lControl.mapElements.addLayer(element);

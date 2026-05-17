@@ -238,31 +238,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         _id: 'solid',
                         _label: 'Sólida',
                         style: {
-                            line: 'solid'
-                        }
-                    },
-                    short_dotted: {
-                        _id: 'short_dotted',
-                        _label: 'Pontilhado Curto',
-                        style: {
-                            line: 'dotted',
-                            dashArray: '5, 5'
-                        }
-                    },
-                    dotted: {
-                        _id: 'dotted',
-                        _label: 'Pontilhado',
-                        style: {
-                            line: 'dotted',
-                            dashArray: '5, 10'
-                        }
-                    },
-                    long_dotted: {
-                        _id: 'long_dotted',
-                        _label: 'Pontilhado Longo',
-                        style: {
-                            line: 'dotted',
-                            dashArray: '10, 10'
+                            dashArray: '0, 0'
                         }
                     },
                     short_dashed: {
@@ -289,14 +265,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                             dashArray: '10, 10'
                         }
                     },
-                    double_dashed: {
-                        _id: 'double_dashed',
-                        _label: 'Traçado Duplo',
-                        style: {
-                            line: 'double',
-                            dashArray: '5, 10'
-                        }
-                    }
                 }
             }
         })
@@ -565,10 +533,7 @@ function activateMainListeners() {
 
     const currentYearInput = document.getElementById('currentYear');
 
-    toggleTab.addEventListener('click', () => {
-        topBar.classList.toggle('visible');
-        toggleTab.classList.toggle('visible');
-    });
+    toggleTab.addEventListener('click', (event) => { onToggleTopBarClick(event); });
 
     codexBtn.addEventListener('click', (event) => { onTopbarButtonClick(event); });
     timelineBtn.addEventListener('click', (event) => { onTopbarButtonClick(event); });
@@ -605,14 +570,24 @@ function activateMainListeners() {
         option.addEventListener('click', (event) => { onMarkerIconClick(event); });
     });
 
+    const toggleShapesPanel = document.getElementById('toggleShapesPanel');
+    toggleShapesPanel.addEventListener('click', (event) => { onToggleShapesPanelClick(event); });
+
     const shapeSizeSlider = uniforge.ctrls.sliders.shapeSizeSlider = new Slider('shapeSizeSlider', document, { min: 1, max: 10, value: 5, linkedLabel: 'shapeSizeSpan', labelMask: '{value}px' });
     shapeSizeSlider.config();
     shapeSizeSlider.addEventListener('change', (event) => { onShapeSizeSliderChange(event); });
 
+    const shapeBorderCombo = document.getElementById('shapeBorderCombo');
+    shapeBorderCombo.addEventListener('change', (event) => { onShapeBorderComboChange(event); });
+
     const fillColorPicker = uniforge.ctrls.colorPickers.fillColorPicker = new ColorPicker('fillColorPicker', document, { value: 'var(--red)' });
     fillColorPicker.config();
+    fillColorPicker.addEventListener('change', (event) => { onFillColorPickerChange(fillColorPicker); });
+
     const borderColorPicker = uniforge.ctrls.colorPickers.borderColorPicker = new ColorPicker('borderColorPicker', document, { value: 'var(--dark-red)' });
     borderColorPicker.config();
+
+    borderColorPicker.addEventListener('change', (event) => { onBorderColorPickerChange(borderColorPicker); });
 }
 /** 
  * ------------------------------------------------------------------
@@ -626,6 +601,16 @@ function onTopbarButtonClick(event) {
     button.classList.add('disabled');
 
     renderForm(button.getAttribute('data-target'));
+}
+
+function onToggleTopBarClick(event) {
+    event.stopPropagation();
+
+    const toggleTab = event.target.closest('.toggle-tab');
+    const topBar = document.getElementById('topBarContainer');
+
+    topBar.classList.toggle('visible');
+    toggleTab.classList.toggle('visible');
 }
 
 function onChangeTime(event, amount) {
@@ -744,12 +729,42 @@ async function onMarkerIconClick(event) {
     else if (uniforge.ctrls.marker) uniforge.ctrls.marker.disable();
 }
 
-function onShapeSizeSliderChange(event) {
-    const size = uniforge.ctrls.sliders.shapeSizeSlider.getValue(true);
+function onToggleShapesPanelClick(event) {
+    event.stopPropagation();
+    const mapShapesContainer = document.querySelector('.map-objects-container.regular-shapes');
 
-    uniforge.leaflet.drawStyle.style.templineStyle.weight = size;
-    uniforge.leaflet.drawStyle.style.hintlineStyle.weight = size;
-    uniforge.leaflet.drawStyle.style.pathOptions.weight = size;
+    mapShapesContainer.classList.toggle('active');
+}
+
+function onShapeSizeSliderChange(event) {
+    const size = uniforge.ctrls.sliders.shapeSizeSlider.getValueNumber();
+    uniforge.leaflet.drawStyle.style.weight = size;
+
+    uniforge.leaflet.drawStyle.update(uniforge.leaflet.core.default.map, uniforge.leaflet.drawStyle.style);
+}
+
+function onShapeBorderComboChange(event) {
+    const lineTypes = uniforge.shapesToolBar.constants.lineTypes;
+    const style = lineTypes[event.target.value].style;
+
+    uniforge.leaflet.drawStyle.style = {
+        ...uniforge.leaflet.drawStyle.style,
+        ...style
+    }
+
+    uniforge.leaflet.drawStyle.update(uniforge.leaflet.core.default.map, uniforge.leaflet.drawStyle.style);
+}
+
+function onFillColorPickerChange(picker) {
+    uniforge.leaflet.drawStyle.style.fillColor = picker.value;
+    uniforge.leaflet.drawStyle.style.fillOpacity = picker.alpha;
+
+    uniforge.leaflet.drawStyle.update(uniforge.leaflet.core.default.map, uniforge.leaflet.drawStyle.style);
+}
+
+function onBorderColorPickerChange(picker) {
+    uniforge.leaflet.drawStyle.style.color = picker.value;
+    uniforge.leaflet.drawStyle.style.opacity = picker.alpha;
 
     uniforge.leaflet.drawStyle.update(uniforge.leaflet.core.default.map, uniforge.leaflet.drawStyle.style);
 }

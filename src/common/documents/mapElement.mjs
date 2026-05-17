@@ -20,6 +20,7 @@ export default class MapElement extends BaseDocument {
     get icon() { return this.data.icon; }
     get source() { return this.data.source; }
     get points() { return this.data.points; }
+    get style() { return this.data.style; }
 
     set mid(value) { this.data.mid = value; }
     set epoch(value) { this.data.epoch = value; }
@@ -27,6 +28,7 @@ export default class MapElement extends BaseDocument {
     set icon(value) { this.data.icon = value; }
     set source(value) { this.data.source = value; }
     set points(value) { this.data.points = value; }
+    set style(value) { this.data.style = value; }
 
     initialize(data) {
         super.initialize(data);

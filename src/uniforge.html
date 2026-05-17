@@ -65,7 +65,7 @@
     <div id="layerControl" class="layer-control-wrapper flexcol">
         <h3 class="layer-control-title">Objetos</h3>
         <div class="layer-control-search-bar flexrow">
-            <input id="searchLayerObjectsInput" type="text" placeholder="Buscar marcador..." />
+            <input id="searchLayerObjectsInput" type="text" placeholder="Buscar elemento..." />
             <a id="clearLayerObjectsSearchButton"><i class="fas fa-trash"></i></a>
         </div>
         <div class="layer-control-content flexcol">
@@ -91,7 +91,7 @@
                     </div>
                 </fieldset>
             </div>
-        </div>
+        </div>        
     </div>
 
     <div class="map-objects-container regular-shapes">
@@ -107,7 +107,7 @@
                 <div class="config-group line">
                     <legend class="label">Linha</legend>
                     <div class="data-group options line">
-                        <combo id="entryType" value="lineTypes" />
+                        <combo id="shapeBorderCombo" value="lineTypes" />
                     </div>
                 </div>
                 <div class="config-colors flexcol">
@@ -150,6 +150,9 @@
                     </div>
                 </div>
             </div>
+        </div>
+        <div id="toggleShapesPanel" class="toggle-tab flexrow visible">
+            <i class="fas fa-shapes"></i>
         </div>
     </div>
 

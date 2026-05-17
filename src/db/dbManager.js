@@ -473,8 +473,8 @@ export default class DBManager {
     }
 
     async addMapElement(data) {
-        let query = 'INSERT INTO mapElements (meid, mid, epoch, type, icon, source, points) ';
-        query += 'VALUES (?,?,?,?,?,?,?);';
+        let query = 'INSERT INTO mapElements (meid, mid, epoch, type, icon, source, points, style) ';
+        query += 'VALUES (?,?,?,?,?,?,?,?);';
         const params = [];
 
         const meid = (!data.meid || data.meid.isEmpty()) ? this.generateID() : data.meid;
@@ -486,6 +486,7 @@ export default class DBManager {
         params.push(data.icon);
         params.push(data.source);
         params.push(data.points);
+        params.push(data.style);
 
         const result = await this.#execQuery(query, params);
         result.lastInsertRowid = meid;
@@ -737,7 +738,8 @@ export default class DBManager {
     async updateMapElement(data) {
         const updateSet = this.buildUpdateSet([
             ['source', data.source],
-            ['points', data.points]
+            ['points', data.points],
+            ['style', data.style]
         ]);
 
         let query = `UPDATE mapElements SET ${updateSet} WHERE meid = ?`;
@@ -1922,6 +1924,7 @@ export default class DBManager {
             '`icon` varchar(16) NOT NULL,' +             // Ícone do elemento do mapa.
             '`source` VARCHAR(100) NULL,' +              // Fonte do elemento do mapa, se houver ('sourceType{uuid}').
             '`points` TEXT NOT NULL,' +                  // Pontos do elemento do mapa.
+            '`style` TEXT NULL,' +                       // Estilo do elemento do mapa.
             'PRIMARY KEY (`meid`))';
 
         this.results = await this.#execQuery(query);

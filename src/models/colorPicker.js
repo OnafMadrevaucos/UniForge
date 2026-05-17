@@ -182,7 +182,6 @@ export default class ColorPicker {
     }
 
     dispatchChangeEvent() {
-
         this.colorPicker.dispatchEvent(new CustomEvent('change', {
             detail: {
                 value: this.value,
@@ -219,7 +218,7 @@ export default class ColorPicker {
 
             this.#state.draggingSpectrum = true;
 
-            this.updateSpectrumFromEvent(event);
+            this.updateSpectrumFromEvent(event);            
         });
 
         document.addEventListener('mousemove', (event) => {
@@ -234,9 +233,9 @@ export default class ColorPicker {
 
             if (this.#state.draggingSpectrum) {
 
-                this.#state.draggingSpectrum = false;
+                this.#state.draggingSpectrum = false;                
 
-                // Fecha ao concluir seleção
+                // Fecha ao concluir seleção.
                 this.opened = false;
             }
         });
@@ -413,9 +412,8 @@ export default class ColorPicker {
     }
 
     onOutsideClick(event) {
-
-        if (!this.colorPicker.contains(event.target))
-            this.opened = false;
+        if (!this.colorPicker.contains(event.target)) 
+            this.opened = false;        
     }
 
     #hslaToHexa(forceAlpha = null) {
