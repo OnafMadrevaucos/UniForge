@@ -43,16 +43,8 @@ const options = {
                 removeLastVertex: true,
                 finishOn: 'dblclick',
                 hintlineStyle: defaultHintlineStyle,
-                templineStyle: {
-                    color: 'var(--red)', // Cor do polígono.           
-                    weight: 5,
-                    dashArray: '5, 10'
-                },
-                pathOptions: {
-                    color: 'var(--red)', // Cor do polígono.           
-                    weight: 5,
-                    dashArray: '5, 10',
-                }
+                templineStyle: { ...style },
+                pathOptions: { ...style }
             }
         }
         else {
@@ -63,11 +55,7 @@ const options = {
         if (isDrawer) {
             return {
                 hintlineStyle: defaultHintlineStyle,
-                pathOptions: {
-                    color: 'var(--red)', // Cor do polígono.           
-                    weight: 5,
-                    dashArray: '5, 10',
-                }
+                pathOptions: { ...style }
             }
         }
         else {
@@ -117,7 +105,7 @@ const style = {
     color: 'var(--red)', // Cor do polígono.
     opacity: 1,
     weight: 5,
-    dashArray: '5, 10',
+    dashArray: '0, 0',
 };
 
 const state = {
@@ -143,8 +131,8 @@ function _updateStyle(map, newStyle) {
     if (!map) return;    
 
     // Caso não exista desenho ativo, apenas atualiza as opções globais.
-    if (!state.drawInstance.enabled()) {
-        map.pm.setGlobalOptions(drawOptions);
+    if (!state.drawInstance || !state.drawInstance?.enabled()) {
+        map.pm.setPathOptions(drawOptions.pathOptions);
         return;
     }
 
