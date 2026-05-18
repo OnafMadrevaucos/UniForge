@@ -12,7 +12,6 @@ export default class ColorPicker {
         this.hue = 0;
         this.saturation = 100;
         this.level = 100;
-        //this.lightness = 50;
         this.alpha = 1;
 
         // Permite inicialização por HEXA.
@@ -23,6 +22,11 @@ export default class ColorPicker {
             this.saturation = options.saturation ?? 100;
             this.lightness = options.lightness ?? 50;
             this.alpha = options.alpha ?? 1;
+        }
+
+        // O color picker possui um tooltip a ser exibido.
+        if (options.tooltip) {
+            this.tooltip = options.tooltip;
         }
     }
 
@@ -37,51 +41,46 @@ export default class ColorPicker {
     get colorPicker() {
         return this.parent.querySelector(`#${this.id}`);
     }
-
     get preview() {
         return this.colorPicker?.querySelector('.color-picker-preview') ?? null;
     }
-
     get popup() {
         return this.colorPicker?.querySelector('.color-picker-popup') ?? null;
     }
-
     get spectrum() {
         return this.colorPicker?.querySelector('.color-picker-spectrum') ?? null;
     }
-
     get spectrumCursor() {
         return this.colorPicker?.querySelector('.color-picker-spectrum-cursor') ?? null;
     }
-
     get hueSlider() {
         return this.colorPicker?.querySelector('.color-picker-hue') ?? null;
     }
-
     get hueThumb() {
         return this.colorPicker?.querySelector('.color-picker-hue-thumb') ?? null;
     }
-
     get alphaSlider() {
         return this.colorPicker?.querySelector('.color-picker-alpha') ?? null;
     }
-
     get alphaThumb() {
         return this.colorPicker?.querySelector('.color-picker-alpha-thumb') ?? null;
     }
-
     get display() {
-        return this.colorPicker?.querySelector('.color-picker-display') ?? null;
+        return this.colorPicker?.querySelector('.color-picker-display input') ?? null;
+    }
+    get clearBtn() {
+        return this.colorPicker?.querySelector('#colorPickerClear') ?? null;
+    }
+    get acceptBtn() {
+        return this.colorPicker?.querySelector('#colorPickerAccept') ?? null;
     }
 
     get configured() {
         return this.#state.configured;
     }
-
     get opened() {
         return this.#state.opened;
     }
-
     get value() {
         return this.#hsvaToHexa();
     }
@@ -114,8 +113,10 @@ export default class ColorPicker {
         const color = this.value;
 
         this.preview.style.background = color;
-        this.display.textContent = color;
-        this.colorPicker.dataset.tooltip = color;
+        this.display.value = color;
+
+        if (this.tooltip)
+            this.preview.dataset.tooltip = this.tooltip;
 
         this.updateSpectrum();
         this.updateHue();
@@ -153,26 +154,43 @@ export default class ColorPicker {
     }
 
     setValue(value, propagate = true) {
-        // Verifica se o valor é uma variável CSS e resolve seu valor.
+
+        // Resolve variáveis CSS.
         value = this.resolveCSSVariable(value);
 
-        // Verifica se o valor é um HEX váldido.
-        if (!this.#isValidHexa(value)) return;
+        // Verifica se é um HEX válido.
+        if (!this.#isValidHexa(value))
+            return;
 
-        const hex = value.substring(1, 7);
-        const alphaHex = value.substring(7, 9);
+        // Remove o '#'
+        let hex = value.substring(1);
+
+        // Expande HEX curto.
+        // #fff => #ffffff
+        // #f4de => #ff44ddee
+        if (hex.length === 3 || hex.length === 4) {
+
+            // Repete os termos dos pares do código HEX.
+            hex = hex.split('')
+                     .map(char => char + char)
+                     .join('');
+        }
+
+        // Garante alpha.
+        // #ffffff -> #ffffffff
+        if (hex.length === 6)
+            hex += 'FF';
 
         const r = parseInt(hex.substring(0, 2), 16);
         const g = parseInt(hex.substring(2, 4), 16);
         const b = parseInt(hex.substring(4, 6), 16);
+        const alpha = parseInt(hex.substring(6, 8), 16) / 255;
 
-        const alpha = alphaHex ? parseInt(alphaHex, 16) / 255 : 1;
+        const hsv = this.#rgbToHsv(r, g, b);
 
-        const hsl = this.#rgbToHsl(r, g, b);
-
-        this.hue = hsl.h;
-        this.saturation = hsl.s;
-        this.lightness = hsl.l;
+        this.hue = hsv.h;
+        this.saturation = hsv.s;
+        this.level = hsv.v;
         this.alpha = alpha;
 
         this.update(propagate);
@@ -188,7 +206,7 @@ export default class ColorPicker {
                 value: this.value,
                 hue: this.hue,
                 saturation: this.saturation,
-                lightness: this.lightness,
+                level: this.level,
                 alpha: this.alpha
             }
         }));
@@ -198,6 +216,21 @@ export default class ColorPicker {
         this.preview.addEventListener('click', () => {
             this.opened = !this.opened;
         });
+
+        this.preview.addEventListener('contextmenu', async (event) => {
+            event.preventDefault();
+
+            try {
+                await navigator.clipboard.writeText(this.value);
+
+                uniforge.ctrls.msgBox.showInfo(`Cor enviada para a área de transferência.`);
+
+            } catch (error) {
+                console.error('Não foi possível copiar a cor.', error);
+            }
+        });
+
+        this.display.addEventListener('change', (event) => { this.onDisplayChange(event); });
 
         document.addEventListener('click', (event) => {
             this.onOutsideClick(event);
@@ -211,6 +244,7 @@ export default class ColorPicker {
         this.activateSpectrumListeners();
         this.activateHueListeners();
         this.activateAlphaListeners();
+        this.activateButtonsListeners();
     }
 
     activateSpectrumListeners() {
@@ -235,9 +269,6 @@ export default class ColorPicker {
             if (this.#state.draggingSpectrum) {
 
                 this.#state.draggingSpectrum = false;
-
-                // Fecha ao concluir seleção.
-                this.opened = false;
             }
         });
     }
@@ -245,14 +276,12 @@ export default class ColorPicker {
     activateHueListeners() {
 
         this.hueSlider.addEventListener('mousedown', (event) => {
-
             this.#state.draggingHue = true;
 
             this.updateHueFromEvent(event);
         });
 
         document.addEventListener('mousemove', (event) => {
-
             if (!this.#state.draggingHue)
                 return;
 
@@ -260,7 +289,6 @@ export default class ColorPicker {
         });
 
         document.addEventListener('mouseup', () => {
-
             this.#state.draggingHue = false;
         });
     }
@@ -268,9 +296,7 @@ export default class ColorPicker {
     activateAlphaListeners() {
 
         this.alphaSlider.addEventListener('mousedown', (event) => {
-
             this.#state.draggingAlpha = true;
-
             this.updateAlphaFromEvent(event);
         });
 
@@ -283,18 +309,19 @@ export default class ColorPicker {
         });
 
         document.addEventListener('mouseup', () => {
-
             this.#state.draggingAlpha = false;
         });
     }
+    activateButtonsListeners() {
+        this.clearBtn.addEventListener('click', (event) => { this.onClearButtonClick(event); });
+        this.acceptBtn.addEventListener('click', (event) => { this.onAcceptButtonClick(event); });
+    }
 
     updatePopupPosition() {
-
         const previewRect =
             this.preview.getBoundingClientRect();
 
-        const popup =
-            this.popup;
+        const popup = this.popup;
 
         // Reset inicial
         popup.style.left = '0px';
@@ -307,7 +334,6 @@ export default class ColorPicker {
 
         // Overflow direita
         if (left + popupRect.width > window.innerWidth) {
-
             left = window.innerWidth - popupRect.width - 10;
         }
 
@@ -317,7 +343,6 @@ export default class ColorPicker {
 
         // Overflow inferior
         if (top + popupRect.height > window.innerHeight) {
-
             top = previewRect.top - popupRect.height - 10;
         }
 
@@ -395,8 +420,23 @@ export default class ColorPicker {
             this.opened = false;
     }
 
-    #hsvaToHexa(forceAlpha = null) {
+    onDisplayChange(event) {
+        const input = event.target.closest('input');
+        this.setValue(input.value);
+    }
 
+    onClearButtonClick(event) {
+        event.stopPropagation();
+
+        this.setValue('#FFFFFFFF');
+    }
+    onAcceptButtonClick(event) {
+        event.stopPropagation();
+
+        this.opened = false;
+    }
+
+    #hsvaToHexa(forceAlpha = null) {
         const h = this.hue;
         const s = this.saturation / 100;
         const v = this.level / 100;
@@ -501,7 +541,7 @@ export default class ColorPicker {
             .toUpperCase()}`;
     }
 
-    #rgbToHsl(r, g, b) {
+    #rgbToHsv(r, g, b) {
 
         r /= 255;
         g /= 255;
@@ -513,51 +553,49 @@ export default class ColorPicker {
         const min =
             Math.min(r, g, b);
 
-        let h;
-        let s;
-        let l =
-            (max + min) / 2;
+        const delta =
+            max - min;
 
-        if (max === min) {
+        let h = 0;
 
-            h = s = 0;
-
-        } else {
-
-            const d =
-                max - min;
-
-            s =
-                l > 0.5
-                    ? d / (2 - max - min)
-                    : d / (max + min);
+        // Hue
+        if (delta !== 0) {
 
             switch (max) {
 
                 case r:
                     h =
-                        (g - b) / d +
-                        (g < b ? 6 : 0);
+                        60 * (((g - b) / delta) % 6);
                     break;
 
                 case g:
                     h =
-                        (b - r) / d + 2;
+                        60 * (((b - r) / delta) + 2);
                     break;
 
                 case b:
                     h =
-                        (r - g) / d + 4;
+                        60 * (((r - g) / delta) + 4);
                     break;
             }
-
-            h /= 6;
         }
 
+        if (h < 0)
+            h += 360;
+
+        // Saturation
+        const s =
+            max === 0
+                ? 0
+                : delta / max;
+
+        // Value
+        const v = max;
+
         return {
-            h: Math.round(h * 360),
+            h: Math.round(h),
             s: Math.round(s * 100),
-            l: Math.round(l * 100)
+            v: Math.round(v * 100)
         };
     }
 

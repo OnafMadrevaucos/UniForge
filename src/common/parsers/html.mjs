@@ -29,6 +29,9 @@ export function parseHTML(html, data) {
     // Substitui as tags <slider>
     html = _parseSliderTags(html);
 
+    // Substitui as tags <color>
+    html = _parseColorTags(html);
+
     // Substitui os placeholders
     html = _parsePlaceholders(html, data);
 
@@ -62,7 +65,7 @@ function _parsePlaceholders(html, data) {
                 if (result && Object.prototype.hasOwnProperty.call(result, k)) {
                     // Se existir, obtenha o valor correspondente.
                     result = result[k];
-                } 
+                }
             }
             return result;
         } else {
@@ -112,7 +115,45 @@ function _parseSliderTags(html) {
                 <div class="slider-fill"></div>
                 <div class="slider-thumb"></div>
             </div>
-        </div>`;        
+        </div>`;
+    });
+    return html;
+}
+
+/**
+* Substitui todas as tags <color> no HTML pelo código de um color picker estilizado.
+* @param {string} html - A string HTML contendo as tags <color>.
+* @returns {string} - A string HTML modificada com as tags <slider> substituídas.
+*/
+function _parseColorTags(html) {
+    console.log('UniForge | Substituindo tags de Color Picker...');
+
+    const regex = /<color\s*(?:id="([^"]+)")?\s*(?:class="([^"]+)")?\s*\/?>/g;
+    html = html.replace(regex, (match, id, classes) => {
+        console.log(`Correspondência encontrada: ${match}`);
+        console.log(`ID: ${id ?? 'none'}, Classes: ${classes ?? 'none'}`);
+        return `
+        <div ${id ? `id="${id}"` : ''} ${classes ? `class="color-picker ${classes}"` : 'class="color-picker"'}>
+            <div class="color-picker-preview"></div>
+            <div class="color-picker-popup">
+                <div class="color-picker-spectrum">
+                    <div class="color-picker-spectrum-cursor"></div>
+                </div>
+                <div class="color-picker-hue">
+                    <div class="color-picker-hue-thumb"></div>
+                </div>
+                <div class="color-picker-alpha">
+                    <div class="color-picker-alpha-thumb"></div>
+                </div>
+                <div class="color-picker-display">
+                    <input type="text"/>
+                </div>
+                <div class="color-picker-footer flexrow">
+                    <button id="colorPickerClear" class="color-picker-button">Limpar</button>
+                    <button id="colorPickerAccept" class="color-picker-button">Aceitar</button>    
+                </div>
+            </div>
+        </div>`;
     });
     return html;
 }
@@ -226,7 +267,7 @@ function _parseFoldertreeTags(html, data) {
             return `<ul id="folderList" type="${type}" class="folder-list" type="${type}">${utils.html.generateEmptyListHTML(true)}</ul>`;
         }
 
-        if(data.folders.size === 0) {
+        if (data.folders.size === 0) {
             console.log(`A lista 'folders' está vazia. Retornando um <ul> vazio.`);
             return `<ul id="folderList" type="${type}" class="folder-list" type="${type}">${utils.html.generateEmptyListHTML(true)}</ul>`;
         }

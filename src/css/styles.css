@@ -967,7 +967,7 @@ button.disabled:hover {
 }
 
 .layer-control-wrapper div.layer-control-search-bar {
-    bottom: 235px;
+    bottom: 10em;
     border-radius: var(--default-border-radius);
 }
 
@@ -1381,6 +1381,12 @@ button.disabled:hover {
 .marker .map-objects-panel .tools-search-bar {
     border-bottom: none;
     left: 15px;     
+}
+
+.map-objects-panel .sizes .switch {
+    position: absolute;
+    top: 15px;
+    left: 205px;
 }
 
 .layer-control-wrapper .layer-control-search-bar,
@@ -4233,7 +4239,7 @@ button.disabled:hover {
     background: var(--light-blue);
     border-radius: 10px;
     position: relative;
-    margin-block: 18px;
+    margin-block: 10px;
     margin-inline: 5px;
 }
 
@@ -4269,10 +4275,10 @@ button.disabled:hover {
 }
 
 .color-picker-preview {
-    width: 32px;
-    height: 32px;
-    border-radius: 10px;
-    border: 2px solid #d1d5db;
+    width: 16px;
+    height: 16px;
+    border-radius: 3px;
+    border: 2px solid var(--light-grey);
     cursor: pointer;
     background-image:
         linear-gradient(45deg, #ddd 25%, transparent 25%),
@@ -4292,9 +4298,10 @@ button.disabled:hover {
     top: 52px;
     left: 0;
     width: 260px;
-    padding: 12px;
+    padding-top: 12px;
+    padding-bottom: 0px;
     border-radius: 14px;
-    background: #1f2937;
+    background: var(--background-color);
     box-shadow:
         0 10px 30px rgba(0, 0, 0, .25);
     display: none;
@@ -4307,18 +4314,19 @@ button.disabled:hover {
 
 .color-picker-spectrum {
     position: relative;
-    width: 100%;
+    width: var(--fill-width);
     height: 180px;
     border-radius: 10px;
     cursor: crosshair;
     overflow: hidden;
+    margin-inline: 12px;
 }
 
 .color-picker-spectrum-cursor {
     position: absolute;
     width: 14px;
     height: 14px;
-    border: 2px solid white;
+    border: 2px solid var(--light-grey);
     border-radius: 50%;
     transform: translate(-50%, -50%);
     box-shadow: 0 0 0 1px rgba(0, 0, 0, .4);
@@ -4328,7 +4336,7 @@ button.disabled:hover {
 .color-picker-hue,
 .color-picker-alpha {
     position: relative;
-    width: 100%;
+    width: var(--fill-width);
     height: 14px;
     margin-top: 12px;
     border-radius: 999px;
@@ -4338,13 +4346,14 @@ button.disabled:hover {
 .color-picker-hue {
     background:
         linear-gradient(to right,
-            #ff0000,
-            #ffff00,
-            #00ff00,
-            #00ffff,
-            #0000ff,
-            #ff00ff,
-            #ff0000);
+            red,
+            yellow,
+            green,
+            cyan,
+            blue,
+            magenta,
+            red);
+    margin-inline: 12px;
 }
 
 .color-picker-alpha {
@@ -4359,7 +4368,7 @@ button.disabled:hover {
         0 6px,
         6px -6px,
         -6px 0;
-    overflow: hidden;
+    margin-inline: 12px;
 }
 
 .color-picker-hue-thumb,
@@ -4369,22 +4378,43 @@ button.disabled:hover {
     width: 18px;
     height: 18px;
     border-radius: 50%;
-    background: white;
+    background: var(--light-grey);
     border: 2px solid rgba(0, 0, 0, .25);
     transform: translate(-50%, -50%);
     pointer-events: none;
 }
 
 .color-picker-display {
-
     margin-top: 14px;
-
-    color: white;
-
+    color: var(--light-grey);
     font-family: monospace;
     font-size: 14px;
-
     text-align: center;
+}
+
+.color-picker-footer {
+    margin-top: auto;
+    gap: var(--default-gap-size);
+}
+.color-picker-footer .color-picker-button {
+    flex: 1;
+    background-color: transparent;
+    border: none;
+    box-shadow: none;
+    color: var(--light-text-color);    
+    margin: 0;
+    margin-top: 5px;
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+}
+.color-picker-footer .color-picker-button:first-of-type {
+    border-bottom-right-radius: 0;
+}
+.color-picker-footer .color-picker-button:last-of-type {
+    border-bottom-left-radius: 0;
+}
+.color-picker-footer .color-picker-button:hover {
+    background-color: var(--red);
 }
 
 /* ------ TinyMCE Editor ------ */

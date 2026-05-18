@@ -25,6 +25,9 @@ export default class Slider {
         this.direction = options.direction ?? Slider.Directions.horizontal;
         this.linkedLabel = options.linkedLabel ?? null;
         this.labelMask = options.labelMask ?? '{value}';
+
+        if(options.tooltip)
+            this.tooltip = options.tooltip;
     }
 
     #state = {
@@ -33,20 +36,20 @@ export default class Slider {
         disabled: false
     }
 
-    get slider() {
+    get element() {
         return this.parent.querySelector(`#${this.id}`);
     }
 
     get track() {
-        return this.slider?.querySelector('.slider-track') ?? null;
+        return this.element?.querySelector('.slider-track') ?? null;
     }
 
     get fill() {
-        return this.slider?.querySelector('.slider-fill') ?? null;
+        return this.element?.querySelector('.slider-fill') ?? null;
     }
 
     get thumb() {
-        return this.slider?.querySelector('.slider-thumb') ?? null;
+        return this.element?.querySelector('.slider-thumb') ?? null;
     }
 
     get configured() {
@@ -77,9 +80,9 @@ export default class Slider {
         this.#state.disabled = value;
 
         if (value)
-            this.slider.classList.add('disabled');
+            this.element.classList.add('disabled');
         else
-            this.slider.classList.remove('disabled');
+            this.element.classList.remove('disabled');
     }
 
     /**
@@ -87,7 +90,7 @@ export default class Slider {
      */
     config() {
         // Define o tamanho do Slider.
-        this.slider.style.width = this.width;
+        this.element.style.width = this.width;
 
         this.activateBaseListeners();
         this.update();
@@ -110,11 +113,12 @@ export default class Slider {
             this.thumb.style.bottom = `${percent}%`;
         }
 
-        // Atualiza o tooltip do Slider.
-        this.thumb.dataset.tooltip = this.value;
+        // Atualiza o tooltip do Slider, se houver.
+        if(this.tooltip)
+            this.thumb.dataset.tooltip = this.tooltip;
 
         // Atualiza o dataset do Slider.
-        this.slider.dataset.value = this.value;
+        this.element.dataset.value = this.value;
     }
 
     /**
@@ -176,14 +180,14 @@ export default class Slider {
      * @param {Function} callback
      */
     addEventListener(event, callback) {
-        this.slider.addEventListener(event, callback);
+        this.element.addEventListener(event, callback);
     }
 
     /**
      * Dispara evento de alteração.
      */
     dispatchChangeEvent() {
-        this.slider.dispatchEvent(new CustomEvent('change', {
+        this.element.dispatchEvent(new CustomEvent('change', {
             detail: {
                 value: this.value
             }
