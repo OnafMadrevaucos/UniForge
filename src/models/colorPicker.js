@@ -11,7 +11,8 @@ export default class ColorPicker {
 
         this.hue = 0;
         this.saturation = 100;
-        this.lightness = 50;
+        this.level = 100;
+        //this.lightness = 50;
         this.alpha = 1;
 
         // Permite inicialização por HEXA.
@@ -82,7 +83,7 @@ export default class ColorPicker {
     }
 
     get value() {
-        return this.#hslaToHexa();
+        return this.#hsvaToHexa();
     }
 
     set configured(value) {
@@ -134,7 +135,7 @@ export default class ColorPicker {
         `;
 
         const x = this.saturation;
-        const y = 100 - this.lightness;
+        const y = 100 - this.level;
 
         this.spectrumCursor.style.left = `${x}%`;
         this.spectrumCursor.style.top = `${y}%`;
@@ -145,7 +146,7 @@ export default class ColorPicker {
     }
 
     updateAlpha() {
-        const solid = this.#hslaToHexa(1);
+        const solid = this.#hsvaToHexa();
 
         this.alphaSlider.style.background = `linear-gradient(to right, transparent, ${solid})`;
         this.alphaThumb.style.left = `${this.alpha * 100}%`;
@@ -172,7 +173,7 @@ export default class ColorPicker {
         this.hue = hsl.h;
         this.saturation = hsl.s;
         this.lightness = hsl.l;
-        this.alpha = alpha;        
+        this.alpha = alpha;
 
         this.update(propagate);
     }
@@ -218,7 +219,7 @@ export default class ColorPicker {
 
             this.#state.draggingSpectrum = true;
 
-            this.updateSpectrumFromEvent(event);            
+            this.updateSpectrumFromEvent(event);
         });
 
         document.addEventListener('mousemove', (event) => {
@@ -233,7 +234,7 @@ export default class ColorPicker {
 
             if (this.#state.draggingSpectrum) {
 
-                this.#state.draggingSpectrum = false;                
+                this.#state.draggingSpectrum = false;
 
                 // Fecha ao concluir seleção.
                 this.opened = false;
@@ -299,8 +300,7 @@ export default class ColorPicker {
         popup.style.left = '0px';
         popup.style.top = '52px';
 
-        const popupRect =
-            popup.getBoundingClientRect();
+        const popupRect = popup.getBoundingClientRect();
 
         let left = previewRect.left;
         let top = previewRect.bottom + 10;
@@ -308,8 +308,7 @@ export default class ColorPicker {
         // Overflow direita
         if (left + popupRect.width > window.innerWidth) {
 
-            left =
-                window.innerWidth - popupRect.width - 10;
+            left = window.innerWidth - popupRect.width - 10;
         }
 
         // Overflow esquerda
@@ -319,8 +318,7 @@ export default class ColorPicker {
         // Overflow inferior
         if (top + popupRect.height > window.innerHeight) {
 
-            top =
-                previewRect.top - popupRect.height - 10;
+            top = previewRect.top - popupRect.height - 10;
         }
 
         // Overflow superior
@@ -332,54 +330,35 @@ export default class ColorPicker {
     }
 
     updateSpectrumFromEvent(event) {
+        const rect = this.spectrum.getBoundingClientRect();
 
-        const rect =
-            this.spectrum.getBoundingClientRect();
-
-        let x =
-            (event.clientX - rect.left) / rect.width;
-
-        let y =
-            (event.clientY - rect.top) / rect.height;
+        let x = (event.clientX - rect.left) / rect.width;
+        let y = (event.clientY - rect.top) / rect.height;
 
         x = Math.max(0, Math.min(1, x));
         y = Math.max(0, Math.min(1, y));
 
-        this.saturation =
-            Math.round(x * 100);
-
-        this.lightness =
-            Math.round((1 - y) * 100);
+        this.saturation = Math.round(x * 100);
+        this.level = Math.round((1 - y) * 100);
 
         this.update(true);
     }
 
     updateHueFromEvent(event) {
+        const rect = this.hueSlider.getBoundingClientRect();
 
-        const rect =
-            this.hueSlider.getBoundingClientRect();
-
-        let percent =
-            (event.clientX - rect.left) / rect.width;
-
+        let percent = (event.clientX - rect.left) / rect.width;
         percent = Math.max(0, Math.min(1, percent));
-
-        this.hue =
-            Math.round(percent * 360);
+        this.hue = Math.round(percent * 360);
 
         this.update(true);
     }
 
     updateAlphaFromEvent(event) {
+        const rect = this.alphaSlider.getBoundingClientRect();
 
-        const rect =
-            this.alphaSlider.getBoundingClientRect();
-
-        let percent =
-            (event.clientX - rect.left) / rect.width;
-
+        let percent = (event.clientX - rect.left) / rect.width;
         percent = Math.max(0, Math.min(1, percent));
-
         this.alpha = percent;
 
         this.update(true);
@@ -390,7 +369,7 @@ export default class ColorPicker {
         if (typeof value !== 'string') return value;
 
         // Remove os espaços em branco.
-        value = value.trim();      
+        value = value.trim();
 
         // Verifica se é uma variárivel CSS.
         if (!this.#isCSSVariable(value)) return value;
@@ -412,8 +391,57 @@ export default class ColorPicker {
     }
 
     onOutsideClick(event) {
-        if (!this.colorPicker.contains(event.target)) 
-            this.opened = false;        
+        if (!this.colorPicker.contains(event.target))
+            this.opened = false;
+    }
+
+    #hsvaToHexa(forceAlpha = null) {
+
+        const h = this.hue;
+        const s = this.saturation / 100;
+        const v = this.level / 100;
+
+        const alpha = forceAlpha ?? this.alpha;
+
+        const c = v * s;
+
+        const x = c * (1 - Math.abs((h / 60) % 2 - 1));
+
+        const m = v - c;
+
+        let r = 0;
+        let g = 0;
+        let b = 0;
+
+        if (h < 60) {
+            r = c; g = x; b = 0;
+        }
+        else if (h < 120) {
+            r = x; g = c; b = 0;
+        }
+        else if (h < 180) {
+            r = 0; g = c; b = x;
+        }
+        else if (h < 240) {
+            r = 0; g = x; b = c;
+        }
+        else if (h < 300) {
+            r = x; g = 0; b = c;
+        }
+        else {
+            r = c; g = 0; b = x;
+        }
+
+        r = Math.round((r + m) * 255);
+        g = Math.round((g + m) * 255);
+        b = Math.round((b + m) * 255);
+
+        const a = Math.round(alpha * 255);
+
+        return `#${[r, g, b, a]
+            .map(v => v.toString(16).padStart(2, '0'))
+            .join('')
+            .toUpperCase()}`;
     }
 
     #hslaToHexa(forceAlpha = null) {
@@ -422,11 +450,9 @@ export default class ColorPicker {
         const s = this.saturation / 100;
         const l = this.lightness / 100;
 
-        const alpha =
-            forceAlpha ?? this.alpha;
+        const alpha = forceAlpha ?? this.alpha;
 
-        const c =
-            (1 - Math.abs(2 * l - 1)) * s;
+        const c = (1 - Math.abs(2 * l - 1)) * s;
 
         const x =
             c * (1 - Math.abs((h / 60) % 2 - 1));
