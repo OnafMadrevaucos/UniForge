@@ -262,7 +262,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         _label: 'Traçado Longo',
                         style: {
                             line: 'dashed',
-                            dashArray: '10, 10'
+                            dashArray: '15, 20'
                         }
                     },
                 }
@@ -356,7 +356,7 @@ function configureSettings() {
 }
 
 async function configureURLs() {
-    const worldMap = uniforge.doc.settings.get('mainMap');
+    const worldMap = uniforge.doc.settings.get('leaflet.mainMap');
 
     /**
     * @description Urls padrões usadas pelo sistema.
@@ -466,6 +466,9 @@ async function configureToolsBars() {
 
     uniforge.ctrls.currentMarkerIcon = 'blue_battle.svg';
 
+    const hasBorderSwitch = document.querySelector("#hasBorderSwitch");
+    hasBorderSwitch.dataset.tooltip = "Ativar contorno.";
+
     const mapMarkersContainer = document.querySelector('.map-objects-container.marker div');
 
     const markersOptions = mapMarkersContainer.querySelector('.options.marker');
@@ -573,6 +576,11 @@ function activateMainListeners() {
     const toggleShapesPanel = document.getElementById('toggleShapesPanel');
     toggleShapesPanel.addEventListener('click', (event) => { onToggleShapesPanelClick(event); });
 
+    const hasBorderSwitch = document.querySelector('#hasBorderSwitch');
+    const hasBorderCheckbox = hasBorderSwitch.querySelector('#checkbox');
+
+    hasBorderCheckbox.addEventListener('change', (event) => { onHasBorderSwitchChange(event); });
+
     const shapeSizeSlider = uniforge.ctrls.sliders.shapeSizeSlider = new Slider('shapeSizeSlider', document, { min: 1, max: 10, value: 5, linkedLabel: 'shapeSizeSpan', labelMask: '{value}px' });
     shapeSizeSlider.config();
     shapeSizeSlider.addEventListener('change', (event) => { onShapeSizeSliderChange(event); });
@@ -580,11 +588,11 @@ function activateMainListeners() {
     const shapeBorderCombo = document.getElementById('shapeBorderCombo');
     shapeBorderCombo.addEventListener('change', (event) => { onShapeBorderComboChange(event); });
 
-    const fillColorPicker = uniforge.ctrls.colorPickers.fillColorPicker = new ColorPicker('fillColorPicker', document, { value: 'var(--red)' });
+    const fillColorPicker = uniforge.ctrls.colorPickers.fillColorPicker = new ColorPicker('fillColorPicker', document, { value: 'var(--red)', tooltip: 'Cor do Preenchimento' });
     fillColorPicker.config();
     fillColorPicker.addEventListener('change', (event) => { onFillColorPickerChange(fillColorPicker); });
 
-    const borderColorPicker = uniforge.ctrls.colorPickers.borderColorPicker = new ColorPicker('borderColorPicker', document, { value: 'var(--dark-red)' });
+    const borderColorPicker = uniforge.ctrls.colorPickers.borderColorPicker = new ColorPicker('borderColorPicker', document, { value: 'var(--dark-red)', tooltip: 'Cor da Borda' });
     borderColorPicker.config();
 
     borderColorPicker.addEventListener('change', (event) => { onBorderColorPickerChange(borderColorPicker); });
@@ -734,6 +742,22 @@ function onToggleShapesPanelClick(event) {
     const mapShapesContainer = document.querySelector('.map-objects-container.regular-shapes');
 
     mapShapesContainer.classList.toggle('active');
+}
+
+function onHasBorderSwitchChange(event) {
+    const hasBorder = event.target.checked;
+
+    const hasBorderSwitch = document.querySelector('#hasBorderSwitch');
+    const sliderSwitchContainer = uniforge.ctrls.sliders.shapeSizeSlider.element.closest('.options.size');
+
+    if (hasBorder) {
+        sliderSwitchContainer.classList.remove('hidden');
+        hasBorderSwitch.dataset.tooltip = "Desativar contorno.";
+    }
+    else {
+        sliderSwitchContainer.classList.add('hidden');
+        hasBorderSwitch.dataset.tooltip = "Ativar contorno.";
+    }
 }
 
 function onShapeSizeSliderChange(event) {

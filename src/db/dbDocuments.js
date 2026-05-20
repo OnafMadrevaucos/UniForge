@@ -18,6 +18,7 @@ import TextImage from "../common/documents/textImage.mjs";
 import MapAtlas from "../common/documents/map.mjs";
 import MapElement from "../common/documents/mapElement.mjs";
 import Timeline from "../common/documents/timeline.mjs";
+import Dictionary from "../common/primitives/dictionary.mjs";
 
 /**
  * Classe para criar e gerenciar conjuntos (Sets) baseados em dados de um banco de dados.
@@ -52,8 +53,7 @@ export default class DBDocuments {
         this.textImages = this.createGenericSet(data.textImages, TextImage);
         this.chapterTypes = this.createGenericSet(data.chapterTypes, ChapterType);
         this.entryTypes = this.createGenericSet(data.entryTypes, EntryType);
-        this.relevances = this.createGenericSet(data.relevances, Relevance);
-        this.settings = this.createGenericSet(data.settings, Setting);
+        this.relevances = this.createGenericSet(data.relevances, Relevance);        
 
         this.chapters = this.createChapterSet(data.chapters, data.sections);
         this.sections = this.createSectionSet(data.sections, data.entries, data.events);
@@ -62,6 +62,7 @@ export default class DBDocuments {
         this.events = this.createEventSet(data.events);
         this.timelines = this.createTimelineSet(data.timelines, data.timelineEvents);
         this.maps = this.createMapSet(data.maps, data.mapElements);
+        this.settings = this.createSettingsSet(data.settings);
 
         // Adiciona umas propriedades utilitárias para facilitar o acesso.
         this.entry = this.entries;
@@ -110,8 +111,8 @@ export default class DBDocuments {
         const chapterSet = new Set();
 
         chapters.forEach((chapter) => {
-            const sectionSet = new Set();   
-            
+            const sectionSet = new Set();
+
             const cType = this.chapterTypes.get(chapter.type);
 
             // Converte os booleanos de 0 e 1 para 'false' e 'true'.
@@ -151,7 +152,7 @@ export default class DBDocuments {
             te.forEach((te) => {
                 const e = this.events.get(te.evid);
 
-                if(e) eventSet.add(e);
+                if (e) eventSet.add(e);
             });
 
             // Adiciona a timeline ao conjunto, incluindo seus eventos
@@ -180,18 +181,18 @@ export default class DBDocuments {
                 _value: type.tag,
                 _label: type.label
             })));
-            
-            const entry = this.entries.get(lineage.eid); 
+
+            const entry = this.entries.get(lineage.eid);
 
             const lineageEntries = entries.filter(e => e.ltid === lineage.ltid).map((e) => {
                 const entry = this.entries.get(e.eid);
-                return new LineageEntry({...entry, code: e.code, isRoot: e.isRoot, isVirtual: e.isVirtual});
+                return new LineageEntry({ ...entry, code: e.code, isRoot: e.isRoot, isVirtual: e.isVirtual });
             });
 
             // Filtra os tipos associados à linhagem atual e adiciona os campos _value e _label.
             const entriesSet = new Set(lineageEntries);
 
-            const finalLineage = new LineageTree({ ...lineage, types: typesSet, entity: entry, entries: entriesSet }); 
+            const finalLineage = new LineageTree({ ...lineage, types: typesSet, entity: entry, entries: entriesSet });
             finalLineage.entity.lineage = finalLineage;
 
             // Adiciona a linhagem ao conjunto, incluindo seus tipos.
@@ -258,7 +259,7 @@ export default class DBDocuments {
             months.forEach((month) => {
                 month.pos = pos;
                 // Adiciona o nome do mês à lista de meses
-                data.months.add(new CalendarMonths(month));                
+                data.months.add(new CalendarMonths(month));
 
                 pos++;
             });
@@ -309,7 +310,7 @@ export default class DBDocuments {
             } else {
                 // Adiciona a entrada ao conjunto, incluindo seus eventos.
                 entrySet.add(new Entity({ ...entry, entryType: entryType, events: eventsSet, section: section }));
-            }  
+            }
         });
 
         return entrySet;
@@ -326,8 +327,8 @@ export default class DBDocuments {
             if (entry.entryType.isEntity) {
                 const lineage = lineagesSet.toArray().find(l => l.eid === entry.eid);
                 entry.lineage = new LineageTree(lineage);
-            }  
-        });        
+            }
+        });
     }
 
     /**
@@ -400,6 +401,22 @@ export default class DBDocuments {
         } else throw new Error('Não foi possível criar o Set das categorias. O Set dos chapters deve ser criado antes do de sections.');
 
         return sectionSet;
+    }
+
+    /**
+     * Cria um conjunto de COnfigurações, ordenados por grupos.
+     *
+     * @param {Array<Setting>} settings      - Dados da tabela Settings.
+     * @returns {Set} Conjunto de Maps.
+     */
+    createSettingsSet(settings) {
+        const settingsSet = new Dictionary();
+
+        settings.forEach((setting) => {
+            settingsSet.add(`${setting.group}.${setting.tag}`, setting.value);
+        });
+
+        return settingsSet;
     }
 
     /**

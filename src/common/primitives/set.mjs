@@ -14,7 +14,8 @@ export function get(_id) {
         // Verifica se o membro tem uma propriedade _id e se ela é igual ao _id fornecido.
         if (member._id === _id) {
             _value = member; 
-            break;}
+            break;
+        }
     }
     return _value;
 }

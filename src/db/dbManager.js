@@ -213,6 +213,7 @@ export default class DBManager {
             await this.populateEntryTypeTable();
             await this.populateRelevanceTable();
             await this.populateMapTable();
+            await this.populateSettingsTable();
 
             // Comita a transação.
             await this.commitTransaction();
@@ -508,7 +509,7 @@ export default class DBManager {
         const result = await this.#execQuery(query, params);
         result.lastInsertRowid = tid;
         this.results = result;
-        
+
         return this.result;
     }
 
@@ -1889,8 +1890,8 @@ export default class DBManager {
             '`eid` VARCHAR(16) NOT NULL,' +             // Identificador da Entrada Fundadora da Linhagem.
             '`code` VARCHAR(5) NOT NULL,' +             // Identificador da Entrada dentro da Árvore.
             '`isRoot` BOOLEAN NOT NULL DEFAULT 0,'      // É a Entrada Fundadora da Linhagem.
-            '`isVirtual` BOOLEAN NOT NULL DEFAULT 0,'      // A Entrada é virtual? (Existe apenas para dar sentido à Linhagem).
-            'PRIMARY KEY (`ltid`,`eid`))';
+        '`isVirtual` BOOLEAN NOT NULL DEFAULT 0,'      // A Entrada é virtual? (Existe apenas para dar sentido à Linhagem).
+        'PRIMARY KEY (`ltid`,`eid`))';
 
         this.results = await this.#execQuery(query);
         console.log('Tabela \'_lineageTreeEntries\' criada....OK.');
@@ -2251,6 +2252,48 @@ export default class DBManager {
             this.results = await this.#execQuery(query, params);
         });
         console.log('Tabela \'relevance\' populada....OK.');
+        return this.result;
+    }
+
+    /**
+     * Popula a tabela 'settings' com um mapa padrão.
+     * 
+     * @returns {Promise<Object>} Uma promessa que informa as alterações realizadas no banco de dados.
+     */
+    async populateSettingsTable() {
+        console.log('Populando tabela \'settings\'....');
+
+        const styles = [
+            {
+                tag: 'templine',
+                group: 'leafletStyle',
+                value: "fillColor: 'var(--red)',fillOpacity: 0.5, color: 'var(--red)',opacity: 1,weight: 5,dashArray: '0, 0'",
+            },
+            {
+                tag: 'pathOptions',
+                group: 'leafletStyle',
+                value: "fillColor: 'var(--red)',fillOpacity: 0.5, color: 'var(--red)',opacity: 1,weight: 5,dashArray: '0, 0'",
+            },
+            {
+                tag: 'hintline',
+                group: 'leafletStyle',
+                value: "color: 'var(--light-text-color)',dashArray: '5, 10',weight: 3"
+            }
+        ];
+
+        let query = 'INSERT INTO settings (tag, group, value) ';
+        query += 'VALUES (?,?,?);';
+
+        styles.forEach(async style => {
+            let params = [];
+
+            params.push(style.tag);
+            params.push(style.group);
+            params.push(style.value);
+
+            this.results = await this.#execQuery(query, params);
+        });
+        console.log('Tabela \'settings\' populada....OK.');
         return this.result;
     }
 
