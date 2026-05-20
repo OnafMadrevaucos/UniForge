@@ -55,13 +55,13 @@ export default class SettingsForm extends EntryForm {
     }
 
     prepareGroups() {
-        const database = uniforge.doc.settings.database;
+        const database = uniforge.doc.settings.get('database');
         this.data.database = {};
         for (const setting of database.toArray()) {
             this.data.database.items[setting.tag] = setting.value;
         }
 
-        const leaflet = uniforge.doc.settings.leaflet;
+        const leaflet = uniforge.doc.settings.get('leaflet');
         this.data.leaflet = {};        
         for (const setting of leaflet.toArray()) {
             this.data.leaflet.items[setting.tag] = setting.value;
@@ -71,7 +71,7 @@ export default class SettingsForm extends EntryForm {
     }
 
     async prepareMetadata() {
-        const filePath = await uniforge.path.join(uniforge.doc.settings.leaflet.get('mainMap').value, 'metadata.json');
+        const filePath = await uniforge.path.join(uniforge.doc.settings.get('leaflet.mainMap').value, 'metadata.json');
 
         const data = await fetch(filePath);
         this.data.metadata = await data.json();

@@ -276,7 +276,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Inicia o gerenciador de banco de dados.
     uniforge.db.init();
 
-    uniforge.settings = Object.freeze(configureSettings());
+    // Atalho para o gerenciador de configurações do sistema.
+    uniforge.settings = uniforge.db.settings;
 
     // Atalho para o Controle de Mensagens para o Usuário
     uniforge.msgBox = uniforge.ctrls.msgBox;
@@ -339,22 +340,6 @@ async function refreshDocuments() {
     return uniforge.doc;
 }
 
-function configureSettings() {
-    const settings = {
-        get: (tag) => {
-            const setting = uniforge.doc.settings.get(tag);
-            return setting ? setting.value : null;
-        },
-        set: async (tag, value) => {
-            const setting = uniforge.doc.settings.get(tag);
-            if (setting) setting.value = value;
-
-            return await uniforge.db.updateSettings(setting);
-        }
-    }
-    return settings;
-}
-
 async function configureURLs() {
     const worldMap = uniforge.doc.settings.get('leaflet.mainMap');
 
@@ -375,8 +360,8 @@ async function configureURLs() {
         relativePath: {
             background: '/ui/lib-background.png',
             blankImg: '/ui/blank-image.svg',
-            worldMap: worldMap.value ? `/${worldMap.value}/tiles` : null,
-            mapOverlays: worldMap.value ? `/${worldMap.value}/overlays` : null,
+            worldMap: worldMap ? `/${worldMap}/tiles` : null,
+            mapOverlays: worldMap ? `/${worldMap}/overlays` : null,
             common: '/common/',
             models: '/models/',
             templates: '/templates/',

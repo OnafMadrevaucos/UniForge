@@ -18,7 +18,7 @@ import TextImage from "../common/documents/textImage.mjs";
 import MapAtlas from "../common/documents/map.mjs";
 import MapElement from "../common/documents/mapElement.mjs";
 import Timeline from "../common/documents/timeline.mjs";
-import Dictionary from "../common/primitives/dictionary.mjs";
+import SettingsSet from "../common/primitives/settingsSet.mjs";
 
 /**
  * Classe para criar e gerenciar conjuntos (Sets) baseados em dados de um banco de dados.
@@ -410,7 +410,7 @@ export default class DBDocuments {
      * @returns {Set} Conjunto de Maps.
      */
     createSettingsSet(settings) {
-        const settingsSet = new Dictionary();
+        const settingsSet = new SettingsSet();
 
         settings.forEach((setting) => {
             settingsSet.add(`${setting.group}.${setting.tag}`, setting.value);

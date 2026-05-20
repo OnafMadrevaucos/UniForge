@@ -1,4 +1,4 @@
-export default class Dictionary extends Set {
+export default class SettingsSet extends Set {
     /**
      * Adiciona um item.
      * 
@@ -98,7 +98,7 @@ export default class Dictionary extends Set {
         }
 
         // Busca item interno.
-        return parent._items.get(childId);
+        return parent._items.get(childId)._value;
     }
 
     /**
