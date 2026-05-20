@@ -10,6 +10,21 @@ const defaultHintlineStyle = {
     dashArray: '5, 10',
     weight: 3
 }
+const darkHintlineStyle = {
+    color: 'var(--text-color)',
+    dashArray: '5, 10',
+    weight: 3
+}
+
+const style = {
+    fillColor: 'var(--red)',
+    fillOpacity: 0.5,
+    color: 'var(--red)',
+    opacity: 1,
+    weight: 5,
+    dashArray: '0, 0',
+    line: 'solid'
+};
 
 /**
  * Opções de configuração para os desenhos de polígonos, marcadores e formas regulares (círculos e retângulos).
@@ -53,8 +68,9 @@ const options = {
     },
     regularShape: function (isDrawer = true) {
         if (isDrawer) {
-            return {
+            return {                
                 hintlineStyle: defaultHintlineStyle,
+                templineStyle: { ...style },
                 pathOptions: { ...style }
             }
         }
@@ -77,36 +93,18 @@ const drawer = {
         if (state.drawInstance && state.drawInstance.enabled()) state.drawInstance.disable();
 
         map.pm.enableDraw('Polygon', options.polygon()); // Permite interseção de polígonos.
-        state.drawInstance = map.pm.Draw.Polygon;
-
-        return state.drawInstance;
     },
     circle: function (map) {
         if (state.drawInstance && state.drawInstance.enabled()) state.drawInstance.disable();
 
         map.pm.enableDraw('Circle', options.regularShape()); // Permite interseção de círculos.
-        state.drawInstance = map.pm.Draw.Circle;
-
-        return state.drawInstance;
     },
     rectangle: function (map) {
         if (state.drawInstance && state.drawInstance.enabled()) state.drawInstance.disable();
 
-        map.pm.enableDraw('Rectangle', options.regularShape()); // Permite interseção de retângulos.
-        state.drawInstance = map.pm.Draw.Rectangle;
-
-        return state.drawInstance;
+        map.pm.enableDraw('Rectangle', options.regularShape()); // Permite interseção de retângulos.        
     }
 }
-
-const style = {
-    fillColor: 'var(--red)',
-    fillOpacity: 0.5,
-    color: 'var(--red)', // Cor do polígono.
-    opacity: 1,
-    weight: 5,
-    dashArray: '0, 0',
-};
 
 const state = {
     drawInstance: null,
@@ -128,7 +126,7 @@ function _updateStyle(map, newStyle) {
     };
 
     // Verifica se a instância do mapa do Leaflet foi enviada corretamente.
-    if (!map) return;    
+    if (!map) return;
 
     // Caso não exista desenho ativo, apenas atualiza as opções globais.
     if (!state.drawInstance || !state.drawInstance?.enabled()) {
@@ -136,18 +134,25 @@ function _updateStyle(map, newStyle) {
         return;
     }
 
+    // Atualiza o estilo temporário (templine) do desenho ativo.
+    _updateTemplineStyle(map, drawOptions.templineStyle);
+}
+function _updateTemplineStyle(map, newStyle) {
+    // Verifica se o estilo foi enviado corretamente.
+    if(!newStyle) return;
+
+    // Obtém forma ativa do desenho.
     const activeShape = map.pm.Draw.getActiveShape();
 
-    // ------------------------------------------------------
-    // SALVA OS VÉRTICES ATUAIS
-    // ------------------------------------------------------
+    // Verifica se a instância de desenho do Leaflet foi criada corretamente. Se não, crie-a.
+    if(!state.drawInstance) state.drawInstance = map.pm.Draw[activeShape];
 
     // Obtém a camada de desenho ativa.
     const workingLayer = state.drawInstance._workingLayer ?? state.drawInstance._layer;
 
     // Verifica se a camada de desenho ativa possui latlngs.
     if (workingLayer) {
-        workingLayer.setStyle(drawOptions.templineStyle);
+        workingLayer.setStyle(newStyle);
     }
 }
 
@@ -255,7 +260,7 @@ function _onPolygonDraw(map, event) {
         mapShapesContainer.classList.add('active');
     }
 
-    drawer.polygon(map, options);
+    drawer.polygon(map);
 }
 
 
@@ -273,7 +278,7 @@ function _onRectangleDraw(map, event) {
         mapShapesContainer.classList.add('active');
     }
 
-    drawer.rectangle(map, options);
+    drawer.rectangle(map);
 }
 
 function _onCircleDraw(map, event) {
@@ -290,7 +295,7 @@ function _onCircleDraw(map, event) {
         mapShapesContainer.classList.add('active');
     }
 
-    drawer.circle(map, options);
+    drawer.circle(map);
 }
 
 async function _onMarkerDraw(map, event) {
@@ -405,7 +410,8 @@ const utils = {
     state: state,
     drawStyle: {
         style,
-        update: _updateStyle
+        update: _updateStyle,
+        updateTemplineStyle: _updateTemplineStyle
     }
 }
 

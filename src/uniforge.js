@@ -40,7 +40,7 @@ document.addEventListener('DOMContentLoaded', async () => {
          * @property {string} emptyString - String vazia padrão, usada para evitar várias definições de string vazias.
         */
         defaults: Object.freeze({
-            emptyString: ''
+            emptyString: '',
         }),
 
         /**
@@ -238,6 +238,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         _id: 'solid',
                         _label: 'Sólida',
                         style: {
+                            line: 'solid',
                             dashArray: '0, 0'
                         }
                     },
@@ -274,10 +275,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     uniforge.state.init();
 
     // Inicia o gerenciador de banco de dados.
-    uniforge.db.init();
-
-    // Atalho para o gerenciador de configurações do sistema.
-    uniforge.settings = uniforge.db.settings;
+    uniforge.db.init();    
 
     // Atalho para o Controle de Mensagens para o Usuário
     uniforge.msgBox = uniforge.ctrls.msgBox;
@@ -287,6 +285,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     uniforge.html.classList.add('uniforge');
 
     await refreshDocuments();
+
+    // Atalho para o gerenciador de configurações do sistema.
+    uniforge.settings = uniforge.doc.settings;
 
     await configureURLs();
 
@@ -298,7 +299,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     configureHooks();
 
-    checkState();
+    checkState();    
 
     await configureLeaflet();
 
@@ -406,6 +407,33 @@ async function configureLeaflet() {
 
     // Inicializa o controle de mapas Leaflet.
     uniforge.ctrls.leaflet = lControl.init(uniforge.urls.worldMap);
+
+    const style = JSON.parse(uniforge.doc.settings.get('leafletStyle.pathOptions'));
+    style.line = uniforge.shapesToolBar.constants.lineTypes[style.line].style.line;
+    style.dashArray = uniforge.shapesToolBar.constants.lineTypes[style.line].style.dashArray;
+
+    const hasBorder = style.opacity === 1;
+
+    const hasBorderCheck = document.querySelector('#hasBorderSwitch #checkbox'); 
+    hasBorderCheck.checked = hasBorder;    
+
+    const shapeSizeSlider = uniforge.ctrls.sliders.shapeSizeSlider;    
+    shapeSizeSlider.setValue(style.weight, true);
+
+    const shapeBorderCombo = document.getElementById('shapeBorderCombo');
+    shapeBorderCombo.value = style.line;
+
+    shapeBorderCombo.dispatchEvent(new Event('change'));
+
+    const fillColorPicker = uniforge.ctrls.colorPickers.fillColorPicker;
+    fillColorPicker.setColor(style.fillColor, true);
+
+    const borderColorPicker = uniforge.ctrls.colorPickers.borderColorPicker;    
+    borderColorPicker.setColor(style.color, true);    
+
+    uniforge.leaflet.drawStyle.update(uniforge.leaflet.core.default.map, style);
+
+    await refreshPreviewStyle();
 }
 // Configura a ferramenta de geração de map tiles.
 function configureMapTiler() {
@@ -566,14 +594,15 @@ function activateMainListeners() {
 
     hasBorderCheckbox.addEventListener('change', (event) => { onHasBorderSwitchChange(event); });
 
-    const shapeSizeSlider = uniforge.ctrls.sliders.shapeSizeSlider = new Slider('shapeSizeSlider', document, { min: 1, max: 10, value: 5, linkedLabel: 'shapeSizeSpan', labelMask: '{value}px' });
+    const shapeSizeSliderContainer = document.querySelector('.options.size');
+    const shapeSizeSlider = uniforge.ctrls.sliders.shapeSizeSlider = new Slider('shapeSizeSlider', shapeSizeSliderContainer, { min: 1, max: 10, value: 5, linkedLabel: 'shapeSizeSpan', labelMask: '{value}px' });
     shapeSizeSlider.config();
     shapeSizeSlider.addEventListener('change', (event) => { onShapeSizeSliderChange(event); });
 
     const shapeBorderCombo = document.getElementById('shapeBorderCombo');
     shapeBorderCombo.addEventListener('change', (event) => { onShapeBorderComboChange(event); });
 
-    const fillColorPicker = uniforge.ctrls.colorPickers.fillColorPicker = new ColorPicker('fillColorPicker', document, { value: 'var(--red)', tooltip: 'Cor do Preenchimento' });
+    const fillColorPicker = uniforge.ctrls.colorPickers.fillColorPicker = new ColorPicker('fillColorPicker', document, { value: 'var(--red)', alpha: 0.5, tooltip: 'Cor do Preenchimento', fixedAlpha: true });
     fillColorPicker.config();
     fillColorPicker.addEventListener('change', (event) => { onFillColorPickerChange(fillColorPicker); });
 
@@ -729,7 +758,7 @@ function onToggleShapesPanelClick(event) {
     mapShapesContainer.classList.toggle('active');
 }
 
-function onHasBorderSwitchChange(event) {
+async function onHasBorderSwitchChange(event) {
     const hasBorder = event.target.checked;
 
     const hasBorderSwitch = document.querySelector('#hasBorderSwitch');
@@ -738,44 +767,66 @@ function onHasBorderSwitchChange(event) {
     if (hasBorder) {
         sliderSwitchContainer.classList.remove('hidden');
         hasBorderSwitch.dataset.tooltip = "Desativar contorno.";
+
+        uniforge.leaflet.drawStyle.style.opacity = 1;
     }
     else {
         sliderSwitchContainer.classList.add('hidden');
         hasBorderSwitch.dataset.tooltip = "Ativar contorno.";
+
+        uniforge.leaflet.drawStyle.style.opacity = 0;        
     }
+
+    uniforge.leaflet.drawStyle.update(uniforge.leaflet.core.default.map, uniforge.leaflet.drawStyle.style);
+    
+    await refreshPreviewStyle();
 }
 
-function onShapeSizeSliderChange(event) {
+async function onShapeSizeSliderChange(event) {
+    const preview = uniforge.shapesToolBar.preview;
+
     const size = uniforge.ctrls.sliders.shapeSizeSlider.getValueNumber();
     uniforge.leaflet.drawStyle.style.weight = size;
 
     uniforge.leaflet.drawStyle.update(uniforge.leaflet.core.default.map, uniforge.leaflet.drawStyle.style);
+
+    await refreshPreviewStyle();  
 }
 
-function onShapeBorderComboChange(event) {
+async function onShapeBorderComboChange(event) {
+    const preview = uniforge.shapesToolBar.preview;
+
     const lineTypes = uniforge.shapesToolBar.constants.lineTypes;
     const style = lineTypes[event.target.value].style;
 
     uniforge.leaflet.drawStyle.style = {
         ...uniforge.leaflet.drawStyle.style,
-        ...style
+        ...style,
     }
 
     uniforge.leaflet.drawStyle.update(uniforge.leaflet.core.default.map, uniforge.leaflet.drawStyle.style);
+
+    await refreshPreviewStyle();
 }
 
-function onFillColorPickerChange(picker) {
+async function onFillColorPickerChange(picker) {
     uniforge.leaflet.drawStyle.style.fillColor = picker.value;
     uniforge.leaflet.drawStyle.style.fillOpacity = picker.alpha;
 
-    uniforge.leaflet.drawStyle.update(uniforge.leaflet.core.default.map, uniforge.leaflet.drawStyle.style);
+    uniforge.leaflet.drawStyle.update(uniforge.leaflet.core.default.map, uniforge.leaflet.drawStyle.style);  
+    
+    await refreshPreviewStyle();
 }
 
-function onBorderColorPickerChange(picker) {
+async function onBorderColorPickerChange(picker) {
+    const preview = uniforge.shapesToolBar.preview;
+
     uniforge.leaflet.drawStyle.style.color = picker.value;
     uniforge.leaflet.drawStyle.style.opacity = picker.alpha;
 
     uniforge.leaflet.drawStyle.update(uniforge.leaflet.core.default.map, uniforge.leaflet.drawStyle.style);
+
+    await refreshPreviewStyle();
 }
 
 /** 
@@ -832,6 +883,34 @@ async function startMarkerDrawing(marker) {
     // Ativa o controle de posicionamento de Markers.
     uniforge.ctrls.marker = uniforge.leaflet.drawer.marker(map, markerURL);
 };
+
+async function refreshPreviewStyle() {
+    const preview = document.querySelector('.regular-shapes .config-group.preview .shape-canvas .shape-preview');
+    if (!preview) return;
+
+    const hasBorderCheck = document.querySelector('#hasBorderSwitch #checkbox'); 
+
+    const style = uniforge.leaflet.drawStyle.style;
+    const lineTypes = uniforge.shapesToolBar.constants.lineTypes;
+
+    // Obtém o tipo de linha correto baseado no estado atual
+    const lineStyle = style.line ? lineTypes[style.line].style.line : style.line;
+
+    preview.style.backgroundColor = style.fillColor;
+
+    const shapeBorderCombo = document.getElementById('shapeBorderCombo');
+    
+    if(hasBorderCheck.checked) 
+        preview.style.border = `${style.weight}px ${lineStyle} ${style.color}`;        
+     else 
+        preview.style.border = 'none';    
+
+    shapeBorderCombo.disabled = !hasBorderCheck.checked;
+    uniforge.ctrls.colorPickers.borderColorPicker.disabled = !hasBorderCheck.checked;
+    uniforge.ctrls.sliders.shapeSizeSlider.setVisible(hasBorderCheck.checked, true);
+
+    await uniforge.settings.set('leafletStyle.pathOptions', JSON.stringify(uniforge.leaflet.drawStyle.style));
+}
 
 function _setTime(year) {
     const currentYearInput = document.getElementById('currentYear');

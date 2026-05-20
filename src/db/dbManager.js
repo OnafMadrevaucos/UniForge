@@ -774,18 +774,18 @@ export default class DBManager {
     /**
      * Atualiza uma Configuração com a TAG informada.
      * @param {Object} data             - Os dados a serem atualizados.
+     * @param {string} data.group       - O grupo da Configuração a ser atualizada.
      * @param {string} data.tag         - A TAG da Configuração a ser atualizada.
      * @param {string} data.value       - O valor da Configuração a ser atualizada.
      * @returns {Promise<Object>} A resposta do banco de dados.
      */
     async updateSettings(data) {
-        const updateSet = this.buildUpdateSet([
-            ['tag', data.tag],
+        const updateSet = this.buildUpdateSet([            
             ['value', data.value]
         ]);
 
-        let query = `UPDATE settings SET ${updateSet} WHERE tag = ?`;
-        let params = [data.tag];
+        let query = `UPDATE settings SET ${updateSet} WHERE \"group\" = ? AND tag = ?`;
+        let params = [data.group, data.tag];
         this.results = await this.#execQuery(query, params);
 
         return this.result;
@@ -2265,19 +2265,9 @@ export default class DBManager {
 
         const styles = [
             {
-                tag: 'templine',
-                group: 'leafletStyle',
-                value: "fillColor: 'var(--red)',fillOpacity: 0.5, color: 'var(--red)',opacity: 1,weight: 5,dashArray: '0, 0'",
-            },
-            {
                 tag: 'pathOptions',
                 group: 'leafletStyle',
                 value: "fillColor: 'var(--red)',fillOpacity: 0.5, color: 'var(--red)',opacity: 1,weight: 5,dashArray: '0, 0'",
-            },
-            {
-                tag: 'hintline',
-                group: 'leafletStyle',
-                value: "color: 'var(--light-text-color)',dashArray: '5, 10',weight: 3"
             }
         ];
 

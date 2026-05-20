@@ -1386,7 +1386,7 @@ button.disabled:hover {
 .map-objects-panel .sizes .switch {
     position: absolute;
     top: 15px;
-    left: 205px;
+    left: 245px;
 }
 
 .layer-control-wrapper .layer-control-search-bar,
@@ -1414,7 +1414,8 @@ button.disabled:hover {
 }
 
 .map-objects-panel .tools-content .config-group {
-    flex: 1;
+    flex: 2;
+    height: 75px;
     border: var(--data-group-border);
     border-radius: var(--default-border-radius);
     margin: 5px;
@@ -1422,6 +1423,9 @@ button.disabled:hover {
 
     overflow-y: hidden;
     overflow-x: scroll;
+}
+.map-objects-panel .tools-content .config-group.preview {
+    flex: 1;
 }
 
 .map-objects-panel .tools-content .config-colors {
@@ -1431,17 +1435,16 @@ button.disabled:hover {
 
 .map-objects-panel .tools-content .shape-canvas {
     flex: 1;
+    align-items: center;
     justify-content: center;
     background-color: var(--light-grey);
-    padding: 5px;
+    padding: 10px;
     border-radius: var(--default-border-radius);
     box-shadow: inset 1px 1px 4px 1px var(--dark-grey);
 }
 .map-objects-panel .tools-content .shape-canvas .shape-preview {
     height: 75%;
     flex: 0.5;
-    background-color: var(--redT50);
-    border: 5px solid var(--dark-red);
     border-radius: var(--default-border-radius);
 }
 
@@ -4291,6 +4294,11 @@ button.disabled:hover {
         0 6px,
         6px -6px,
         -6px 0;
+}
+.color-picker-preview.disabled {
+    border: 2px dashed;
+    background-color: var(--dark-text-color) !important;
+    pointer-events: none;
 }
 
 .color-picker-popup {

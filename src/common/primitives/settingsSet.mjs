@@ -85,20 +85,50 @@ export default class SettingsSet extends Set {
         }
 
         // Busca hierárquica.
-        const [parentId, childId] = identifier.split('.');
+        const [groupId, tagId] = identifier.split('.');
 
-        // Busca item pai.
-        const parent = this.#findById(this, parentId);
+        // Busca item do grupo.
+        const group = this.#findById(this, groupId);
 
-        if (!parent) return undefined;
+        if (!group) return undefined;
 
         // Verifica existência do _items.
-        if (!(parent._items instanceof Set)) {
+        if (!(group._items instanceof Set)) {
             return undefined;
         }
 
-        // Busca item interno.
-        return parent._items.get(childId)._value;
+        // Busca o valor atribuído à tag.
+        return group._items.get(tagId)._value;
+    }
+
+    /**
+     * Atualiza um item do Set no Banco de Dados.
+     * 
+     * Exemplos:
+     *  get('usuarios')
+     *  get('usuarios.admin')
+     * 
+     * @param {String} identifier
+     * @param {any} value
+     * 
+     * @async
+     */
+    async set(identifier, value) {
+
+        // Identificador inválido.
+        if (!identifier.includes('.')) {
+            throw new Error('O identificador deve seguir o padrão "group.tag".');
+        }
+
+        // Obtém os identificadores de group e da tag.
+        const [groupId, tagId] = identifier.split('.');
+
+        // Atualiza a Configuração no banco de dados.
+        await uniforge.db.updateSettings({
+            group: groupId,
+            tag: tagId,
+            value: value
+        });
     }
 
     /**

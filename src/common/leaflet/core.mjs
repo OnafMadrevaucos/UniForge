@@ -37,7 +37,7 @@ const lControl = {
         VIEW_WIDTH: 3840,
         VIEW_HEIGHT: 2160,
 
-        UNIT_TO_KM_RATIO: 1.5 // 1 Map Unit = 1.5 km
+        UNIT_TO_KM_RATIO: 1.5, // 1 Map Unit = 1.5 km        
     },
 
     /**
@@ -229,6 +229,8 @@ const lControl = {
         // Configura os elementos do mapa.
         const mapElements = lControl.mapElements = _configureMapElements();
 
+        _loadElementsStyles();
+
         // Configura o controle de camadas sobrepostas (caminhos, cidades e nomes).
         _configureOverlayControl();
 
@@ -334,6 +336,11 @@ const lControl = {
             map.addControl(layerControl);
 
             return layerControl;
+        }
+
+        function _loadElementsStyles() {
+            const style = JSON.parse(uniforge.settings.get('leafletStyle.pathOptions'));
+            utils.drawStyle.update(map, style);
         }
 
         function _configureOverlayControl() {
@@ -451,8 +458,10 @@ const lControl = {
 
             // Adicione um listener para o evento 'pm:drawstart' para desabilitar o arrastre do mapa quando estiver desenhando um polígono.
             map.on('pm:drawstart', function (e) {
-                if (e.shape === 'Polygon') {
-                    map.dragging.disable();
+                map.dragging.disable();
+                
+                if (e.shape !== 'Marker') {
+                    utils.drawStyle.updateTemplineStyle(map, utils.drawStyle.style);
                 }
             });
 
@@ -479,7 +488,7 @@ const lControl = {
                         lControl.deleteElement(e);
                     }
                 });
-            });            
+            });
 
             // Adicione um listener para o evento de clique do botão direito para remover o ultimo vertice de um polígono.
             map.getContainer().addEventListener('contextmenu', (event) => {
@@ -495,7 +504,7 @@ const lControl = {
             lControl.clickLatLang = e.latlng;  // Ponto de clique do usuário.
         }
 
-        async function _onDrawCreated(e, isPM) {    
+        async function _onDrawCreated(e, isPM) {
             let layer = e.layer;
 
             // Atualiza o estilo da camada desenhada.
@@ -718,7 +727,7 @@ const lControl = {
         const elements = uniforge.doc.maps.get(mid).elements || [];
         const elementsOfEpoch = elements.filter(element => element.epoch === epoch);
         elementsOfEpoch.forEach((elementData) => {
-            let element;           
+            let element;
 
             switch (elementData.mType) {
                 case 'circle': {
@@ -730,7 +739,7 @@ const lControl = {
                     const elementStyle = JSON.parse(elementData.style) ?? utils.options.regularShape(false, false);
 
                     element = L.circle(points, elementStyle);
-                    element.setStyle(elementStyle);                    
+                    element.setStyle(elementStyle);
                 } break;
                 case 'marker': {
                     const markerUrl = elementData.icon; // URL do ícone do marcador.
