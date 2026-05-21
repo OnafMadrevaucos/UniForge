@@ -68,7 +68,7 @@ const options = {
     },
     regularShape: function (isDrawer = true) {
         if (isDrawer) {
-            return {                
+            return {
                 hintlineStyle: defaultHintlineStyle,
                 templineStyle: { ...style },
                 pathOptions: { ...style }
@@ -106,6 +106,78 @@ const drawer = {
     }
 }
 
+const measurements = {
+    tooltip: null,
+
+    createTooltip(map) {
+        if (this.tooltip) {
+            this.tooltip.remove();
+        }
+
+        this.tooltip = L.tooltip({
+            permanent: false,
+            direction: 'top',
+            offset: [0, -10],
+            className: 'leaflet-draw-tooltip'
+        }).addTo(map);
+
+        return this.tooltip;
+    },
+
+    removeTooltip(map) {
+        if (this.tooltip) {
+            map.removeLayer(this.tooltip);
+            this.tooltip = null;
+        }
+    },
+
+    updateTooltip(map, latlng, content) {
+        if (!this.tooltip) {
+            this.createTooltip(map);
+        }
+
+        this.tooltip
+            .setLatLng(latlng)
+            .setContent(content);
+    },
+
+    calculatePolygonArea(latlngs, unitRatio = 1) {
+        let area = 0;
+
+        for (let i = 0; i < latlngs.length; i++) {
+            const p1 = latlngs[i];
+            const p2 = latlngs[(i + 1) % latlngs.length];
+
+            area += (p1.lng * p2.lat);
+            area -= (p2.lng * p1.lat);
+        }
+
+        area = Math.abs(area / 2);
+
+        return area * Math.pow(unitRatio, 2);
+    },
+
+    calculateDistance(a, b, unitRatio = 1) {
+        const dx = b.lng - a.lng;
+        const dy = b.lat - a.lat;
+
+        return Math.sqrt(dx * dx + dy * dy) * unitRatio;
+    },
+
+    calculatePolygonPerimeter(latlngs, unitRatio = 1) {
+        let total = 0;
+
+        for (let i = 0; i < latlngs.length; i++) {
+            const current = latlngs[i];
+            const next = latlngs[(i + 1) % latlngs.length];
+
+            total += this.calculateDistance(current, next, unitRatio);
+        }
+
+        return total;
+    }
+};
+
 const state = {
     drawInstance: null,
     blockEvents: false
@@ -139,13 +211,13 @@ function _updateStyle(map, newStyle) {
 }
 function _updateTemplineStyle(map, newStyle) {
     // Verifica se o estilo foi enviado corretamente.
-    if(!newStyle) return;
+    if (!newStyle) return;
 
     // Obtém forma ativa do desenho.
     const activeShape = map.pm.Draw.getActiveShape();
 
     // Verifica se a instância de desenho do Leaflet foi criada corretamente. Se não, crie-a.
-    if(!state.drawInstance) state.drawInstance = map.pm.Draw[activeShape];
+    if (!state.drawInstance) state.drawInstance = map.pm.Draw[activeShape];
 
     // Obtém a camada de desenho ativa.
     const workingLayer = state.drawInstance._workingLayer ?? state.drawInstance._layer;
@@ -412,7 +484,8 @@ const utils = {
         style,
         update: _updateStyle,
         updateTemplineStyle: _updateTemplineStyle
-    }
+    },
+    measurements: measurements
 }
 
 export default utils;

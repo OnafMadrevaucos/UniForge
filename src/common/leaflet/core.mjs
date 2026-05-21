@@ -459,10 +459,66 @@ const lControl = {
             // Adicione um listener para o evento 'pm:drawstart' para desabilitar o arrastre do mapa quando estiver desenhando um polígono.
             map.on('pm:drawstart', function (e) {
                 map.dragging.disable();
-                
+
                 if (e.shape !== 'Marker') {
                     utils.drawStyle.updateTemplineStyle(map, utils.drawStyle.style);
                 }
+
+                const workingLayer = e.workingLayer;
+                const shape = e.shape;
+
+                utils.measurements.createTooltip(map);
+
+                workingLayer.on('pm:vertexadded', (event) => {
+
+                    const latlngs = workingLayer.getLatLngs();
+                    if (!latlngs || !latlngs[0]) return;
+
+                    const points = latlngs[0];
+                    if (points.length < 2) return;
+
+                    const mouseLatLng = points[points.length - 1];
+
+                    // POLÍGONO
+                    if (shape === 'Polygon') {
+
+                        const area = utils.measurements.calculatePolygonArea(
+                                points,
+                                lControl.constants.UNIT_TO_KM_RATIO
+                            );
+
+                        const perimeter = utils.measurements.calculatePolygonPerimeter(
+                                points,
+                                lControl.constants.UNIT_TO_KM_RATIO
+                            );
+
+                        utils.measurements.updateTooltip(
+                            map,
+                            mouseLatLng,
+                            `<strong>Área:</strong> ${area.toFixed(2)} km²<br>
+                            <strong>Perímetro:</strong> ${perimeter.toFixed(2)} km`
+                        );
+                    }
+                });
+
+                // CÍRCULO
+                workingLayer.on('pm:centerplaced', () => {
+
+                    workingLayer.on('pm:change', () => {
+
+                        const radius = workingLayer.getRadius() * lControl.constants.UNIT_TO_KM_RATIO;
+
+                        const area = Math.PI * radius * radius;
+
+                        utils.measurements.updateTooltip(
+                            map,
+                            workingLayer.getLatLng(),
+                            `<strong>Raio:</strong> ${radius.toFixed(2)} km<br>
+                             <strong>Área:</strong> ${area.toFixed(2)} km²
+                            `
+                        );
+                    });
+                });
             });
 
             // Adicione um listener para o evento 'pm:drawend' para habilitar o arrastre do mapa.
