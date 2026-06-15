@@ -1,0 +1,203 @@
+/* Temas Adicionais para UniForge */
+
+/* 1. TEMA MEDIEVAL (D&D 5e) 
+   Como as variáveis originais no :root já possuem a essência de pergaminho/clássico,
+   o .theme-medieval apenas força a fonte serifada e tons mais terrosos/avermelhados, 
+   ou simplesmente não altera nada (herda :root), mas podemos reforçar a estética aqui.
+*/
+:root[data-theme="theme-medieval"] {
+    /* Herda a grande maioria do :root de styles.css, que já é medieval */
+    --default-font: "Georgia", "Times New Roman", serif;
+    --background-color: rgba(20, 15, 10, 0.9);
+    --blue: #231b14;
+    --light-blue: #36281e;
+    --dark-blue: rgba(30, 20, 15, 0.92);
+    --lib-background: #18120d;
+    --yellow: #b87a25;
+    --bright-yellow: #e5a440;
+    --border-yellow: #d99b38;
+}
+
+/* 2. TEMA SCI-FI (Cyberpunk / Neon)
+   Focado em tons escuros profundos com contrastes neon em Ciano, Magenta e Amarelo.
+*/
+:root[data-theme="theme-scifi"] {
+    --default-font: "Courier New", Courier, monospace;
+    --background-color: rgba(5, 5, 10, 0.95);
+    
+    /* Escuros muito frios / pretos */
+    --blue: #0b0c10;
+    --light-blue: #1f2833;
+    --dark-blue: rgba(10, 10, 15, 0.95);
+    --dark-blueT87: rgba(10, 10, 15, 0.92);
+    --dark-blueT50: rgba(10, 10, 15, 0.5);
+    --blueT50: rgba(11, 12, 16, 0.5);
+    --lib-background: #050508;
+    
+    /* Neons (Ciano / Magenta em vez de Vermelho / Amarelo) */
+    --red: #ff00ff; /* Magenta para elementos antes vermelhos */
+    --hover-red: #cc00cc;
+    --border-red: #ff00ff;
+    --focus-red: #ff33ff;
+    --highlight-red: #ff00ff;
+    --dark-red: #660066;
+    --redT50: rgba(255, 0, 255, 0.5);
+    --redT87: rgba(255, 0, 255, 0.87);
+    --dark-redT87: rgba(102, 0, 102, 0.87);
+    --header-red: #00ffff; /* Ciano para títulos */
+    --text-red: #00ffff;
+    
+    --yellow: #00ffff; /* Ciano onde era amarelo */
+    --bright-yellow: #00ffff;
+    --light-yellow: #ccffff;
+    --border-yellow: #00ffff;
+    
+    --text-color: #e0e0e0;
+    --light-text-color: #00ffff; /* Ciano brilhante */
+    
+    /* Brilhos (Glows) */
+    --filled-border: 1px solid rgba(0, 255, 255, 0.6);
+    --focus-border: 1px solid #ff00ff;
+    --info-content-border: 2px solid #00ffff;
+    --active-search-border: 1.5px solid #ff00ff;
+    --tab-item-border: 1px solid rgba(255, 0, 255, 0.5);
+    
+    --text-highlight: 0 0 10px rgba(0, 255, 255, 0.8);
+    --dark-text-highlight: 0 0 10px rgba(255, 0, 255, 0.8);
+    --default-shadow: 0 0 20px rgba(0, 255, 255, 0.2);
+    --sidebar-shadow: 4px 0 24px rgba(0, 255, 255, 0.15);
+    
+    /* Bordas geométricas */
+    --default-border-radius: 0px;
+    --strong-border-radius: 4px;
+    --title-header-radius: 0 0 0 0;
+}
+
+:root[data-theme="theme-scifi"] body.uniforge {
+    background-image: none !important;
+    background-color: var(--background-color) !important;
+}
+
+/* 3. TEMA NEUTRO (Sóbrio)
+   Limpo, sem cores gritantes, tons de cinza/chumbo, bordas suaves, sem texturas/glows.
+*/
+:root[data-theme="theme-neutral"] {
+    --default-font: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    --background-color: rgba(26, 32, 44, 0.95); /* Tailwind gray-900 */
+    
+    /* Tons de cinza ardósia e azul apagado */
+    --blue: #2d3748; /* gray-800 */
+    --light-blue: #4a5568; /* gray-700 */
+    --dark-blue: rgba(26, 32, 44, 0.95);
+    --dark-blueT87: rgba(26, 32, 44, 0.92);
+    --dark-blueT50: rgba(26, 32, 44, 0.5);
+    --blueT50: rgba(45, 55, 72, 0.5);
+    --lib-background: #1a202c;
+    
+    /* Cores de ação substituídas por azuis/cinzas amenos */
+    --red: #3182ce; /* blue-500 em vez de vermelho */
+    --hover-red: #2b6cb0;
+    --border-red: #63b3ed;
+    --focus-red: #4299e1;
+    --highlight-red: #3182ce;
+    --dark-red: #2c5282;
+    --redT50: rgba(49, 130, 206, 0.5);
+    --redT87: rgba(49, 130, 206, 0.87);
+    --dark-redT87: rgba(44, 82, 130, 0.87);
+    --header-red: #e2e8f0; /* Títulos em branco/cinza claro */
+    --text-red: #cbd5e0;
+    
+    --yellow: #a0aec0; /* gray-400 no lugar do amarelo/dourado */
+    --bright-yellow: #cbd5e0;
+    --light-yellow: #e2e8f0;
+    --border-yellow: #718096;
+    
+    --text-color: #f7fafc; /* gray-50 */
+    --light-text-color: #ffffff;
+    --dark-text-color: #1a202c;
+    
+    /* Removendo excessos e bordas fortes */
+    --filled-border: 1px solid rgba(255, 255, 255, 0.1);
+    --focus-border: 1px solid #4299e1;
+    --info-content-border: 1px solid #4a5568;
+    --active-search-border: 1px solid #63b3ed;
+    --tab-item-border: 1px solid rgba(255, 255, 255, 0.1);
+    --img-border: 1px solid #4a5568;
+    
+    /* Sombras contidas */
+    --text-highlight: none;
+    --dark-text-highlight: none;
+    --default-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    --sidebar-shadow: 2px 0 10px rgba(0, 0, 0, 0.2);
+    
+    /* Arredondamento moderno */
+    --default-border-radius: 6px;
+    --strong-border-radius: 8px;
+    --title-header-radius: 0 6px 6px 0;
+}
+
+:root[data-theme="theme-neutral"] body.uniforge {
+    background-image: none !important;
+    background-color: var(--background-color) !important;
+}
+
+/* --- Estilização do Seletor de Temas --- */
+.theme-selector {
+    height: 46px;
+    margin: 4px 0 4px 10px;
+    padding: 0 35px 0 15px; /* Espaço para o chevron customizado */
+    font-size: 14px;
+    font-weight: 500;
+    font-family: var(--default-font);
+    color: var(--text-color) !important;
+    background-color: rgba(255, 255, 255, 0.06) !important;
+    border: var(--sidebar-border) !important;
+    border-radius: var(--default-border-radius) !important;
+    box-shadow: var(--default-shadow);
+    cursor: pointer;
+    outline: none;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    
+    /* Oculta seta nativa do browser */
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    
+    /* Seta customizada em SVG (Chevron Down) */
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fbbf24' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    background-size: 15px;
+}
+
+.theme-selector:hover {
+    background-color: rgba(255, 255, 255, 0.12) !important;
+    border-color: var(--bright-yellow) !important;
+    box-shadow: 0 0 8px var(--bright-yellow);
+}
+
+.theme-selector:focus {
+    border-color: var(--red) !important;
+    box-shadow: 0 0 10px var(--redT50) !important;
+}
+
+/* Altera a seta nos outros temas para combinar com a paleta de cores correspondente */
+:root[data-theme="theme-scifi"] .theme-selector {
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2300ffff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    box-shadow: 0 0 12px rgba(0, 255, 255, 0.2);
+}
+
+:root[data-theme="theme-scifi"] .theme-selector:hover {
+    box-shadow: 0 0 15px rgba(0, 255, 255, 0.4);
+}
+
+:root[data-theme="theme-neutral"] .theme-selector {
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23a0aec0' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+}
+
+/* Ajusta as opções para combinar com o fundo do menu em cada tema */
+.theme-selector option {
+    background-color: var(--blue);
+    color: var(--text-color);
+    padding: 10px;
+}

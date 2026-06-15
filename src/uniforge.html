@@ -11,6 +11,7 @@
     <link rel="icon" type="image/svg" sizes="16x16" href="./ui/icons/icone.svg">
 
     <link rel="stylesheet" href="css/styles.css" />
+    <link rel="stylesheet" href="css/themes.css" />
     <link rel="stylesheet" href="../node_modules/leaflet/dist/leaflet.css" />
     <link rel="stylesheet" href="../node_modules/leaflet-draw/dist/leaflet.draw.css" />
 
@@ -33,6 +34,11 @@
                         class="fas fa-book"></i></button>
                 <button id="timelineBtn" class="topbarBtn" data-tooltip="Linha do Tempo" data-target="timeline"><i
                         class="fas fa-timeline"></i></button>
+                <select id="themeSelector" class="theme-selector">
+                    <option value="theme-medieval">Medieval</option>
+                    <option value="theme-scifi">Sci-fi</option>
+                    <option value="theme-neutral">Neutro</option>
+                </select>
             </div>
             <div id="timeTool" class="time-tool flexrow">
                 <button id="tenYearsBack" class="arrow" data-tooltip="Voltar 10 Anos"><i
