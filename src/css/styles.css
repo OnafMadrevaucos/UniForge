@@ -77,57 +77,57 @@
 
 /* ------ Variables ------ */
 :root {
-    --default-font: 'Georgia', serif;
+    --default-font: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     /* Colors */
-    --grey: #bdc3c7;
-    --light-grey: #f0f0f0;
-    --dark-grey: #0b0a13;
+    --grey: #a0aec0;
+    --light-grey: #f7fafc;
+    --dark-grey: #0a0a0f;
 
-    --blue: #2c2b33;
-    --light-blue: #4c4a5f;
-    --dark-blue: #1e1e27;
-    --dark-blueT87: #1e1e27e0;
-    --dark-blueT50: #1e1e2780;
-    --info-blue: #345fba;
-    --male-blue: #5279ad;
+    --blue: #1a1921;
+    --light-blue: #2e2c3b;
+    --dark-blue: rgba(18, 17, 26, 0.82);
+    --dark-blueT87: rgba(18, 17, 26, 0.92);
+    --dark-blueT50: rgba(18, 17, 26, 0.5);
+    --info-blue: #2b6cb0;
+    --male-blue: #4299e1;
 
-    --red: #991c1c;
-    --light-red: #e7b1b1;
-    --hover-red: #cd9a9a;
-    --border-red: #e39584;
-    --focus-red: #df2121;
-    --highlight-red: #cc3232;
-    --dark-red: #63120c;
-    --header-red: #ff1a05;
-    --text-red: #ab2a21;
+    --red: #b82525;
+    --light-red: #fca5a5;
+    --hover-red: #991b1b;
+    --border-red: #f87171;
+    --focus-red: #ef4444;
+    --highlight-red: #dc2626;
+    --dark-red: #7f1d1d;
+    --header-red: #ef4444;
+    --text-red: #f87171;
 
-    --yellow: #e4a11a;
-    --bright-yellow: #ffb300;
-    --light-yellow: #dba845;
-    --border-yellow: #d4c694;
-    --lib-background: #f1ebe8;
+    --yellow: #d97706;
+    --bright-yellow: #f59e0b;
+    --light-yellow: #fbbf24;
+    --border-yellow: #f59e0b;
+    --lib-background: #111118;
 
-    --green: #0f732c;
-    --dark-green: #04531b;
+    --green: #16a34a;
+    --dark-green: #14532d;
 
-    --redT50: #cc1f1f80;
-    --redT87: #cc1f1fe0;
-    --dark-redT87: #931a0fe0;
-    --yellowT87: #e4a11ae0;
-    --blueT50: #2c2c4080;
-    --info-blueT87: #0052ff;
+    --redT50: rgba(220, 38, 38, 0.5);
+    --redT87: rgba(220, 38, 38, 0.87);
+    --dark-redT87: rgba(127, 29, 29, 0.87);
+    --yellowT87: rgba(245, 158, 11, 0.87);
+    --blueT50: rgba(26, 25, 33, 0.5);
+    --info-blueT87: #3b82f6;
 
-    --text-color: #1f1e2c;
-    --light-text-color: #d4c694;
-    --dark-text-color: #20201d;
-    --disabled-text-color: #6d664e;
-    --background-color: #1e1e2fe5;
-    --tooltip-background: #212121;
-    --blockquote-background: #e6b74d;
-    --light-background-color: #2b2b37;
+    --text-color: #e2e8f0;
+    --light-text-color: #fbbf24;
+    --dark-text-color: #0f172a;
+    --disabled-text-color: #64748b;
+    --background-color: rgba(18, 17, 26, 0.88);
+    --tooltip-background: #0f172a;
+    --blockquote-background: #3b3a30;
+    --light-background-color: rgba(30, 41, 59, 0.5);
     --stroke-color: var(--dark-red);
-    --shadow-color: #141313;
-    --shadow-header: #49443c;
+    --shadow-color: rgba(0, 0, 0, 0.5);
+    --shadow-header: #334155;
 
     /* Font Sizes */
     --title-size: 56px;
@@ -138,46 +138,46 @@
     --tmce-size: 14px;
     --grid-tile-size: 90px;
     --images-size: 20em;
-    --default-size: 12px;
+    --default-size: 13px;
     --small-size: 11px;
     --smaller-size: 10.5px;
     --tiny-size: 8px;
 
     /* Borders */
-    --filled-border: 1px solid var(--border-yellow);
+    --filled-border: 1px solid rgba(245, 158, 11, 0.4);
     --invisible-border: 1px solid transparent;
     --focus-border: 1px solid var(--border-yellow);
-    --info-content-border: 2px solid var(--blue);
-    --active-search-border: 2px solid var(--border-yellow);
-    --sidebar-border: 1px solid var(--light-blue);
-    --tab-item-border: 1px solid var(--dark-redT87);
-    --tooltip-border: 1px solid var(--shadow-header);
-    --img-border: 2px groove var(--blue);
-    --data-group-border: 1px solid var(--light-blue);
-    --focused-data-group-border: 1px solid var(--dark-redT87);
+    --info-content-border: 2px solid var(--light-blue);
+    --active-search-border: 1.5px solid var(--border-yellow);
+    --sidebar-border: 1px solid rgba(255, 255, 255, 0.08);
+    --tab-item-border: 1px solid rgba(127, 29, 29, 0.5);
+    --tooltip-border: 1px solid rgba(255, 255, 255, 0.1);
+    --img-border: 2px groove var(--light-blue);
+    --data-group-border: 1px solid rgba(255, 255, 255, 0.1);
+    --focused-data-group-border: 1px solid var(--border-yellow);
     --focused-div-border: 1px solid var(--light-text-color);
-    --blockquote-border: 5px solid var(--red);
+    --blockquote-border: 4px solid var(--red);
 
     /* Borders Radius */
-    --default-border-radius: 5px;
-    --strong-border-radius: 8px;
+    --default-border-radius: 8px;
+    --strong-border-radius: 12px;
     --title-header-radius: 0 8px 8px 0;
 
     /* Gradients */
     --blockquote-gradient: linear-gradient(125deg, var(--bright-yellow) 35%, var(--light-yellow) 45%, var(--blockquote-background) 80%);
 
     /* Shadows */
-    --default-shadow: 0 4px 10px var(--shadow-color);
-    --small-shadow: 1px 2px 2px var(--shadow-color);
-    --light-shadow: 1px 1px 1px var(--grey);
-    --right-shadow: 1px 0px 0px var(--grey);
-    --text-shadow: 2px 2px 5px var(--shadow-color);
-    --text-highlight: 2px 2px 2px var(--light-text-color);
-    --dark-text-highlight: 2px 2px 2px var(--highlight-red);
-    --sidebar-shadow: 4px 0 8px rgba(0, 0, 0, 0.2);
-    --dialog-shadow: 5px 0 10px var(--shadow-color);
-    --calendar-shadow: 0 2px 6px rgba(0, 0, 0, 1);
-    --leaflet-popup-shadow: inset 0px 2px 0px 0px var(--dark-grey);
+    --default-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+    --small-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+    --light-shadow: 0 1px 3px rgba(255, 255, 255, 0.1);
+    --right-shadow: 1px 0px 4px rgba(0, 0, 0, 0.15);
+    --text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+    --text-highlight: 0 0 8px rgba(245, 158, 11, 0.3);
+    --dark-text-highlight: 0 0 8px rgba(220, 38, 38, 0.3);
+    --sidebar-shadow: 4px 0 24px rgba(0, 0, 0, 0.35);
+    --dialog-shadow: 8px 0 32px rgba(0, 0, 0, 0.4);
+    --calendar-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+    --leaflet-popup-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
 
     /* Dimensions */
     --fill-width: -webkit-fill-available;
@@ -185,10 +185,10 @@
     --flavor-height: 5vh;
 
     /* Gaps */
-    --small-gap-size: 2px;
-    --default-gap-size: 5px;
-    --big-gap-size: 10px;
-    --large-gap-size: 20px;
+    --small-gap-size: 4px;
+    --default-gap-size: 8px;
+    --big-gap-size: 14px;
+    --large-gap-size: 24px;
 }
 
 /* ------ Flex Control ------ */
@@ -713,37 +713,45 @@ button.disabled:hover {
     z-index: 1000 !important;
 }
 
+.leaflet-bar a, 
+.leaflet-bar button, 
+.leaflet-control-layers-toggle,
+.leaflet-pm-toolbar.leaflet-control .button-container a.leaflet-buttons-control-button {
+    background-color: var(--dark-blue) !important;
+    color: var(--light-grey) !important;
+    border: var(--sidebar-border) !important;
+    border-radius: var(--default-border-radius) !important;
+    transition: all 0.2s ease-in-out !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    box-shadow: var(--small-shadow) !important;
+    width: 36px !important;
+    height: 36px !important;
+    margin: 4px 0 !important;
+}
+
+.leaflet-bar a:hover, 
+.leaflet-bar button:hover, 
+.leaflet-control-layers-toggle:hover,
+.leaflet-pm-toolbar.leaflet-control .button-container a.leaflet-buttons-control-button:hover {
+    background-color: var(--red) !important;
+    color: var(--light-grey) !important;
+    box-shadow: 0 0 10px rgba(184, 37, 37, 0.6) !important;
+}
+
 .leaflet-pm-toolbar.leaflet-control {
-    height: 32px;
+    height: auto;
 }
 .leaflet-pm-toolbar.leaflet-control .button-container {
-    height: var(--fill-height);
-    width: 48px;
+    height: auto;
+    width: 36px;
 }
 .leaflet-pm-toolbar.leaflet-control .button-container a.leaflet-buttons-control-button {
-    width: var(--fill-width);
-    height: auto;
+    width: 36px !important;
+    height: 36px !important;
     padding: 0;
-    margin: 5px 0;
-    border-radius: var(--default-border-radius);
-}
-.leaflet-pm-toolbar.leaflet-control .button-container a.leaflet-buttons-control-button:hover {
-    text-shadow: none;
-}
-
-
-.leaflet-control .button-container a.leaflet-buttons-control-button,
-.leaflet-container .leaflet-control-layers a,
-.leaflet-bar button {
-    width: 48px;
-    height: 32px;
-    font-size: 16px;
-    margin: 5px 0;
-    padding: 5px;
-}
-
-.leaflet-container .leaflet-control-layers-expanded a.leaflet-control-layers-toggle {
-    display: inherit;
+    margin: 4px 0 !important;
 }
 
 .leaflet-touch .leaflet-control-layers {
@@ -752,8 +760,8 @@ button.disabled:hover {
 }
 
 .leaflet-container.leaflet-touch .leaflet-control-layers a {
-    height: 1.5em;
-    width: 1.5em;
+    height: 36px;
+    width: 36px;
 }
 
 .leaflet-touch .leaflet-control-layers .leaflet-control-layers-list {
@@ -761,12 +769,16 @@ button.disabled:hover {
     position: absolute;
     top: 0.5em;
     right: 5.25em;
-    background: var(--grey);
+    background: var(--dark-blueT87) !important;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
     border-radius: var(--default-border-radius);
-    color: var(--dark-grey);
+    color: var(--light-grey);
     font-weight: bold;
-    padding: 5px;
+    padding: 8px 12px;
     width: max-content;
+    border: var(--sidebar-border);
+    box-shadow: var(--default-shadow);
 }
 
 .leaflet-touch .leaflet-control-layers .leaflet-control-layers-list.hidden {
@@ -776,17 +788,19 @@ button.disabled:hover {
 .leaflet-touch .leaflet-control-layers .leaflet-control-layers-list::after {
     content: "";
     position: absolute;
-    background: var(--grey);
-    height: 17px;
-    width: 17px;
+    background: var(--dark-blue) !important;
+    border-right: var(--sidebar-border);
+    border-top: var(--sidebar-border);
+    height: 10px;
+    width: 10px;
     transform: rotate(45deg);
-    top: 1em;
-    right: -0.5em;
-    z-index: -1;
+    top: 1.2em;
+    right: -6px;
+    z-index: 1;
 }
 
 .leaflet-touch .leaflet-control-layers .leaflet-control-layers-overlays input[type="checkbox"] {
-    accent-color: var(--dark-red);
+    accent-color: var(--red);
     width: 1.2em;
 }
 
@@ -796,8 +810,9 @@ button.disabled:hover {
 
 .leaflet-pm-toolbar.leaflet-control .button-container a.leaflet-buttons-control-button.active,
 .leaflet-container .leaflet-control-container .leaflet-top.leaflet-right .leaflet-control button.active {
-    background-color: var(--background-color);
-    color: var(--red);
+    background-color: var(--red) !important;
+    color: var(--light-grey) !important;
+    border-color: var(--border-yellow) !important;
 }
 
 .leaflet-container .leaflet-div-icon {
@@ -825,59 +840,71 @@ button.disabled:hover {
 }
 
 .uniforge .leaflet-container a.leaflet-popup-close-button {
-    width: 18px;
-    height: 18px;
+    width: 20px;
+    height: 20px;
     display: flex;
     flex-direction: column;
     font: var(--default-font);
-    font-size: 16px;
+    font-size: 14px;
     font-weight: bold;
     align-self: flex-start;
-    background-color: var(--light-text-color);
-    color: var(--dark-red);
-    border: none;
+    background-color: rgba(255, 255, 255, 0.1);
+    color: var(--light-grey);
+    border: 1px solid rgba(255, 255, 255, 0.15);
     cursor: pointer;
     z-index: 2100;
-    border-radius: 50% 50%;
-    margin-right: 5px;
-    margin-top: 5px;
+    border-radius: 50%;
+    margin-right: 8px;
+    margin-top: 8px;
     justify-content: center;
+    align-items: center;
+    transition: all 0.2s ease;
 }
 
 .uniforge .leaflet-container a.leaflet-popup-close-button:hover {
+    background-color: var(--red);
+    color: var(--light-grey);
     box-shadow: var(--small-shadow);
-    color: var(--dark-red);
-    text-shadow: none;
 }
 
 .leaflet-container .leaflet-popup-pane .leaflet-popup .leaflet-popup-content-wrapper {
-    background-color: var(--dark-red);
-    color: var(--light-text-color);
-    border: var(--filled-border);
-    border-radius: var(--default-border-radius);
+    background-color: var(--dark-blue) !important;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    color: var(--light-grey) !important;
+    border: var(--sidebar-border) !important;
+    border-radius: var(--strong-border-radius) !important;
+    box-shadow: var(--default-shadow) !important;
 }
 
 .leaflet-container .leaflet-popup-pane .leaflet-popup .leaflet-popup-content-wrapper,
 .leaflet-popup-tip-container .leaflet-popup-tip {
-    background: var(--dark-red);
+    background: var(--dark-blue) !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+
+.leaflet-container .leaflet-popup-pane .leaflet-popup .leaflet-popup-content {
+    margin: 12px !important;
 }
 
 .leaflet-container .leaflet-popup-pane .leaflet-popup .leaflet-popup-content-wrapper .leaflet-popup-content {
-    width: 250px;
-    height: 125px;
-    background-color: var(--light-blue);
-    background-image: url('../ui/denim065.png');
-    background-blend-mode: multiply;
+    width: 260px;
+    height: 135px;
+    background-color: rgba(30, 41, 59, 0.45) !important;
+    background-image: none !important;
+    border-radius: var(--default-border-radius) !important;
     margin-inline: 0;
     margin-bottom: 3%;
     margin-top: 9%;
-    padding: 5px;
+    padding: 8px;
     box-shadow: var(--leaflet-popup-shadow);
+    border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .leaflet-container .leaflet-popup-pane .leaflet-popup .leaflet-popup-content .layer-popup-title {
     position: absolute;
-    top: 5px;
+    top: 8px;
     font-weight: 800;
 }
 
@@ -904,18 +931,24 @@ button.disabled:hover {
     text-align: end;
     font-style: italic;
     font-size: var(--small-size);
-    color: var(--light-blue);
+    color: var(--grey);
     user-select: none;
 }
 
 .leaflet-container .leaflet-popup-pane .leaflet-popup .leaflet-popup-content .layer-popup-footer a {
-    color: var(--light-text-color);
-    margin: 0;
-    padding: 2px 5px;
-}
-
-.leaflet-container .leaflet-popup-pane .leaflet-popup .leaflet-popup-content .layer-popup-footer a {
-    max-width: 22.5px;
+    color: var(--light-grey) !important;
+    background-color: rgba(255, 255, 255, 0.08) !important;
+    margin: 0 4px !important;
+    padding: 6px !important;
+    border-radius: 50% !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 28px !important;
+    height: 28px !important;
+    max-width: none !important;
+    transition: all 0.2s ease !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
 }
 
 .leaflet-container .leaflet-popup-pane .leaflet-popup .leaflet-popup-content .layer-popup-footer a.disabled {
@@ -926,7 +959,8 @@ button.disabled:hover {
 
 .leaflet-container .leaflet-popup-pane .leaflet-popup .leaflet-popup-content .layer-popup-footer a:hover {
     cursor: pointer;
-    background-color: var(--dark-red);
+    background-color: var(--red) !important;
+    transform: scale(1.1);
 }
 
 .leaflet-container .leaflet-popup-pane .leaflet-popup a.leaflet-popup-close-button {
@@ -1018,14 +1052,16 @@ button.disabled:hover {
 /* ------ Tools Container ------ */
 .tools-container {
     background-color: var(--dark-blue);
-    background-image: url('../ui/denim065.png');
-    padding: 4px 8px;
-    border-radius: 8px;
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    padding: 8px 16px;
+    border-radius: var(--strong-border-radius);
     align-self: center;
     justify-content: center;
-    transition: transform 0.5s ease-in-out;
+    transition: transform 0.5s ease-in-out, box-shadow 0.3s ease;
     z-index: 1001;
-    border: 2px solid var(--light-text-color);
+    border: var(--sidebar-border);
+    box-shadow: var(--default-shadow);
 }
 
 /* ------ Time Panel ------ */
@@ -1059,11 +1095,11 @@ button.disabled:hover {
     flex: 0;
     gap: var(--big-gap-size);
     justify-content: center;
-    border: 2px groove var(--dark-blue);
+    border-right: 1px solid rgba(255, 255, 255, 0.08);
     border-left: none;
     border-top: none;
     border-bottom: none;
-    padding-inline: 5px;
+    padding-inline: 10px;
 }
 
 .time-panel button {
@@ -1071,20 +1107,28 @@ button.disabled:hover {
     width: 50px;
     margin: 4px 0;
     font-size: 24px;
-    color: var(--background-color);
-    background-color: var(--red);
+    color: var(--light-grey) !important;
+    background-color: rgba(255, 255, 255, 0.06) !important;
+    border: var(--sidebar-border) !important;
+    border-radius: var(--default-border-radius) !important;
     box-shadow: var(--small-shadow);
     padding: 0;
+    transition: all 0.2s ease-in-out !important;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .time-panel button.disabled {
-    background-color: var(--dark-blue);
-    color: var(--disabled-text-color);
+    background-color: rgba(0, 0, 0, 0.2) !important;
+    color: var(--disabled-text-color) !important;
+    border-color: transparent !important;
 }
 
-.time-panel button:hover {
-    color: var(--light-text-color);
-    background-color: var(--dark-red);
+.time-panel button:hover:not(.disabled) {
+    color: #ffffff !important;
+    background-color: var(--red) !important;
+    box-shadow: 0 0 10px rgba(184, 37, 37, 0.5) !important;
 }
 
 .time-panel .time-tool {
@@ -1107,18 +1151,25 @@ button.disabled:hover {
     align-content: center;
     align-self: center;
     height: 46px;
-    background-color: var(--red);
+    background-color: rgba(18, 17, 26, 0.4) !important;
+    border: var(--sidebar-border) !important;
     box-shadow: var(--small-shadow);
     border-radius: var(--default-border-radius);
-    border: var(--filled-border);
-    padding-inline: 5px;
+    padding-inline: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
 }
 
 .time-panel .time-tool .year-container input {
-    width: 75%;
+    width: 70%;
     text-align: center;
     font-weight: bold;
-    background-color: var(--dark-blue);
+    background-color: rgba(0, 0, 0, 0.25) !important;
+    border: var(--sidebar-border) !important;
+    color: var(--light-grey) !important;
+    border-radius: 4px;
+    padding: 2px;
 }
 
 .time-panel .time-tool .year-container span {
@@ -1133,14 +1184,25 @@ button.disabled:hover {
     top: 0;
     align-self: center;
     width: 50px;
-    height: 15px;
+    height: 18px;
     justify-content: center;
-    background-color: var(--red);
-    border-radius: 0 0 4px 4px;
+    align-items: center;
+    background-color: var(--dark-blue) !important;
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
+    border: var(--sidebar-border) !important;
+    border-top: none !important;
+    border-radius: 0 0 8px 8px;
     cursor: pointer;
     transform: translateY(-100%);
     transition: all 0.5s ease-in-out;
     padding-block: 2px;
+    color: var(--light-text-color) !important;
+}
+
+#toolsTopbar .toggle-tab:hover {
+    background-color: var(--red) !important;
+    color: #ffffff !important;
 }
 
 #toolsTopbar .toggle-tab.visible {
@@ -1165,15 +1227,18 @@ button.disabled:hover {
     position: fixed;
     text-align: center;
     background-color: var(--dark-blue);
-    background-image: url('../ui/denim065.png');
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
     left: 0;
     top: 0;
     height: var(--fill-height);
     width: 50px;
     display: flex;
     flex-direction: column;
-    transition: width 0.3s ease-in-out;
+    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     z-index: 10000;
+    border-right: var(--sidebar-border);
+    box-shadow: var(--sidebar-shadow);
 }
 
 #menuSidebar:hover {
