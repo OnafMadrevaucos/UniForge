@@ -312,7 +312,12 @@ const lControl = {
                 tooltips: {
                     firstVertex: 'Clique para começar a desenhar uma forma.',
                     continueLine: 'Clique para continuar desenhando.',
-                    finishPoly: 'Clique no primeiro ponto para fechar esta forma.',
+                    startCircle: 'Clique para determinar o centro do círculo',
+
+                    finishPoly: 'Clique no ponto inicial para fechar esta forma.',
+                    finishRect: 'Clique para finalizar o retângulo',
+                    finishCircle: 'Clique para finalizar o círculo',
+
                     placeMarker: "Escolha uma posição para o marcador.",
                 }
             });
@@ -452,6 +457,7 @@ const lControl = {
         function _activateEventsListener() {
             //map.on('moveend', _checkMapVisibility);
             map.on('mousedown', _onUserMapClick);
+
             map.on('pm:create', (event) => _onDrawCreated(event, true));
 
             map.on('zoomend', _onZoomEnd);
@@ -467,7 +473,82 @@ const lControl = {
                 const workingLayer = e.workingLayer;
                 const shape = e.shape;
 
-                utils.measurements.createTooltip(map);
+                map.on('mousemove', (e) => {
+                    const shape = map.pm.Draw.getActiveShape();
+                    if (!shape) {
+                        utils.measurements.removeTooltip();
+                        return;
+                    }
+
+                    // CÍRCULO
+                    if (shape === 'Circle') {
+                        const workingLayer = map.pm.Draw.Circle._layer;
+
+                        // Pega os vértices já desenhados
+                        let latlng = e.latlng;
+
+                        const radius = workingLayer.getRadius() * lControl.constants.UNIT_TO_KM_RATIO;
+                        const area = Math.PI * radius * radius;
+
+                        utils.measurements.updateTooltip(
+                            map,
+                            latlng,
+                            `<strong>Raio:</strong> ${radius.toFixed(2)} km<br>
+                                <strong>Área:</strong> ${area.toFixed(2)} km²
+                                `
+                        );
+                    }
+                    // POLÍGONOS
+                    else if (shape === 'Polygon') {
+                        const workingLayer = map.pm.Draw.Polygon._layer;
+
+                        // Pega os vértices já desenhados
+                        let latlngs = workingLayer.getLatLngs();
+                        if (Array.isArray(latlngs[0])) latlngs = latlngs[0];
+
+                        const area = utils.measurements.calculatePolygonArea(
+                            [...latlngs, e.latlng],
+                            lControl.constants.UNIT_TO_KM_RATIO
+                        );
+                        const perimeter = utils.measurements.calculatePolygonPerimeter(
+                            [...latlngs, e.latlng],
+                            lControl.constants.UNIT_TO_KM_RATIO
+                        );
+
+                        utils.measurements.updateTooltip(
+                            map,
+                            e.latlng,
+                            `<strong>Perímetro:</strong> ${perimeter.toFixed(2)} km
+                             <strong>Área:</strong> ${area.toFixed(2)} km²<br>
+                            `
+                        );
+                    }
+                    // RETÂNGULO
+                    else if (shape === 'Rectangle') {
+                        const workingLayer = map.pm.Draw.Rectangle._layer;
+
+                        // Pega os vértices já desenhados
+                        let latlngs = workingLayer.getLatLngs();
+                        if (Array.isArray(latlngs[0])) latlngs = latlngs[0];
+
+                        const area = utils.measurements.calculatePolygonArea(
+                            latlngs,
+                            lControl.constants.UNIT_TO_KM_RATIO
+                        );
+                        const perimeter = utils.measurements.calculatePolygonPerimeter(
+                            latlngs,
+                            lControl.constants.UNIT_TO_KM_RATIO
+                        );
+
+                        utils.measurements.updateTooltip(
+                            map,
+                            e.latlng,
+                            `<strong>Perímetro:</strong> ${perimeter.toFixed(2)} km
+                             <strong>Área:</strong> ${area.toFixed(2)} km²<br>
+                            `
+                        );
+                    }
+                });
 
                 workingLayer.on('pm:vertexadded', (event) => {
 
@@ -477,26 +558,26 @@ const lControl = {
                     const points = latlngs[0];
                     if (points.length < 2) return;
 
-                    const mouseLatLng = points[points.length - 1];
+                    const mouseLatLng = points.length ? points[points.length - 1] : points;
 
                     // POLÍGONO
                     if (shape === 'Polygon') {
 
                         const area = utils.measurements.calculatePolygonArea(
-                                points,
-                                lControl.constants.UNIT_TO_KM_RATIO
-                            );
-
+                            latlngs,
+                            lControl.constants.UNIT_TO_KM_RATIO
+                        );
                         const perimeter = utils.measurements.calculatePolygonPerimeter(
-                                points,
-                                lControl.constants.UNIT_TO_KM_RATIO
-                            );
+                            latlngs,
+                            lControl.constants.UNIT_TO_KM_RATIO
+                        );
 
                         utils.measurements.updateTooltip(
                             map,
                             mouseLatLng,
-                            `<strong>Área:</strong> ${area.toFixed(2)} km²<br>
-                            <strong>Perímetro:</strong> ${perimeter.toFixed(2)} km`
+                            `<strong>Perímetro:</strong> ${perimeter.toFixed(2)} km
+                             <strong>Área:</strong> ${area.toFixed(2)} km²<br>
+                            `
                         );
                     }
                 });
@@ -505,9 +586,7 @@ const lControl = {
                 workingLayer.on('pm:centerplaced', () => {
 
                     workingLayer.on('pm:change', () => {
-
                         const radius = workingLayer.getRadius() * lControl.constants.UNIT_TO_KM_RATIO;
-
                         const area = Math.PI * radius * radius;
 
                         utils.measurements.updateTooltip(
@@ -629,6 +708,7 @@ const lControl = {
             }
             finally {
                 if (utils.state.drawInstance) utils.state.drawInstance.disable();
+                utils.measurements.removeTooltip(map);
             }
         }
 
@@ -640,6 +720,8 @@ const lControl = {
 
             const containers = document.querySelectorAll('div.map-objects-container');
             containers.forEach(container => container.classList.remove('active'));
+
+            utils.measurements.removeTooltip(map);
         }
 
         function _onZoomEnd() {

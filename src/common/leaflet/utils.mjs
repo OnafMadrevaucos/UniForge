@@ -109,31 +109,37 @@ const drawer = {
 const measurements = {
     tooltip: null,
 
-    createTooltip(map) {
+    createTooltip(map, latlng, content) {
         if (this.tooltip) {
             this.tooltip.remove();
         }
 
-        this.tooltip = L.tooltip({
-            permanent: false,
-            direction: 'top',
-            offset: [0, -10],
+        this.tooltip = L.tooltip({            
+            permanent: true,
+            sticky: true,
+            direction: 'center',
+            offset: [0, -5],
             className: 'leaflet-draw-tooltip'
-        }).addTo(map);
+        })
+        .setLatLng(latlng)
+        .setContent(content)
+        .addTo(map);
 
         return this.tooltip;
     },
 
     removeTooltip(map) {
         if (this.tooltip) {
-            map.removeLayer(this.tooltip);
+            this.tooltip.remove();
             this.tooltip = null;
+
+            map.off('mousemove');
         }
     },
 
     updateTooltip(map, latlng, content) {
         if (!this.tooltip) {
-            this.createTooltip(map);
+            this.createTooltip(map, latlng, content);
         }
 
         this.tooltip

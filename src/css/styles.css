@@ -105,7 +105,8 @@
     --bright-yellow: #f59e0b;
     --light-yellow: #fbbf24;
     --border-yellow: #f59e0b;
-    --lib-background: #111118;
+
+    --lib-background: var(--light-grey);
 
     --green: #16a34a;
     --dark-green: #14532d;
@@ -672,6 +673,9 @@ button.disabled:hover {
     visibility: hidden;
     display: none !important;
 }
+.visible {
+    visibility: visible !important;
+}
 
 /* ------ Progress Dialog ------ */
 .progress-dialog .progress-bar-wrapper {
@@ -838,6 +842,13 @@ button.disabled:hover {
     color: var(--light-text-color);
     font-weight: bold;
 }
+
+.leaflet-container .leaflet-tooltip-pane .leaflet-draw-tooltip {
+    visibility: visible !important;
+}
+.leaflet-container .leaflet-tooltip-pane .leaflet-draw-tooltip::before {
+    content: none;
+} 
 
 .uniforge .leaflet-container a.leaflet-popup-close-button {
     width: 20px;
@@ -1218,7 +1229,7 @@ button.disabled:hover {
 }
 
 #toolsTopbar:hover .toggle-tab {
-    transform: translateY(0%);
+    transform: translateY(30%);
 }
 
 /* ------ Side Menu ------ */
@@ -1394,6 +1405,7 @@ button.disabled:hover {
 }
 .map-objects-container.marker {
     bottom: -10em;
+    z-index: 1002;
 }
 
 .map-objects-container.active {
@@ -1435,7 +1447,7 @@ button.disabled:hover {
 }
 
 .tools-container.map-objects-panel {
-    height: 85px;
+    height: 80px;
     width: var(--fill-width);
     border-bottom: none;
     border-bottom-left-radius: 0;
