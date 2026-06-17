@@ -13,6 +13,9 @@ import { set } from "./common/primitives/set.mjs";
 import Slider from "./models/slider.js";
 import ColorPicker from "./models/colorPicker.js";
 
+// Configura o tema salvo no localStorage antes de inicializar o app para evitar flash de estilo
+document.documentElement.setAttribute('data-theme', localStorage.getItem('uniforge_theme') || 'theme-medieval');
+
 // Realiza as configurações iniciais da aplicação ao carregar o conteúdo do DOM.
 document.addEventListener('DOMContentLoaded', async () => {
     const cssname = await uniforge.path.join('css/styles.css');
@@ -533,6 +536,18 @@ function configureHooks() {
 }
 // Configura o listeners que tratam os eventos dos tabs do Menu Lateral e as rotinas de fechamento do Form
 function activateMainListeners() {
+    // Lógica para seleção de temas
+    const themeSelector = document.getElementById('themeSelector');
+    if (themeSelector) {
+        const savedTheme = localStorage.getItem('uniforge_theme') || 'theme-medieval';
+        themeSelector.value = savedTheme;
+        themeSelector.addEventListener('change', (event) => {
+            const selectedTheme = event.target.value;
+            document.documentElement.setAttribute('data-theme', selectedTheme);
+            localStorage.setItem('uniforge_theme', selectedTheme);
+        });
+    }
+
     // Lógica de UI para o Menu Lateral
     const tabs = document.querySelectorAll('.tab');
 
@@ -965,3 +980,4 @@ function createElement(tag, attributes = {}, children = []) {
 
     return element;
 }
+
