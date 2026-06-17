@@ -16,6 +16,14 @@
     --yellow: #b87a25;
     --bright-yellow: #e5a440;
     --border-yellow: #d99b38;
+    
+    /* Tooltip */
+    --tooltip-background: rgba(35, 27, 20, 0.98);
+    --tooltip-text: #e2e8f0;
+    --tooltip-muted: #9b8a78;
+    --tooltip-border: rgba(184, 122, 37, 0.4);
+    --tooltip-divider: rgba(184, 122, 37, 0.2);
+    --tooltip-title: #e5a440;
 }
 
 /* 2. TEMA SCI-FI (Cyberpunk / Neon)
@@ -54,6 +62,14 @@
     
     --text-color: #e0e0e0;
     --light-text-color: #00ffff; /* Ciano brilhante */
+    
+    /* Tooltip */
+    --tooltip-background: rgba(11, 12, 16, 0.98);
+    --tooltip-text: #e0e0e0;
+    --tooltip-muted: #718096;
+    --tooltip-border: rgba(0, 255, 255, 0.4);
+    --tooltip-divider: rgba(255, 0, 255, 0.3);
+    --tooltip-title: #00ffff;
     
     /* Brilhos (Glows) */
     --filled-border: 1px solid rgba(0, 255, 255, 0.6);
@@ -115,6 +131,15 @@
     --text-color: #f7fafc; /* gray-50 */
     --light-text-color: #ffffff;
     --dark-text-color: #1a202c;
+    --disabled-text-color: #64748b;
+    
+    /* Tooltip */
+    --tooltip-background: rgba(26, 32, 44, 0.98);
+    --tooltip-text: #f7fafc;
+    --tooltip-muted: #cbd5e0;
+    --tooltip-border: rgba(255, 255, 255, 0.08);
+    --tooltip-divider: rgba(255, 255, 255, 0.06);
+    --tooltip-title: #ffffff;
     
     /* Removendo excessos e bordas fortes */
     --filled-border: 1px solid rgba(255, 255, 255, 0.1);

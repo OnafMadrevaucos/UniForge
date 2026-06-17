@@ -122,7 +122,12 @@
     --dark-text-color: #0f172a;
     --disabled-text-color: #64748b;
     --background-color: rgba(18, 17, 26, 0.88);
-    --tooltip-background: #0f172a;
+    --tooltip-background: #12111a;
+    --tooltip-text: #e2e8f0;
+    --tooltip-muted: #8a8897;
+    --tooltip-border: rgba(255, 255, 255, 0.1);
+    --tooltip-divider: rgba(255, 255, 255, 0.15);
+    --tooltip-title: #fbbf24;
     --blockquote-background: #3b3a30;
     --light-background-color: rgba(30, 41, 59, 0.5);
     --stroke-color: var(--dark-red);
@@ -4945,12 +4950,13 @@ button.disabled:hover {
     position: absolute;
     opacity: 0;
     pointer-events: none;
-    border-radius: 3px;
+    border-radius: 4px;
     box-shadow: var(--default-shadow);
-    background-color: var(--grey);
-    color: var(--text-color);
+    background-color: var(--tooltip-background);
+    color: var(--tooltip-text);
+    border: 1px solid var(--tooltip-border);
     z-index: 2000;
-    padding: 8px;
+    padding: 10px 14px;
     width: 250px;
     font-size: var(--default-size);
     transform: translateY(-20px);
@@ -4963,41 +4969,47 @@ button.disabled:hover {
 }
 
 .link-tooltip .header {
-    border-bottom: 2px groove var(--dark-red);
-    margin-bottom: 2px;
+    border-bottom: 2px groove var(--tooltip-divider);
+    margin-bottom: 4px;
+    padding-bottom: 2px;
 }
 
 .link-tooltip .header h3 {
     flex: 1;
     margin-block: 2px;
-    color: var(--text-red);
+    color: var(--tooltip-title);
 }
 
 .link-tooltip .header a {
     width: 5%;
     text-align: center;
+    color: var(--tooltip-title);
 }
 
 .link-tooltip p {
     text-align: end;
-    color: var(--text-color);
+    color: var(--tooltip-muted);
     margin-top: 2px;
     margin-bottom: 10px;
+    font-size: 11px;
 }
 
 .link-tooltip span {
     font-style: italic;
-    color: var(--background-color);
+    color: var(--tooltip-text);
 }
 
 .link-tooltip .date {
     justify-content: center;
     gap: var(--default-gap-size);
+    margin-top: 8px;
+    border-top: 1px solid var(--tooltip-divider);
+    padding-top: 6px;
 }
 
 .link-tooltip .date span {
     font-style: normal;
-    color: var(--dark-red);
+    color: var(--tooltip-title);
 }
 
 /* ------ Native Tooltip ------ */
@@ -5005,12 +5017,13 @@ button.disabled:hover {
     position: fixed;
     opacity: 0;
     pointer-events: none;
-    border-radius: 3px;
+    border-radius: 4px;
     box-shadow: var(--default-shadow);
-    background-color: var(--grey);
-    color: var(--text-color);
+    background-color: var(--tooltip-background);
+    color: var(--tooltip-text);
+    border: 1px solid var(--tooltip-border);
     z-index: 99999;
-    padding: 8px;
+    padding: 6px 10px;
     width: 150px;
     height: fit-content;
     line-height: normal;
