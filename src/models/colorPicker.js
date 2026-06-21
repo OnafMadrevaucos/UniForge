@@ -452,31 +452,23 @@ export default class ColorPicker {
         const popup = this.popup;
 
         // Reset de posicionamento padrão css inicial relativo.
-        popup.style.left = '0px';
-        popup.style.top = '52px';
+        popup.style.left = '5px';
+        popup.style.top = '140px';
 
         const popupRect = popup.getBoundingClientRect();
 
         let left = previewRect.left;
-        let top = previewRect.bottom + 10; // Posiciona logo abaixo do preview com 10px de margem.
+        let top = previewRect.height + 10; // Posiciona logo abaixo do preview com 10px de margem.
 
         // Prevenção de estouro na borda direita da viewport.
         if (left + popupRect.width > window.innerWidth) {
-            left = window.innerWidth - popupRect.width - 10;
-        }
-
-        // Prevenção de estouro na borda esquerda.
-        if (left < 10)
-            left = 10;
+            left = (popupRect.width) * -1;
+        }        
 
         // Prevenção de estouro na borda inferior (joga o popup para cima do preview).
         if (top + popupRect.height > window.innerHeight) {
-            top = previewRect.top - popupRect.height - 10;
-        }
-
-        // Prevenção de estouro na borda superior.
-        if (top < 10)
-            top = 10;
+            top = (10 + popupRect.height) * -1;
+        }       
 
         // Aplica o posicionamento absoluto calculado baseado na viewport.
         popup.style.left = `${left}px`;
