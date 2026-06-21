@@ -100,6 +100,7 @@
     --dark-red: #7f1d1d;
     --header-red: #ef4444;
     --text-red: #f87171;
+    --title-red: var(--dark-red);
 
     --yellow: #d97706;
     --bright-yellow: #f59e0b;
@@ -255,7 +256,7 @@ h1 {
     flex: 1;
     margin-bottom: 0px;
     margin-top: 0.5em;
-    color: var(--text-red);
+    color: var(--title-red);
     font-size: var(--heading-1-size);
     font-weight: 700;
     font-family: 'Cinzel', serif;
@@ -266,7 +267,7 @@ h1 {
 
 h2 {
     margin-bottom: 10px;
-    color: var(--text-red);
+    color: var(--title-red);
     font-size: var(--heading-2-size);
     font-weight: 700;
     font-family: 'Cinzel', serif;
@@ -275,7 +276,7 @@ h2 {
 }
 
 h4 {
-    color: var(--text-red);
+    color: var(--title-red);
     font-variant: petite-caps;
     margin-block: 2px;
     text-align: center;
@@ -678,6 +679,7 @@ button.disabled:hover {
     visibility: hidden;
     display: none !important;
 }
+
 .visible {
     visibility: visible !important;
 }
@@ -722,8 +724,8 @@ button.disabled:hover {
     z-index: 1000 !important;
 }
 
-.leaflet-bar a, 
-.leaflet-bar button, 
+.leaflet-bar a,
+.leaflet-bar button,
 .leaflet-control-layers-toggle,
 .leaflet-pm-toolbar.leaflet-control .button-container a.leaflet-buttons-control-button {
     background-color: var(--dark-blue) !important;
@@ -740,8 +742,8 @@ button.disabled:hover {
     margin: 4px 0 !important;
 }
 
-.leaflet-bar a:hover, 
-.leaflet-bar button:hover, 
+.leaflet-bar a:hover,
+.leaflet-bar button:hover,
 .leaflet-control-layers-toggle:hover,
 .leaflet-pm-toolbar.leaflet-control .button-container a.leaflet-buttons-control-button:hover {
     background-color: var(--red) !important;
@@ -752,10 +754,12 @@ button.disabled:hover {
 .leaflet-pm-toolbar.leaflet-control {
     height: auto;
 }
+
 .leaflet-pm-toolbar.leaflet-control .button-container {
     height: auto;
     width: 36px;
 }
+
 .leaflet-pm-toolbar.leaflet-control .button-container a.leaflet-buttons-control-button {
     width: 36px !important;
     height: 36px !important;
@@ -777,8 +781,8 @@ button.disabled:hover {
     display: block !important;
     position: absolute;
     top: 0.5em;
-    right: 5.25em;
-    background: var(--dark-blueT87) !important;
+    right: 6.25em;
+    background: var(--background-color);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     border-radius: var(--default-border-radius);
@@ -851,9 +855,10 @@ button.disabled:hover {
 .leaflet-container .leaflet-tooltip-pane .leaflet-draw-tooltip {
     visibility: visible !important;
 }
+
 .leaflet-container .leaflet-tooltip-pane .leaflet-draw-tooltip::before {
     content: none;
-} 
+}
 
 .uniforge .leaflet-container a.leaflet-popup-close-button {
     width: 20px;
@@ -1222,7 +1227,7 @@ button.disabled:hover {
 }
 
 #toolsTopbar .toggle-tab.visible {
-    top: 64px;
+    top: 70px;
 }
 
 #toolsTopbar .toggle-tab i {
@@ -1234,7 +1239,7 @@ button.disabled:hover {
 }
 
 #toolsTopbar:hover .toggle-tab {
-    transform: translateY(30%);
+    transform: translateY(0);
 }
 
 /* ------ Side Menu ------ */
@@ -1402,19 +1407,36 @@ button.disabled:hover {
 /* ------ Map Objects Panel ------ */
 .map-objects-container {
     position: absolute;
-    bottom: -6em;
-    left: 10em;
-    width: 750px;
+    top: 23.5em;
+    right: -17.5em;
+    width: 280px;
+    height: 600px;
     z-index: 1001;
-    transition: bottom 0.3s ease-in-out;
+    transition: right 0.3s ease-in-out;
+}
+
+.map-objects-container.layer-objects {
+    right: 0;
 }
 .map-objects-container.marker {
-    bottom: -10em;
+    height: 500px;
+    width: 250px;
+    top: 25em;
     z-index: 1002;
 }
 
 .map-objects-container.active {
-    bottom: 0px;
+    right: 0;
+}
+.map-objects-container.layer-objects.active {    
+    right: 17.5em;
+}
+.map-objects-container.marker.active {
+    right: 0em;
+}
+
+.map-objects-container.marker .tools-container .tools-content {
+    height: var(--fill-height);
 }
 
 .map-objects-container div#shapeSizeSlider {
@@ -1429,16 +1451,14 @@ button.disabled:hover {
 
 .map-objects-container .toggle-tab {
     position: absolute;
-    top: 0px;
-    left: 15px;
     width: 50px;
     height: 25px;
+    left: -49px;
     align-items: center;
     justify-content: center;
     background-color: var(--dark-red);
-    border: var(--filled-border);
     border-bottom: none;
-    border-radius: 4px 4px 0 0;
+    border-radius: 4px 0 0 4px;
     cursor: pointer;
     color: var(--light-text-color);
     transform: translateY(-100%);
@@ -1446,29 +1466,33 @@ button.disabled:hover {
     padding-block: 2px;
 }
 
+.map-objects-container #toggleShapesPanel.toggle-tab {
+    top: 50px;    
+}
+.map-objects-container #toggleObjectsPanel.toggle-tab {
+    top: 85px;
+}
+
 .map-objects-container.active .toggle-tab,
 .map-objects-container .toggle-tab:hover {
-    height: 28px;
+    color: var(--dark-red);
+    background-color: var(--border-yellow);
 }
 
 .tools-container.map-objects-panel {
-    height: 80px;
+    height: var(--fill-height);
     width: var(--fill-width);
     border-bottom: none;
-    border-bottom-left-radius: 0;
+    border-top-right-radius: 0;
     border-bottom-right-radius: 0;
     gap: var(--default-gap-size);
 }
 
 .marker .map-objects-panel .tools-search-bar {
+    bottom: auto;
+    top: -38px;
     border-bottom: none;
-    left: 15px;     
-}
-
-.map-objects-panel .sizes .switch {
-    position: absolute;
-    top: 15px;
-    left: 245px;
+    left: 15px;
 }
 
 .layer-control-wrapper .layer-control-search-bar,
@@ -1476,10 +1500,10 @@ button.disabled:hover {
     position: absolute;
     bottom: 95px;
     left: 10px;
-    width: 200px;
+    width: 210px;
     padding: 5px;
     background-color: var(--dark-red);
-    border: var(--filled-border);    
+    border: var(--filled-border);
     border-top-left-radius: var(--default-border-radius);
     border-top-right-radius: var(--default-border-radius);
     gap: var(--default-gap-size);
@@ -1495,17 +1519,21 @@ button.disabled:hover {
     color: var(--light-text-color);
 }
 
+.map-objects-container.regular-shapes .map-objects-panel .tools-content {
+    height: var(--fill-height);
+}
+
 .map-objects-panel .tools-content .config-group {
     flex: 2;
-    height: 75px;
+    height: var(--fill-height);
     border: var(--data-group-border);
     border-radius: var(--default-border-radius);
     margin: 5px;
     padding-inline: 5px;
-
     overflow-y: hidden;
     overflow-x: scroll;
 }
+
 .map-objects-panel .tools-content .config-group.preview {
     flex: 1;
 }
@@ -1524,6 +1552,7 @@ button.disabled:hover {
     border-radius: var(--default-border-radius);
     box-shadow: inset 1px 1px 4px 1px var(--dark-grey);
 }
+
 .map-objects-panel .tools-content .shape-canvas .shape-preview {
     height: 75%;
     flex: 0.5;
@@ -1542,10 +1571,6 @@ button.disabled:hover {
     transition: opacity ease 0.3s;
 }
 
-.map-objects-panel .tools-content .config-group.markers {
-    flex: 2;
-}
-
 .map-objects-panel .tools-content .config-group .label {
     color: var(--red);
     font-variant: small-caps;
@@ -1560,20 +1585,27 @@ button.disabled:hover {
     gap: var(--default-gap-size);
 }
 
-.map-objects-panel .tools-content .config-group .options.marker {
-    width: 450px;
+.marker .map-objects-panel .tools-content .config-group .options {
+    width: var(--fill-width);
+    height: var(--fill-height);
+    flex-direction: column;
+    flex-wrap: wrap;
 }
 
-.map-objects-panel .tools-content .config-group .options.color {
+.map-objects-panel.marker .tools-content .config-group .options.color {
     width: 200px;
     gap: var(--big-gap-size);
+}
+
+.map-objects-panel.marker .tools-content {
+    height: var(--fill-height);
 }
 
 .map-objects-panel .tools-content .config-group .options a {
     height: 32px;
     width: 32px;
     min-width: 32px;
-
+    min-height: 32px;
     border: var(--invisible-border);
     border-radius: var(--default-border-radius);
     padding: 2px;
@@ -3836,7 +3868,7 @@ button.disabled:hover {
     border-bottom: 1px solid var(--blue);
     padding-bottom: 5px;
     margin-bottom: 15px;
-    color: var(--text-red);
+    color: var(--title-red);
 }
 
 #encyclo.entries .sidebar h3 {
@@ -4165,9 +4197,9 @@ button.disabled:hover {
     border-radius: 4px;
     box-shadow: var(--calendar-shadow);
     width: 350px;
-    height: 310px;
+    height: 335px;
     max-width: 350px;
-    max-height: 310px;
+    max-height: 335px;
     overflow: hidden;
 }
 
@@ -4318,6 +4350,7 @@ button.disabled:hover {
 .slider-container {
     align-self: center;
 }
+
 .slider-track {
     width: 100%;
     height: 6px;
@@ -4360,8 +4393,8 @@ button.disabled:hover {
 }
 
 .color-picker-preview {
-    width: 16px;
-    height: 16px;
+    width: 32px;
+    height: 32px;
     border-radius: 3px;
     border: 2px solid var(--light-grey);
     cursor: pointer;
@@ -4377,6 +4410,7 @@ button.disabled:hover {
         6px -6px,
         -6px 0;
 }
+
 .color-picker-preview.disabled {
     border: 2px dashed;
     background-color: var(--dark-text-color) !important;
@@ -4384,9 +4418,10 @@ button.disabled:hover {
 }
 
 .color-picker-popup {
-    position: fixed;
-    top: 52px;
-    left: 0;
+    position: absolute;
+    top: 140px;
+    left: 5px;
+    height: min-content;
     width: 260px;
     padding-top: 12px;
     padding-bottom: 0px;
@@ -4486,23 +4521,27 @@ button.disabled:hover {
     margin-top: auto;
     gap: var(--default-gap-size);
 }
+
 .color-picker-footer .color-picker-button {
     flex: 1;
     background-color: transparent;
     border: none;
     box-shadow: none;
-    color: var(--light-text-color);    
+    color: var(--light-text-color);
     margin: 0;
     margin-top: 5px;
     border-top-left-radius: 0;
     border-top-right-radius: 0;
 }
+
 .color-picker-footer .color-picker-button:first-of-type {
     border-bottom-right-radius: 0;
 }
+
 .color-picker-footer .color-picker-button:last-of-type {
     border-bottom-left-radius: 0;
 }
+
 .color-picker-footer .color-picker-button:hover {
     background-color: var(--red);
 }
@@ -4543,6 +4582,10 @@ button.disabled:hover {
     justify-content: flex-start;
     height: var(--fill-height);
     /* Garante que o conteúdo vá para o topo */
+}
+
+.tox .tox-edit-area__iframe {
+    background-color: var(--blue);
 }
 
 
