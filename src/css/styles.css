@@ -107,7 +107,7 @@
     --light-yellow: #fbbf24;
     --border-yellow: #f59e0b;
 
-    --lib-background: var(--light-grey);
+    --lib-background: url(../ui/lib-background.png);
 
     --green: #16a34a;
     --dark-green: #14532d;
@@ -159,7 +159,7 @@
     --sidebar-border: 1px solid rgba(255, 255, 255, 0.08);
     --tab-item-border: 1px solid rgba(127, 29, 29, 0.5);
     --tooltip-border: 1px solid rgba(255, 255, 255, 0.1);
-    --img-border: 2px groove var(--light-blue);
+    --img-border: 2px solid var(--border-yellow);
     --data-group-border: 1px solid rgba(255, 255, 255, 0.1);
     --focused-data-group-border: 1px solid var(--border-yellow);
     --focused-div-border: 1px solid var(--light-text-color);
@@ -923,24 +923,24 @@ button.disabled:hover {
     border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-.leaflet-container .leaflet-popup-pane .leaflet-popup .leaflet-popup-content .layer-popup-title {
-    position: absolute;
-    top: 8px;
+.leaflet-container .leaflet-popup-pane .leaflet-popup .leaflet-popup-content .layer-popup-title {    
+    color: var(--light-text-color);
+    font-size: var(--big-size);
     font-weight: 800;
 }
 
 .leaflet-container .leaflet-popup-pane .leaflet-popup .leaflet-popup-content .layer-popup-body {
-    height: var(--fill-height);
+    height: 62.5%;
     overflow-y: auto;
 }
 
 .leaflet-container .leaflet-popup-pane .leaflet-popup .leaflet-popup-content .layer-popup-body p {
+    font-size: var(--small-size);
+    font-style: italic;
     margin: 0;
 }
 
-.leaflet-container .leaflet-popup-pane .leaflet-popup .leaflet-popup-content .layer-popup-footer {
-    position: absolute;
-    bottom: 1vh;
+.leaflet-container .leaflet-popup-pane .leaflet-popup .leaflet-popup-content .layer-popup-footer {    
     height: fit-content;
     width: var(--fill-width);
     padding-right: 5px;
@@ -959,14 +959,13 @@ button.disabled:hover {
 .leaflet-container .leaflet-popup-pane .leaflet-popup .leaflet-popup-content .layer-popup-footer a {
     color: var(--light-grey) !important;
     background-color: rgba(255, 255, 255, 0.08) !important;
-    margin: 0 4px !important;
+    margin: 4px 0 !important;
     padding: 6px !important;
     border-radius: 50% !important;
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
     width: 28px !important;
-    height: 28px !important;
     max-width: none !important;
     transition: all 0.2s ease !important;
     border: 1px solid rgba(255, 255, 255, 0.1) !important;
@@ -1030,44 +1029,6 @@ button.disabled:hover {
     flex: 1;
     width: var(--fill-width);
     overflow-y: auto;
-}
-
-.layer-control-wrapper .layer-control-content ul {
-    height: var(--fill-height);
-    list-style: none;
-    padding: 0 5px;
-    overflow: auto;
-    gap: var(--default-gap-size);
-}
-
-.layer-control-wrapper .layer-control-content ul .layer-item {
-    color: var(--light-text-color);
-    background-color: var(--dark-red);
-    padding: 5px;
-    border-radius: var(--default-border-radius);
-    box-shadow: var(--small-shadow);
-    user-select: none;
-    transition: transform 0.3s ease-in-out;
-}
-
-.layer-control-wrapper .layer-control-content ul .layer-item:hover {
-    cursor: pointer;
-    transform: scale(1.01);
-}
-
-.layer-control-content ul .layer-item .layer-item-content {
-    flex: 1;
-    gap: var(--default-gap-size);
-}
-
-.layer-control-content ul .layer-item .layer-item-content span {
-    flex: 1;
-}
-
-.layer-control-content ul .layer-item .layer-item-content a:hover {
-    cursor: default;
-    color: inherit;
-    text-shadow: none;
 }
 
 /* ------ Tools Container ------ */
@@ -1415,9 +1376,6 @@ button.disabled:hover {
     transition: right 0.3s ease-in-out;
 }
 
-.map-objects-container.layer-objects {
-    right: 0;
-}
 .map-objects-container.marker {
     height: 500px;
     width: 250px;
@@ -1427,9 +1385,6 @@ button.disabled:hover {
 
 .map-objects-container.active {
     right: 0;
-}
-.map-objects-container.layer-objects.active {    
-    right: 17.5em;
 }
 .map-objects-container.marker.active {
     right: 0em;
@@ -1479,6 +1434,11 @@ button.disabled:hover {
     background-color: var(--border-yellow);
 }
 
+.map-objects-container .tools-container .tools-content {
+    height: var(--fill-height);
+    overflow-y: auto;
+}
+
 .tools-container.map-objects-panel {
     height: var(--fill-height);
     width: var(--fill-width);
@@ -1486,6 +1446,61 @@ button.disabled:hover {
     border-top-right-radius: 0;
     border-bottom-right-radius: 0;
     gap: var(--default-gap-size);
+}
+
+.map-objects-container .tools-container .tools-content ul {
+    height: var(--fill-height);
+    list-style: none;
+    padding: 0 5px;
+    overflow: auto;
+    gap: var(--default-gap-size);
+}
+
+.map-objects-container .tools-container .tools-content ul .layer-item {
+    color: var(--light-text-color);
+    background-color: var(--dark-red);
+    padding: 5px;
+    border-radius: var(--default-border-radius);
+    box-shadow: var(--small-shadow);
+    user-select: none;
+    transition: transform 0.3s ease-in-out;
+}
+
+.map-objects-container .tools-container .tools-content ul .layer-item:hover {
+    cursor: pointer;
+    transform: scale(1.01);
+}
+
+.map-objects-container .tools-content ul .layer-item .layer-item-content {
+    flex: 1;
+    height: 64px;
+    gap: var(--default-gap-size);
+}
+
+.map-objects-container ul .layer-item .layer-item-content img {
+    align-self: center;
+    background-color: var(--background-color);
+    border: var(--img-border);
+    border-radius: 50%;
+    min-width: 46px;
+    max-width: 46px;
+    min-height: 46px;
+    max-height: 46px;
+}
+
+.map-objects-container ul .layer-item .layer-item-content .layer-item-content-body h3 {
+    font-size: var(--default-size);
+    font-weight: 700;
+}
+.map-objects-container ul .layer-item .layer-item-content .layer-item-content-body span {
+    flex: 1;
+    font-size: var(--small-size);
+}
+
+.map-objects-container .tools-container .tools-content .no-results {
+    color: var(--red);
+    font-style: italic;
+    text-align: center;
 }
 
 .marker .map-objects-panel .tools-search-bar {
@@ -1507,6 +1522,14 @@ button.disabled:hover {
     border-top-left-radius: var(--default-border-radius);
     border-top-right-radius: var(--default-border-radius);
     gap: var(--default-gap-size);
+}
+
+.layer-objects .map-objects-panel .tools-search-bar {
+    bottom: -39px;
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+    border-bottom-left-radius: var(--default-border-radius);
+    border-bottom-right-radius: var(--default-border-radius);
 }
 
 .layer-control-wrapper .layer-control-search-bar input,

@@ -997,61 +997,66 @@ const lControl = {
 function _updateLayerControl() {
     const iconMap = utils.iconMap;
     const mapElementsList = document.querySelector('#mapElementsList');
-    mapElementsList.innerHTML = ''; // Limpa a lista atual.    
+    mapElementsList.innerHTML = ''; // Limpa a lista atual.  
 
-    lControl.mapElements.eachLayer(function (layer) {
-        const li = document.createElement('li');
-        li.id = layer._id;
-        li.dataset.leafletId = layer._leaflet_id;
-        li.classList.add('layer-item', 'flexrow');
+    const noObjectsFoundMessage = document.getElementById('noObjectsFoundMessage');
 
-        const content = document.createElement('div');
-        content.classList.add('layer-item-content', 'flexrow');
+    // Se não houver elementos, exibe a mensagem de "Nenhum objeto encontrado".
+    if (lControl.mapElements.getLayers().length === 0) {        
+        noObjectsFoundMessage.classList.remove('hidden');
+    }
+    // Caso haja elementos, gera os itens da lista de elementos do mapa.
+    else {
+        // Garante que a mensagem de "Nenhum objeto encontrado" esteja oculta.
+        noObjectsFoundMessage.classList.add('hidden');
+        
+        // Percorre os elementos do mapa e os adiciona à lista de controle de camadas.
+        lControl.mapElements.eachLayer(async function (layer) {
+            const li = document.createElement('li');
+            li.id = layer._id;
+            li.dataset.leafletId = layer._leaflet_id;
+            li.classList.add('layer-item', 'flexrow');
 
-        const icon = document.createElement('a');
-        icon.innerHTML = `<i class="${iconMap[layer.type]}"></i>`;
+            const content = document.createElement('div');
+            content.classList.add('layer-item-content', 'flexrow');
 
-        const span = document.createElement('span');
-        span.innerText = layer.source.title;
-
-        content.appendChild(icon);
-        content.appendChild(span);
-
-        const deleteButton = document.createElement('a');
-        deleteButton.classList.add('layer-item-delete');
-        deleteButton.innerHTML = '<i class="fa-solid fa-trash"></i>';
-
-        deleteButton.addEventListener('click', lControl.deleteElement);
-
-        li.appendChild(content);
-        li.appendChild(deleteButton);
-
-        li.addEventListener('mouseover', _onLayerItemMouseOver);
-        li.addEventListener('mouseleave', _onLayerItemMouseLeave)
-
-        mapElementsList.appendChild(li);
-    })
-
-    function _onObjectsSearchChange(event) {
-        event.stopPropagation();
-        const input = event.currentTarget;
-        // Padroniza e remove espaços em branco do filtro para melhorar a busca.
-        const filter = input.value.trim().toLowerCase();
-
-        // Obtém todas os items de Objetos do Mapa.
-        const objectsItems = document.querySelectorAll('#mapElementsList li');
-        objectsItems.forEach(item => {
-            const meid = item.dateset.id;
-            const mapElement = uniforge.docs.maps[map.mid].elements[meid];
-            // Se o filtro estiver vazio ou a opção contém o filtro, mostra a opção.
-            if (filter.isEmpty() || mapElement.includes(filter)) {
-                item.classList.remove('hidden');
+            const img = document.createElement('img');
+            if (!layer.source.img) {
+                img.src = uniforge.urls.blankImg;
             }
-            // Senão, esconde a opção. 
             else {
-                item.classList.add('hidden');
+                img.src = await uniforge.utils.blobToImage(layer.source.img);
             }
-        });
+
+            const contentBody = document.createElement('div');
+            contentBody.classList.add('layer-item-content-body', 'flexcol');
+
+            const h3 = document.createElement('h3');
+            h3.innerText = layer.source.title;
+
+            const span = document.createElement('span');
+            span.innerHTML = `<i class="${layer.source.entryType.icon}"></i> ${layer.source.entryType.title}`;
+
+            contentBody.appendChild(h3);
+            contentBody.appendChild(span);
+
+            content.appendChild(img);
+            content.appendChild(contentBody);
+
+            const deleteButton = document.createElement('a');
+            deleteButton.classList.add('layer-item-delete');
+            deleteButton.innerHTML = '<i class="fa-solid fa-trash"></i>';
+
+            deleteButton.addEventListener('click', lControl.deleteElement);
+
+            li.appendChild(content);
+            li.appendChild(deleteButton);
+
+            li.addEventListener('mouseover', _onLayerItemMouseOver);
+            li.addEventListener('mouseleave', _onLayerItemMouseLeave)
+
+            mapElementsList.appendChild(li);
+        })
     }
 
     function _onLayerItemMouseLeave(event) {
