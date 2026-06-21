@@ -154,7 +154,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             },
             colorPickers: {
                 fillColorPicker: null,
-                borderColorPicker: null
+                borderColorPicker: null,
+                gradientColorPicker: null
             }
         },
 
@@ -610,21 +611,26 @@ function activateMainListeners() {
     hasBorderCheckbox.addEventListener('change', (event) => { onHasBorderSwitchChange(event); });
 
     const shapeSizeSliderContainer = document.querySelector('.options.size');
-    const shapeSizeSlider = uniforge.ctrls.sliders.shapeSizeSlider = new Slider('shapeSizeSlider', shapeSizeSliderContainer, { min: 1, max: 10, value: 5, linkedLabel: 'shapeSizeSpan', labelMask: '{value}px' });
+    const shapeSizeSlider = uniforge.ctrls.sliders.shapeSizeSlider = new Slider('shapeSizeSlider', shapeSizeSliderContainer, { min: 1, max: 10, value: 5, linkedLabel: 'shapeSizeSpan', labelMask: '{value}px', width: '80px' });
     shapeSizeSlider.config();
     shapeSizeSlider.addEventListener('change', (event) => { onShapeSizeSliderChange(event); });
 
     const shapeBorderCombo = document.getElementById('shapeBorderCombo');
     shapeBorderCombo.addEventListener('change', (event) => { onShapeBorderComboChange(event); });
 
-    const fillColorPicker = uniforge.ctrls.colorPickers.fillColorPicker = new ColorPicker('fillColorPicker', document, { value: 'var(--red)', alpha: 0.5, tooltip: 'Cor do Preenchimento', fixedAlpha: true });
+    const fillColorPicker = uniforge.ctrls.colorPickers.fillColorPicker = new ColorPicker('fillColorPicker', document, { value: 'var(--red)', alpha: 0.5, tooltip: 'Cor do Preenchimento I', fixedAlpha: true });
     fillColorPicker.config();
     fillColorPicker.addEventListener('change', (event) => { onFillColorPickerChange(fillColorPicker); });
 
     const borderColorPicker = uniforge.ctrls.colorPickers.borderColorPicker = new ColorPicker('borderColorPicker', document, { value: 'var(--dark-red)', tooltip: 'Cor da Borda' });
-    borderColorPicker.config();
-
+    borderColorPicker.config();    
     borderColorPicker.addEventListener('change', (event) => { onBorderColorPickerChange(borderColorPicker); });
+    
+    const gradientColorPicker = uniforge.ctrls.colorPickers.gradientColorPicker = new ColorPicker('gradientColorPicker', document, { value: 'var(--dark-red)', tooltip: 'Cor da Preenchimento II', fixedAlpha: true });
+    gradientColorPicker.config();
+    gradientColorPicker.addEventListener('change', (event) => { onGradientColorPickerChange(gradientColorPicker); });    
+
+    gradientColorPicker.disabled = true;
 }
 /** 
  * ------------------------------------------------------------------
@@ -777,18 +783,14 @@ async function onHasBorderSwitchChange(event) {
     const hasBorder = event.target.checked;
 
     const hasBorderSwitch = document.querySelector('#hasBorderSwitch');
-    const sliderSwitchContainer = uniforge.ctrls.sliders.shapeSizeSlider.element.closest('.options.size');
+    const borderSizeGroup = document.querySelector('#borderSizeGroup');
 
     if (hasBorder) {
-        sliderSwitchContainer.classList.remove('hidden');
-        hasBorderSwitch.dataset.tooltip = "Desativar contorno.";
-
+        borderSizeGroup.classList.remove('hidden');
         uniforge.leaflet.drawStyle.style.opacity = 1;
     }
     else {
-        sliderSwitchContainer.classList.add('hidden');
-        hasBorderSwitch.dataset.tooltip = "Ativar contorno.";
-
+        borderSizeGroup.classList.add('hidden');
         uniforge.leaflet.drawStyle.style.opacity = 0;        
     }
 
@@ -841,6 +843,10 @@ async function onBorderColorPickerChange(picker) {
 
     uniforge.leaflet.drawStyle.update(uniforge.leaflet.core.default.map, uniforge.leaflet.drawStyle.style);
 
+    await refreshPreviewStyle();
+}
+
+async function onGradientColorPickerChange(picker) {    
     await refreshPreviewStyle();
 }
 
@@ -980,4 +986,4 @@ function createElement(tag, attributes = {}, children = []) {
 
     return element;
 }
-
+

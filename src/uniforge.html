@@ -66,18 +66,7 @@
     <div id="msgContainer" class="msg-container"></div>
 
     <!-- Controle do Mapa Leaflet -->
-    <div id="map"></div>
-
-    <div id="layerControl" class="layer-control-wrapper flexcol">
-        <h3 class="layer-control-title">Objetos</h3>
-        <div class="layer-control-search-bar flexrow">
-            <input id="searchLayerObjectsInput" type="text" placeholder="Buscar elemento..." />
-            <a id="clearLayerObjectsSearchButton"><i class="fas fa-trash"></i></a>
-        </div>
-        <div class="layer-control-content flexcol">
-            <ul id="mapElementsList" class="map-elements flexcol"></ul>
-        </div>
-    </div>
+    <div id="map"></div>   
 
     <div class="map-objects-container marker">
         <div class="tools-container map-objects-panel">
@@ -85,7 +74,7 @@
                 <input id="searchMarkerInput" type="text" placeholder="Buscar marcador..." />
                 <a id="clearMarkerSearchButton"><i class="fas fa-trash"></i></a>
             </div>
-            <div class="tools-content flexrow">
+            <div class="tools-content flexcol">
                 <fieldset class="config-group markers">
                     <legend class="label">Ícones</legend>
                     <div class="options marker">
@@ -102,35 +91,65 @@
 
     <div class="map-objects-container regular-shapes">
         <div class="tools-container map-objects-panel">
-            <div class="tools-content flexrow">
-                <div class="config-group sizes">
-                    <legend class="label">Contorno</legend>
-                    <div class="options size flexrow hidden">
-                        <slider id="shapeSizeSlider" />
-                        <span id="shapeSizeSpan">5 px</span>
-                    </div>
-                    <switch id="hasBorderSwitch" />
-                </div>
-                <div class="config-group line">
-                    <legend class="label">Linha</legend>
-                    <div class="data-group options line">
-                        <combo id="shapeBorderCombo" value="lineTypes" />
-                    </div>
-                </div>
-                <div class="config-colors flexcol">
-                    <color id="fillColorPicker"></color>
-                    <color id="borderColorPicker"></color>
-                </div>
+            <div class="tools-search-bar flexrow">
+                <input id="searchMarkerInput" type="text" placeholder="Buscar marcador..." />
+                <a id="clearMarkerSearchButton"><i class="fas fa-trash"></i></a>
+            </div>
+            <div class="tools-content flexcol">  
+                <div class="tools-content flexcol">
                 <div class="config-group preview flexcol">
                     <legend class="label">Prévia</legend>
                     <div class="shape-canvas flexrow">
                         <div class="shape-preview"></div>
                     </div>
                 </div>
-            </div>
+                <div class="config-colors flexrow">
+                    <color id="borderColorPicker"></color>
+                    <color id="fillColorPicker"></color>
+                    <color id="gradientColorPicker"></color>
+                </div> 
+                <div class="config-group sizes">
+                    <div class="data-group check">
+                        <span class="data-label">Degradê</span>
+                        <switch id="isGradientSwitch" />
+                    </div>
+                    <div class="data-group check">
+                        <span class="data-label">Contorno</span>
+                        <switch id="hasBorderSwitch" />
+                    </div>
+                    <div id="borderSizeGroup" class="data-group">
+                        <span class="data-label">Tamanho</span>
+                        <div class="options size flexrow hidden">
+                            <slider id="shapeSizeSlider" />
+                            <span id="shapeSizeSpan">5 px</span>
+                        </div>
+                    </div>
+                </div>                
+                <div class="config-group line">
+                    <legend class="label">Linha</legend>
+                    <div class="data-group options line">
+                        <combo id="shapeBorderCombo" value="lineTypes" />
+                    </div>
+                </div>                               
+            </div>   
         </div>
         <div id="toggleShapesPanel" class="toggle-tab flexrow visible">
             <i class="fas fa-shapes"></i>
+        </div>
+    </div>
+
+    <div id="layerControl" class="map-objects-container layer-objects">
+        <div class="tools-search-bar flexrow">
+                <input id="searchLayerObjectsInput" type="text" placeholder="Buscar objeto..." />
+                <a id="clearLayerObjectsSearchButton"><i class="fas fa-trash"></i></a>
+            </div>
+        <div class="tools-container map-objects-panel">
+            <div class="tools-content flexcol">    
+                <ul id="mapElementsList" class="map-elements flexcol"></ul>                                         
+            </div>
+        </div>
+        <div id="toggleObjectsPanel" class="toggle-tab flexrow visible">
+            <i class="fas fa-circle"></i>
         </div>
     </div>
 

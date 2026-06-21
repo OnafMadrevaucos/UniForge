@@ -308,6 +308,7 @@ const lControl = {
                 exitModeOnEscape: true
             });
 
+            // Configura a localização dos tooltips do Leaflet.pm para PT-BR.
             map.pm.setLang('pt_br', {
                 tooltips: {
                     firstVertex: 'Clique para começar a desenhar uma forma.',
@@ -352,8 +353,7 @@ const lControl = {
 
             /**
             * Instância da camada de armazenagem a imagem que representa os caminhos do Mapa.
-            * @type {L.ImageOverlay}
-            *        
+            * @type {L.ImageOverlay}        
             */
             const paths = lControl.overlay = L.imageOverlay(`${uniforge.urls.mapOverlays}/paths.png`, bounds, {
                 zIndex: 1,
@@ -365,7 +365,6 @@ const lControl = {
             /**
             * Instância da camada de armazenagem a imagem que representa as cidades do Mapa.
             * @type {L.ImageOverlay}
-            *        
             */
             const cities = lControl.overlay = L.imageOverlay(`${uniforge.urls.mapOverlays}/cities.png`, bounds, {
                 zIndex: 2,
@@ -377,7 +376,6 @@ const lControl = {
             /**
             * Instância da camada de armazenagem a imagem que representa os nomes do Mapa.
             * @type {L.ImageOverlay}
-            *        
             */
             const labels = lControl.overlay = L.imageOverlay(`${uniforge.urls.mapOverlays}/labels.png`, bounds, {
                 zIndex: 3,
@@ -391,13 +389,13 @@ const lControl = {
                 "Nomes": labels
             }).addTo(map);
 
-            // Pega o container do controle
+            // Pega o container do controle.
             const container = overlayLayerControl.getContainer();
 
-            // Pega o botão de toggle (ícone do controle)
+            // Pega o botão de toggle (ícone do controle).
             const toggleButton = container.querySelector('.leaflet-control-layers-toggle');
 
-            // Pega a lista de layers
+            // Pega a lista de layers.
             const list = container.querySelector('.leaflet-control-layers-list');
 
             // Esconde inicialmente
