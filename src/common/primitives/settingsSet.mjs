@@ -40,7 +40,7 @@ export default class SettingsSet extends Set {
 
             if (!value) {
                 value = '';
-            }           
+            }
 
             const [parentId, childId] = target.split('.');
 
@@ -50,14 +50,16 @@ export default class SettingsSet extends Set {
             if (!parent) {
                 const a = this.add({
                     _id: parentId,
-                    _items: new Set()
+                    _items: new Set(),
+
+                    tag: parentId,
                 });
 
                 parent = this.get(parentId);
             }
 
             // Adiciona no _items.
-            parent._items.add({_id: childId, _value: value});
+            parent._items.add({ _id: childId, _value: value, tag: childId, value: value });
 
             return this;
         }
@@ -129,6 +131,26 @@ export default class SettingsSet extends Set {
             tag: tagId,
             value: value
         });
+    }
+
+    /**
+    * Converte um conjunto em um objeto JSON mapeando seu conteúdo para um array.
+    * @memberof SettingsSet.prototype
+    * 
+    * @param {String|null} tag   - Identificador do subgrupo das Configurações a ser transformado em Array. 
+    * @returns {Array}           - Os elementos do conjunto como um array.
+    */
+    toArray(tag=null) {
+        // Verifica se uma tag foi informada, caso contrário retorna um array de todo o SettingsSet.
+        if(!tag) return Array.from(this);
+
+        // Busca o grupo de Configurações da tag informada.
+        const items = this.get(tag);
+
+        // Verifica se a tag existe, caso contrário retorna um array vazio.
+        if(!items) return [];
+
+        return Array.from(items._items);
     }
 
     /**

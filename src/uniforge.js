@@ -13,8 +13,8 @@ import { set } from "./common/primitives/set.mjs";
 import Slider from "./models/slider.js";
 import ColorPicker from "./models/colorPicker.js";
 
-// Configura o tema salvo no localStorage antes de inicializar o app para evitar flash de estilo
-document.documentElement.setAttribute('data-theme', localStorage.getItem('uniforge_theme') || 'theme-medieval');
+// Configura o tema salvo no localStorage antes de inicializar o app para evitar flash de estilo.
+document.documentElement.setAttribute('data-theme', localStorage.getItem('uniforge_theme') || 'theme-neutral');
 
 // Realiza as configurações iniciais da aplicação ao carregar o conteúdo do DOM.
 document.addEventListener('DOMContentLoaded', async () => {
@@ -540,7 +540,7 @@ function activateMainListeners() {
     // Lógica para seleção de temas
     const themeSelector = document.getElementById('themeSelector');
     if (themeSelector) {
-        const savedTheme = localStorage.getItem('uniforge_theme') || 'theme-medieval';
+        const savedTheme = localStorage.getItem('uniforge_theme') || 'theme-neutral';
         themeSelector.value = savedTheme;
         themeSelector.addEventListener('change', (event) => {
             const selectedTheme = event.target.value;

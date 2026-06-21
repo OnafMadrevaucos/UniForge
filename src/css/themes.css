@@ -9,6 +9,7 @@
     /* Herda a grande maioria do :root de styles.css, que já é medieval */
     --default-font: "Georgia", "Times New Roman", serif;
     --background-color: rgba(20, 15, 10, 0.9);
+    
     --blue: #231b14;
     --light-blue: #36281e;
     --dark-blue: rgba(30, 20, 15, 0.92);
@@ -16,6 +17,10 @@
     --yellow: #b87a25;
     --bright-yellow: #e5a440;
     --border-yellow: #d99b38;
+
+    --text-color:#fbbf24 ;
+    --light-text-color: #e0e0e0; 
+    --dark-text-color: #0f172a;
     
     /* Tooltip */
     --tooltip-background: rgba(35, 27, 20, 0.98);

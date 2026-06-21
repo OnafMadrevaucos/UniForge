@@ -119,19 +119,19 @@
     --blueT50: rgba(26, 25, 33, 0.5);
     --info-blueT87: #3b82f6;
 
-    --text-color: #e2e8f0;
-    --light-text-color: #fbbf24;
+    --text-color: #fbbf24;
+    --light-text-color: #e2e8f0;
     --dark-text-color: #0f172a;
     --disabled-text-color: #64748b;
     --background-color: rgba(18, 17, 26, 0.88);
+    --light-background-color: rgba(30, 41, 59, 0.5);
     --tooltip-background: #12111a;
     --tooltip-text: #e2e8f0;
     --tooltip-muted: #8a8897;
     --tooltip-border: rgba(255, 255, 255, 0.1);
     --tooltip-divider: rgba(255, 255, 255, 0.15);
     --tooltip-title: #fbbf24;
-    --blockquote-background: #3b3a30;
-    --light-background-color: rgba(30, 41, 59, 0.5);
+    --blockquote-background: #3b3a30;    
     --stroke-color: var(--dark-red);
     --shadow-color: rgba(0, 0, 0, 0.5);
     --shadow-header: #334155;
@@ -291,7 +291,7 @@ input.dial[type="number"] {
     border: var(--data-group-border);
     border-radius: 5px;
     background: var(--light-background-color);
-    color: var(--light-text-color);
+    color: var(--text-color);
     font-size: var(--default-size);
 }
 
@@ -325,7 +325,7 @@ select {
     cursor: pointer;
     font-size: var(--default-size);
     border-radius: var(--default-border-radius);
-    color: var(--light-text-color);
+    color: var(--text-color);
 }
 
 input:disabled,
@@ -335,14 +335,14 @@ select:disabled {
 
 .uniforge .leaflet-container .leaflet-control-attribution {
     background-color: var(--red);
-    color: var(--light-text-color);
+    color: var(--text-color);
     padding: 2px 5px;
     border-top-left-radius: var(--default-border-radius);
     font-weight: 900;
 }
 
 .uniforge .leaflet-container .leaflet-control-attribution a {
-    color: var(--light-text-color);
+    color: var(--text-color);
 }
 
 .leaflet-container a:not(.leaflet-control-attribution>a),
@@ -542,7 +542,7 @@ input:checked+.slider::before {
 
 .footer button.new-entry:hover {
     background-color: var(--dark-green);
-    color: var(--light-text-color);
+    color: var(--text-color);
 }
 
 .footer .buttons {
@@ -569,7 +569,7 @@ input:checked+.slider::before {
 
 button.disabled {
     background-color: var(--background-color);
-    color: var(--light-text-color);
+    color: var(--text-color);
     border: var(--filled-border);
 }
 
@@ -612,7 +612,7 @@ button.disabled:hover {
     visibility: hidden;
     width: 125px;
     background-color: var(--tooltip-background);
-    color: var(--light-text-color);
+    color: var(--text-color);
     text-align: center;
     border-radius: 6px;
     padding: 7px;
@@ -848,7 +848,7 @@ button.disabled:hover {
     border: 2px solid var(--dark-redT87);
     border-top: none;
     background: var(--blueT50);
-    color: var(--light-text-color);
+    color: var(--text-color);
     font-weight: bold;
 }
 
@@ -924,7 +924,7 @@ button.disabled:hover {
 }
 
 .leaflet-container .leaflet-popup-pane .leaflet-popup .leaflet-popup-content .layer-popup-title {    
-    color: var(--light-text-color);
+    color: var(--red);
     font-size: var(--big-size);
     font-weight: 800;
 }
@@ -1156,7 +1156,7 @@ button.disabled:hover {
 
 .time-panel .time-tool .year-container span {
     font-size: var(--default-size);
-    color: var(--light-text-color);
+    color: var(--text-color);
     font-weight: 700;
     margin-left: 5px;
 }
@@ -1179,7 +1179,7 @@ button.disabled:hover {
     transform: translateY(-100%);
     transition: all 0.5s ease-in-out;
     padding-block: 2px;
-    color: var(--light-text-color) !important;
+    color: var(--text-color) !important;
 }
 
 #toolsTopbar .toggle-tab:hover {
@@ -1251,7 +1251,7 @@ button.disabled:hover {
     position: absolute;
     width: 92px;
     height: 92px;
-    background: var(--light-text-color);
+    background: var(--text-color);
     clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
     top: 2%;
     left: 9%;
@@ -1295,7 +1295,7 @@ button.disabled:hover {
 .tab {
     padding: 0 5px;
     cursor: pointer;
-    color: var(--light-text-color);
+    color: var(--text-color);
     font-weight: bold;
     transition: background 0.2s;
 }
@@ -1415,7 +1415,7 @@ button.disabled:hover {
     border-bottom: none;
     border-radius: 4px 0 0 4px;
     cursor: pointer;
-    color: var(--light-text-color);
+    color: var(--text-color);
     transform: translateY(-100%);
     transition: all 0.05s ease-in-out;
     padding-block: 2px;
@@ -1457,7 +1457,7 @@ button.disabled:hover {
 }
 
 .map-objects-container .tools-container .tools-content ul .layer-item {
-    color: var(--light-text-color);
+    color: var(--text-color);
     background-color: var(--dark-red);
     padding: 5px;
     border-radius: var(--default-border-radius);
@@ -1539,7 +1539,7 @@ button.disabled:hover {
 
 .layer-control-wrapper .layer-control-search-bar a,
 .map-objects-panel .tools-search-bar a {
-    color: var(--light-text-color);
+    color: var(--text-color);
 }
 
 .map-objects-container.regular-shapes .map-objects-panel .tools-content {
@@ -1749,7 +1749,7 @@ button.disabled:hover {
     height: var(--fill-height);
     align-content: center;
     margin-left: 5px;
-    color: var(--light-text-color);
+    color: var(--text-color);
     font-size: var(--default-size);
     font-weight: bold;
     user-select: none;
@@ -1774,8 +1774,8 @@ button.disabled:hover {
 }
 
 .form .header-bar .slider::before {
-    color: var(--light-text-color);
-    background-color: var(--light-text-color);
+    color: var(--text-color);
+    background-color: var(--text-color);
     font-family: 'Font Awesome 6 Free';
     font-weight: 900;
     -webkit-font-smoothing: antialiased;
@@ -1791,7 +1791,7 @@ button.disabled:hover {
     font-size: 18px;
     align-self: flex-start;
     padding: 0.5px;
-    color: var(--light-text-color);
+    color: var(--text-color);
     border: none;
     cursor: pointer;
     z-index: 2100;
@@ -1854,7 +1854,7 @@ button.disabled:hover {
 
 .dialog .header-bar h2 {
     flex: 1;
-    color: var(--light-text-color);
+    color: var(--text-color);
     margin: 0;
     padding-left: 20px;
     font-size: 18px;
@@ -1864,7 +1864,7 @@ button.disabled:hover {
 
 .dialog .header-bar a {
     flex: 0;
-    color: var(--light-text-color);
+    color: var(--text-color);
     align-self: center;
     text-align: end;
     margin-right: 5px;
@@ -1878,7 +1878,7 @@ button.disabled:hover {
     margin-block: 5px;
     padding-inline: 10px;
     font-size: var(--default-size);
-    color: var(--light-text-color);
+    color: var(--text-color);
     overflow-y: auto;
     overflow-x: hidden;
 }
@@ -1963,7 +1963,7 @@ button.disabled:hover {
 
 .dialog .main .button:hover {
     background-color: var(--dark-red);
-    color: var(--light-text-color);
+    color: var(--text-color);
 }
 
 .dialog .main .chapter-dialog .icon-list .icon-item .item-content {
@@ -1998,7 +1998,7 @@ button.disabled:hover {
 
 .dialog .main .folder {
     text-decoration: none;
-    color: var(--light-text-color);
+    color: var(--text-color);
     display: flex;
     align-items: center;
     padding: 5px 10px;
@@ -2027,7 +2027,7 @@ button.disabled:hover {
 
 .dialog .main .folder-list .folder.created.selected .fa-trash:hover {
     background-color: var(--dark-blue);
-    color: var(--light-text-color);
+    color: var(--text-color);
 }
 
 .dialog .main .folder-list .fas {
@@ -2086,7 +2086,7 @@ button.disabled:hover {
 
 .dialog .main .file-dialog .upload-file .uploader {
     flex: 2;
-    color: var(--light-text-color);
+    color: var(--text-color);
     background-color: var(--light-background-color);
     border: var(--data-group-border);
     border-radius: var(--default-border-radius);
@@ -2119,7 +2119,7 @@ button.disabled:hover {
     border-radius: 0;
     flex: 0;
     margin: 0;
-    color: var(--light-text-color);
+    color: var(--text-color);
     width: auto;
     padding: 7px;
 }
@@ -2309,7 +2309,7 @@ button.disabled:hover {
     background-color: var(--background-color);
     border-radius: var(--default-border-radius);
     border: var(--info-content-border);
-    color: var(--light-text-color);
+    color: var(--text-color);
     padding-inline: 5px;
 }
 
@@ -2334,7 +2334,7 @@ button.disabled:hover {
     cursor: pointer;
     background: var(--dark-red);
     box-shadow: var(--small-shadow);
-    color: var(--light-text-color);
+    color: var(--text-color);
 }
 
 .dialog .buttons button:hover {
@@ -2401,6 +2401,10 @@ button.disabled:hover {
     flex-direction: row;
     margin-block: 5px;
 }
+.data-group > a:not(.hidden) {
+    flex: 0.04;
+    text-align: center;
+}
 
 .data-group button {
     margin: 2px;
@@ -2438,7 +2442,7 @@ button.disabled:hover {
     padding: 5px;
     border-radius: 5px;
     background: var(--dark-blue);
-    color: var(--light-text-color);
+    color: var(--text-color);
     font-size: var(--small-size);
 }
 
@@ -2487,7 +2491,7 @@ button.disabled:hover {
     background-color: var(--dark-blue);
     border: var(--data-group-border);
     box-shadow: none;
-    color: var(--light-text-color);
+    color: var(--text-color);
 }
 
 .full-button button:hover {
@@ -2545,12 +2549,12 @@ button.disabled:hover {
     border-radius: var(--default-border-radius);
 }
 
-.source-dialog .data-group .data {
-    flex: 2;
-}
-
+.source-dialog .data-group .data,
 .data-group .data:not(div) {
     flex: 2;
+}
+.data-group .data:not(div):has(+a) {
+    flex: 1.96;    
 }
 
 .data-group .type-label {
@@ -2677,7 +2681,7 @@ button.disabled:hover {
 }
 
 .tabs-control .tabs-options button.selected {
-    color: var(--light-text-color);
+    color: var(--text-color);
 }
 
 .tabs-control .tabs-options button:first-of-type {
@@ -2755,7 +2759,7 @@ button.disabled:hover {
     background-color: transparent;
     border: none;
     border-radius: 0;
-    color: var(--light-text-color);
+    color: var(--text-color);
 
     border-left: var(--tab-item-border);
     border-right: var(--tab-item-border);
@@ -2772,7 +2776,7 @@ button.disabled:hover {
 #settings .settings-container {
     flex: 100%;
     border-radius: var(--default-border-radius);
-    color: var(--light-text-color);
+    color: var(--text-color);
     overflow-y: auto;
 }
 
@@ -2830,13 +2834,9 @@ button.disabled:hover {
     resize: none;
     background-color: var(--blueT50);
     border-radius: var(--default-border-radius);
-    color: var(--light-text-color);
+    color: var(--text-color);
     overflow-y: auto;
     height: 200px;
-}
-
-#settings #leafletPanel .info-set .data-group.text {
-    gap: var(--default-gap-size);
 }
 
 #settings #leafletPanel .scale {
@@ -2855,7 +2855,7 @@ button.disabled:hover {
     margin: 0;
     width: 100%;
     padding-block: 5px;
-    color: var(--light-text-color);
+    color: var(--text-color);
     border: var(--filled-border);
 }
 
@@ -2909,7 +2909,7 @@ button.disabled:hover {
     font-size: var(--title-size);
     text-align: center;
     background-color: var(--dark-red);
-    color: var(--light-text-color);
+    color: var(--text-color);
     margin: 0;
     margin-left: -15px;
     margin-bottom: 0.5em;
@@ -2942,14 +2942,14 @@ button.disabled:hover {
 
 .article .content .title-header .title {
     flex: 1;
-    color: var(--light-text-color);
+    color: var(--text-color);
     text-align: start;
 }
 
 .article .content .title-header .type-icon {
     font-size: var(--heading-2-size);
     border-radius: var(--default-border-radius);
-    background-color: var(--light-text-color);
+    background-color: var(--text-color);
     color: var(--dark-red);
     text-align: center;
     padding: 3px 10px;
@@ -3018,7 +3018,7 @@ button.disabled:hover {
 
 .timeline .content div {
     z-index: 1;
-    color: var(--light-text-color);
+    color: var(--text-color);
     gap: var(--default-gap-size);
 }
 
@@ -3058,7 +3058,7 @@ button.disabled:hover {
 
 .timeline .content .time-manager button.active {
     background-color: var(--dark-green) !important;
-    color: var(--light-text-color) !important;
+    color: var(--text-color) !important;
 }
 
 .timeline .content .time-manager button.active:hover {
@@ -3067,7 +3067,7 @@ button.disabled:hover {
 
 .timeline .content .time-manager button.cancel {
     background-color: var(--dark-red) !important;
-    color: var(--light-text-color) !important;
+    color: var(--text-color) !important;
 }
 
 .timeline .content .time-manager button.cancel:hover {
@@ -3080,7 +3080,7 @@ button.disabled:hover {
     padding: 16px;
     font-size: 14px;
     color: var(--dark-red);
-    background-color: var(--light-text-color);
+    background-color: var(--text-color);
     align-self: flex-end;
     margin-bottom: 5px;
 }
@@ -3091,7 +3091,7 @@ button.disabled:hover {
     width: 32px;
     padding: 32px;
     font-size: 32px;
-    color: var(--light-text-color);
+    color: var(--text-color);
     align-self: center;
 }
 
@@ -3102,11 +3102,11 @@ button.disabled:hover {
 
 .timeline .content .time-manager button.new:not(.active):hover {
     background-color: var(--dark-red);
-    color: var(--light-text-color);
+    color: var(--text-color);
 }
 
 .timeline .content .time-manager button.manage:not(.active):hover {
-    background-color: var(--light-text-color);
+    background-color: var(--text-color);
     color: var(--dark-red);
 }
 
@@ -3114,7 +3114,7 @@ button.disabled:hover {
     font-size: var(--title-size);
     text-align: center;
     background-color: var(--dark-red);
-    color: var(--light-text-color);
+    color: var(--text-color);
     margin: 0;
     margin-left: -25px;
     margin-bottom: 0.5em;
@@ -3154,7 +3154,7 @@ button.disabled:hover {
     width: fit-content;
     background-color: var(--background-color);
     box-shadow: none;
-    color: var(--light-text-color);
+    color: var(--text-color);
 }
 
 .timeline .content .timeline-topbar span {
@@ -3170,7 +3170,7 @@ button.disabled:hover {
 }
 
 .timeline .content .timeline-topbar:hover button * {
-    color: var(--light-text-color);
+    color: var(--text-color);
 }
 
 .timeline .content .timeline-topbar:hover span {
@@ -3237,7 +3237,7 @@ button.disabled:hover {
     left: 32.75vw;
     text-align: center;
     background: var(--dark-red);
-    color: var(--light-text-color);
+    color: var(--text-color);
     width: 20px;
     height: 20px;
     line-height: 20px;
@@ -3384,7 +3384,7 @@ button.disabled:hover {
 }
 
 .timeline-list .timeline-panel .btn-group-hover button:hover {
-    color: var(--light-text-color);
+    color: var(--text-color);
     background-color: var(--dark-red);
     box-shadow: var(--small-shadow);
 }
@@ -3409,7 +3409,7 @@ button.disabled:hover {
     text-align: center;
     padding: 12px;
     border: 8px var(--dark-red) solid;
-    color: var(--light-text-color);
+    color: var(--text-color);
     background-color: var(--blue);
     border-radius: 50%;
     display: inline-block;
@@ -3484,7 +3484,7 @@ button.disabled:hover {
 
 .folder-list .folder .folder-header {
     text-decoration: none;
-    color: var(--light-text-color);
+    color: var(--text-color);
     display: flex;
     padding: 5px 10px;
     border-radius: var(--default-border-radius);
@@ -3518,7 +3518,7 @@ button.disabled:hover {
 
 .folder-list .folder.created.selected .folder-header .fa-trash:hover {
     background-color: var(--dark-blue);
-    color: var(--light-text-color);
+    color: var(--text-color);
 }
 
 .folder-list .folder-content {
@@ -3574,7 +3574,7 @@ button.disabled:hover {
 }
 
 .folder-list .folder-content .entry-list .entry-item.selected a:hover {
-    color: var(--light-text-color);
+    color: var(--text-color);
 }
 
 .folder-list .fas {
@@ -3672,14 +3672,14 @@ button.disabled:hover {
     flex: 1;
     margin: 0;
     font-family: 'Georgia', serif;
-    color: var(--light-text-color);
+    color: var(--text-color);
     border-bottom-left-radius: var(--default-border-radius);
     border-bottom-right-radius: var(--default-border-radius);
     user-select: none;
 }
 
 .entries input[type="text"] {
-    color: var(--light-text-color);
+    color: var(--text-color);
 }
 
 .form .entries {
@@ -3690,7 +3690,7 @@ button.disabled:hover {
     white-space: nowrap;
     background-color: var(--dark-blue);
     background-image: url('../ui/denim065.png');
-    color: var(--light-text-color);
+    color: var(--text-color);
     padding: 20px;
     box-shadow: var(--sidebar-shadow);
     overflow-y: auto;
@@ -3814,7 +3814,7 @@ button.disabled:hover {
     cursor: pointer;
     border-radius: 15px;
     background-color: var(--dark-redT87);
-    color: var(--light-text-color);
+    color: var(--text-color);
 }
 
 .sidebar .footer {
@@ -3864,7 +3864,7 @@ button.disabled:hover {
 }
 
 .sidebar .footer .input-container a:hover {
-    color: var(--light-text-color);
+    color: var(--text-color);
 }
 
 .sidebar .footer button {
@@ -3875,12 +3875,12 @@ button.disabled:hover {
 }
 
 .sidebar button:hover {
-    color: var(--light-text-color);
+    color: var(--text-color);
 }
 
 .sidebar mark {
     background-color: var(--dark-redT87);
-    color: var(--light-text-color);
+    color: var(--text-color);
 }
 
 .panel .info-set h3,
@@ -4031,7 +4031,7 @@ button.disabled:hover {
     font-size: 3em;
     align-content: center;
     text-align: center;
-    color: var(--light-text-color);
+    color: var(--text-color);
     position: absolute;
     background-color: var(--redT50);
     border-radius: 50%;
@@ -4237,7 +4237,7 @@ button.disabled:hover {
 .calendar .calendar-header button {
     flex: 0;
     font-size: var(--default-size);
-    color: var(--light-text-color);
+    color: var(--text-color);
 }
 
 .calendar .calendar-header span {
@@ -4366,7 +4366,7 @@ button.disabled:hover {
 }
 
 .entries button:hover {
-    color: var(--light-text-color);
+    color: var(--text-color);
 }
 
 /* ------ Slider ------ */
@@ -4550,7 +4550,7 @@ button.disabled:hover {
     background-color: transparent;
     border: none;
     box-shadow: none;
-    color: var(--light-text-color);
+    color: var(--text-color);
     margin: 0;
     margin-top: 5px;
     border-top-left-radius: 0;
@@ -4625,9 +4625,8 @@ button.disabled:hover {
     font-family: 'Georgia', serif;
     font-size: var(--tmce-size);
     line-height: 1.25em;
-    color: var(--light-text-color);
+    color: var(--text-color);
     background: none;
-    background-color: var(--light-background-color);
     padding: 5px;
     height: 100%;
     margin: 0;
@@ -4650,12 +4649,11 @@ button.disabled:hover {
     border-radius: var(--default-border-radius);
     padding: 10px;
     background: var(--light-background-color);
-    color: var(--light-text-color);
 }
 
 .simple-tmce {
     margin-block: 5px;
-    background-color: var(--light-background-color);
+    background-color: var(--blue);
     border-radius: var(--default-border-radius);
     box-shadow: var(--small-shadow);
     padding: 5px 10px;
@@ -4686,7 +4684,7 @@ button.disabled:hover {
 #tinymce::before {
     font-size: var(--tmce-size);
     font-style: italic;
-    color: var(--light-text-color) !important;
+    color: var(--text-color) !important;
     line-height: 1.35em;
     padding-left: 5px;
     cursor: text;
@@ -4803,7 +4801,7 @@ button.disabled:hover {
 .message.error {
     background-color: var(--header-red);
     background-image: url(../ui/denim065.png);
-    color: var(--light-text-color);
+    color: var(--text-color);
 }
 
 .message.warning {
@@ -4881,7 +4879,7 @@ button.disabled:hover {
 }
 
 .lineage-tree .node.selected {
-    border: 2px solid var(--light-text-color);
+    border: 2px solid var(--text-color);
 }
 
 .lineage-tree .node:hover {
@@ -4915,7 +4913,7 @@ button.disabled:hover {
     font-size: var(--tiny-size);
     background-color: var(--light-grey);
     color: var(--dark-text-color);
-    border: 1px solid var(--light-text-color);
+    border: 1px solid var(--text-color);
     border-top-width: 0;
     border-radius: 0;
     border-bottom-left-radius: var(--default-border-radius);

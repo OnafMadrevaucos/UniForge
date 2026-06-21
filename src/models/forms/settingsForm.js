@@ -49,29 +49,45 @@ export default class SettingsForm extends EntryForm {
             'Um Tile Map é em si um diretório localizado no \'diretório padrão\' abaixo, altere-o se desejar ' +
             'que os arquivos gerados sejam armazenados em outro diretório.';
 
+        this.prepareThemes();
+
         await this.prepareMetadata();
 
         return super.prepareData();
     }
 
     prepareGroups() {
-        const database = uniforge.doc.settings.get('database');
-        this.data.database = {};
-        for (const setting of database.toArray()) {
-            this.data.database.items[setting.tag] = setting.value;
+        this.data.misc = {};
+        for (const setting of uniforge.doc.settings.toArray('misc')) {
+            this.data.misc[setting.tag] = setting.value;
         }
 
-        const leaflet = uniforge.doc.settings.get('leaflet');
-        this.data.leaflet = {};        
-        for (const setting of leaflet.toArray()) {
-            this.data.leaflet.items[setting.tag] = setting.value;
+        this.data.database = {};
+        for (const setting of uniforge.doc.settings.toArray('database')) {
+            this.data.database[setting.tag] = setting.value;
+        }
+
+        this.data.leaflet = {};
+        for (const setting of uniforge.doc.settings.toArray('leaflet')) {
+            this.data.leaflet[setting.tag] = setting.value;
         }
 
         this.data.leaflet.MAX_ZOOM = uniforge.constants.leaflet.MAX_ZOOM;
     }
 
+    prepareThemes() {
+        this.data.themes = {
+            nativos: [
+                { _id: 'theme-medieval', _label: 'Medieval' },
+                { _id: 'theme-scifi', _label: 'Sci-fi' },
+                { _id: 'theme-neutral', _label: 'Neutro' },
+            ],
+            extras: []
+        };
+    }
+
     async prepareMetadata() {
-        const filePath = await uniforge.path.join(uniforge.doc.settings.get('leaflet.mainMap').value, 'metadata.json');
+        const filePath = await uniforge.path.join(uniforge.doc.settings.get('leaflet.mainMap'), 'metadata.json');
 
         const data = await fetch(filePath);
         this.data.metadata = await data.json();
@@ -120,13 +136,26 @@ export default class SettingsForm extends EntryForm {
     async configureContent(form) {
         await super.configureContent(form);
 
+        this.configureMiscPanel();
+
         this.configureDatabasePanel();
+
         await this.configureLeafletPanel();
     }
 
     /**
-   * Configura o conteúdo do panel de Banco de Dados.
-   */
+    * Configura o conteúdo do panel de Configurações Gerais.
+    */
+    async configureMiscPanel() {
+        const themeSelector = this.querySelector('#themeSelector');
+        const selectedTheme = this.data.misc.currentTheme ?? 'theme-neutral';
+
+        themeSelector.value = selectedTheme;
+        themeSelector.dispatchEvent(new Event('change'));
+    }
+    /**
+    * Configura o conteúdo do panel de Banco de Dados.
+    */
     async configureDatabasePanel() {
         const procedures = this.db.storedProcedures;
         const proceduresSelect = this.querySelector('#procedureName');
@@ -166,8 +195,8 @@ export default class SettingsForm extends EntryForm {
     }
 
     /**
-     * Configura o conteúdo do panel do módulo do Leaflet®.
-     */
+    * Configura o conteúdo do panel do módulo do Leaflet®.
+    */
     async configureLeafletPanel() {
         const defaultMapInput = this.querySelector('#defaultMapInput');
         const mid = uniforge.constants.leaflet.DEFAULT_OVERLAY; // Define o ID do mapa como o mapa padrão.
@@ -203,6 +232,10 @@ export default class SettingsForm extends EntryForm {
 
         // ------------------------------------------------------------------------------------------------
         // Eventos do painel de Configurações Gerais ------------------------------------------------------
+
+        const themeSelector = this.querySelector('#themeSelector');
+        themeSelector.addEventListener('change', (event) => { this.onThemeSelectorChange(event); });
+
         this.slider.activateBaseListeners();
 
         // ------------------------------------------------------------------------------------------------
@@ -272,6 +305,18 @@ export default class SettingsForm extends EntryForm {
     }
 
     /**
+   * Configura o evento de mudança de tema.
+   * @param {Event} event - O evento de mudança de tema.
+   */
+    async onThemeSelectorChange(event) {
+        const selectedTheme = event.target.value;
+        document.documentElement.setAttribute('data-theme', selectedTheme);
+        localStorage.setItem('uniforge_theme', selectedTheme);
+
+        await uniforge.settings.set('misc.currentTheme', selectedTheme);
+    }
+
+    /**
    * Configura o conteúdo da opção selecionada.
    * @param {HTMLElement} panel - O elemento que representa o panel carregado.
    */
@@ -320,13 +365,13 @@ export default class SettingsForm extends EntryForm {
             externalConnectionGroup.classList.add('hidden');
         }
 
-        uniforge.settings.set('activeExternalCon', isChecked.toString());
+        uniforge.settings.set('database.activeExternalCon', isChecked.toString());
     }
 
     async onTestConnectionClick(event) {
         const externalConnectionPathInput = this.querySelector('#externalConnectionPathInput');
         const connectionPath = externalConnectionPathInput.value;
-        
+
         this.msgBox.showError(`Esta funcionalidade ainda não foi implementada. O caminho configurado é: \'${connectionPath}\'`);
     }
 
