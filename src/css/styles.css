@@ -1371,7 +1371,7 @@ button.disabled:hover {
     top: 23.5em;
     right: -17.5em;
     width: 280px;
-    height: 600px;
+    height: 50vh;
     z-index: 1001;
     transition: right 0.3s ease-in-out;
 }
@@ -1442,7 +1442,7 @@ button.disabled:hover {
 .tools-container.map-objects-panel {
     height: var(--fill-height);
     width: var(--fill-width);
-    border-bottom: none;
+    border-right: none;
     border-top-right-radius: 0;
     border-bottom-right-radius: 0;
     gap: var(--default-gap-size);
@@ -1504,9 +1504,8 @@ button.disabled:hover {
 }
 
 .marker .map-objects-panel .tools-search-bar {
-    bottom: auto;
-    top: -38px;
-    border-bottom: none;
+    bottom: -39px;
+    border-top: none;
     left: 15px;
 }
 
@@ -1519,13 +1518,14 @@ button.disabled:hover {
     padding: 5px;
     background-color: var(--dark-red);
     border: var(--filled-border);
-    border-top-left-radius: var(--default-border-radius);
-    border-top-right-radius: var(--default-border-radius);
+    border-bottom-left-radius: var(--default-border-radius);
+    border-bottom-right-radius: var(--default-border-radius);
     gap: var(--default-gap-size);
 }
 
 .layer-objects .map-objects-panel .tools-search-bar {
     bottom: -39px;
+    border-top: none;
     border-top-left-radius: 0;
     border-top-right-radius: 0;
     border-bottom-left-radius: var(--default-border-radius);

@@ -111,19 +111,7 @@ const lControl = {
             position: 'topright' // Posição no canto superior esquerdo.            
         },
         onAdd: utils.onAddMain
-    }),
-
-    /**
-    * Controle de camada no mapa.
-    * 
-    * @extends {L.Control}
-    */
-    LayerControl: L.Control.extend({
-        options: {
-            position: 'bottomright' // Posição no canto superior esquerdo.            
-        },
-        onAdd: utils.onAddLayer
-    }),
+    }),    
 
     /**
     * Objeto L.CRS customizado com a função de distância em metros.
@@ -238,10 +226,7 @@ const lControl = {
         _configureMainControl();
 
         // Configura o controle de desenho customizado.
-        _configureCustomDrawControl(mapElements);
-
-        // Configura o controle de camadas.
-        _configureLayerControl();
+        _configureCustomDrawControl(mapElements);        
 
         // Configura o controle de escala.
         const scaleControl = _configureScaleControl();
@@ -335,14 +320,7 @@ const lControl = {
 
         function _configureCustomDrawControl(mapElements) {
             utils.setupCustomButtons(map);
-        }
-
-        function _configureLayerControl() {
-            const layerControl = new lControl.LayerControl();
-            map.addControl(layerControl);
-
-            return layerControl;
-        }
+        }        
 
         function _loadElementsStyles() {
             const style = JSON.parse(uniforge.settings.get('leafletStyle.pathOptions'));
