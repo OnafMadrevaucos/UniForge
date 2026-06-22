@@ -581,7 +581,7 @@ function activateMainListeners() {
     tabs.forEach(tab => {
         tab.addEventListener('click', () => {
             tab.classList.add('disabled');
-            renderForm(tab.getAttribute('data-target'));
+            renderForm(tab.getAttribute('data-target'), tab);
         });
     });
 
@@ -656,7 +656,7 @@ function onTopbarButtonClick(event) {
     const button = event.target.closest('.topbarBtn');
     button.classList.add('disabled');
 
-    renderForm(button.getAttribute('data-target'));
+    renderForm(button.getAttribute('data-target'), button);
 }
 
 function onToggleTopBarClick(event) {
@@ -897,11 +897,12 @@ async function onGradientColorPickerChange(picker) {
  * e o exibe na tela.
  *
  * @param {string} targetId             - O ID do formulário a ser renderizado.
+ * @param {HTMLElement} [button=null]   - O elemento HTML que representa a aba do formulário.
  * @param {boolean} [showAfter=true]    - Indica se o formulário deve ser exibido imediatamente.
  * @returns {Promise<void>}             - Uma promessa que resolve quando o formulário for renderizado e exibido.
  * @throws {Error}                      - Se ocorrer um erro ao renderizar o formulário.
  */
-async function renderForm(targetId, showAfter = true) {
+async function renderForm(targetId, button=null, showAfter = true) {
     try {
         const form = new uniforge.forms[targetId]();
         if (!form)
@@ -910,6 +911,7 @@ async function renderForm(targetId, showAfter = true) {
         if (showAfter) await form.show(true);
     } catch (error) {
         uniforge.msgBox.showError(error.message);
+        if(button) button.classList.remove('disabled');
     }
 }
 
