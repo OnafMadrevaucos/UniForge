@@ -167,11 +167,11 @@ function _parseColorTags(html) {
 function _parseComboTags(html, data) {
     console.log('UniForge | Substituindo tags de Combo...');
 
-    const regex = /<combo\s+id="([^"]+)"\s+value="([^"]+)"(?:\s+blank="([^"]+)")?(?:\s+search="([^"]+)")?(?:\s+(disabled)(?=\s|\/|>))?\s*\/?>/g;
+    const regex = /<combo\s+id="([^"]+)"\s+value="([^"]+)"(?:\s+blank="([^"]+)")?(?:\s+search="([^"]+)")?(?:\s+grouped="(true|false|1|0)")?(?:\s+(disabled)(?=\s|\/|>))?\s*\/?>/g;
 
-    html = html.replace(regex, (match, id, valueKey, blankValue, searchValue, disabled) => {
+    html = html.replace(regex, (match, id, valueKey, blankValue, searchValue, grouped, disabled) => {
         console.log(`Correspondência encontrada: ${match}`);
-        console.log(`ID: ${id}, ValueKey: ${valueKey}${blankValue ? `, BlankValue: ${blankValue}` : ''}${searchValue ? `, IsSearchable: ${searchValue}` : ''}${disabled ? ', Disabled' : ''}`);
+        console.log(`ID: ${id}, ValueKey: ${valueKey}${blankValue ? `, BlankValue: ${blankValue}` : ''}${searchValue ? `, IsSearchable: ${searchValue}` : ''}${grouped ? `, Grouped: ${grouped}` : ''}${disabled ? ', Disabled' : ''}`);
 
         let result = `<select id="${id}" class="data" name="${id}"></select>`;
         if (!(valueKey in data)) {
@@ -180,30 +180,53 @@ function _parseComboTags(html, data) {
         }
 
         const isSearchable = searchValue === 'true';
+        const isGrouped = grouped === 'true';
 
-        if (isSearchable) {
-            const blankOption = blankValue ? `<option value="&#8212" label="&#8212"/>` : '';
-            const options = Array.isArray(data[valueKey])
-                ? data[valueKey].map(val => `<option id="${val._id}" value="${val._label}" class="search-option"/>`).join('\n')
-                : Object.keys(data[valueKey]).map(key => `<option id="${data[valueKey][key]._id}" value="${data[valueKey][key]._label}" class="search-option"/>`).join('\n');
+        if (!isGrouped) {
+            if (isSearchable) {
+                const blankOption = blankValue ? `<option value="&#8212" label="&#8212"/>` : '';
+                const options = Array.isArray(data[valueKey])
+                    ? data[valueKey].map(val => `<option id="${val._id}" value="${val._label}" class="search-option"/>`).join('\n')
+                    : Object.keys(data[valueKey]).map(key => `<option id="${data[valueKey][key]._id}" value="${data[valueKey][key]._label}" class="search-option"/>`).join('\n');
 
-            result = `
+                result = `
             <input type="text" id="${id}" class="data" name="${valueKey}" list="${id}-list"${disabled ? ' disabled' : ''}>
             <datalist id="${id}-list">
                 ${blankOption}
                 ${options}
             </datalist >`;
-        } else {
-            const blankOption = blankValue ? `<option value="${blankValue}" label="&#8212"/>` : '';
-            const options = Array.isArray(data[valueKey])
-                ? data[valueKey].map(val => `<option value="${val._id}" label="${val._label}"/>`).join('\n')
-                : Object.keys(data[valueKey]).map(key => `<option value="${data[valueKey][key]._id}" label="${data[valueKey][key]._label}"/>`).join('\n');
+            } else {
+                const blankOption = blankValue ? `<option value="${blankValue}" label="&#8212"/>` : '';
+                const options = Array.isArray(data[valueKey])
+                    ? data[valueKey].map(val => `<option value="${val._id}" label="${val._label}"/>`).join('\n')
+                    : Object.keys(data[valueKey]).map(key => `<option value="${data[valueKey][key]._id}" label="${data[valueKey][key]._label}"/>`).join('\n');
 
-            result = `
+                result = `
             <select id="${id}" class="data" name="${id}"${disabled ? ' disabled' : ''}>
                 ${blankOption}
                 ${options}
             </select>`;
+            }
+        }
+        else {
+            if (!isSearchable) {
+                const groups = data[valueKey];
+                const blankOption = blankValue ? `<option value="${blankValue}" label="&#8212"/>` : '';
+                result = `<select id="${id}" class="data" name="${id}"${disabled ? ' disabled' : ''}>
+                    ${blankOption}`;
+                Object.keys(groups).forEach(group => {
+                    const groupOptions = groups[group];                    
+                    const options = Array.isArray(groupOptions)
+                        ? groupOptions.map(val => `<option value="${val._id}" label="${val._label}"/>`).join('\n')
+                        : Object.keys(groupOptions).map(key => `<option value="${groupOptions[key]._id}" label="${groupOptions[key]._label}"/>`).join('\n');
+                        
+                        result += `
+                        <optgroup label="${group.capitalize()}">
+                            ${options}
+                        </optgroup>`; 
+                });
+                result += '</select>';
+            }
         }
 
         return result;

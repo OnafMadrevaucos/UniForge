@@ -100,12 +100,14 @@
     --dark-red: #7f1d1d;
     --header-red: #ef4444;
     --text-red: #f87171;
+    --title-red: var(--dark-red);
 
     --yellow: #d97706;
     --bright-yellow: #f59e0b;
     --light-yellow: #fbbf24;
     --border-yellow: #f59e0b;
-    --lib-background: #111118;
+
+    --lib-background: url(../ui/lib-background.png);
 
     --green: #16a34a;
     --dark-green: #14532d;
@@ -117,18 +119,18 @@
     --blueT50: rgba(26, 25, 33, 0.5);
     --info-blueT87: #3b82f6;
 
-    --text-color: #e2e8f0;
-    --light-text-color: #fbbf24;
+    --text-color: #fbbf24;
+    --light-text-color: #e2e8f0;
     --dark-text-color: #0f172a;
     --disabled-text-color: #64748b;
     --background-color: rgba(18, 17, 26, 0.88);
+    --light-background-color: rgba(30, 41, 59, 0.5);
     --tooltip-background: #12111a;
     --tooltip-text: #e2e8f0;
     --tooltip-muted: #8a8897;
     --tooltip-border: rgba(255, 255, 255, 0.1);
     --tooltip-divider: rgba(255, 255, 255, 0.15);
     --tooltip-title: #fbbf24;
-    
     /* Configurações padrão de contraste para a área de leitura */
     --content-bg-image: url(../ui/lib-background.png);
     --content-bg-color: transparent;
@@ -136,7 +138,6 @@
     --content-text-color: #0b0c10;
     --content-viewer-bg: url(../ui/texture1.webp) no-repeat top center / auto 770px, #f4eae1 url(../ui/texture2.webp) no-repeat bottom center / auto 704px;
     --blockquote-background: #3b3a30;
-    --light-background-color: rgba(30, 41, 59, 0.5);
     --stroke-color: var(--dark-red);
     --shadow-color: rgba(0, 0, 0, 0.5);
     --shadow-header: #334155;
@@ -164,7 +165,7 @@
     --sidebar-border: 1px solid rgba(255, 255, 255, 0.08);
     --tab-item-border: 1px solid rgba(127, 29, 29, 0.5);
     --tooltip-border: 1px solid rgba(255, 255, 255, 0.1);
-    --img-border: 2px groove var(--light-blue);
+    --img-border: 2px solid var(--border-yellow);
     --data-group-border: 1px solid rgba(255, 255, 255, 0.1);
     --focused-data-group-border: 1px solid var(--border-yellow);
     --focused-div-border: 1px solid var(--light-text-color);
@@ -261,7 +262,7 @@ h1 {
     flex: 1;
     margin-bottom: 0px;
     margin-top: 0.5em;
-    color: var(--text-red);
+    color: var(--title-red);
     font-size: var(--heading-1-size);
     font-weight: 700;
     font-family: 'Cinzel', serif;
@@ -272,7 +273,7 @@ h1 {
 
 h2 {
     margin-bottom: 10px;
-    color: var(--text-red);
+    color: var(--title-red);
     font-size: var(--heading-2-size);
     font-weight: 700;
     font-family: 'Cinzel', serif;
@@ -281,7 +282,7 @@ h2 {
 }
 
 h4 {
-    color: var(--text-red);
+    color: var(--title-red);
     font-variant: petite-caps;
     margin-block: 2px;
     text-align: center;
@@ -296,7 +297,7 @@ input.dial[type="number"] {
     border: var(--data-group-border);
     border-radius: 5px;
     background: var(--light-background-color);
-    color: var(--light-text-color);
+    color: var(--text-color);
     font-size: var(--default-size);
 }
 
@@ -330,7 +331,7 @@ select {
     cursor: pointer;
     font-size: var(--default-size);
     border-radius: var(--default-border-radius);
-    color: var(--light-text-color);
+    color: var(--text-color);
 }
 
 input:disabled,
@@ -340,14 +341,14 @@ select:disabled {
 
 .uniforge .leaflet-container .leaflet-control-attribution {
     background-color: var(--red);
-    color: var(--light-text-color);
+    color: var(--text-color);
     padding: 2px 5px;
     border-top-left-radius: var(--default-border-radius);
     font-weight: 900;
 }
 
 .uniforge .leaflet-container .leaflet-control-attribution a {
-    color: var(--light-text-color);
+    color: var(--text-color);
 }
 
 .leaflet-container a:not(.leaflet-control-attribution>a),
@@ -547,7 +548,7 @@ input:checked+.slider::before {
 
 .footer button.new-entry:hover {
     background-color: var(--dark-green);
-    color: var(--light-text-color);
+    color: var(--text-color);
 }
 
 .footer .buttons {
@@ -574,7 +575,7 @@ input:checked+.slider::before {
 
 button.disabled {
     background-color: var(--background-color);
-    color: var(--light-text-color);
+    color: var(--text-color);
     border: var(--filled-border);
 }
 
@@ -617,7 +618,7 @@ button.disabled:hover {
     visibility: hidden;
     width: 125px;
     background-color: var(--tooltip-background);
-    color: var(--light-text-color);
+    color: var(--text-color);
     text-align: center;
     border-radius: 6px;
     padding: 7px;
@@ -685,6 +686,10 @@ button.disabled:hover {
     display: none !important;
 }
 
+.visible {
+    visibility: visible !important;
+}
+
 /* ------ Progress Dialog ------ */
 .progress-dialog .progress-bar-wrapper {
     gap: var(--default-gap-size);
@@ -725,8 +730,8 @@ button.disabled:hover {
     z-index: 1000 !important;
 }
 
-.leaflet-bar a, 
-.leaflet-bar button, 
+.leaflet-bar a,
+.leaflet-bar button,
 .leaflet-control-layers-toggle,
 .leaflet-pm-toolbar.leaflet-control .button-container a.leaflet-buttons-control-button {
     background-color: var(--dark-blue) !important;
@@ -743,8 +748,8 @@ button.disabled:hover {
     margin: 4px 0 !important;
 }
 
-.leaflet-bar a:hover, 
-.leaflet-bar button:hover, 
+.leaflet-bar a:hover,
+.leaflet-bar button:hover,
 .leaflet-control-layers-toggle:hover,
 .leaflet-pm-toolbar.leaflet-control .button-container a.leaflet-buttons-control-button:hover {
     background-color: var(--red) !important;
@@ -755,10 +760,12 @@ button.disabled:hover {
 .leaflet-pm-toolbar.leaflet-control {
     height: auto;
 }
+
 .leaflet-pm-toolbar.leaflet-control .button-container {
     height: auto;
     width: 36px;
 }
+
 .leaflet-pm-toolbar.leaflet-control .button-container a.leaflet-buttons-control-button {
     width: 36px !important;
     height: 36px !important;
@@ -780,8 +787,8 @@ button.disabled:hover {
     display: block !important;
     position: absolute;
     top: 0.5em;
-    right: 5.25em;
-    background: var(--dark-blueT87) !important;
+    right: 6.25em;
+    background: var(--background-color);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     border-radius: var(--default-border-radius);
@@ -847,8 +854,16 @@ button.disabled:hover {
     border: 2px solid var(--dark-redT87);
     border-top: none;
     background: var(--blueT50);
-    color: var(--light-text-color);
+    color: var(--text-color);
     font-weight: bold;
+}
+
+.leaflet-container .leaflet-tooltip-pane .leaflet-draw-tooltip {
+    visibility: visible !important;
+}
+
+.leaflet-container .leaflet-tooltip-pane .leaflet-draw-tooltip::before {
+    content: none;
 }
 
 .uniforge .leaflet-container a.leaflet-popup-close-button {
@@ -914,24 +929,24 @@ button.disabled:hover {
     border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-.leaflet-container .leaflet-popup-pane .leaflet-popup .leaflet-popup-content .layer-popup-title {
-    position: absolute;
-    top: 8px;
+.leaflet-container .leaflet-popup-pane .leaflet-popup .leaflet-popup-content .layer-popup-title {    
+    color: var(--red);
+    font-size: var(--big-size);
     font-weight: 800;
 }
 
 .leaflet-container .leaflet-popup-pane .leaflet-popup .leaflet-popup-content .layer-popup-body {
-    height: var(--fill-height);
+    height: 62.5%;
     overflow-y: auto;
 }
 
 .leaflet-container .leaflet-popup-pane .leaflet-popup .leaflet-popup-content .layer-popup-body p {
+    font-size: var(--small-size);
+    font-style: italic;
     margin: 0;
 }
 
-.leaflet-container .leaflet-popup-pane .leaflet-popup .leaflet-popup-content .layer-popup-footer {
-    position: absolute;
-    bottom: 1vh;
+.leaflet-container .leaflet-popup-pane .leaflet-popup .leaflet-popup-content .layer-popup-footer {    
     height: fit-content;
     width: var(--fill-width);
     padding-right: 5px;
@@ -950,14 +965,13 @@ button.disabled:hover {
 .leaflet-container .leaflet-popup-pane .leaflet-popup .leaflet-popup-content .layer-popup-footer a {
     color: var(--light-grey) !important;
     background-color: rgba(255, 255, 255, 0.08) !important;
-    margin: 0 4px !important;
+    margin: 4px 0 !important;
     padding: 6px !important;
     border-radius: 50% !important;
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
     width: 28px !important;
-    height: 28px !important;
     max-width: none !important;
     transition: all 0.2s ease !important;
     border: 1px solid rgba(255, 255, 255, 0.1) !important;
@@ -1021,44 +1035,6 @@ button.disabled:hover {
     flex: 1;
     width: var(--fill-width);
     overflow-y: auto;
-}
-
-.layer-control-wrapper .layer-control-content ul {
-    height: var(--fill-height);
-    list-style: none;
-    padding: 0 5px;
-    overflow: auto;
-    gap: var(--default-gap-size);
-}
-
-.layer-control-wrapper .layer-control-content ul .layer-item {
-    color: var(--light-text-color);
-    background-color: var(--dark-red);
-    padding: 5px;
-    border-radius: var(--default-border-radius);
-    box-shadow: var(--small-shadow);
-    user-select: none;
-    transition: transform 0.3s ease-in-out;
-}
-
-.layer-control-wrapper .layer-control-content ul .layer-item:hover {
-    cursor: pointer;
-    transform: scale(1.01);
-}
-
-.layer-control-content ul .layer-item .layer-item-content {
-    flex: 1;
-    gap: var(--default-gap-size);
-}
-
-.layer-control-content ul .layer-item .layer-item-content span {
-    flex: 1;
-}
-
-.layer-control-content ul .layer-item .layer-item-content a:hover {
-    cursor: default;
-    color: inherit;
-    text-shadow: none;
 }
 
 /* ------ Tools Container ------ */
@@ -1186,7 +1162,7 @@ button.disabled:hover {
 
 .time-panel .time-tool .year-container span {
     font-size: var(--default-size);
-    color: var(--light-text-color);
+    color: var(--text-color);
     font-weight: 700;
     margin-left: 5px;
 }
@@ -1209,7 +1185,7 @@ button.disabled:hover {
     transform: translateY(-100%);
     transition: all 0.5s ease-in-out;
     padding-block: 2px;
-    color: var(--light-text-color) !important;
+    color: var(--text-color) !important;
 }
 
 #toolsTopbar .toggle-tab:hover {
@@ -1218,7 +1194,7 @@ button.disabled:hover {
 }
 
 #toolsTopbar .toggle-tab.visible {
-    top: 64px;
+    top: 70px;
 }
 
 #toolsTopbar .toggle-tab i {
@@ -1230,7 +1206,7 @@ button.disabled:hover {
 }
 
 #toolsTopbar:hover .toggle-tab {
-    transform: translateY(0%);
+    transform: translateY(0);
 }
 
 /* ------ Side Menu ------ */
@@ -1281,7 +1257,7 @@ button.disabled:hover {
     position: absolute;
     width: 92px;
     height: 92px;
-    background: var(--light-text-color);
+    background: var(--text-color);
     clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
     top: 2%;
     left: 9%;
@@ -1325,7 +1301,7 @@ button.disabled:hover {
 .tab {
     padding: 0 5px;
     cursor: pointer;
-    color: var(--light-text-color);
+    color: var(--text-color);
     font-weight: bold;
     transition: background 0.2s;
 }
@@ -1398,18 +1374,30 @@ button.disabled:hover {
 /* ------ Map Objects Panel ------ */
 .map-objects-container {
     position: absolute;
-    bottom: -6em;
-    left: 10em;
-    width: 750px;
+    top: 23.5em;
+    right: -17.5em;
+    width: 280px;
+    height: 50vh;
     z-index: 1001;
-    transition: bottom 0.3s ease-in-out;
+    transition: right 0.3s ease-in-out;
 }
+
 .map-objects-container.marker {
-    bottom: -10em;
+    height: 500px;
+    width: 250px;
+    top: 25em;
+    z-index: 1002;
 }
 
 .map-objects-container.active {
-    bottom: 0px;
+    right: 0;
+}
+.map-objects-container.marker.active {
+    right: 0em;
+}
+
+.map-objects-container.marker .tools-container .tools-content {
+    height: var(--fill-height);
 }
 
 .map-objects-container div#shapeSizeSlider {
@@ -1424,46 +1412,107 @@ button.disabled:hover {
 
 .map-objects-container .toggle-tab {
     position: absolute;
-    top: 0px;
-    left: 15px;
     width: 50px;
     height: 25px;
+    left: -49px;
     align-items: center;
     justify-content: center;
     background-color: var(--dark-red);
-    border: var(--filled-border);
     border-bottom: none;
-    border-radius: 4px 4px 0 0;
+    border-radius: 4px 0 0 4px;
     cursor: pointer;
-    color: var(--light-text-color);
+    color: var(--text-color);
     transform: translateY(-100%);
     transition: all 0.05s ease-in-out;
     padding-block: 2px;
 }
 
+.map-objects-container #toggleShapesPanel.toggle-tab {
+    top: 50px;    
+}
+.map-objects-container #toggleObjectsPanel.toggle-tab {
+    top: 85px;
+}
+
 .map-objects-container.active .toggle-tab,
 .map-objects-container .toggle-tab:hover {
-    height: 28px;
+    color: var(--dark-red);
+    background-color: var(--border-yellow);
+}
+
+.map-objects-container .tools-container .tools-content {
+    height: var(--fill-height);
+    overflow-y: auto;
 }
 
 .tools-container.map-objects-panel {
-    height: 85px;
+    height: var(--fill-height);
     width: var(--fill-width);
-    border-bottom: none;
-    border-bottom-left-radius: 0;
+    border-right: none;
+    border-top-right-radius: 0;
     border-bottom-right-radius: 0;
     gap: var(--default-gap-size);
 }
 
-.marker .map-objects-panel .tools-search-bar {
-    border-bottom: none;
-    left: 15px;     
+.map-objects-container .tools-container .tools-content ul {
+    height: var(--fill-height);
+    list-style: none;
+    padding: 0 5px;
+    overflow: auto;
+    gap: var(--default-gap-size);
 }
 
-.map-objects-panel .sizes .switch {
-    position: absolute;
-    top: 15px;
-    left: 245px;
+.map-objects-container .tools-container .tools-content ul .layer-item {
+    color: var(--text-color);
+    background-color: var(--dark-red);
+    padding: 5px;
+    border-radius: var(--default-border-radius);
+    box-shadow: var(--small-shadow);
+    user-select: none;
+    transition: transform 0.3s ease-in-out;
+}
+
+.map-objects-container .tools-container .tools-content ul .layer-item:hover {
+    cursor: pointer;
+    transform: scale(1.01);
+}
+
+.map-objects-container .tools-content ul .layer-item .layer-item-content {
+    flex: 1;
+    height: 64px;
+    gap: var(--default-gap-size);
+}
+
+.map-objects-container ul .layer-item .layer-item-content img {
+    align-self: center;
+    background-color: var(--background-color);
+    border: var(--img-border);
+    border-radius: 50%;
+    min-width: 46px;
+    max-width: 46px;
+    min-height: 46px;
+    max-height: 46px;
+}
+
+.map-objects-container ul .layer-item .layer-item-content .layer-item-content-body h3 {
+    font-size: var(--default-size);
+    font-weight: 700;
+}
+.map-objects-container ul .layer-item .layer-item-content .layer-item-content-body span {
+    flex: 1;
+    font-size: var(--small-size);
+}
+
+.map-objects-container .tools-container .tools-content .no-results {
+    color: var(--red);
+    font-style: italic;
+    text-align: center;
+}
+
+.marker .map-objects-panel .tools-search-bar {
+    bottom: -39px;
+    border-top: none;
+    left: 15px;
 }
 
 .layer-control-wrapper .layer-control-search-bar,
@@ -1471,13 +1520,22 @@ button.disabled:hover {
     position: absolute;
     bottom: 95px;
     left: 10px;
-    width: 200px;
+    width: 210px;
     padding: 5px;
     background-color: var(--dark-red);
-    border: var(--filled-border);    
-    border-top-left-radius: var(--default-border-radius);
-    border-top-right-radius: var(--default-border-radius);
+    border: var(--filled-border);
+    border-bottom-left-radius: var(--default-border-radius);
+    border-bottom-right-radius: var(--default-border-radius);
     gap: var(--default-gap-size);
+}
+
+.layer-objects .map-objects-panel .tools-search-bar {
+    bottom: -39px;
+    border-top: none;
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+    border-bottom-left-radius: var(--default-border-radius);
+    border-bottom-right-radius: var(--default-border-radius);
 }
 
 .layer-control-wrapper .layer-control-search-bar input,
@@ -1487,20 +1545,24 @@ button.disabled:hover {
 
 .layer-control-wrapper .layer-control-search-bar a,
 .map-objects-panel .tools-search-bar a {
-    color: var(--light-text-color);
+    color: var(--text-color);
+}
+
+.map-objects-container.regular-shapes .map-objects-panel .tools-content {
+    height: var(--fill-height);
 }
 
 .map-objects-panel .tools-content .config-group {
     flex: 2;
-    height: 75px;
+    height: var(--fill-height);
     border: var(--data-group-border);
     border-radius: var(--default-border-radius);
     margin: 5px;
     padding-inline: 5px;
-
     overflow-y: hidden;
     overflow-x: scroll;
 }
+
 .map-objects-panel .tools-content .config-group.preview {
     flex: 1;
 }
@@ -1519,6 +1581,7 @@ button.disabled:hover {
     border-radius: var(--default-border-radius);
     box-shadow: inset 1px 1px 4px 1px var(--dark-grey);
 }
+
 .map-objects-panel .tools-content .shape-canvas .shape-preview {
     height: 75%;
     flex: 0.5;
@@ -1537,10 +1600,6 @@ button.disabled:hover {
     transition: opacity ease 0.3s;
 }
 
-.map-objects-panel .tools-content .config-group.markers {
-    flex: 2;
-}
-
 .map-objects-panel .tools-content .config-group .label {
     color: var(--red);
     font-variant: small-caps;
@@ -1555,20 +1614,27 @@ button.disabled:hover {
     gap: var(--default-gap-size);
 }
 
-.map-objects-panel .tools-content .config-group .options.marker {
-    width: 450px;
+.marker .map-objects-panel .tools-content .config-group .options {
+    width: var(--fill-width);
+    height: var(--fill-height);
+    flex-direction: column;
+    flex-wrap: wrap;
 }
 
-.map-objects-panel .tools-content .config-group .options.color {
+.map-objects-panel.marker .tools-content .config-group .options.color {
     width: 200px;
     gap: var(--big-gap-size);
+}
+
+.map-objects-panel.marker .tools-content {
+    height: var(--fill-height);
 }
 
 .map-objects-panel .tools-content .config-group .options a {
     height: 32px;
     width: 32px;
     min-width: 32px;
-
+    min-height: 32px;
     border: var(--invisible-border);
     border-radius: var(--default-border-radius);
     padding: 2px;
@@ -1689,7 +1755,7 @@ button.disabled:hover {
     height: var(--fill-height);
     align-content: center;
     margin-left: 5px;
-    color: var(--light-text-color);
+    color: var(--text-color);
     font-size: var(--default-size);
     font-weight: bold;
     user-select: none;
@@ -1714,8 +1780,8 @@ button.disabled:hover {
 }
 
 .form .header-bar .slider::before {
-    color: var(--light-text-color);
-    background-color: var(--light-text-color);
+    color: var(--text-color);
+    background-color: var(--text-color);
     font-family: 'Font Awesome 6 Free';
     font-weight: 900;
     -webkit-font-smoothing: antialiased;
@@ -1731,7 +1797,7 @@ button.disabled:hover {
     font-size: 18px;
     align-self: flex-start;
     padding: 0.5px;
-    color: var(--light-text-color);
+    color: var(--text-color);
     border: none;
     cursor: pointer;
     z-index: 2100;
@@ -1794,7 +1860,7 @@ button.disabled:hover {
 
 .dialog .header-bar h2 {
     flex: 1;
-    color: var(--light-text-color);
+    color: var(--text-color);
     margin: 0;
     padding-left: 20px;
     font-size: 18px;
@@ -1804,7 +1870,7 @@ button.disabled:hover {
 
 .dialog .header-bar a {
     flex: 0;
-    color: var(--light-text-color);
+    color: var(--text-color);
     align-self: center;
     text-align: end;
     margin-right: 5px;
@@ -1818,7 +1884,7 @@ button.disabled:hover {
     margin-block: 5px;
     padding-inline: 10px;
     font-size: var(--default-size);
-    color: var(--light-text-color);
+    color: var(--text-color);
     overflow-y: auto;
     overflow-x: hidden;
 }
@@ -1903,7 +1969,7 @@ button.disabled:hover {
 
 .dialog .main .button:hover {
     background-color: var(--dark-red);
-    color: var(--light-text-color);
+    color: var(--text-color);
 }
 
 .dialog .main .chapter-dialog .icon-list .icon-item .item-content {
@@ -1938,7 +2004,7 @@ button.disabled:hover {
 
 .dialog .main .folder {
     text-decoration: none;
-    color: var(--light-text-color);
+    color: var(--text-color);
     display: flex;
     align-items: center;
     padding: 5px 10px;
@@ -1967,7 +2033,7 @@ button.disabled:hover {
 
 .dialog .main .folder-list .folder.created.selected .fa-trash:hover {
     background-color: var(--dark-blue);
-    color: var(--light-text-color);
+    color: var(--text-color);
 }
 
 .dialog .main .folder-list .fas {
@@ -2026,7 +2092,7 @@ button.disabled:hover {
 
 .dialog .main .file-dialog .upload-file .uploader {
     flex: 2;
-    color: var(--light-text-color);
+    color: var(--text-color);
     background-color: var(--light-background-color);
     border: var(--data-group-border);
     border-radius: var(--default-border-radius);
@@ -2059,7 +2125,7 @@ button.disabled:hover {
     border-radius: 0;
     flex: 0;
     margin: 0;
-    color: var(--light-text-color);
+    color: var(--text-color);
     width: auto;
     padding: 7px;
 }
@@ -2249,7 +2315,7 @@ button.disabled:hover {
     background-color: var(--background-color);
     border-radius: var(--default-border-radius);
     border: var(--info-content-border);
-    color: var(--light-text-color);
+    color: var(--text-color);
     padding-inline: 5px;
 }
 
@@ -2274,7 +2340,7 @@ button.disabled:hover {
     cursor: pointer;
     background: var(--dark-red);
     box-shadow: var(--small-shadow);
-    color: var(--light-text-color);
+    color: var(--text-color);
 }
 
 .dialog .buttons button:hover {
@@ -2341,6 +2407,10 @@ button.disabled:hover {
     flex-direction: row;
     margin-block: 5px;
 }
+.data-group > a:not(.hidden) {
+    flex: 0.04;
+    text-align: center;
+}
 
 .data-group button {
     margin: 2px;
@@ -2378,7 +2448,7 @@ button.disabled:hover {
     padding: 5px;
     border-radius: 5px;
     background: var(--dark-blue);
-    color: var(--light-text-color);
+    color: var(--text-color);
     font-size: var(--small-size);
 }
 
@@ -2427,7 +2497,7 @@ button.disabled:hover {
     background-color: var(--dark-blue);
     border: var(--data-group-border);
     box-shadow: none;
-    color: var(--light-text-color);
+    color: var(--text-color);
 }
 
 .full-button button:hover {
@@ -2485,12 +2555,12 @@ button.disabled:hover {
     border-radius: var(--default-border-radius);
 }
 
-.source-dialog .data-group .data {
-    flex: 2;
-}
-
+.source-dialog .data-group .data,
 .data-group .data:not(div) {
     flex: 2;
+}
+.data-group .data:not(div):has(+a) {
+    flex: 1.96;    
 }
 
 .data-group .type-label {
@@ -2617,7 +2687,7 @@ button.disabled:hover {
 }
 
 .tabs-control .tabs-options button.selected {
-    color: var(--light-text-color);
+    color: var(--text-color);
 }
 
 .tabs-control .tabs-options button:first-of-type {
@@ -2695,7 +2765,7 @@ button.disabled:hover {
     background-color: transparent;
     border: none;
     border-radius: 0;
-    color: var(--light-text-color);
+    color: var(--text-color);
 
     border-left: var(--tab-item-border);
     border-right: var(--tab-item-border);
@@ -2712,7 +2782,7 @@ button.disabled:hover {
 #settings .settings-container {
     flex: 100%;
     border-radius: var(--default-border-radius);
-    color: var(--light-text-color);
+    color: var(--text-color);
     overflow-y: auto;
 }
 
@@ -2770,13 +2840,9 @@ button.disabled:hover {
     resize: none;
     background-color: var(--blueT50);
     border-radius: var(--default-border-radius);
-    color: var(--light-text-color);
+    color: var(--text-color);
     overflow-y: auto;
     height: 200px;
-}
-
-#settings #leafletPanel .info-set .data-group.text {
-    gap: var(--default-gap-size);
 }
 
 #settings #leafletPanel .scale {
@@ -2795,7 +2861,7 @@ button.disabled:hover {
     margin: 0;
     width: 100%;
     padding-block: 5px;
-    color: var(--light-text-color);
+    color: var(--text-color);
     border: var(--filled-border);
 }
 
@@ -2851,7 +2917,7 @@ button.disabled:hover {
     font-size: var(--title-size);
     text-align: center;
     background-color: var(--dark-red);
-    color: var(--light-text-color);
+    color: var(--text-color);
     margin: 0;
     margin-left: -15px;
     margin-bottom: 0.5em;
@@ -2884,14 +2950,14 @@ button.disabled:hover {
 
 .article .content .title-header .title {
     flex: 1;
-    color: var(--light-text-color);
+    color: var(--text-color);
     text-align: start;
 }
 
 .article .content .title-header .type-icon {
     font-size: var(--heading-2-size);
     border-radius: var(--default-border-radius);
-    background-color: var(--light-text-color);
+    background-color: var(--text-color);
     color: var(--dark-red);
     text-align: center;
     padding: 3px 10px;
@@ -2960,7 +3026,7 @@ button.disabled:hover {
 
 .timeline .content div {
     z-index: 1;
-    color: var(--light-text-color);
+    color: var(--text-color);
     gap: var(--default-gap-size);
 }
 
@@ -3000,7 +3066,7 @@ button.disabled:hover {
 
 .timeline .content .time-manager button.active {
     background-color: var(--dark-green) !important;
-    color: var(--light-text-color) !important;
+    color: var(--text-color) !important;
 }
 
 .timeline .content .time-manager button.active:hover {
@@ -3009,7 +3075,7 @@ button.disabled:hover {
 
 .timeline .content .time-manager button.cancel {
     background-color: var(--dark-red) !important;
-    color: var(--light-text-color) !important;
+    color: var(--text-color) !important;
 }
 
 .timeline .content .time-manager button.cancel:hover {
@@ -3022,7 +3088,7 @@ button.disabled:hover {
     padding: 16px;
     font-size: 14px;
     color: var(--dark-red);
-    background-color: var(--light-text-color);
+    background-color: var(--text-color);
     align-self: flex-end;
     margin-bottom: 5px;
 }
@@ -3033,7 +3099,7 @@ button.disabled:hover {
     width: 32px;
     padding: 32px;
     font-size: 32px;
-    color: var(--light-text-color);
+    color: var(--text-color);
     align-self: center;
 }
 
@@ -3044,11 +3110,11 @@ button.disabled:hover {
 
 .timeline .content .time-manager button.new:not(.active):hover {
     background-color: var(--dark-red);
-    color: var(--light-text-color);
+    color: var(--text-color);
 }
 
 .timeline .content .time-manager button.manage:not(.active):hover {
-    background-color: var(--light-text-color);
+    background-color: var(--text-color);
     color: var(--dark-red);
 }
 
@@ -3056,7 +3122,7 @@ button.disabled:hover {
     font-size: var(--title-size);
     text-align: center;
     background-color: var(--dark-red);
-    color: var(--light-text-color);
+    color: var(--text-color);
     margin: 0;
     margin-left: -25px;
     margin-bottom: 0.5em;
@@ -3096,7 +3162,7 @@ button.disabled:hover {
     width: fit-content;
     background-color: var(--background-color);
     box-shadow: none;
-    color: var(--light-text-color);
+    color: var(--text-color);
 }
 
 .timeline .content .timeline-topbar span {
@@ -3112,7 +3178,7 @@ button.disabled:hover {
 }
 
 .timeline .content .timeline-topbar:hover button * {
-    color: var(--light-text-color);
+    color: var(--text-color);
 }
 
 .timeline .content .timeline-topbar:hover span {
@@ -3179,7 +3245,7 @@ button.disabled:hover {
     left: 32.75vw;
     text-align: center;
     background: var(--dark-red);
-    color: var(--light-text-color);
+    color: var(--text-color);
     width: 20px;
     height: 20px;
     line-height: 20px;
@@ -3326,7 +3392,7 @@ button.disabled:hover {
 }
 
 .timeline-list .timeline-panel .btn-group-hover button:hover {
-    color: var(--light-text-color);
+    color: var(--text-color);
     background-color: var(--dark-red);
     box-shadow: var(--small-shadow);
 }
@@ -3351,7 +3417,7 @@ button.disabled:hover {
     text-align: center;
     padding: 12px;
     border: 8px var(--dark-red) solid;
-    color: var(--light-text-color);
+    color: var(--text-color);
     background-color: var(--blue);
     border-radius: 50%;
     display: inline-block;
@@ -3426,7 +3492,7 @@ button.disabled:hover {
 
 .folder-list .folder .folder-header {
     text-decoration: none;
-    color: var(--light-text-color);
+    color: var(--text-color);
     display: flex;
     padding: 5px 10px;
     border-radius: var(--default-border-radius);
@@ -3460,7 +3526,7 @@ button.disabled:hover {
 
 .folder-list .folder.created.selected .folder-header .fa-trash:hover {
     background-color: var(--dark-blue);
-    color: var(--light-text-color);
+    color: var(--text-color);
 }
 
 .folder-list .folder-content {
@@ -3516,7 +3582,7 @@ button.disabled:hover {
 }
 
 .folder-list .folder-content .entry-list .entry-item.selected a:hover {
-    color: var(--light-text-color);
+    color: var(--text-color);
 }
 
 .folder-list .fas {
@@ -3614,14 +3680,14 @@ button.disabled:hover {
     flex: 1;
     margin: 0;
     font-family: 'Georgia', serif;
-    color: var(--light-text-color);
+    color: var(--text-color);
     border-bottom-left-radius: var(--default-border-radius);
     border-bottom-right-radius: var(--default-border-radius);
     user-select: none;
 }
 
 .entries input[type="text"] {
-    color: var(--light-text-color);
+    color: var(--text-color);
 }
 
 .form .entries {
@@ -3632,7 +3698,7 @@ button.disabled:hover {
     white-space: nowrap;
     background-color: var(--dark-blue);
     background-image: url('../ui/denim065.png');
-    color: var(--light-text-color);
+    color: var(--text-color);
     padding: 20px;
     box-shadow: var(--sidebar-shadow);
     overflow-y: auto;
@@ -3756,7 +3822,7 @@ button.disabled:hover {
     cursor: pointer;
     border-radius: 15px;
     background-color: var(--dark-redT87);
-    color: var(--light-text-color);
+    color: var(--text-color);
 }
 
 .sidebar .footer {
@@ -3806,7 +3872,7 @@ button.disabled:hover {
 }
 
 .sidebar .footer .input-container a:hover {
-    color: var(--light-text-color);
+    color: var(--text-color);
 }
 
 .sidebar .footer button {
@@ -3817,12 +3883,12 @@ button.disabled:hover {
 }
 
 .sidebar button:hover {
-    color: var(--light-text-color);
+    color: var(--text-color);
 }
 
 .sidebar mark {
     background-color: var(--dark-redT87);
-    color: var(--light-text-color);
+    color: var(--text-color);
 }
 
 .panel .info-set h3,
@@ -3833,7 +3899,7 @@ button.disabled:hover {
     border-bottom: 1px solid var(--blue);
     padding-bottom: 5px;
     margin-bottom: 15px;
-    color: var(--text-red);
+    color: var(--title-red);
 }
 
 #encyclo.entries .sidebar h3 {
@@ -3976,7 +4042,7 @@ button.disabled:hover {
     font-size: 3em;
     align-content: center;
     text-align: center;
-    color: var(--light-text-color);
+    color: var(--text-color);
     position: absolute;
     background-color: var(--redT50);
     border-radius: 50%;
@@ -4165,9 +4231,9 @@ button.disabled:hover {
     border-radius: 4px;
     box-shadow: var(--calendar-shadow);
     width: 350px;
-    height: 310px;
+    height: 335px;
     max-width: 350px;
-    max-height: 310px;
+    max-height: 335px;
     overflow: hidden;
 }
 
@@ -4182,7 +4248,7 @@ button.disabled:hover {
 .calendar .calendar-header button {
     flex: 0;
     font-size: var(--default-size);
-    color: var(--light-text-color);
+    color: var(--text-color);
 }
 
 .calendar .calendar-header span {
@@ -4311,13 +4377,14 @@ button.disabled:hover {
 }
 
 .entries button:hover {
-    color: var(--light-text-color);
+    color: var(--text-color);
 }
 
 /* ------ Slider ------ */
 .slider-container {
     align-self: center;
 }
+
 .slider-track {
     width: 100%;
     height: 6px;
@@ -4360,8 +4427,8 @@ button.disabled:hover {
 }
 
 .color-picker-preview {
-    width: 16px;
-    height: 16px;
+    width: 32px;
+    height: 32px;
     border-radius: 3px;
     border: 2px solid var(--light-grey);
     cursor: pointer;
@@ -4377,6 +4444,7 @@ button.disabled:hover {
         6px -6px,
         -6px 0;
 }
+
 .color-picker-preview.disabled {
     border: 2px dashed;
     background-color: var(--dark-text-color) !important;
@@ -4384,9 +4452,10 @@ button.disabled:hover {
 }
 
 .color-picker-popup {
-    position: fixed;
-    top: 52px;
-    left: 0;
+    position: absolute;
+    top: 140px;
+    left: 5px;
+    height: min-content;
     width: 260px;
     padding-top: 12px;
     padding-bottom: 0px;
@@ -4486,23 +4555,27 @@ button.disabled:hover {
     margin-top: auto;
     gap: var(--default-gap-size);
 }
+
 .color-picker-footer .color-picker-button {
     flex: 1;
     background-color: transparent;
     border: none;
     box-shadow: none;
-    color: var(--light-text-color);    
+    color: var(--text-color);
     margin: 0;
     margin-top: 5px;
     border-top-left-radius: 0;
     border-top-right-radius: 0;
 }
+
 .color-picker-footer .color-picker-button:first-of-type {
     border-bottom-right-radius: 0;
 }
+
 .color-picker-footer .color-picker-button:last-of-type {
     border-bottom-left-radius: 0;
 }
+
 .color-picker-footer .color-picker-button:hover {
     background-color: var(--red);
 }
@@ -4545,6 +4618,10 @@ button.disabled:hover {
     /* Garante que o conteúdo vá para o topo */
 }
 
+.tox .tox-edit-area__iframe {
+    background-color: var(--blue);
+}
+
 
 .tox .tox-menu.tox-collection.tox-collection--list {
     width: max-content !important;
@@ -4559,9 +4636,8 @@ button.disabled:hover {
     font-family: 'Georgia', serif;
     font-size: var(--tmce-size);
     line-height: 1.25em;
-    color: var(--light-text-color);
+    color: var(--text-color);
     background: none;
-    background-color: var(--light-background-color);
     padding: 5px;
     height: 100%;
     margin: 0;
@@ -4584,12 +4660,11 @@ button.disabled:hover {
     border-radius: var(--default-border-radius);
     padding: 10px;
     background: var(--light-background-color);
-    color: var(--light-text-color);
 }
 
 .simple-tmce {
     margin-block: 5px;
-    background-color: var(--light-background-color);
+    background-color: var(--blue);
     border-radius: var(--default-border-radius);
     box-shadow: var(--small-shadow);
     padding: 5px 10px;
@@ -4620,7 +4695,7 @@ button.disabled:hover {
 #tinymce::before {
     font-size: var(--tmce-size);
     font-style: italic;
-    color: var(--light-text-color) !important;
+    color: var(--text-color) !important;
     line-height: 1.35em;
     padding-left: 5px;
     cursor: text;
@@ -4737,7 +4812,7 @@ button.disabled:hover {
 .message.error {
     background-color: var(--header-red);
     background-image: url(../ui/denim065.png);
-    color: var(--light-text-color);
+    color: var(--text-color);
 }
 
 .message.warning {
@@ -4815,7 +4890,7 @@ button.disabled:hover {
 }
 
 .lineage-tree .node.selected {
-    border: 2px solid var(--light-text-color);
+    border: 2px solid var(--text-color);
 }
 
 .lineage-tree .node:hover {
@@ -4849,7 +4924,7 @@ button.disabled:hover {
     font-size: var(--tiny-size);
     background-color: var(--light-grey);
     color: var(--dark-text-color);
-    border: 1px solid var(--light-text-color);
+    border: 1px solid var(--text-color);
     border-top-width: 0;
     border-radius: 0;
     border-bottom-left-radius: var(--default-border-radius);

@@ -323,12 +323,7 @@ export default class Application {
         return uniforge.parser.parseHTML(html, this.data);
     }
 
-    /**
-    * Renderiza a aplicação.
-    * 
-    * @async
-    * @returns {Boolean} - Uma flag indicando se o form foi renderizado (true) ou não (false).
-    */
+    
     async render() {
         try {
             // Função para obter os dados comuns à toda aplicação.
@@ -518,11 +513,7 @@ export default class Application {
 
         this.close();
     }
-    /**
-    * Inicia o processo de arraste do aplicação.
-    * 
-    * @param {MouseEvent} event - O evento de mouse.
-    */
+    
     _onMouseDown(event) {
         event.stopPropagation();
         this.state.isDragging = true;
@@ -563,9 +554,7 @@ export default class Application {
         }
     }
 
-    /**
-     * Finaliza o arraste da aplicação.
-     */
+    
     _onMouseUp() {
         if (!this.ui.app) return;
 
@@ -578,11 +567,7 @@ export default class Application {
 
     /* ---------------------------------------------------------------------------------------------------------------- */
     // UTILITÁRIOS  
-    /**
-     * Consulta um seletor CSS dentro da aplicação.
-     * @param {string} selector - O seletor CSS a ser buscado.
-     * @returns {HTMLElement} O primeiro elemento correspondente.
-     */
+    
     querySelector(selector) {
         return this.ui.app.querySelector(selector);
     }

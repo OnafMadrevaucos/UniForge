@@ -9,18 +9,20 @@
     </div>
     <div class="settings-container flexrow">
         <div id="mainPanel" class="panel flexrow">
-            <div id="sideBar" class="sidebar">
-                <foldertree id="subjects" item="settings"></foldertree>
-                <div class="footer">
-                    <div id="searchEntry" class="input-container search-bar flexrow">
-                        <input type="text" id="searchInput" class="search-data" placeholder="Pesquisar opção...">
-                        <a id="clearSearch" data-tooltip="Limpar busca" data-tooltip-side="left"
-                            data-tooltip-block="top"><i class="fas fa-xmark"></i></a>
-                    </div>
-                </div>
-            </div>
             <div class="content flexcol">
                 <fieldset class="info-set core flexcol not-disable">
+                    <div class="data-group flexrow combo">
+                        <span class="data-label">Tema: </span>
+                        <combo id="themeSelector" value="themes" grouped="true"/>
+                        <a id="newThemeButton" data-tooltip="Novo Tema"><i class="fas fa-plus"></i></a>  
+                        <a id="editThemeButton" class="hidden" data-tooltip="Editar Temas"><i class="fa-solid fa-palette"></i></a>                      
+                    </div>                    
+                </fieldset>
+                <fieldset class="info-set flexcol not-disable">
+                    <div class="data-group text">
+                        <span class="data-label">Text Edit: </span>
+                        <input type="text" class="data" />
+                    </div>
                     <div class="data-group check">
                         <span class="data-label">Switch: </span>
                         <switch id="exampleSwitch" />
@@ -29,19 +31,14 @@
                         <span class="data-label">Text Edit: </span>
                         <input type="text" class="data" />
                     </div>
-                </fieldset>
-                <fieldset class="info-set misc flexcol not-disable">
-                    <div class="data-group text">
-                        <span class="data-label">Text Edit: </span>
-                        <input type="text" class="data" />
-                    </div>
                     <div class="data-group check">
                         <span class="data-label">Checkbox: </span>
                         <combo id="exampleCombo" value="options" blank="0" />
                     </div>
-                </fieldset>
-                <fieldset class="info-set core flexcol not-disable">
-                    <slider id="testSlider"></slider>
+                    <div class="data-group check">
+                        <span class="data-label">slider: </span>
+                        <slider id="testSlider"></slider>
+                    </div>                    
                 </fieldset>
             </div>
         </div>

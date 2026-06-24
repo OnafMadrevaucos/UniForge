@@ -84,7 +84,8 @@ const drawer = {
     marker: function (map, markerURL) {
         if (state.drawInstance && state.drawInstance.enabled()) state.drawInstance.disable();
 
-        map.pm.enableDraw('Marker', options.marker(markerURL)); // Permite interseção de polígonos.
+        // Permite interseção de polígonos.
+        map.pm.enableDraw('Marker', options.marker(markerURL)); 
         state.drawInstance = map.pm.Draw.Marker;
 
         return state.drawInstance;
@@ -92,48 +93,57 @@ const drawer = {
     polygon: function (map) {
         if (state.drawInstance && state.drawInstance.enabled()) state.drawInstance.disable();
 
-        map.pm.enableDraw('Polygon', options.polygon()); // Permite interseção de polígonos.
+        // Permite interseção de polígonos.
+        map.pm.enableDraw('Polygon', options.polygon()); 
     },
     circle: function (map) {
         if (state.drawInstance && state.drawInstance.enabled()) state.drawInstance.disable();
 
-        map.pm.enableDraw('Circle', options.regularShape()); // Permite interseção de círculos.
+        // Permite interseção de círculos.
+        map.pm.enableDraw('Circle', options.regularShape()); 
     },
     rectangle: function (map) {
         if (state.drawInstance && state.drawInstance.enabled()) state.drawInstance.disable();
 
-        map.pm.enableDraw('Rectangle', options.regularShape()); // Permite interseção de retângulos.        
+        // Permite interseção de retângulos.
+        map.pm.enableDraw('Rectangle', options.regularShape());         
     }
 }
 
 const measurements = {
     tooltip: null,
 
-    createTooltip(map) {
+    createTooltip(map, latlng, content) {
         if (this.tooltip) {
             this.tooltip.remove();
         }
 
-        this.tooltip = L.tooltip({
-            permanent: false,
-            direction: 'top',
-            offset: [0, -10],
+        this.tooltip = L.tooltip({            
+            permanent: true,
+            sticky: true,
+            direction: 'center',
+            offset: [0, -5],
             className: 'leaflet-draw-tooltip'
-        }).addTo(map);
+        })
+        .setLatLng(latlng)
+        .setContent(content)
+        .addTo(map);
 
         return this.tooltip;
     },
 
     removeTooltip(map) {
         if (this.tooltip) {
-            map.removeLayer(this.tooltip);
+            this.tooltip.remove();
             this.tooltip = null;
+
+            map.off('mousemove');
         }
     },
 
     updateTooltip(map, latlng, content) {
         if (!this.tooltip) {
-            this.createTooltip(map);
+            this.createTooltip(map, latlng, content);
         }
 
         this.tooltip
@@ -239,7 +249,7 @@ function _zoomOut(map) {
 }
 
 function _setupCustomButtons(map) {
-    // Inicializa o Geoman sem os controles padrão (vamos criar os nossos)
+    // Inicializa o Geoman sem os controles padrão (vamos criar os nossos).
     map.pm.addControls({
         position: 'topright',
         cutPolygon: false,
@@ -260,44 +270,44 @@ function _setupCustomButtons(map) {
         name: 'drawPolygonCustom',
         block: 'draw',
         title: 'Desenhar Região',
-        className: iconMap.polygon, // Sua classe de ícone
+        className: iconMap.polygon, // Sua classe de ícone.
         onClick: (event) => {
             if (event) _onPolygonDraw(map, event);
         },
-        toggle: true // Comportamento de liga/desliga
+        toggle: true // Comportamento de liga/desliga.
     });
 
     map.pm.Toolbar.createCustomControl({
         name: 'drawRectangleCustom',
         block: 'draw',
         title: 'Desenhar Retângulo',
-        className: iconMap.rectangle, // Sua classe de ícone
+        className: iconMap.rectangle, // Sua classe de ícone.
         onClick: (event) => {
             if (event) _onRectangleDraw(map, event);
         },
-        toggle: true // Comportamento de liga/desliga
+        toggle: true // Comportamento de liga/desliga.
     });
 
     map.pm.Toolbar.createCustomControl({
         name: 'drawCircleCustom',
         block: 'draw',
         title: 'Desenhar Círculo',
-        className: iconMap.circle, // Sua classe de ícone
+        className: iconMap.circle, // Sua classe de ícone.
         onClick: (event) => {
             if (event) _onCircleDraw(map, event);
         },
-        toggle: true // Comportamento de liga/desliga
+        toggle: true // Comportamento de liga/desliga.
     });
 
     map.pm.Toolbar.createCustomControl({
         name: 'drawMarkerCustom',
         block: 'draw',
         title: 'Posicionar Marcador',
-        className: iconMap.marker, // Sua classe de ícone
+        className: iconMap.marker, // Sua classe de ícone.
         onClick: (event) => {
             if (event) _onMarkerDraw(map, event);
         },
-        toggle: true // Comportamento de liga/desliga
+        toggle: true // Comportamento de liga/desliga.
     });
 }
 
@@ -439,7 +449,7 @@ function onAddLayer(map) {
 }
 
 function onCreateTile(coords) {
-    // Create a tile with transparency
+    // Cria um tile com transparência.
     const tile = document.createElement('canvas');
 
     var tileSize = this.getTileSize();
@@ -448,12 +458,12 @@ function onCreateTile(coords) {
 
     const ctx = tile.getContext('2d');
 
-    // Draw grid lines
+    // Desenha linhas de grade.
     ctx.strokeStyle = 'rgba(212, 198, 148, 0.5)'; // Grid line color
     ctx.lineWidth = 1;
 
-    // Draw horizontal and vertical grid lines
-    for (let i = 0; i <= tileSize; i += 36) { // Adjust the grid cell size (36px here)
+    // Desenha linhas de grade horizontais e verticais.
+    for (let i = 0; i <= tileSize; i += 36) { // Ajusta o tamanho da celula da grade (36px).
         ctx.beginPath();
         ctx.moveTo(i, 0);
         ctx.lineTo(i, tileSize);

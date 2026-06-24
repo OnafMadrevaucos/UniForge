@@ -111,19 +111,7 @@ const lControl = {
             position: 'topright' // Posição no canto superior esquerdo.            
         },
         onAdd: utils.onAddMain
-    }),
-
-    /**
-    * Controle de camada no mapa.
-    * 
-    * @extends {L.Control}
-    */
-    LayerControl: L.Control.extend({
-        options: {
-            position: 'bottomright' // Posição no canto superior esquerdo.            
-        },
-        onAdd: utils.onAddLayer
-    }),
+    }),    
 
     /**
     * Objeto L.CRS customizado com a função de distância em metros.
@@ -238,10 +226,7 @@ const lControl = {
         _configureMainControl();
 
         // Configura o controle de desenho customizado.
-        _configureCustomDrawControl(mapElements);
-
-        // Configura o controle de camadas.
-        _configureLayerControl();
+        _configureCustomDrawControl(mapElements);        
 
         // Configura o controle de escala.
         const scaleControl = _configureScaleControl();
@@ -308,11 +293,17 @@ const lControl = {
                 exitModeOnEscape: true
             });
 
+            // Configura a localização dos tooltips do Leaflet.pm para PT-BR.
             map.pm.setLang('pt_br', {
                 tooltips: {
                     firstVertex: 'Clique para começar a desenhar uma forma.',
                     continueLine: 'Clique para continuar desenhando.',
-                    finishPoly: 'Clique no primeiro ponto para fechar esta forma.',
+                    startCircle: 'Clique para determinar o centro do círculo',
+
+                    finishPoly: 'Clique no ponto inicial para fechar esta forma.',
+                    finishRect: 'Clique para finalizar o retângulo',
+                    finishCircle: 'Clique para finalizar o círculo',
+
                     placeMarker: "Escolha uma posição para o marcador.",
                 }
             });
@@ -329,14 +320,7 @@ const lControl = {
 
         function _configureCustomDrawControl(mapElements) {
             utils.setupCustomButtons(map);
-        }
-
-        function _configureLayerControl() {
-            const layerControl = new lControl.LayerControl();
-            map.addControl(layerControl);
-
-            return layerControl;
-        }
+        }        
 
         function _loadElementsStyles() {
             const style = JSON.parse(uniforge.settings.get('leafletStyle.pathOptions'));
@@ -347,8 +331,7 @@ const lControl = {
 
             /**
             * Instância da camada de armazenagem a imagem que representa os caminhos do Mapa.
-            * @type {L.ImageOverlay}
-            *        
+            * @type {L.ImageOverlay}        
             */
             const paths = lControl.overlay = L.imageOverlay(`${uniforge.urls.mapOverlays}/paths.png`, bounds, {
                 zIndex: 1,
@@ -360,7 +343,6 @@ const lControl = {
             /**
             * Instância da camada de armazenagem a imagem que representa as cidades do Mapa.
             * @type {L.ImageOverlay}
-            *        
             */
             const cities = lControl.overlay = L.imageOverlay(`${uniforge.urls.mapOverlays}/cities.png`, bounds, {
                 zIndex: 2,
@@ -372,7 +354,6 @@ const lControl = {
             /**
             * Instância da camada de armazenagem a imagem que representa os nomes do Mapa.
             * @type {L.ImageOverlay}
-            *        
             */
             const labels = lControl.overlay = L.imageOverlay(`${uniforge.urls.mapOverlays}/labels.png`, bounds, {
                 zIndex: 3,
@@ -386,13 +367,13 @@ const lControl = {
                 "Nomes": labels
             }).addTo(map);
 
-            // Pega o container do controle
+            // Pega o container do controle.
             const container = overlayLayerControl.getContainer();
 
-            // Pega o botão de toggle (ícone do controle)
+            // Pega o botão de toggle (ícone do controle).
             const toggleButton = container.querySelector('.leaflet-control-layers-toggle');
 
-            // Pega a lista de layers
+            // Pega a lista de layers.
             const list = container.querySelector('.leaflet-control-layers-list');
 
             // Esconde inicialmente
@@ -452,6 +433,7 @@ const lControl = {
         function _activateEventsListener() {
             //map.on('moveend', _checkMapVisibility);
             map.on('mousedown', _onUserMapClick);
+
             map.on('pm:create', (event) => _onDrawCreated(event, true));
 
             map.on('zoomend', _onZoomEnd);
@@ -467,7 +449,82 @@ const lControl = {
                 const workingLayer = e.workingLayer;
                 const shape = e.shape;
 
-                utils.measurements.createTooltip(map);
+                map.on('mousemove', (e) => {
+                    const shape = map.pm.Draw.getActiveShape();
+                    if (!shape) {
+                        utils.measurements.removeTooltip();
+                        return;
+                    }
+
+                    // CÍRCULO
+                    if (shape === 'Circle') {
+                        const workingLayer = map.pm.Draw.Circle._layer;
+
+                        // Pega os vértices já desenhados
+                        let latlng = e.latlng;
+
+                        const radius = workingLayer.getRadius() * lControl.constants.UNIT_TO_KM_RATIO;
+                        const area = Math.PI * radius * radius;
+
+                        utils.measurements.updateTooltip(
+                            map,
+                            latlng,
+                            `<strong>Raio:</strong> ${radius.toFixed(2)} km<br>
+                                <strong>Área:</strong> ${area.toFixed(2)} km²
+                                `
+                        );
+                    }
+                    // POLÍGONOS
+                    else if (shape === 'Polygon') {
+                        const workingLayer = map.pm.Draw.Polygon._layer;
+
+                        // Pega os vértices já desenhados
+                        let latlngs = workingLayer.getLatLngs();
+                        if (Array.isArray(latlngs[0])) latlngs = latlngs[0];
+
+                        const area = utils.measurements.calculatePolygonArea(
+                            [...latlngs, e.latlng],
+                            lControl.constants.UNIT_TO_KM_RATIO
+                        );
+                        const perimeter = utils.measurements.calculatePolygonPerimeter(
+                            [...latlngs, e.latlng],
+                            lControl.constants.UNIT_TO_KM_RATIO
+                        );
+
+                        utils.measurements.updateTooltip(
+                            map,
+                            e.latlng,
+                            `<strong>Perímetro:</strong> ${perimeter.toFixed(2)} km
+                             <strong>Área:</strong> ${area.toFixed(2)} km²<br>
+                            `
+                        );
+                    }
+                    // RETÂNGULO
+                    else if (shape === 'Rectangle') {
+                        const workingLayer = map.pm.Draw.Rectangle._layer;
+
+                        // Pega os vértices já desenhados
+                        let latlngs = workingLayer.getLatLngs();
+                        if (Array.isArray(latlngs[0])) latlngs = latlngs[0];
+
+                        const area = utils.measurements.calculatePolygonArea(
+                            latlngs,
+                            lControl.constants.UNIT_TO_KM_RATIO
+                        );
+                        const perimeter = utils.measurements.calculatePolygonPerimeter(
+                            latlngs,
+                            lControl.constants.UNIT_TO_KM_RATIO
+                        );
+
+                        utils.measurements.updateTooltip(
+                            map,
+                            e.latlng,
+                            `<strong>Perímetro:</strong> ${perimeter.toFixed(2)} km
+                             <strong>Área:</strong> ${area.toFixed(2)} km²<br>
+                            `
+                        );
+                    }
+                });
 
                 workingLayer.on('pm:vertexadded', (event) => {
 
@@ -477,26 +534,26 @@ const lControl = {
                     const points = latlngs[0];
                     if (points.length < 2) return;
 
-                    const mouseLatLng = points[points.length - 1];
+                    const mouseLatLng = points.length ? points[points.length - 1] : points;
 
                     // POLÍGONO
                     if (shape === 'Polygon') {
 
                         const area = utils.measurements.calculatePolygonArea(
-                                points,
-                                lControl.constants.UNIT_TO_KM_RATIO
-                            );
-
+                            latlngs,
+                            lControl.constants.UNIT_TO_KM_RATIO
+                        );
                         const perimeter = utils.measurements.calculatePolygonPerimeter(
-                                points,
-                                lControl.constants.UNIT_TO_KM_RATIO
-                            );
+                            latlngs,
+                            lControl.constants.UNIT_TO_KM_RATIO
+                        );
 
                         utils.measurements.updateTooltip(
                             map,
                             mouseLatLng,
-                            `<strong>Área:</strong> ${area.toFixed(2)} km²<br>
-                            <strong>Perímetro:</strong> ${perimeter.toFixed(2)} km`
+                            `<strong>Perímetro:</strong> ${perimeter.toFixed(2)} km
+                             <strong>Área:</strong> ${area.toFixed(2)} km²<br>
+                            `
                         );
                     }
                 });
@@ -505,9 +562,7 @@ const lControl = {
                 workingLayer.on('pm:centerplaced', () => {
 
                     workingLayer.on('pm:change', () => {
-
                         const radius = workingLayer.getRadius() * lControl.constants.UNIT_TO_KM_RATIO;
-
                         const area = Math.PI * radius * radius;
 
                         utils.measurements.updateTooltip(
@@ -629,6 +684,7 @@ const lControl = {
             }
             finally {
                 if (utils.state.drawInstance) utils.state.drawInstance.disable();
+                utils.measurements.removeTooltip(map);
             }
         }
 
@@ -640,6 +696,8 @@ const lControl = {
 
             const containers = document.querySelectorAll('div.map-objects-container');
             containers.forEach(container => container.classList.remove('active'));
+
+            utils.measurements.removeTooltip(map);
         }
 
         function _onZoomEnd() {
@@ -917,61 +975,66 @@ const lControl = {
 function _updateLayerControl() {
     const iconMap = utils.iconMap;
     const mapElementsList = document.querySelector('#mapElementsList');
-    mapElementsList.innerHTML = ''; // Limpa a lista atual.    
+    mapElementsList.innerHTML = ''; // Limpa a lista atual.  
 
-    lControl.mapElements.eachLayer(function (layer) {
-        const li = document.createElement('li');
-        li.id = layer._id;
-        li.dataset.leafletId = layer._leaflet_id;
-        li.classList.add('layer-item', 'flexrow');
+    const noObjectsFoundMessage = document.getElementById('noObjectsFoundMessage');
 
-        const content = document.createElement('div');
-        content.classList.add('layer-item-content', 'flexrow');
+    // Se não houver elementos, exibe a mensagem de "Nenhum objeto encontrado".
+    if (lControl.mapElements.getLayers().length === 0) {        
+        noObjectsFoundMessage.classList.remove('hidden');
+    }
+    // Caso haja elementos, gera os itens da lista de elementos do mapa.
+    else {
+        // Garante que a mensagem de "Nenhum objeto encontrado" esteja oculta.
+        noObjectsFoundMessage.classList.add('hidden');
+        
+        // Percorre os elementos do mapa e os adiciona à lista de controle de camadas.
+        lControl.mapElements.eachLayer(async function (layer) {
+            const li = document.createElement('li');
+            li.id = layer._id;
+            li.dataset.leafletId = layer._leaflet_id;
+            li.classList.add('layer-item', 'flexrow');
 
-        const icon = document.createElement('a');
-        icon.innerHTML = `<i class="${iconMap[layer.type]}"></i>`;
+            const content = document.createElement('div');
+            content.classList.add('layer-item-content', 'flexrow');
 
-        const span = document.createElement('span');
-        span.innerText = layer.source.title;
-
-        content.appendChild(icon);
-        content.appendChild(span);
-
-        const deleteButton = document.createElement('a');
-        deleteButton.classList.add('layer-item-delete');
-        deleteButton.innerHTML = '<i class="fa-solid fa-trash"></i>';
-
-        deleteButton.addEventListener('click', lControl.deleteElement);
-
-        li.appendChild(content);
-        li.appendChild(deleteButton);
-
-        li.addEventListener('mouseover', _onLayerItemMouseOver);
-        li.addEventListener('mouseleave', _onLayerItemMouseLeave)
-
-        mapElementsList.appendChild(li);
-    })
-
-    function _onObjectsSearchChange(event) {
-        event.stopPropagation();
-        const input = event.currentTarget;
-        // Padroniza e remove espaços em branco do filtro para melhorar a busca.
-        const filter = input.value.trim().toLowerCase();
-
-        // Obtém todas os items de Objetos do Mapa.
-        const objectsItems = document.querySelectorAll('#mapElementsList li');
-        objectsItems.forEach(item => {
-            const meid = item.dateset.id;
-            const mapElement = uniforge.docs.maps[map.mid].elements[meid];
-            // Se o filtro estiver vazio ou a opção contém o filtro, mostra a opção.
-            if (filter.isEmpty() || mapElement.includes(filter)) {
-                item.classList.remove('hidden');
+            const img = document.createElement('img');
+            if (!layer.source.img) {
+                img.src = uniforge.urls.blankImg;
             }
-            // Senão, esconde a opção. 
             else {
-                item.classList.add('hidden');
+                img.src = await uniforge.utils.blobToImage(layer.source.img);
             }
-        });
+
+            const contentBody = document.createElement('div');
+            contentBody.classList.add('layer-item-content-body', 'flexcol');
+
+            const h3 = document.createElement('h3');
+            h3.innerText = layer.source.title;
+
+            const span = document.createElement('span');
+            span.innerHTML = `<i class="${layer.source.entryType.icon}"></i> ${layer.source.entryType.title}`;
+
+            contentBody.appendChild(h3);
+            contentBody.appendChild(span);
+
+            content.appendChild(img);
+            content.appendChild(contentBody);
+
+            const deleteButton = document.createElement('a');
+            deleteButton.classList.add('layer-item-delete');
+            deleteButton.innerHTML = '<i class="fa-solid fa-trash"></i>';
+
+            deleteButton.addEventListener('click', lControl.deleteElement);
+
+            li.appendChild(content);
+            li.appendChild(deleteButton);
+
+            li.addEventListener('mouseover', _onLayerItemMouseOver);
+            li.addEventListener('mouseleave', _onLayerItemMouseLeave)
+
+            mapElementsList.appendChild(li);
+        })
     }
 
     function _onLayerItemMouseLeave(event) {
