@@ -20,12 +20,6 @@ export default class BaseForm extends Application {
     this.db = uniforge.db;
 
     /**
-     * URL da imagem de fundo para o overlay.
-     * @type {string}
-     */
-    this.imageUrl = uniforge.urls.background;
-
-    /**
      * O caminho para quando a entrada não possui imagem.
      * @type {string}
      */
@@ -73,6 +67,20 @@ export default class BaseForm extends Application {
 
   /* ---------------------------------------------------------------------------------------------------------------- */
   // GETTERS E SETTERS
+  /**
+   * Obtém a URL da imagem de fundo correspondente ao tema ativo.
+   * @type {string}
+   */
+  get imageUrl() {
+    const activeTheme = document.documentElement.getAttribute('data-theme') || 'theme-medieval';
+    if (activeTheme === 'theme-scifi') {
+      return uniforge.urls.backgroundScifi;
+    } else if (activeTheme === 'theme-neutral') {
+      return uniforge.urls.backgroundNeutral;
+    }
+    return uniforge.urls.background;
+  }
+
   /**
   * @overload
   * @inheritdoc
