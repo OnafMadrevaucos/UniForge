@@ -83,29 +83,30 @@
     --light-grey: #f7fafc;
     --dark-grey: #0a0a0f;
 
-    --blue: #1a1921;
-    --light-blue: #2e2c3b;
+    --panel-background-color: #1a1921;
+    --button-background-color: #2e2c3b;
     --dark-blue: rgba(18, 17, 26, 0.82);
     --dark-blueT87: rgba(18, 17, 26, 0.92);
     --dark-blueT50: rgba(18, 17, 26, 0.5);
     --info-blue: #2b6cb0;
     --male-blue: #4299e1;
 
-    --red: #b82525;
+    --main-detail-color: #b82525;
     --light-red: #fca5a5;
-    --hover-red: #991b1b;
-    --border-red: #f87171;
+    --hover-detail-color: #991b1b;
+    --focus-detail-color: #f87171;
     --focus-red: #ef4444;
     --highlight-red: #dc2626;
-    --dark-red: #7f1d1d;
+    --header-detail-color: #7f1d1d;
     --header-red: #ef4444;
     --text-red: #f87171;
-    --title-red: var(--dark-red);
+    --title-red: var(--header-detail-color);
 
-    --yellow: #d97706;
-    --bright-yellow: #f59e0b;
+    --tools-detail-color: #d97706;
+    --secondary-tools-detail-color: #f59e0b;
+    
     --light-yellow: #fbbf24;
-    --border-yellow: #f59e0b;
+    --border-color: #f59e0b;
 
     --lib-background: url(../ui/lib-background.png);
 
@@ -114,7 +115,7 @@
 
     --redT50: rgba(220, 38, 38, 0.5);
     --redT87: rgba(220, 38, 38, 0.87);
-    --dark-redT87: rgba(127, 29, 29, 0.87);
+    --header-detail-colorT87: rgba(127, 29, 29, 0.87);
     --yellowT87: rgba(245, 158, 11, 0.87);
     --blueT50: rgba(26, 25, 33, 0.5);
     --info-blueT87: #3b82f6;
@@ -138,7 +139,7 @@
     --content-text-color: #0b0c10;
     --content-viewer-bg: url(../ui/texture1.webp) no-repeat top center / auto 770px, #f4eae1 url(../ui/texture2.webp) no-repeat bottom center / auto 704px;
     --blockquote-background: #3b3a30;
-    --stroke-color: var(--dark-red);
+    --stroke-color: var(--header-detail-color);
     --shadow-color: rgba(0, 0, 0, 0.5);
     --shadow-header: #334155;
 
@@ -159,17 +160,17 @@
     /* Borders */
     --filled-border: 1px solid rgba(245, 158, 11, 0.4);
     --invisible-border: 1px solid transparent;
-    --focus-border: 1px solid var(--border-yellow);
-    --info-content-border: 2px solid var(--light-blue);
-    --active-search-border: 1.5px solid var(--border-yellow);
+    --focus-border: 1px solid var(--border-color);
+    --info-content-border: 2px solid var(--button-background-color);
+    --active-search-border: 1.5px solid var(--border-color);
     --sidebar-border: 1px solid rgba(255, 255, 255, 0.08);
     --tab-item-border: 1px solid rgba(127, 29, 29, 0.5);
     --tooltip-border: 1px solid rgba(255, 255, 255, 0.1);
-    --img-border: 2px solid var(--border-yellow);
+    --img-border: 2px solid var(--border-color);
     --data-group-border: 1px solid rgba(255, 255, 255, 0.1);
-    --focused-data-group-border: 1px solid var(--border-yellow);
+    --focused-data-group-border: 1px solid var(--border-color);
     --focused-div-border: 1px solid var(--light-text-color);
-    --blockquote-border: 4px solid var(--red);
+    --blockquote-border: 4px solid var(--main-detail-color);
 
     /* Borders Radius */
     --default-border-radius: 8px;
@@ -177,7 +178,7 @@
     --title-header-radius: 0 8px 8px 0;
 
     /* Gradients */
-    --blockquote-gradient: linear-gradient(125deg, var(--bright-yellow) 35%, var(--light-yellow) 45%, var(--blockquote-background) 80%);
+    --blockquote-gradient: linear-gradient(125deg, var(--secondary-tools-detail-color) 35%, var(--light-yellow) 45%, var(--blockquote-background) 80%);
 
     /* Shadows */
     --default-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
@@ -340,7 +341,7 @@ select:disabled {
 }
 
 .uniforge .leaflet-container .leaflet-control-attribution {
-    background-color: var(--red);
+    background-color: var(--main-detail-color);
     color: var(--text-color);
     padding: 2px 5px;
     border-top-left-radius: var(--default-border-radius);
@@ -358,7 +359,7 @@ button {
     align-self: flex-end;
     box-shadow: var(--small-shadow);
     font-family: 'Georgia', serif;
-    background-color: var(--red);
+    background-color: var(--main-detail-color);
     color: var(--background-color);
     border: var(--filled-border);
     border-radius: var(--default-border-radius);
@@ -412,7 +413,7 @@ button[type="submit"] {
 .leaflet-pm-toolbar.leaflet-control .button-container a.leaflet-buttons-control-button:hover,
 button:hover {
     cursor: pointer;
-    background-color: var(--dark-red);
+    background-color: var(--header-detail-color);
 }
 
 button#logout {
@@ -423,7 +424,7 @@ button#logout {
 blockquote {
     font-style: italic;
     color: var(--text-color);
-    border-left: 5px solid var(--dark-redT87);
+    border-left: 5px solid var(--header-detail-colorT87);
     padding: 5px;
     margin: 0.45em 0.5em 0 0.5em;
     background-color: var(--blockquote-background);
@@ -476,7 +477,7 @@ blockquote:not(:has(+ blockquote)) {
     left: 0;
     right: 0;
     bottom: 0;
-    background-color: var(--light-blue);
+    background-color: var(--button-background-color);
     transition: 0.4s;
     border-radius: 24px;
 }
@@ -496,7 +497,7 @@ blockquote:not(:has(+ blockquote)) {
 
 /* Estado ativo (checado) */
 input:checked+.slider {
-    background-color: var(--red);
+    background-color: var(--main-detail-color);
 }
 
 input:checked+.slider::before {
@@ -507,7 +508,7 @@ input:checked+.slider::before {
 /* ------ Separators ------ */
 .separator {
     height: 2px;
-    background-color: var(--dark-red);
+    background-color: var(--header-detail-color);
     margin: 10px 0;
     border-radius: var(--default-border-radius);
     width: 95%;
@@ -590,14 +591,14 @@ button.disabled:hover {
 }
 
 ::-webkit-scrollbar-thumb {
-    background-color: var(--dark-redT87);
+    background-color: var(--header-detail-colorT87);
     /* Cor da barra de rolagem */
     border-radius: 4px;
     /* Deixar as bordas arredondadas */
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background-color: var(--dark-redT87);
+    background-color: var(--header-detail-colorT87);
     /* Cor mais intensa ao passar o mouse */
 }
 
@@ -700,14 +701,14 @@ button.disabled:hover {
     flex: 0 0 90%;
     border: var(--filled-border);
     border-radius: var(--default-border-radius);
-    background-color: var(--blue);
+    background-color: var(--panel-background-color);
     box-shadow: inset 1px 1px 4px 0px var(--grey);
 }
 
 .progress-dialog .progress-bar-bg .progress-bar-fill {
     background-color: var(--redT87);
     border-radius: var(--default-border-radius);
-    box-shadow: inset 1px 1px 4px 0px var(--hover-red);
+    box-shadow: inset 1px 1px 4px 0px var(--hover-detail-color);
 }
 
 /* ------ Leaflet Controls ------ */
@@ -752,7 +753,7 @@ button.disabled:hover {
 .leaflet-bar button:hover,
 .leaflet-control-layers-toggle:hover,
 .leaflet-pm-toolbar.leaflet-control .button-container a.leaflet-buttons-control-button:hover {
-    background-color: var(--red) !important;
+    background-color: var(--main-detail-color) !important;
     color: var(--light-grey) !important;
     box-shadow: 0 0 10px rgba(184, 37, 37, 0.6) !important;
 }
@@ -819,7 +820,7 @@ button.disabled:hover {
 }
 
 .leaflet-touch .leaflet-control-layers .leaflet-control-layers-overlays input[type="checkbox"] {
-    accent-color: var(--red);
+    accent-color: var(--main-detail-color);
     width: 1.2em;
 }
 
@@ -829,9 +830,9 @@ button.disabled:hover {
 
 .leaflet-pm-toolbar.leaflet-control .button-container a.leaflet-buttons-control-button.active,
 .leaflet-container .leaflet-control-container .leaflet-top.leaflet-right .leaflet-control button.active {
-    background-color: var(--red) !important;
+    background-color: var(--main-detail-color) !important;
     color: var(--light-grey) !important;
-    border-color: var(--border-yellow) !important;
+    border-color: var(--border-color) !important;
 }
 
 .leaflet-container .leaflet-div-icon {
@@ -851,7 +852,7 @@ button.disabled:hover {
 .leaflet-container .leaflet-control-scale-line {
     width: 75px;
     left: 50px;
-    border: 2px solid var(--dark-redT87);
+    border: 2px solid var(--header-detail-colorT87);
     border-top: none;
     background: var(--blueT50);
     color: var(--text-color);
@@ -889,7 +890,7 @@ button.disabled:hover {
 }
 
 .uniforge .leaflet-container a.leaflet-popup-close-button:hover {
-    background-color: var(--red);
+    background-color: var(--main-detail-color);
     color: var(--light-grey);
     box-shadow: var(--small-shadow);
 }
@@ -930,7 +931,7 @@ button.disabled:hover {
 }
 
 .leaflet-container .leaflet-popup-pane .leaflet-popup .leaflet-popup-content .layer-popup-title {    
-    color: var(--red);
+    color: var(--main-detail-color);
     font-size: var(--big-size);
     font-weight: 800;
 }
@@ -985,7 +986,7 @@ button.disabled:hover {
 
 .leaflet-container .leaflet-popup-pane .leaflet-popup .leaflet-popup-content .layer-popup-footer a:hover {
     cursor: pointer;
-    background-color: var(--red) !important;
+    background-color: var(--main-detail-color) !important;
     transform: scale(1.1);
 }
 
@@ -1116,7 +1117,7 @@ button.disabled:hover {
 
 .time-panel button:hover:not(.disabled) {
     color: #ffffff !important;
-    background-color: var(--red) !important;
+    background-color: var(--main-detail-color) !important;
     box-shadow: 0 0 10px rgba(184, 37, 37, 0.5) !important;
 }
 
@@ -1190,7 +1191,7 @@ button.disabled:hover {
 }
 
 #toolsTopbar .toggle-tab:hover {
-    background-color: var(--red) !important;
+    background-color: var(--main-detail-color) !important;
     color: #ffffff !important;
 }
 
@@ -1242,7 +1243,7 @@ button.disabled:hover {
 }
 
 .menu-title .tab-title {
-    color: var(--red);
+    color: var(--main-detail-color);
     font-size: 40px;
     font-weight: 700;
     font-family: 'Cinzel', serif;
@@ -1269,7 +1270,7 @@ button.disabled:hover {
     position: relative;
     width: 81px;
     height: 81px;
-    background: var(--dark-red);
+    background: var(--header-detail-color);
     clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
     top: 6%;
     left: 6%;
@@ -1320,7 +1321,7 @@ button.disabled:hover {
 }
 
 .tab.about-item {
-    background: var(--dark-redT87);
+    background: var(--header-detail-colorT87);
     border-top: var(--tab-item-border);
 }
 
@@ -1349,7 +1350,7 @@ button.disabled:hover {
 }
 
 .tab.about-item:hover {
-    background: var(--border-red);
+    background: var(--focus-detail-color);
 }
 
 #menuSidebar:not(:hover) .tab-title,
@@ -1418,7 +1419,7 @@ button.disabled:hover {
     left: -49px;
     align-items: center;
     justify-content: center;
-    background-color: var(--dark-red);
+    background-color: var(--header-detail-color);
     border-bottom: none;
     border-radius: 4px 0 0 4px;
     cursor: pointer;
@@ -1437,13 +1438,12 @@ button.disabled:hover {
 
 .map-objects-container.active .toggle-tab,
 .map-objects-container .toggle-tab:hover {
-    color: var(--dark-red);
-    background-color: var(--border-yellow);
+    color: var(--header-detail-color);
+    background-color: var(--border-color);
 }
 
 .map-objects-container .tools-container .tools-content {
     height: var(--fill-height);
-    overflow-y: auto;
 }
 
 .tools-container.map-objects-panel {
@@ -1465,7 +1465,7 @@ button.disabled:hover {
 
 .map-objects-container .tools-container .tools-content ul .layer-item {
     color: var(--text-color);
-    background-color: var(--dark-red);
+    background-color: var(--header-detail-color);
     padding: 5px;
     border-radius: var(--default-border-radius);
     box-shadow: var(--small-shadow);
@@ -1505,7 +1505,7 @@ button.disabled:hover {
 }
 
 .map-objects-container .tools-container .tools-content .no-results {
-    color: var(--red);
+    color: var(--main-detail-color);
     font-style: italic;
     text-align: center;
 }
@@ -1523,7 +1523,7 @@ button.disabled:hover {
     left: 10px;
     width: 210px;
     padding: 5px;
-    background-color: var(--dark-red);
+    background-color: var(--header-detail-color);
     border: var(--filled-border);
     border-bottom-left-radius: var(--default-border-radius);
     border-bottom-right-radius: var(--default-border-radius);
@@ -1602,7 +1602,7 @@ button.disabled:hover {
 }
 
 .map-objects-panel .tools-content .config-group .label {
-    color: var(--red);
+    color: var(--main-detail-color);
     font-variant: small-caps;
 }
 
@@ -1772,11 +1772,11 @@ button.disabled:hover {
 }
 
 .form .header-bar .switch input:checked+.slider {
-    background-color: var(--light-blue);
+    background-color: var(--button-background-color);
 }
 
 .form .header-bar .switch input:checked+.slider::before {
-    color: var(--dark-red);
+    color: var(--header-detail-color);
     background-color: var(--light-grey);
 }
 
@@ -1905,7 +1905,7 @@ button.disabled:hover {
 .dialog .link-dialog .content .link-group h3 {
     margin-top: 10px;
     border-bottom: var(--active-search-border);
-    color: var(--red);
+    color: var(--main-detail-color);
     font-variant: petite-caps;
 }
 
@@ -1918,7 +1918,7 @@ button.disabled:hover {
 
 .dialog .link-dialog .content .link-list .link-item {
     width: fit-content;
-    background-color: var(--blue);
+    background-color: var(--panel-background-color);
     border: var(--invisible-border);
     border-radius: var(--default-border-radius);
     padding: 5px;
@@ -1926,7 +1926,7 @@ button.disabled:hover {
 }
 
 .dialog .link-dialog .content .link-list .link-item.selected {
-    background-color: var(--dark-red);
+    background-color: var(--header-detail-color);
 }
 
 .dialog .link-dialog .content .link-list .link-item:hover {
@@ -1969,7 +1969,7 @@ button.disabled:hover {
 }
 
 .dialog .main .button:hover {
-    background-color: var(--dark-red);
+    background-color: var(--header-detail-color);
     color: var(--text-color);
 }
 
@@ -2015,8 +2015,8 @@ button.disabled:hover {
 
 .dialog .main .folder-list .folder .folder-header:hover,
 .dialog .main .folder-list .folder.selected .folder-header {
-    background: var(--blue);
-    color: var(--red);
+    background: var(--panel-background-color);
+    color: var(--main-detail-color);
 }
 
 .dialog .main .folder-list .folder.created:not(.selected) a {
@@ -2305,7 +2305,7 @@ button.disabled:hover {
 
 .dialog .main .summary .content .header-info input {
     font-size: 25px;
-    background-color: var(--dark-redT87);
+    background-color: var(--header-detail-colorT87);
     box-shadow: var(--small-shadow);
     font-weight: bold;
 }
@@ -2339,7 +2339,7 @@ button.disabled:hover {
     border: none;
     border-radius: var(--default-border-radius);
     cursor: pointer;
-    background: var(--dark-red);
+    background: var(--header-detail-color);
     box-shadow: var(--small-shadow);
     color: var(--text-color);
 }
@@ -2439,7 +2439,7 @@ button.disabled:hover {
     width: 32px;
     height: 32px;
     border-radius: 50%;
-    background-color: var(--dark-redT87);
+    background-color: var(--header-detail-colorT87);
     box-shadow: var(--small-shadow);
     justify-content: center;
 }
@@ -2480,7 +2480,7 @@ button.disabled:hover {
 .list ul li:hover,
 .data-group.list ul li.selected,
 .data-group.list ul li:hover {
-    background-color: var(--dark-redT87);
+    background-color: var(--header-detail-colorT87);
 }
 
 .list ul li:hover,
@@ -2503,7 +2503,7 @@ button.disabled:hover {
 
 .full-button button:hover {
     cursor: pointer;
-    background-color: var(--dark-redT87);
+    background-color: var(--header-detail-colorT87);
     border: var(--focus-border);
 }
 
@@ -2590,7 +2590,7 @@ button.disabled:hover {
 .data-group .file-container a:hover {
     cursor: pointer;
     color: var(--focus-red);
-    text-shadow: 0 0 2px var(--dark-redT87);
+    text-shadow: 0 0 2px var(--header-detail-colorT87);
 }
 
 #entryFormOverlay .form.container .main {
@@ -2775,7 +2775,7 @@ button.disabled:hover {
 
 #settings.tabs-control .tabs-options button.selected,
 #settings.tabs-control .tabs-options button:hover {
-    background-color: var(--dark-redT87);
+    background-color: var(--header-detail-colorT87);
     color: var(--background-color);
 }
 
@@ -2919,7 +2919,7 @@ button.disabled:hover {
 .article .content .title-header {
     font-size: var(--title-size);
     text-align: center;
-    background-color: var(--dark-red);
+    background-color: var(--header-detail-color);
     color: var(--text-color);
     margin: 0;
     margin-left: -15px;
@@ -2961,7 +2961,7 @@ button.disabled:hover {
     font-size: var(--heading-2-size);
     border-radius: var(--default-border-radius);
     background-color: var(--text-color);
-    color: var(--dark-red);
+    color: var(--header-detail-color);
     text-align: center;
     padding: 3px 10px;
     margin-block: 25px;
@@ -2986,7 +2986,7 @@ button.disabled:hover {
 }
 
 .article .content h1 {
-    border-bottom: 2px solid var(--yellow);
+    border-bottom: 2px solid var(--tools-detail-color);
     line-height: normal;
 }
 
@@ -3018,7 +3018,7 @@ button.disabled:hover {
 }
 
 .article .text-content figure .img-caption {
-    color: var(--dark-red)
+    color: var(--header-detail-color)
 }
 
 /* ------ Timeline Form ------ */
@@ -3077,12 +3077,12 @@ button.disabled:hover {
 }
 
 .timeline .content .time-manager button.cancel {
-    background-color: var(--dark-red) !important;
+    background-color: var(--header-detail-color) !important;
     color: var(--text-color) !important;
 }
 
 .timeline .content .time-manager button.cancel:hover {
-    background-color: var(--red) !important;
+    background-color: var(--main-detail-color) !important;
 }
 
 .timeline .content .time-manager button.new {
@@ -3090,7 +3090,7 @@ button.disabled:hover {
     width: 16px;
     padding: 16px;
     font-size: 14px;
-    color: var(--dark-red);
+    color: var(--header-detail-color);
     background-color: var(--text-color);
     align-self: flex-end;
     margin-bottom: 5px;
@@ -3108,23 +3108,23 @@ button.disabled:hover {
 
 .timeline .content .time-manager button.manage.disabled {
     color: var(--disabled-text-color);
-    background-color: var(--blue);
+    background-color: var(--panel-background-color);
 }
 
 .timeline .content .time-manager button.new:not(.active):hover {
-    background-color: var(--dark-red);
+    background-color: var(--header-detail-color);
     color: var(--text-color);
 }
 
 .timeline .content .time-manager button.manage:not(.active):hover {
     background-color: var(--text-color);
-    color: var(--dark-red);
+    color: var(--header-detail-color);
 }
 
 .timeline .content .title-header {
     font-size: var(--title-size);
     text-align: center;
-    background-color: var(--dark-red);
+    background-color: var(--header-detail-color);
     color: var(--text-color);
     margin: 0;
     margin-left: -25px;
@@ -3185,7 +3185,7 @@ button.disabled:hover {
 }
 
 .timeline .content .timeline-topbar:hover span {
-    color: var(--dark-redT87);
+    color: var(--header-detail-colorT87);
 }
 
 .timeline .time-content {
@@ -3220,7 +3220,7 @@ button.disabled:hover {
     position: absolute;
     content: " ";
     width: 3px;
-    background-color: var(--dark-red);
+    background-color: var(--header-detail-color);
     border-radius: var(--default-border-radius);
     border: var(--data-group-border);
     margin-left: -1.5px;
@@ -3247,7 +3247,7 @@ button.disabled:hover {
     top: 9.5vh;
     left: 32.75vw;
     text-align: center;
-    background: var(--dark-red);
+    background: var(--header-detail-color);
     color: var(--text-color);
     width: 20px;
     height: 20px;
@@ -3302,7 +3302,7 @@ button.disabled:hover {
 }
 
 .timeline .timeline-content .timeline-list .timeline-entry {
-    color: var(--red);
+    color: var(--main-detail-color);
     font-size: 14px;
 }
 
@@ -3323,14 +3323,14 @@ button.disabled:hover {
     right: -16px;
     display: inline-block;
     border-top: 16px solid transparent;
-    border-left: 16px solid var(--blue);
-    border-right: 0px solid var(--blue);
+    border-left: 16px solid var(--panel-background-color);
+    border-right: 0px solid var(--panel-background-color);
     border-bottom: 16px solid transparent;
 }
 
 .timeline .time-content .timeline-list li:not(.external) .timeline-panel {
-    border-top: 8px solid var(--dark-red);
-    background: var(--blue);
+    border-top: 8px solid var(--header-detail-color);
+    background: var(--panel-background-color);
     box-shadow: var(--small-shadow);
     border-radius: var(--default-border-radius);
     margin-top: 50px;
@@ -3342,7 +3342,7 @@ button.disabled:hover {
 .timeline .time-content .timeline-list li.external .timeline-panel {
     border-top: 8px solid var(--dark-green);
     position: relative;
-    background: var(--light-blue);
+    background: var(--button-background-color);
     /* Background color of the box */
     box-shadow: var(--small-shadow);
     padding: 10px 20px;
@@ -3383,7 +3383,7 @@ button.disabled:hover {
     width: 18px;
     height: 18px;
 
-    background: var(--red);
+    background: var(--main-detail-color);
     border-radius: var(--default-border-radius);
     color: var(--text-color);
     padding: 2px;
@@ -3396,7 +3396,7 @@ button.disabled:hover {
 
 .timeline-list .timeline-panel .btn-group-hover button:hover {
     color: var(--text-color);
-    background-color: var(--dark-red);
+    background-color: var(--header-detail-color);
     box-shadow: var(--small-shadow);
 }
 
@@ -3411,7 +3411,7 @@ button.disabled:hover {
 
 .timeline-list .timeline-entry .tl-heading hr {
     border-radius: 1px;
-    border: 1px solid var(--bright-yellow);
+    border: 1px solid var(--secondary-tools-detail-color);
     mask-image: linear-gradient(90deg, transparent 0%, black 50%, transparent 100%);
 }
 
@@ -3419,9 +3419,9 @@ button.disabled:hover {
     font-size: 42px;
     text-align: center;
     padding: 12px;
-    border: 8px var(--dark-red) solid;
+    border: 8px var(--header-detail-color) solid;
     color: var(--text-color);
-    background-color: var(--blue);
+    background-color: var(--panel-background-color);
     border-radius: 50%;
     display: inline-block;
     position: absolute;
@@ -3433,7 +3433,7 @@ button.disabled:hover {
 }
 
 .timeline-list .timeline-entry .tl-heading .history-header-section .history-title {
-    background: var(--dark-red);
+    background: var(--header-detail-color);
     border-radius: 0 4px 4px 0;
     padding-block: 2px;
     margin-left: -25px;
@@ -3471,7 +3471,7 @@ button.disabled:hover {
 
 .timeline-list .timeline-entry .external-link a:hover {
     cursor: pointer;
-    color: var(--dark-red);
+    color: var(--header-detail-color);
 }
 
 /* ------ Folder List ------ */
@@ -3506,8 +3506,8 @@ button.disabled:hover {
 .folder-list .folder .folder-header:hover,
 .folder-list .entry-list .entry-item.selected,
 .folder-list .folder.selected .folder-header {
-    background: var(--blue);
-    color: var(--red);
+    background: var(--panel-background-color);
+    color: var(--main-detail-color);
 }
 
 .folder-list .folder .folder-header span {
@@ -3581,7 +3581,7 @@ button.disabled:hover {
 }
 
 .folder-list .folder-content .entry-list .entry-item.selected a {
-    color: var(--red);
+    color: var(--main-detail-color);
 }
 
 .folder-list .folder-content .entry-list .entry-item.selected a:hover {
@@ -3663,7 +3663,7 @@ button.disabled:hover {
 
 .time-forge .event-list li.checked .item-content,
 .time-forge .event-list li:hover .item-content {
-    color: var(--red);
+    color: var(--main-detail-color);
 }
 
 .time-forge .timeline-data {
@@ -3816,7 +3816,7 @@ button.disabled:hover {
     text-align: center;
     padding-block: 1px;
     font-size: var(--small-size);
-    color: var(--dark-red);
+    color: var(--header-detail-color);
     border-radius: var(--default-border-radius);
     transition: color 0.3s ease, background-color 0.3s ease;
 }
@@ -3824,7 +3824,7 @@ button.disabled:hover {
 .flyer-button:hover {
     cursor: pointer;
     border-radius: 15px;
-    background-color: var(--dark-redT87);
+    background-color: var(--header-detail-colorT87);
     color: var(--text-color);
 }
 
@@ -3859,7 +3859,7 @@ button.disabled:hover {
 }
 
 .sidebar .footer .input-container input:focus {
-    box-shadow: inset 0px 0px 5px 0px var(--blue);
+    box-shadow: inset 0px 0px 5px 0px var(--panel-background-color);
 }
 
 .sidebar .footer .input-container a {
@@ -3868,7 +3868,7 @@ button.disabled:hover {
     padding: 2px 3px;
     border: none;
     align-self: center;
-    color: var(--red);
+    color: var(--main-detail-color);
     cursor: pointer;
     font-size: var(--default-size);
     border-radius: var(--default-border-radius);
@@ -3890,7 +3890,7 @@ button.disabled:hover {
 }
 
 .sidebar mark {
-    background-color: var(--dark-redT87);
+    background-color: var(--header-detail-colorT87);
     color: var(--text-color);
 }
 
@@ -3899,7 +3899,7 @@ button.disabled:hover {
     font-size: var(--heading-2-size);
     font-variant: small-caps;
     width: 100%;
-    border-bottom: 1px solid var(--blue);
+    border-bottom: 1px solid var(--panel-background-color);
     padding-bottom: 5px;
     margin-bottom: 15px;
     color: var(--title-red);
@@ -4167,7 +4167,7 @@ button.disabled:hover {
 }
 
 .entries .info-set .data-group.entry .entry-title {
-    background-color: var(--blue);
+    background-color: var(--panel-background-color);
     border-radius: var(--default-border-radius);
     padding: 5px;
     margin-right: 2px;
@@ -4205,7 +4205,7 @@ button.disabled:hover {
 
 .date-input:has(.calendar.open) {
     outline: var(--focus-border);
-    background-color: var(--dark-redT87);
+    background-color: var(--header-detail-colorT87);
 }
 
 :disabled {
@@ -4227,7 +4227,7 @@ button.disabled:hover {
     top: 100%;
     left: 0;
     border: 1px solid #ccc;
-    background-color: var(--light-blue);
+    background-color: var(--button-background-color);
     background-image: url(../ui/denim065.png);
     z-index: 10;
     padding: 10px;
@@ -4287,7 +4287,7 @@ button.disabled:hover {
 .calendar .years .calendar-content .year.invalid,
 .calendar .months .calendar-content .month.invalid,
 .calendar .days .calendar-content .day.invalid {
-    background-color: var(--blue);
+    background-color: var(--panel-background-color);
     color: var(--dark-blue);
     pointer-events: none;
 }
@@ -4312,7 +4312,7 @@ button.disabled:hover {
 }
 
 .days .calendar-content .day:hover {
-    background-color: var(--light-blue);
+    background-color: var(--button-background-color);
 }
 
 /* Visualização dos meses */
@@ -4333,7 +4333,7 @@ button.disabled:hover {
 }
 
 .months .calendar-content .month:hover {
-    background-color: var(--light-blue);
+    background-color: var(--button-background-color);
 }
 
 .years .calendar-content {
@@ -4354,7 +4354,7 @@ button.disabled:hover {
 }
 
 .years .calendar-content .year:hover {
-    background-color: var(--light-blue);
+    background-color: var(--button-background-color);
 }
 
 .zoom-in {
@@ -4391,7 +4391,7 @@ button.disabled:hover {
 .slider-track {
     width: 100%;
     height: 6px;
-    background: var(--light-blue);
+    background: var(--button-background-color);
     border-radius: 10px;
     position: relative;
     margin-block: 10px;
@@ -4400,7 +4400,7 @@ button.disabled:hover {
 
 .slider-fill {
     height: 100%;
-    background: var(--dark-redT87);
+    background: var(--header-detail-colorT87);
     border-radius: 10px;
     width: 0%;
 }
@@ -4580,7 +4580,7 @@ button.disabled:hover {
 }
 
 .color-picker-footer .color-picker-button:hover {
-    background-color: var(--red);
+    background-color: var(--main-detail-color);
 }
 
 /* ------ TinyMCE Editor ------ */
@@ -4622,7 +4622,7 @@ button.disabled:hover {
 }
 
 .tox .tox-edit-area__iframe {
-    background-color: var(--blue);
+    background-color: var(--panel-background-color);
 }
 
 
@@ -4667,7 +4667,7 @@ button.disabled:hover {
 
 .simple-tmce {
     margin-block: 5px;
-    background-color: var(--blue);
+    background-color: var(--panel-background-color);
     border-radius: var(--default-border-radius);
     box-shadow: var(--small-shadow);
     padding: 5px 10px;
@@ -4736,7 +4736,7 @@ button.disabled:hover {
 /* ------ Text Link ------ */
 #tinymce span.linked-text,
 .text-content span.linked-text {
-    border-bottom: 1px dashed var(--red);
+    border-bottom: 1px dashed var(--main-detail-color);
     cursor: alias;
 }
 
@@ -4819,7 +4819,7 @@ button.disabled:hover {
 }
 
 .message.warning {
-    background-color: var(--bright-yellow);
+    background-color: var(--secondary-tools-detail-color);
     background-image: url(../ui/denim065.png);
     color: var(--grey);
 }
@@ -4889,7 +4889,7 @@ button.disabled:hover {
 }
 
 .lineage-tree .node.deceased {
-    background-color: var(--blue);
+    background-color: var(--panel-background-color);
 }
 
 .lineage-tree .node.selected {
@@ -4943,13 +4943,13 @@ button.disabled:hover {
 .lineage-tree .node-text .node-gender.female {
     background-color: rgb(179, 107, 109);
     color: var(--dark-text-color);
-    border-color: var(--dark-red);
+    border-color: var(--header-detail-color);
 }
 
 .lineage-tree .node-text .node-gender.female {
     background-color: pink;
-    color: var(--dark-red);
-    border-color: var(--dark-red);
+    color: var(--header-detail-color);
+    border-color: var(--header-detail-color);
 }
 
 .lineage-tree .node .node-icon {
@@ -4958,7 +4958,7 @@ button.disabled:hover {
     border-radius: 50%;
     font-size: var(--big-size);
     background-color: var(--grey);
-    color: var(--dark-red);
+    color: var(--header-detail-color);
     border: 1px solid;
     text-align: center;
     align-content: center;

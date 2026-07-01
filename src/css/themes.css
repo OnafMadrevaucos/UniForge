@@ -10,13 +10,15 @@
     --default-font: "Georgia", "Times New Roman", serif;
     --background-color: rgba(20, 15, 10, 0.9);
     
-    --blue: #231b14;
-    --light-blue: #36281e;
+    --panel-background-color: #231b14;
+    --button-background-color: #36281e;
+    
     --dark-blue: rgba(30, 20, 15, 0.92);
     --lib-background: #18120d;
-    --yellow: #b87a25;
-    --bright-yellow: #e5a440;
-    --border-yellow: #d99b38;
+    
+    --tools-detail-color: #b87a25;
+    --secondary-tools-detail-color: #e5a440;
+    --border-color: #d99b38;
 
     --text-color:#fbbf24 ;
     --light-text-color: #e0e0e0; 
@@ -34,7 +36,7 @@
     --content-bg-image: url(../ui/lib-background.png);
     --content-bg-color: transparent;
     --content-blend-mode: normal;
-    --content-text-color: #0b0c10;
+    --content-text-color: var(--text-color);
     --content-viewer-bg: url(../ui/texture1.webp) no-repeat top center / auto 770px, #f4eae1 url(../ui/texture2.webp) no-repeat bottom center / auto 704px;
 }
 
@@ -46,8 +48,8 @@
     --background-color: rgba(5, 5, 10, 0.95);
     
     /* Escuros muito frios / pretos */
-    --blue: #0b0c10;
-    --light-blue: #1f2833;
+    --panel-background-color: #0b0c10;
+    --button-background-color: #1f2833;
     --dark-blue: rgba(10, 10, 15, 0.95);
     --dark-blueT87: rgba(10, 10, 15, 0.92);
     --dark-blueT50: rgba(10, 10, 15, 0.5);
@@ -55,22 +57,22 @@
     --lib-background: #050508;
     
     /* Neons (Ciano / Magenta em vez de Vermelho / Amarelo) */
-    --red: #ff00ff; /* Magenta para elementos antes vermelhos */
-    --hover-red: #cc00cc;
-    --border-red: #ff00ff;
+    --main-detail-color: #ff00ff; /* Magenta para elementos antes vermelhos */
+    --hover-detail-color: #cc00cc;
+    --focus-detail-color: #ff00ff;
     --focus-red: #ff33ff;
     --highlight-red: #ff00ff;
-    --dark-red: #660066;
+    --header-detail-color: #660066;
     --redT50: rgba(255, 0, 255, 0.5);
     --redT87: rgba(255, 0, 255, 0.87);
-    --dark-redT87: rgba(102, 0, 102, 0.87);
+    --header-detail-colorT87: rgba(102, 0, 102, 0.87);
     --header-red: #00ffff; /* Ciano para títulos */
     --text-red: #00ffff;
     
-    --yellow: #00ffff; /* Ciano onde era amarelo */
-    --bright-yellow: #00ffff;
+    --tools-detail-color: #00ffff; /* Ciano onde era amarelo */
+    --secondary-tools-detail-color: #00ffff;
     --light-yellow: #ccffff;
-    --border-yellow: #00ffff;
+    --border-color: #00ffff;
     
     --text-color: #e0e0e0;
     --light-text-color: #00ffff; /* Ciano brilhante */
@@ -121,8 +123,8 @@
     --background-color: rgba(26, 32, 44, 0.95); /* Tailwind gray-900 */
     
     /* Tons de cinza ardósia e azul apagado */
-    --blue: #2d3748; /* gray-800 */
-    --light-blue: #4a5568; /* gray-700 */
+    --panel-background-color: #2d3748; /* gray-800 */
+    --button-background-color: #4a5568; /* gray-700 */
     --dark-blue: rgba(26, 32, 44, 0.95);
     --dark-blueT87: rgba(26, 32, 44, 0.92);
     --dark-blueT50: rgba(26, 32, 44, 0.5);
@@ -130,22 +132,25 @@
     --lib-background: #1a202c;
     
     /* Cores de ação substituídas por azuis/cinzas amenos */
-    --red: #3182ce; /* blue-500 em vez de vermelho */
-    --hover-red: #2b6cb0;
-    --border-red: #63b3ed;
+    --main-detail-color: #3182ce; /* blue-500 em vez de vermelho */
+    --hover-detail-color: #2b6cb0;
+    --focus-detail-color: #63b3ed;
+    --header-detail-color: #2c5282;
+    --header-detail-colorT87: rgba(44, 82, 130, 0.87);
+
     --focus-red: #4299e1;
     --highlight-red: #3182ce;
-    --dark-red: #2c5282;
+    
     --redT50: rgba(49, 130, 206, 0.5);
     --redT87: rgba(49, 130, 206, 0.87);
-    --dark-redT87: rgba(44, 82, 130, 0.87);
+    
     --header-red: #e2e8f0; /* Títulos em branco/cinza claro */
     --text-red: #cbd5e0;
     
-    --yellow: #a0aec0; /* gray-400 no lugar do amarelo/dourado */
-    --bright-yellow: #cbd5e0;
+    --tools-detail-color: #a0aec0; /* gray-400 no lugar do amarelo/dourado */
+    --secondary-tools-detail-color: #cbd5e0;
     --light-yellow: #e2e8f0;
-    --border-yellow: #718096;
+    --border-color: #718096;
     
     --text-color: #f7fafc; /* gray-50 */
     --light-text-color: #ffffff;
