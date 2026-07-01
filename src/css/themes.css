@@ -192,46 +192,6 @@
     background-color: var(--background-color) !important;
 }
 
-/* --- Estilização do Seletor de Temas --- */
-.theme-selector {
-    height: 46px;
-    margin: 4px 0 4px 10px;
-    padding: 0 35px 0 15px; /* Espaço para o chevron customizado */
-    font-size: 14px;
-    font-weight: 500;
-    font-family: var(--default-font);
-    color: var(--text-color) !important;
-    background-color: rgba(255, 255, 255, 0.06) !important;
-    border: var(--sidebar-border) !important;
-    border-radius: var(--default-border-radius) !important;
-    box-shadow: var(--default-shadow);
-    cursor: pointer;
-    outline: none;
-    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-    
-    /* Oculta seta nativa do browser */
-    appearance: none;
-    -webkit-appearance: none;
-    -moz-appearance: none;
-    
-    /* Seta customizada em SVG (Chevron Down) */
-    background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fbbf24' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 12px center;
-    background-size: 15px;
-}
-
-.theme-selector:hover {
-    background-color: rgba(255, 255, 255, 0.12) !important;
-    border-color: var(--bright-yellow) !important;
-    box-shadow: 0 0 8px var(--bright-yellow);
-}
-
-.theme-selector:focus {
-    border-color: var(--red) !important;
-    box-shadow: 0 0 10px var(--redT50) !important;
-}
-
 /* Altera a seta nos outros temas para combinar com a paleta de cores correspondente */
 :root[data-theme="theme-scifi"] .theme-selector {
     background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2300ffff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
@@ -246,9 +206,4 @@
     background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23a0aec0' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
 }
 
-/* Ajusta as opções para combinar com o fundo do menu em cada tema */
-.theme-selector option {
-    background-color: var(--blue);
-    color: var(--text-color);
-    padding: 10px;
-}
+

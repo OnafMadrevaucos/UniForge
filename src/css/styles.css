@@ -1066,6 +1066,7 @@ button.disabled:hover {
 .tools-container.time-panel {
     flex: 0;
     width: 35%;
+    max-width: 20vw;
     height: 64px;
     border-radius: 0 0 8px 8px;
     border-top-left-radius: 0;
