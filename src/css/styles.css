@@ -131,7 +131,13 @@
     --tooltip-border: rgba(255, 255, 255, 0.1);
     --tooltip-divider: rgba(255, 255, 255, 0.15);
     --tooltip-title: #fbbf24;
-    --blockquote-background: #3b3a30;    
+    /* Configurações padrão de contraste para a área de leitura */
+    --content-bg-image: url(../ui/lib-background.png);
+    --content-bg-color: transparent;
+    --content-blend-mode: normal;
+    --content-text-color: #0b0c10;
+    --content-viewer-bg: url(../ui/texture1.webp) no-repeat top center / auto 770px, #f4eae1 url(../ui/texture2.webp) no-repeat bottom center / auto 704px;
+    --blockquote-background: #3b3a30;
     --stroke-color: var(--dark-red);
     --shadow-color: rgba(0, 0, 0, 0.5);
     --shadow-header: #334155;
@@ -2792,6 +2798,8 @@ button.disabled:hover {
 #settings .content {
     gap: var(--big-gap-size);
     overflow-y: scroll;
+    color: var(--text-color);
+    --text-color: var(--text-color);
 }
 
 #settings .content::before {
@@ -2868,10 +2876,12 @@ button.disabled:hover {
 .lineage-tree,
 .timeline .main-viewer,
 .article .main-viewer {
-    background: url(../ui/texture1.webp) no-repeat top center / auto 770px, var(--lib-background) url(../ui/texture2.webp) no-repeat bottom center / auto 704px;
+    background: var(--content-viewer-bg);
     border-radius: var(--default-border-radius);
     box-shadow: var(--small-shadow);
     overflow-y: scroll;
+    color: var(--content-text-color);
+    --text-color: var(--content-text-color);
 }
 
 #viewer.timeline .main-viewer,
@@ -3905,10 +3915,12 @@ button.disabled:hover {
     padding-bottom: 15px;
     flex: 1;
     box-sizing: border-box;
+    color: var(--content-text-color);
+    --text-color: var(--content-text-color);
 }
 
 .entries .content.loaded {
-    background-image: url(../ui/lib-background.png);
+    background-image: var(--content-bg-image);
     visibility: visible;
 }
 
@@ -3921,7 +3933,8 @@ button.disabled:hover {
     height: auto;
     background-size: cover;
     background-repeat: no-repeat;
-    background-blend-mode: multiply;
+    background-color: var(--content-bg-color);
+    background-blend-mode: var(--content-blend-mode);
     transition: visibility 0.5s ease-in-out, background-image 0.5s ease-in-out;
 }
 

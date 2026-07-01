@@ -364,6 +364,8 @@ async function configureURLs() {
     uniforge.urls = {
         relativePath: {
             background: '/ui/lib-background.png',
+            backgroundScifi: '/ui/scifi-background.png',
+            backgroundNeutral: '/ui/blank-image.svg',
             blankImg: '/ui/blank-image.svg',
             worldMap: worldMap ? `/${worldMap}/tiles` : null,
             mapOverlays: worldMap ? `/${worldMap}/overlays` : null,
@@ -383,6 +385,8 @@ async function configureURLs() {
 
         // Urls de Imagens padrão usadas pelo sistema.
         background: await uniforge.path.join(uniforge.urls.relativePath.background),
+        backgroundScifi: await uniforge.path.join(uniforge.urls.relativePath.backgroundScifi),
+        backgroundNeutral: await uniforge.path.join(uniforge.urls.relativePath.backgroundNeutral),
         blankImg: await uniforge.path.join(uniforge.urls.relativePath.blankImg),
 
         worldMap: await uniforge.path.join(uniforge.urls.relativePath.worldMap),
@@ -537,18 +541,6 @@ function configureHooks() {
 }
 // Configura o listeners que tratam os eventos dos tabs do Menu Lateral e as rotinas de fechamento do Form
 function activateMainListeners() {
-    // Lógica para seleção de temas
-    const themeSelector = document.getElementById('themeSelector');
-    if (themeSelector) {
-        const savedTheme = localStorage.getItem('uniforge_theme') || 'theme-neutral';
-        themeSelector.value = savedTheme;
-        themeSelector.addEventListener('change', (event) => {
-            const selectedTheme = event.target.value;
-            document.documentElement.setAttribute('data-theme', selectedTheme);
-            localStorage.setItem('uniforge_theme', selectedTheme);
-        });
-    }
-
     // Lógica de UI para o Menu Lateral
     const tabs = document.querySelectorAll('.tab');
 

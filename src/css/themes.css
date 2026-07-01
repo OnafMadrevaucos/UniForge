@@ -29,6 +29,13 @@
     --tooltip-border: rgba(184, 122, 37, 0.4);
     --tooltip-divider: rgba(184, 122, 37, 0.2);
     --tooltip-title: #e5a440;
+    
+    /* Configurações padrão de contraste para a área de leitura */
+    --content-bg-image: url(../ui/lib-background.png);
+    --content-bg-color: transparent;
+    --content-blend-mode: normal;
+    --content-text-color: #0b0c10;
+    --content-viewer-bg: url(../ui/texture1.webp) no-repeat top center / auto 770px, #f4eae1 url(../ui/texture2.webp) no-repeat bottom center / auto 704px;
 }
 
 /* 2. TEMA SCI-FI (Cyberpunk / Neon)
@@ -75,6 +82,13 @@
     --tooltip-border: rgba(0, 255, 255, 0.4);
     --tooltip-divider: rgba(255, 0, 255, 0.3);
     --tooltip-title: #00ffff;
+    
+    /* Configurações de contraste para a área de leitura */
+    --content-bg-image: url(../ui/scifi-background.png);
+    --content-bg-color: #e3edf0;
+    --content-blend-mode: overlay;
+    --content-text-color: #0b0c10;
+    --content-viewer-bg: #e3edf0;
     
     /* Brilhos (Glows) */
     --filled-border: 1px solid rgba(0, 255, 255, 0.6);
@@ -145,6 +159,13 @@
     --tooltip-border: rgba(255, 255, 255, 0.08);
     --tooltip-divider: rgba(255, 255, 255, 0.06);
     --tooltip-title: #ffffff;
+    
+    /* Configurações de contraste para a área de leitura */
+    --content-bg-image: none;
+    --content-bg-color: #edf2f7;
+    --content-blend-mode: normal;
+    --content-text-color: #1a202c;
+    --content-viewer-bg: #edf2f7;
     
     /* Removendo excessos e bordas fortes */
     --filled-border: 1px solid rgba(255, 255, 255, 0.1);
