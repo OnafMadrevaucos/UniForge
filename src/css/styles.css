@@ -109,6 +109,7 @@
     --border-color: #f59e0b;
 
     --lib-background: url(../ui/lib-background.png);
+    --scifi-background: url(../ui/scifi-background.png);
 
     --green: #16a34a;
     --dark-green: #14532d;
@@ -132,12 +133,7 @@
     --tooltip-border: rgba(255, 255, 255, 0.1);
     --tooltip-divider: rgba(255, 255, 255, 0.15);
     --tooltip-title: #fbbf24;
-    /* Configurações padrão de contraste para a área de leitura */
-    --content-bg-image: url(../ui/lib-background.png);
-    --content-bg-color: transparent;
-    --content-blend-mode: normal;
-    --content-text-color: #0b0c10;
-    --content-viewer-bg: url(../ui/texture1.webp) no-repeat top center / auto 770px, #f4eae1 url(../ui/texture2.webp) no-repeat bottom center / auto 704px;
+       
     --blockquote-background: #3b3a30;
     --stroke-color: var(--header-detail-color);
     --shadow-color: rgba(0, 0, 0, 0.5);
@@ -3920,7 +3916,7 @@ button.disabled:hover {
     --text-color: var(--content-text-color);
 }
 
-.entries .content.loaded {
+.entries .content {
     background-image: var(--content-bg-image);
     visibility: visible;
 }
