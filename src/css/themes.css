@@ -7,21 +7,61 @@
 */
 :root[data-theme="theme-medieval"] {
     /* Herda a grande maioria do :root de styles.css, que já é medieval */
-    --default-font: "Georgia", "Times New Roman", serif;
-    --background-color: rgba(20, 15, 10, 0.9);
-    
-    --panel-background-color: #231b14;
-    --button-background-color: #36281e;
-    
-    --dark-blue: rgba(30, 20, 15, 0.92);
-    
-    --tools-detail-color: #b87a25;
-    --secondary-tools-detail-color: #e5a440;
-    --border-color: #d99b38;
+    --default-font: "Georgia", "Times New Roman", serif;    
 
-    --text-color:#fbbf24 ;
-    --light-text-color: #e0e0e0; 
-    --dark-text-color: #0f172a;
+    --dark-color-a: #1e140feb;
+    --dark-color-a-T85: #1e140fd9;
+    --dark-color-a-T50: #1e140f80;
+    --color-a: #231b14;
+    --light-color-a: #36281e; 
+    
+    --dark-color-b: #7f1d1d;
+    --dark-color-b-T50: #7f1d1d80;
+    --dark-color-b-T85: #7f1d1dd9;
+    --color-b: #b82525;
+    --color-b-T50:#b8252580;
+    --color-b-T85:#b82525d9;
+    --light-color-b: #d17272;
+
+    --dark-color-c: #975508;
+    --color-c: #d97706;
+    --color-c-T85: #d97706d9;
+    --light-color-c: #fbbf24;
+
+    --dark-color-d: #0a0a0f;
+    --color-d: #a0aec0;
+    --light-color-d: #f7fafc;    
+
+    --special-color: #ffffff1a;
+
+    --dark-highlight-color: #14532d;
+    --highlight-color: #16a34a; 
+
+    --dark-background-color: #18120d;
+    --background-color: #140f0ae6;
+    --light-background-color: #362c21e6;
+    --blockquote-background: #3b3a30;
+
+    --text-color: var(--light-color-c);
+    --light-text-color: var(--light-color-d); 
+    --dark-text-color: var(--dark-color-d);
+    --disabled-text-color: var(--color-d);
+
+    --shadow-color: rgba(0, 0, 0, 0.5); 
+    
+    /* Borders Radius */
+    --tiny-border-radius: 1px;
+    --small-border-radius: 5px;
+    --default-border-radius: 8px;
+    --strong-border-radius: 12px;    
+    --circular-border-radius: 50%;
+    --scrollbar-border-radius: 4px;
+    --slider-border-radius: 50%;
+    --track-border-radius: 10px;
+    --small-title-header-radius: 0 4px 4px 0;
+    --title-header-radius: 0 8px 8px 0;
+    --topbar-border-radius: 0 0 8px 8px;
+    --toggle-tab-border-radius: 4px 0 0 4px;
     
     /* Tooltip */
     --tooltip-background: rgba(35, 27, 20, 0.98);
@@ -32,7 +72,6 @@
     --tooltip-title: #e5a440;
     
     /* Configurações padrão de contraste para a área de leitura */
-    --content-bg-image: var(--lib-background);
     --content-bg-color: transparent;
     --content-blend-mode: normal;
     --content-text-color: var(--text-color);
@@ -44,52 +83,74 @@
 */
 :root[data-theme="theme-scifi"] {
     --default-font: "Courier New", Courier, monospace;
-    --background-color: rgba(5, 5, 10, 0.95);
+
+    --dark-color-a: #0a0a0ff2;
+    --dark-color-a-T85: #0a0a0fd9;
+    --dark-color-a-T50: #0a0a0f80;
+    --color-a: #0b0c10;
+    --light-color-a: #1f2833; 
     
-    /* Escuros muito frios / pretos */
-    --panel-background-color: #0b0c10;
-    --button-background-color: #1f2833;
-    --dark-blue: rgba(10, 10, 15, 0.95);
-    --dark-blueT87: rgba(10, 10, 15, 0.92);
-    --dark-blueT50: rgba(10, 10, 15, 0.5);
-    --blueT50: rgba(11, 12, 16, 0.5);
-    
-    /* Neons (Ciano / Magenta em vez de Vermelho / Amarelo) */
-    --main-detail-color: #ff00ff; /* Magenta para elementos antes vermelhos */
-    --hover-detail-color: #cc00cc;
-    --focus-detail-color: #ff00ff;
-    --focus-red: #ff33ff;
-    --highlight-red: #ff00ff;
-    --header-detail-color: #660066;
-    --redT50: rgba(255, 0, 255, 0.5);
-    --redT87: rgba(255, 0, 255, 0.87);
-    --header-detail-colorT87: rgba(102, 0, 102, 0.87);
-    --header-red: #00ffff; /* Ciano para títulos */
-    --text-red: #b5cdcd;
-    
-    --tools-detail-color: #00ffff; /* Ciano onde era amarelo */
-    --secondary-tools-detail-color: #00ffff;
-    --light-yellow: #ccffff;
-    --border-color: #00ffff;
-    
-    --text-color: #e0e0e0;
-    --light-text-color: #00ffff; /* Ciano brilhante */
-    --dark-text-color: #d0e2e2;
+    --dark-color-b: #660066;
+    --dark-color-b-T50: #66006680;
+    --dark-color-b-T85: #660066d9;
+    --color-b: #ff00ff;
+    --color-b-T50:#ff00ff80;
+    --color-b-T85:#ff00ffd9;
+    --light-color-b: #d493d4;
+
+    --dark-color-c: #0b8080;
+    --color-c: #00ffff;
+    --color-c-T85: #00ffffd9;
+    --light-color-c: #ccffff;
+
+    --dark-color-d: #0a0a0f;
+    --color-d: #a0aec0;
+    --light-color-d: #f7fafc;    
+
+    --special-color: #ffffff1a;
+
+    --dark-highlight-color: #14532d;
+    --highlight-color: #16a34a; 
+
+    --dark-background-color: #0b0c10;
+    --background-color: #1f222c;
+    --light-background-color: #1f2833;
+    --blockquote-background: var(--dark-color-d);
+
+    --text-color: var(--color-d);
+    --light-text-color: var(--color-c); 
+    --dark-text-color: var(--light-color-c);
+    --disabled-text-color: var(--dark-color-c);
+
+    --shadow-color: #00000080; 
+
+    /* Borders Radius */
+    --tiny-border-radius: none;
+    --small-border-radius: none;
+    --default-border-radius: none;
+    --strong-border-radius: none;    
+    --circular-border-radius: none;
+    --scrollbar-border-radius: none;
+    --track-border-radius: none;
+    --slider-border-radius: 50%;    
+    --small-title-header-radius: none;
+    --title-header-radius: none;
+    --topbar-border-radius: none;
+    --toggle-tab-border-radius: none;
     
     /* Tooltip */
-    --tooltip-background: rgba(11, 12, 16, 0.98);
+    --tooltip-background: #0b0c10fa;
     --tooltip-text: #e0e0e0;
     --tooltip-muted: #718096;
-    --tooltip-border: rgba(0, 255, 255, 0.4);
-    --tooltip-divider: rgba(255, 0, 255, 0.3);
+    --tooltip-border: #00ffff66;
+    --tooltip-divider: #ff00ff4d;
     --tooltip-title: #00ffff;
     
-    /* Configurações de contraste para a área de leitura */
-    --content-bg-image: var(--scifi-background);
+    /* Configurações de contraste para a área de leitura */    
     --content-bg-color: transparent;
     --content-blend-mode: overlay;
-    --content-text-color: #0b0c10;
-    --content-viewer-bg: #000000b0;
+    --content-text-color: var(--text-color);
+    --content-viewer-bg: url(../ui/scifi_texture1.webp) no-repeat top center / 100% 40%, var(--background-color) url(../ui/scifi_texture2.webp) no-repeat bottom center / 100% 40%;
     
     /* Brilhos (Glows) */
     --filled-border: 1px solid rgba(0, 255, 255, 0.6);
@@ -119,43 +180,61 @@
 */
 :root[data-theme="theme-neutral"] {
     --default-font: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-    --background-color: rgba(26, 32, 44, 0.95); /* Tailwind gray-900 */
     
-    /* Tons de cinza ardósia e azul apagado */
-    --panel-background-color: #2d3748; /* gray-800 */
-    --button-background-color: #4a5568; /* gray-700 */
-    --dark-blue: rgba(26, 32, 44, 0.95);
-    --dark-blueT87: rgba(26, 32, 44, 0.92);
-    --dark-blueT50: rgba(26, 32, 44, 0.5);
-    --blueT50: rgba(45, 55, 72, 0.5);
-    --lib-background: #1a202c;
+    --dark-color-a: #1a202cf2;
+    --dark-color-a-T85: #1a202cd9;
+    --dark-color-a-T50: #1a202c80;
+    --color-a: #2d3748;
+    --light-color-a: #4a5568; 
     
-    /* Cores de ação substituídas por azuis/cinzas amenos */
-    --main-detail-color: #3182ce; /* blue-500 em vez de vermelho */
-    --hover-detail-color: #2b6cb0;
-    --focus-detail-color: #63b3ed;
-    --header-detail-color: #2c5282;
-    --header-detail-colorT87: rgba(44, 82, 130, 0.87);
+    --dark-color-b: #2c5282;
+    --dark-color-b-T50: #2c528280;
+    --dark-color-b-T85: #2c5282d9;
+    --color-b: #3182ce;
+    --color-b-T50:#3182ce80;
+    --color-b-T85:#3182ced9;
+    --light-color-b: #63b3ed;
 
-    --focus-red: #4299e1;
-    --highlight-red: #3182ce;
+    --dark-color-c: #718096;
+    --color-c: #a0aec0;
+    --color-c-T85: #a0aec0d9;
+    --light-color-c: #e2e8f0;
+
+    --dark-color-d: #0a0a0f;
+    --color-d: #a0aec0;
+    --light-color-d: #f7fafc;    
+
+    --special-color: #ffffff1a;
+
+    --dark-highlight-color: #14532d;
+    --highlight-color: #16a34a; 
+
+    --dark-background-color: #0b0c10;
+    --background-color: #1a202cf2;
+    --light-background-color: #1f2833;
+    --blockquote-background: var(--color-c-T85);
+
+    --text-color:var(--light-color-c);
+    --light-text-color: var(--color-c); 
+    --dark-text-color: var(--dark-color-a);
+    --disabled-text-color: var(--dark-color-c);
+
+    --shadow-color: #00000080; 
     
-    --redT50: rgba(49, 130, 206, 0.5);
-    --redT87: rgba(49, 130, 206, 0.87);
-    
-    --header-red: #e2e8f0; /* Títulos em branco/cinza claro */
-    --text-red: #cbd5e0;
-    
-    --tools-detail-color: #a0aec0; /* gray-400 no lugar do amarelo/dourado */
-    --secondary-tools-detail-color: #cbd5e0;
-    --light-yellow: #e2e8f0;
-    --border-color: #718096;
-    
-    --text-color: #f7fafc; /* gray-50 */
-    --light-text-color: #ffffff;
-    --dark-text-color: #1a202c;
-    --disabled-text-color: #64748b;
-    
+    /* Borders Radius */
+    --tiny-border-radius: 1px;
+    --small-border-radius: 5px;
+    --default-border-radius: 8px;
+    --strong-border-radius: 12px;    
+    --circular-border-radius: 50%;
+    --scrollbar-border-radius: 4px;
+    --slider-border-radius: 50%;
+    --track-border-radius: 10px;
+    --small-title-header-radius: 0 4px 4px 0;
+    --title-header-radius: 0 8px 8px 0;
+    --topbar-border-radius: 0 0 8px 8px;
+    --toggle-tab-border-radius: 4px 0 0 4px;
+
     /* Tooltip */
     --tooltip-background: rgba(26, 32, 44, 0.98);
     --tooltip-text: #f7fafc;
@@ -165,11 +244,11 @@
     --tooltip-title: #ffffff;
     
     /* Configurações de contraste para a área de leitura */
-    --content-bg-image: var(--lib-background);
+    --content-bg-image: url(../ui/lib-background.png);
     --content-bg-color: #edf2f7;
     --content-blend-mode: normal;
     --content-text-color: #1a202c;
-    --content-viewer-bg: #edf2f7;
+    --content-viewer-bg: url(../ui/lib-background.png);
     
     /* Removendo excessos e bordas fortes */
     --filled-border: 1px solid rgba(255, 255, 255, 0.1);
@@ -199,11 +278,11 @@
 /* Altera a seta nos outros temas para combinar com a paleta de cores correspondente */
 :root[data-theme="theme-scifi"] .theme-selector {
     background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2300ffff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
-    box-shadow: 0 0 12px rgba(0, 255, 255, 0.2);
+    box-shadow: 0 0 12px #00ffff33;
 }
 
 :root[data-theme="theme-scifi"] .theme-selector:hover {
-    box-shadow: 0 0 15px rgba(0, 255, 255, 0.4);
+    box-shadow: 0 0 15px #00ffff66;
 }
 
 :root[data-theme="theme-neutral"] .theme-selector {
