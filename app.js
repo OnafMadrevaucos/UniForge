@@ -4,6 +4,7 @@ import { fileURLToPath } from 'url';
 import fs from 'fs';
 import Database from 'better-sqlite3';
 import { result } from 'lodash-es';
+import fontList from "font-list";
 import NodeTiler from './modules/nodetiler/nodeTiler.mjs';
 
 // Para resolver o `__dirname` no modo ESM
@@ -99,6 +100,13 @@ app.whenReady().then(() => {
   ipcMain.handle('select-file', (event, type) => selectFile(type));
 
   /**
+  * Manipulador para carregar a lista de fontes usando a API do Electron.
+  * @param {Electron.IpcMainEvent} event - O evento IPC recebido.
+  * @returns {Object} - Resultado da execução.
+  */
+  ipcMain.handle('get-fonts', (event) => listFonts());
+
+  /**
    * Manipulador para unir caminhos relativos dentro da pasta `src`.
    * @param {Electron.IpcMainEvent} event - O evento IPC recebido.
    * @param {Array} [args=[]] - Parâmetros opcionais para o comando.
@@ -146,6 +154,15 @@ app.whenReady().then(() => {
    * @returns {Promise<void>} - Uma promessa que é resolvida quando a cópia é concluída.
    */
   ipcMain.handle('copy-file', (event, src, dest) => copyFile(src, dest));
+
+  /**
+   * Manipulador para escrever dados em um arquivo em um determinado diretório.
+   * @param {Electron.IpcMainEvent} event - O evento IPC recebido.
+   * @param {string} path - O caminho onde o arquivo será salvo.
+   * @param {string} name - O nome do arquivo com a extensão.
+   * @param {Buffer} data - O buffer de dados a serem escritos no arquivo.
+   */
+  ipcMain.handle('write-file', (event, path, name, buffer) => writeFile(path, name, buffer));
 
   /**
    * Manipulador para ler o conteúdo de um diretório.
@@ -302,6 +319,13 @@ async function selectFile(type) {
   return canceled ? null : filePaths[0];
 }
 
+async function listFonts() {
+  const fonts = await fontList.getFonts();
+  fonts.sort((a, b) => a.localeCompare(b));
+
+  return fonts;
+}
+
 /**
  * Junta um ou mais caminhos relativos dentro da pasta `src` em um caminho absoluto.
  * @param {string[]} paths - Os caminhos relativos a serem unidos.
@@ -340,7 +364,7 @@ function pathExtname(filePath) {
  * Salva um buffer de dados em um arquivo PDF.
  *
  * @param {string} path - O caminho completo do arquivo a ser salvo.
- * @param {string} name - O nome do arquivo sem a extens o.
+ * @param {string} name - O nome do arquivo sem a extensão.
  * @param {Buffer} buffer - O buffer de dados do PDF.
  */
 function savePDF(target, name, buffer) {
@@ -378,6 +402,23 @@ function copyFile(src, dest) {
   } catch {
     return false;
   }
+}
+
+/**
+ * Escreve dados em um arquivo em sincronia.
+ * @param {string} path - O caminho completo do arquivo a ser salvo.
+ * @param {string} name - O nome do arquivo com a extensão.
+ * @param {Buffer} buffer - O buffer de dados do arquivo.
+ */
+async function writeFile(path, data) {
+  const fullPath = path.join(__srcname, target);
+  await fs.writeFile(fullPath, buffer, (error) => {
+    if (error) {
+      console.error('Erro ao salvar o arquivo:', error);
+    } else {
+      console.log('Arquivo salvo com sucesso em:', path);
+    }
+  });
 }
 
 /**

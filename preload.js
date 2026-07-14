@@ -17,6 +17,7 @@ console.log('UniForge | Configurando pré-carregamentos de SQL.');
 contextBridge.exposeInMainWorld('app', {
   refresh: () => ipcRenderer.invoke('window-refresh'),
   fileDialog: (type) => ipcRenderer.invoke('select-file', type),
+  listFonts: () => ipcRenderer.invoke('get-fonts'),
 });
 console.log('UniForge | Configurando pré-carregamentos de Aplicação.');
 
@@ -44,6 +45,7 @@ contextBridge.exposeInMainWorld('fs', {
     const result = ipcRenderer.invoke('copy-file', src, dest);
     return result;
   },
+  writeFile: (path, name, buffer) => { ipcRenderer.invoke('write-file', path, name, Buffer.from(buffer, "utf8")); },
   readDir: (path) => {
     const result = ipcRenderer.invoke('read-dir', path);
     return result;

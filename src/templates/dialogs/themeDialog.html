@@ -1,0 +1,105 @@
+<div class="theme-dialog flexcol">
+    <div class="data-group text">
+        <span class="data-label">Nome Tema:</span>
+         <input id="themeNameInput" type="text" class="data"/>
+    </div>
+    <div class="data-group combo">
+        <span class="data-label">Fontes</span>
+        <combo id="fontSelect" value="fonts" blank="0"></combo>
+    </div>
+    <div class="separator"></div>
+    <h4>Paletas de Cores</h4>
+    <div class="data-group colors">
+        <span class="data-label">Cor A</span>
+        <div class="data-complex color-a flexrow">
+            <color id="darkAColorPicker"></color>
+            <color id="mainAColorPicker"></color>
+            <color id="lightAColorPicker"></color>
+        </div>
+    </div>
+    <div class="data-group colors">
+        <span class="data-label">Cor B</span>
+        <div class="data-complex color-b flexrow">
+            <color id="darkBColorPicker"></color>
+            <color id="mainBColorPicker"></color>
+            <color id="lightBColorPicker"></color>
+        </div>
+    </div>
+    <div class="data-group colors">
+        <span class="data-label">Cor C</span>
+        <div class="data-complex color-c flexrow">
+            <color id="darkCColorPicker"></color>
+            <color id="mainCColorPicker"></color>
+            <color id="lightCColorPicker"></color>
+        </div>
+    </div>
+    <div class="data-group colors">
+        <span class="data-label">Cor D</span>
+        <div class="data-complex color-d flexrow">
+            <color id="darkDColorPicker"></color>
+            <color id="mainDColorPicker"></color>
+            <color id="lightDColorPicker"></color>
+        </div>
+    </div>
+    <div class="separator"></div>
+    <h4>Cores Adicionais</h4>
+    <div class="data-group colors">
+        <span class="data-label">Especial</span>
+        <div class="data-complex color-special flexrow">
+            <color id="specialColorPicker"></color>
+        </div>
+    </div>
+    <div class="data-group colors">
+        <span class="data-label">Destaque</span>
+        <div class="data-complex color-highlight flexrow">
+            <color id="darkHighlightColorPicker"></color>
+            <color id="highlightColorPicker"></color>
+        </div>
+    </div>
+    <div class="separator"></div>
+    <h4>Cores de Fundo</h4>
+    <div class="data-group colors">
+        <span class="data-label">Principal</span>
+        <div class="data-complex color-background flexrow">
+            <color id="darkBackgroundColorPicker"></color>
+            <color id="mainBackgroundColorPicker"></color>
+            <color id="lightBackgroundColorPicker"></color>
+        </div>
+    </div>
+    <div class="data-group colors">
+        <span class="data-label">Citações</span>
+        <div class="data-complex color-quote flexrow">
+            <color id="quoteBackgroundColorPicker"></color>
+        </div>
+    </div>
+    <div class="separator"></div>
+    <h4>Cores Textos</h4>
+    <div class="data-group combo">
+        <span class="data-label">Principal</span>
+        <div class="data-complex flexrow">
+            <combo id="mainTextColor" value="colorList" blank="none" grouped="true"></combo>
+            <div id="previewMainText" class="color-preview"></div>
+        </div>
+    </div>
+    <div class="data-group combo">
+        <span class="data-label">Clara</span>
+        <div class="data-complex flexrow">
+            <combo id="lightTextColor" value="colorList" blank="none" grouped="true"></combo>
+            <div id="previewLightText" class="color-preview"></div>
+        </div>
+    </div>
+    <div class="data-group combo">
+        <span class="data-label">Escura</span>        
+        <div class="data-complex flexrow">
+            <combo id="darkTextColor" value="colorList" blank="none" grouped="true"></combo>
+            <div id="previewDarkText" class="color-preview"></div>
+        </div>
+    </div>
+    <div class="data-group combo">
+        <span class="data-label">Elemento Desativado</span>
+        <div class="data-complex flexrow">
+            <combo id="disabledTextColor" value="colorList" blank="none" grouped="true"></combo>
+            <div id="previewDisabledText" class="color-preview"></div>
+        </div>        
+    </div>
+</div>

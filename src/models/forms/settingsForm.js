@@ -1,10 +1,11 @@
 import EntryForm from "./entryForm.js";
 import Dialogs from '../dialogs/dialog.js';
 import ChapterDialog from "../dialogs/chapterDialog.js";
+import ThemeDialog from "../dialogs/themeDialog.js";
 import DBManager from "../../db/dbManager.js";
 import FilePickerDialog from "../dialogs/filePickerDialog.js";
 import ProgressDialog from "../dialogs/progressDialog.js";
-import Slider from "../slider.js";
+import Slider from "../controls/slider.js";
 
 /**
   * Formulário de configurações do sistema.
@@ -219,6 +220,7 @@ export default class SettingsForm extends EntryForm {
 
     /* ---------------------------------------------------------------------------------------------------------------- */
     // LISTENERS
+
     /**
     * Configura ouvintes de eventos básicos para o formulário.
     * @inheritdoc
@@ -226,21 +228,37 @@ export default class SettingsForm extends EntryForm {
     activateListeners() {
         super.activateListeners();
 
-        this.configureOptionsListeners();
+        this.activateOptionsListeners();        
+        
+        // Eventos do painel de Configurações Gerais.
+        this.activateMainPanelListeners();
 
-        const html = this.ui.app;
+        // Eventos do painel de Banco de Dados.
+        this.activateDatabaseListeners();
 
-        // ------------------------------------------------------------------------------------------------
-        // Eventos do painel de Configurações Gerais ------------------------------------------------------
+        // Eventos do painel de Capítulos.
+        this.activateChaptersListeners();
 
+        // Eventos do painel do Leaflet®.
+        this.activateLeafletListeners();
+    }
+
+    activateMainPanelListeners() {
         const themeSelector = this.querySelector('#themeSelector');
         themeSelector.addEventListener('change', (event) => { this.onThemeSelectorChange(event); });
 
+        const newThemeButton = this.querySelector('#newThemeButton');
+        newThemeButton.addEventListener('click', (event) => { this.onNewThemeClick(event); });
+
         this.slider.activateBaseListeners();
+    }
 
-        // ------------------------------------------------------------------------------------------------
-        // Eventos do painel de Banco de Dados ------------------------------------------------------------      
+    activateChaptersListeners() {
+        const newChapterButton = this.querySelector('#newChapterButton');
+        newChapterButton.addEventListener('click', (event) => { this.onNewChapterClick(event) });
+    }
 
+    activateDatabaseListeners() {
         const externalConnectionSwitch = this.querySelector('#externalConnectionSwitch input#checkbox');
         externalConnectionSwitch.addEventListener('change', (event) => { this.onExternalConnectionSwitchChange(event); });
 
@@ -264,15 +282,10 @@ export default class SettingsForm extends EntryForm {
 
         // O panel padrão é sempre o panel de Banco de Dados
         this.configureDatabasePanel();
+    }
 
-        // ------------------------------------------------------------------------------------------------
-        // Eventos do painel de Capítulos -----------------------------------------------------------------
-
-        const newChapterButton = this.querySelector('#newChapterButton');
-        newChapterButton.addEventListener('click', (event) => { this.onNewChapterClick(event) });
-
-        // ------------------------------------------------------------------------------------------------
-        // Eventos do painel do Leaflet® ------------------------------------------------------------------
+    activateLeafletListeners() {
+        const html = this.ui.app;
 
         const defaultMapButton = this.querySelector('#defaultMapButton');
         defaultMapButton.addEventListener('click', (event) => { this.onDefaultMapClick(event) });
@@ -288,14 +301,12 @@ export default class SettingsForm extends EntryForm {
 
         // Aciona o cálculo inicial ao carregar
         this._onCalculateScale();
-
-        // ------------------------------------------------------------------------------------------------
     }
 
     /**
-   * Configura os ouvidores de Eventos do menu de opções do formulário.
-   */
-    configureOptionsListeners() {
+    * Configura os ouvidores de Eventos do menu de opções do formulário.
+    */
+    activateOptionsListeners() {
         const options = this.querySelector('.tabs-options');
         const buttons = options.querySelectorAll('button');
 
@@ -314,6 +325,22 @@ export default class SettingsForm extends EntryForm {
         localStorage.setItem('uniforge_theme', selectedTheme);
 
         await uniforge.settings.set('misc.currentTheme', selectedTheme);
+    }
+
+    async onNewThemeClick(event) {
+        event.stopPropagation();
+
+        const theme = await ThemeDialog.configDialog();
+        if(theme) {
+            const url = uniforge.urls.customCSS;
+            const name = `${theme['nome']}.css`;
+
+            const data = `:root[data-theme=\"${theme["nome"].pop().replaceAll(' ', '-').toLowerCase()}\"] {
+                ${theme.join(';\n')}    
+            }`;
+
+            await uniforge.fs.writeFile(url, name, data);
+        }
     }
 
     /**

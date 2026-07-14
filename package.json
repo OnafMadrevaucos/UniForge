@@ -25,6 +25,7 @@
     "electron": "^33.2.1",
     "electron-builder": "^25.1.8",
     "express": "^5.1.0",
+    "font-list": "^2.1.0",
     "fs": "^0.0.1-security",
     "handlebars": "^4.7.8",
     "html2canvas": "^1.4.1",
