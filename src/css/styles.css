@@ -1504,6 +1504,27 @@ button.disabled:hover {
     height: var(--fill-height);
 }
 
+.map-objects-edit-tip {
+    position: absolute;
+    bottom: -100px;
+    left: calc(50% - 200px);
+    width: 400px;
+    text-align: center;
+    background-color: var(--dark-color-b-T50);
+    color: var(--light-text-color);
+    
+    padding: 5px 25px;
+    border-radius: var(--default-border-radius);
+    box-shadow: var(--default-shadow);
+    z-index: 1002;
+
+    transition: bottom 0.3s ease-in-out;
+}
+
+.map-objects-edit-tip.active {
+    bottom: 10px;
+}
+
 .map-objects-panel .tools-content .config-group {
     flex: 2;
     height: var(--fill-height);

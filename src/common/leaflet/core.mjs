@@ -111,7 +111,7 @@ const lControl = {
             position: 'topright' // Posição no canto superior esquerdo.            
         },
         onAdd: utils.onAddMain
-    }),    
+    }),
 
     /**
     * Objeto L.CRS customizado com a função de distância em metros.
@@ -187,6 +187,19 @@ const lControl = {
             //maxBoundsViscosity: 1.0
         });
 
+        map.getActiveLayer = function () {
+            let _layer = null;
+
+            map.eachLayer((layer) => {
+                if (layer.pm?.enabled()) {
+                    _layer = layer;
+                    return _layer;
+                }
+            });
+
+            return _layer;
+        }
+
         // Calcula os limites de imagem com base na largura/altura.
         const bounds = [[
             crs.unproject(L.point(mapExtent[2], mapExtent[3])),
@@ -226,7 +239,7 @@ const lControl = {
         _configureMainControl();
 
         // Configura o controle de desenho customizado.
-        _configureCustomDrawControl(mapElements);        
+        _configureCustomDrawControl(mapElements);
 
         // Configura o controle de escala.
         const scaleControl = _configureScaleControl();
@@ -320,7 +333,7 @@ const lControl = {
 
         function _configureCustomDrawControl(mapElements) {
             utils.setupCustomButtons(map);
-        }        
+        }
 
         function _loadElementsStyles() {
             const style = JSON.parse(uniforge.settings.get('leafletStyle.pathOptions'));
@@ -431,8 +444,9 @@ const lControl = {
         }
 
         function _activateEventsListener() {
-            //map.on('moveend', _checkMapVisibility);
             map.on('mousedown', _onUserMapClick);
+
+            map.on('keydown', (event) => { _checkKeyPressed(event, event.originalEvent.code); });
 
             map.on('pm:create', (event) => _onDrawCreated(event, true));
 
@@ -581,24 +595,30 @@ const lControl = {
 
             // Adicione um listener para o evento de quando o Popup do elemento for aberto.
             map.on('popupopen', function (event) {
-                const popup = event.popup._container;
+                const popup = event.popup;
 
-                if (!popup) return;
+                const container = popup._container;
+                if (!container) return;
 
-                popup.addEventListener('click', (e) => {
-                    const showBtn = e.target.closest('.layer-popup-show');
-                    const deleteBtn = e.target.closest('.layer-popup-delete');
+                const source = popup._source;
 
-                    if (showBtn) {
-                        showBtn.classList.add('disabled');
-                        lControl.showEntry(e);
-                    }
+                // Se o Elemento estiver sendo editado ou for inválido, evite a abertura do seu Popup.
+                if (!source || source.pm.enabled()) {
+                    source.closePopup();
+                    return
+                };
 
-                    if (deleteBtn) {
-                        deleteBtn.classList.add('disabled');
-                        lControl.deleteElement(e);
-                    }
-                });
+                container.addEventListener('click', _onPopupButtonClick);
+            });
+
+            // Adicione um listener para o evento de quando o Popup do elemento for fechado.
+            map.on('popupclose', function (event) {
+                const popup = event.popup;
+
+                const container = popup._container;
+                if (!container) return;
+
+                container.removeEventListener('click', _onPopupButtonClick);
             });
 
             // Adicione um listener para o evento de clique do botão direito para remover o ultimo vertice de um polígono.
@@ -613,6 +633,67 @@ const lControl = {
 
         function _onUserMapClick(e) {
             lControl.clickLatLang = e.latlng;  // Ponto de clique do usuário.
+        }
+
+        function _onPopupButtonClick(e) {
+            const showBtn = e.target.closest('.layer-popup-show');
+            const editBtn = e.target.closest('.layer-popup-edit');
+            const deleteBtn = e.target.closest('.layer-popup-delete');
+
+            if (showBtn) {
+                showBtn.classList.add('disabled');
+                lControl.showEntry(e);
+            }
+
+            if (editBtn) {
+                lControl.editEntry(e);
+
+                const layerEditTip = document.querySelector('.map-objects-edit-tip');
+                layerEditTip.classList.add('active');
+            }
+
+            if (deleteBtn) {
+                lControl.deleteElement(e);
+            }
+        }
+
+        function _checkKeyPressed(event, key) {
+            switch (key) {
+                // A Tecla foi o 'Esc'.
+                case 'Escape': {
+                    // Busca o Elemento atualmente ativo.
+                    const layer = map.getActiveLayer();
+
+                    // Há algum Elemento atualmente ativo, cancela a edição.
+                    if (layer) {
+                        if (typeof layer.pm.cancel === "function") {
+                            layer.pm.cancel();
+                        }
+                        layer.pm.disable();
+                        lControl.toggleMapObjectPanel(event.originalEvent, true);
+
+                        const layerEditTip = document.querySelector('.map-objects-edit-tip');
+                        layerEditTip.classList.remove('active');
+
+                        // Desativa o Modo de Edição Global, se estiver ativo.
+                        if (map.pm.globalEditModeEnabled()) {
+                            map.pm.disableGlobalEditMode();
+                        }
+                    }
+                } break;
+                // A Tecla foi o 'Enter'.
+                case 'Enter': {
+                    // Busca o Elemento atualmente ativo.
+                    const layer = map.getActiveLayer();
+
+                    // Há algum Elemento atualmente ativo, confirma a edição.
+                    if (layer) {
+                        
+                    }
+                }
+                // Não era nenhuma tecla em especial. Ignore.
+                default: break;
+            }
         }
 
         async function _onDrawCreated(e, isPM) {
@@ -807,7 +888,13 @@ const lControl = {
         showButton.dataset.id = layer.source._id;
         showButton.dataset.type = layer.source.type;
         showButton.classList.add('layer-popup-show');
-        showButton.innerHTML = `<i class="fas fa-eye"></i>`;
+        showButton.innerHTML = `<i class="fas fa-arrow-up-right-from-square"></i>`;
+
+        const editButton = document.createElement('a');
+        editButton.dataset.meid = layer._id;
+        editButton.dataset.leafletId = layer._leaflet_id;
+        editButton.classList.add('layer-popup-edit');
+        editButton.innerHTML = `<i class="fas fa-pen-to-square"></i>`;
 
         const deleteButton = document.createElement('a');
         deleteButton.dataset.meid = layer._id;
@@ -816,6 +903,7 @@ const lControl = {
         deleteButton.innerHTML = `<i class="fas fa-trash"></i>`;
 
         footer.appendChild(showButton);
+        footer.appendChild(editButton);
         footer.appendChild(deleteButton);
 
         if (layer.type === 'marker') {
@@ -921,9 +1009,43 @@ const lControl = {
         }
     },
 
+    editEntry: async function (event) {
+        event.stopPropagation();
+        const editBtn = event.target.closest('a.layer-popup-edit');
+
+        let meid = null;
+        let layerId = null;
+
+        const layerItem = event.target.closest('.layer-item');
+        if (layerItem) {
+            meid = layerItem.id;
+            layerId = Number(layerItem.dataset.leafletId);
+        }
+        else {
+            meid = editBtn.dataset.meid;
+            layerId = Number(editBtn.dataset.leafletId);
+        }
+
+        const layer = lControl.mapElements.getLayer(layerId);
+
+        // Fecha o Popup do Elemento para edição.
+        layer.closePopup();
+        // Ativa o Modo de Edição para o Elemento.
+        layer.pm.enable({
+            allowSelfIntersection: false,
+        });
+
+        if (layer.type !== 'marker') {
+            lControl.toggleMapObjectPanel(event);
+        }
+        else {
+
+        }
+    },
+
     deleteElement: async function (event) {
         event.stopPropagation();
-        const deleteBtn = event.target.closest('.layer-popup-delete');
+        const deleteBtn = event.target.closest('a.layer-popup-delete');
 
         if (await Dialogs.confirm('Apagar Elemento', 'Deseja remover o elemento?')) {
             let meid = null;
@@ -935,9 +1057,8 @@ const lControl = {
                 layerId = Number(layerItem.dataset.leafletId);
             }
             else {
-                const deleteButton = event.target.closest('a.layer-popup-delete');
-                meid = deleteButton.dataset.meid;
-                layerId = Number(deleteButton.dataset.leafletId);
+                meid = deleteBtn.dataset.meid;
+                layerId = Number(deleteBtn.dataset.leafletId);
             }
 
             if (!meid) return;
@@ -969,6 +1090,21 @@ const lControl = {
                 form.show(true);
             }
         }
+    },
+    toggleMapObjectPanel: function (event, forceClose = false) {
+        event.stopPropagation();
+
+        const container = document.querySelector('.map-objects-container.regular-shapes');
+        if (!container) return;
+
+        // Desativa todas as opções de desenho, para redesenho.
+        const mapObjContainers = document.querySelectorAll('.map-objects-container');
+        mapObjContainers.forEach(moc => {
+            if (moc !== container || forceClose) moc.classList.remove('active');
+        });
+
+        if (!forceClose)
+            container.classList.toggle('active');
     }
 }
 
@@ -980,14 +1116,14 @@ function _updateLayerControl() {
     const noObjectsFoundMessage = document.getElementById('noObjectsFoundMessage');
 
     // Se não houver elementos, exibe a mensagem de "Nenhum objeto encontrado".
-    if (lControl.mapElements.getLayers().length === 0) {        
+    if (lControl.mapElements.getLayers().length === 0) {
         noObjectsFoundMessage.classList.remove('hidden');
     }
     // Caso haja elementos, gera os itens da lista de elementos do mapa.
     else {
         // Garante que a mensagem de "Nenhum objeto encontrado" esteja oculta.
         noObjectsFoundMessage.classList.add('hidden');
-        
+
         // Percorre os elementos do mapa e os adiciona à lista de controle de camadas.
         lControl.mapElements.eachLayer(async function (layer) {
             const li = document.createElement('li');
