@@ -435,8 +435,8 @@ blockquote:not(:has(+ blockquote)) {
     content: "";
     height: 14px;
     width: 14px;
-    left: 0.1vw;
-    bottom: 0.1vh;
+    left: 2px;
+    bottom: 1px;
     background-color: var(--light-color-d);
     transition: 0.4s;
     border-radius: var(--slider-border-radius);
@@ -940,6 +940,13 @@ button.disabled:hover {
 .leaflet-container .leaflet-popup-pane .leaflet-popup a.leaflet-popup-close-button {
     padding: 0;
     margin: 4px;
+}
+
+.leaflet-marker-icon.editing[alt="Marker"] {
+    filter:
+        drop-shadow(0 0 2px white)
+        drop-shadow(0 0 4px #4da3ff)
+        drop-shadow(0 0 8px #4da3ff);
 }
 
 /* ------ Leaflet Layer Controls ------*/
@@ -1510,7 +1517,7 @@ button.disabled:hover {
     left: calc(50% - 200px);
     width: 400px;
     text-align: center;
-    background-color: var(--dark-color-b-T50);
+    background-color: var(--dark-color-b);
     color: var(--light-text-color);
     
     padding: 5px 25px;
@@ -4408,6 +4415,7 @@ hr.divider {
 .slider-value {
     margin-top: 10px;
     font-size: 18px;
+    user-select: none;
 }
 
 /* ------ Color Picker ------ */

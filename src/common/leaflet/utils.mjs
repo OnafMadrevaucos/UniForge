@@ -23,7 +23,8 @@ const style = {
     opacity: 1,
     weight: 5,
     dashArray: '0, 0',
-    line: 'solid'
+    line: 'solid',
+    hasBorder: true
 };
 
 /**
@@ -85,7 +86,7 @@ const drawer = {
         if (state.drawInstance && state.drawInstance.enabled()) state.drawInstance.disable();
 
         // Permite interseção de polígonos.
-        map.pm.enableDraw('Marker', options.marker(markerURL)); 
+        map.pm.enableDraw('Marker', options.marker(markerURL));
         state.drawInstance = map.pm.Draw.Marker;
 
         return state.drawInstance;
@@ -94,19 +95,19 @@ const drawer = {
         if (state.drawInstance && state.drawInstance.enabled()) state.drawInstance.disable();
 
         // Permite interseção de polígonos.
-        map.pm.enableDraw('Polygon', options.polygon()); 
+        map.pm.enableDraw('Polygon', options.polygon());
     },
     circle: function (map) {
         if (state.drawInstance && state.drawInstance.enabled()) state.drawInstance.disable();
 
         // Permite interseção de círculos.
-        map.pm.enableDraw('Circle', options.regularShape()); 
+        map.pm.enableDraw('Circle', options.regularShape());
     },
     rectangle: function (map) {
         if (state.drawInstance && state.drawInstance.enabled()) state.drawInstance.disable();
 
         // Permite interseção de retângulos.
-        map.pm.enableDraw('Rectangle', options.regularShape());         
+        map.pm.enableDraw('Rectangle', options.regularShape());
     }
 }
 
@@ -118,16 +119,16 @@ const measurements = {
             this.tooltip.remove();
         }
 
-        this.tooltip = L.tooltip({            
+        this.tooltip = L.tooltip({
             permanent: true,
             sticky: true,
             direction: 'center',
             offset: [0, -5],
             className: 'leaflet-draw-tooltip'
         })
-        .setLatLng(latlng)
-        .setContent(content)
-        .addTo(map);
+            .setLatLng(latlng)
+            .setContent(content)
+            .addTo(map);
 
         return this.tooltip;
     },
@@ -210,10 +211,21 @@ function _updateStyle(map, newStyle) {
     // Verifica se a instância do mapa do Leaflet foi enviada corretamente.
     if (!map) return;
 
-    // Caso não exista desenho ativo, apenas atualiza as opções globais.
+    // Caso não exista desenho ativo, verifique se é uma edição.
     if (!state.drawInstance || !state.drawInstance?.enabled()) {
-        map.pm.setPathOptions(drawOptions.pathOptions);
-        return;
+        const activeLayer = map.getActiveLayer();
+
+        // Verifica se há um elemento sendo editado no momento.
+        if (activeLayer && activeLayer.type !== 'marker') {
+            // Atualiza o estilo do desenho ativo.
+            activeLayer.setStyle(drawOptions.pathOptions);
+            return;
+        }
+        // Se não houver apenas atualize as opções globais.
+        else {
+            map.pm.setPathOptions(drawOptions.pathOptions);
+            return;
+        }
     }
 
     // Atualiza o estilo temporário (templine) do desenho ativo.

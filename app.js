@@ -32,7 +32,7 @@ Menu.setApplicationMenu(null);
 app.whenReady().then(() => {
   console.log('============================= UNIFORGE ============================');
   CreateWindow();
-  console.log('UniForge | Criando a Tela Principal.');
+  log('Criando a Tela Principal.');
 
   mainWindow.webContents.openDevTools();
 
@@ -59,7 +59,7 @@ app.whenReady().then(() => {
       mainWindow.webContents.openDevTools();
     }
   });
-  console.log('UniForge | Registrando Atalhos.');
+  log('Registrando Atalhos.');
 
   ipcMain.handle('get-dir', (event) => { return __dirname; });
 
@@ -182,7 +182,7 @@ app.whenReady().then(() => {
     if (activeTiler) activeTiler.cancel();
   });
 
-  console.log('UniForge | Criando requisição de Renders.');
+  log('Criando requisição de Renders.');
 });
 
 app.on('will-quit', () => {
@@ -243,6 +243,23 @@ function CreateWindow() {
     mainWindow = null;
   });
 }
+
+function log(message, err = null) {
+  const agora = new Date();
+  const dataHora = agora.toLocaleString("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit"
+  });
+
+  if (err) {
+    console.error(`${dataHora} - Uniforge | ${message}`, err.message);
+    return;
+  } else console.log(`${dataHora} - Uniforge | ${message}`);
+}
 // ------------------ FUNÇÕES RENDERER ------------------
 
 /**
@@ -259,7 +276,7 @@ function dbQuery(query, params = []) {
     const result = statement.all(...params); // Executa a consulta e retorna todos os resultados
     return result;
   } catch (err) {
-    console.error('UniForge | Erro no banco de dados:', err.message);
+    log('Erro no banco de dados:', err);
     throw err;
   }
 }
@@ -275,17 +292,18 @@ function dbQuery(query, params = []) {
 function dbExec(query, params = []) {
   try {
     const statement = db.prepare(query);
+    log(`Executando comando: ${Object.values(statement).join(', ')}`);
     const result = statement.run(...params); // Executa um comando (INSERT, UPDATE, DELETE)
     return result;
   } catch (err) {
-    console.error('UniForge | Erro no banco de dados:', err.message);
+    log('Erro no banco de dados:', err);
     throw err;
   }
 }
 
 function refreshWindow() {
   if (mainWindow) {
-    console.log('UniForge | Recarregando a Janela Principal.');
+    log('Recarregando a Janela Principal.');
     mainWindow.reload();
   }
 }
@@ -344,13 +362,13 @@ function pathExtname(filePath) {
  * @param {Buffer} buffer - O buffer de dados do PDF.
  */
 function savePDF(target, name, buffer) {
-  console.log(target);
+  log(target);
   const fullPath = path.join(__srcname, target);
   fs.writeFile(fullPath, buffer, (error) => {
     if (error) {
-      console.error('Erro ao salvar o PDF:', error);
+      log('Erro ao salvar o PDF:', error);
     } else {
-      console.log('PDF salvo com sucesso em:', path);
+      log('PDF salvo com sucesso em:' + path);
     }
   });
 }
@@ -464,11 +482,11 @@ async function getTemplate(fileName, id) {
     });
     const compiled = Handlebars.compile(htmlString);
     Handlebars.registerPartial(id ?? filePath, compiled);
-    console.log(`UniForge | Template '${filePath}' obtido e compilado com sucesso.`);
+    log(`Template '${filePath}' obtido e compilado com sucesso.`);
     console.log(compiled);
     return compiled;
   } catch (err) {
-    console.error('UniForge | Erro ao carregar template: ', err.message);
+    log('Erro ao carregar template: ', err);
     throw err;
   }
 }

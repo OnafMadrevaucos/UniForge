@@ -154,8 +154,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             },
             colorPickers: {
                 fillColorPicker: null,
-                borderColorPicker: null,
-                gradientColorPicker: null
+                borderColorPicker: null
             }
         },
 
@@ -615,7 +614,7 @@ function activateMainListeners() {
 
     hasBorderCheckbox.addEventListener('change', (event) => { onHasBorderSwitchChange(event); });
 
-    const shapeSizeSliderContainer = document.querySelector('.options.size');
+    const shapeSizeSliderContainer = document.querySelector('.size');
     const shapeSizeSlider = uniforge.ctrls.sliders.shapeSizeSlider = new Slider('shapeSizeSlider', shapeSizeSliderContainer, { min: 1, max: 10, value: 5, linkedLabel: 'shapeSizeSpan', labelMask: '{value}px', width: '80px' });
     shapeSizeSlider.config();
     shapeSizeSlider.addEventListener('change', (event) => { onShapeSizeSliderChange(event); });
@@ -630,12 +629,6 @@ function activateMainListeners() {
     const borderColorPicker = uniforge.ctrls.colorPickers.borderColorPicker = new ColorPicker('borderColorPicker', document, { value: 'var(--dark-red)', tooltip: 'Cor da Borda' });
     borderColorPicker.config();
     borderColorPicker.addEventListener('change', (event) => { onBorderColorPickerChange(borderColorPicker); });
-
-    const gradientColorPicker = uniforge.ctrls.colorPickers.gradientColorPicker = new ColorPicker('gradientColorPicker', document, { value: 'var(--dark-red)', tooltip: 'Cor da Preenchimento II', fixedAlpha: true });
-    gradientColorPicker.config();
-    gradientColorPicker.addEventListener('change', (event) => { onGradientColorPickerChange(gradientColorPicker); });
-
-    gradientColorPicker.disabled = true;
 }
 /** 
  * ------------------------------------------------------------------
@@ -814,13 +807,13 @@ async function onHasBorderSwitchChange(event) {
     const hasBorderSwitch = document.querySelector('#hasBorderSwitch');
     const borderSizeGroup = document.querySelector('#borderSizeGroup');
 
+    uniforge.leaflet.drawStyle.style.hasBorder = hasBorder;
+
     if (hasBorder) {
-        borderSizeGroup.classList.remove('hidden');
-        uniforge.leaflet.drawStyle.style.opacity = 1;
+        borderSizeGroup.classList.remove('hidden');        
     }
     else {
         borderSizeGroup.classList.add('hidden');
-        uniforge.leaflet.drawStyle.style.opacity = 0;
     }
 
     uniforge.leaflet.drawStyle.update(uniforge.leaflet.core.default.map, uniforge.leaflet.drawStyle.style);

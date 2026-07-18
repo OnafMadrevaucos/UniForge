@@ -73,7 +73,9 @@ export default class DBManager {
 
     async init() {
         try {
+            // Encerra qualquer transação aberta indevidamente antes de iniciar o gerenciador.
             await uniforge.sql.exec('ROLLBACK');
+
             console.log('UniForge | Transação aberta encerrada com sucesso.');
         } catch (error) {
             console.log('UniForge | Nenhuma transação aberta encontrada.');
