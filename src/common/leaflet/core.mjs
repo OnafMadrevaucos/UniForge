@@ -10,6 +10,8 @@ const PANEL_STATE = {
     NONE: -1
 }
 
+const _editCache = new WeakMap();
+
 const lControl = {
     /**
     * Constantes configuráveis, como dimensões de imagem e tamanho do tile.
@@ -46,7 +48,14 @@ const lControl = {
         UNIT_TO_KM_RATIO: 1.5, // 1 Map Unit = 1.5 km        
     },
 
-    editCache: new WeakMap(),
+    get editCache() {
+        if (!this.map) return null;
+        else return _editCache.get(this.map);
+    },
+
+    get isEditModeON() {
+        return (this.editCache && this.editCache.layer);
+    },
 
     /**
     * Calcula a resolução (Map Units por Pixel) e a escala (Km por Pixel) para um ZoomLevel.
@@ -463,8 +472,16 @@ const lControl = {
             map.on('pm:drawstart', function (e) {
                 map.dragging.disable();
 
+                // Se já houver uma edição ocorrendo neste momento, aborte a edição atual para iniciar uma nova.
+                if (lControl.isEditModeON) {
+                    lControl.endEditMode(e, true);
+                }
+
                 if (e.shape !== 'Marker') {
                     utils.drawStyle.updateTemplineStyle(map, utils.drawStyle.style);
+
+                    // Abre o Painel de Edição para o Elemento.
+                    lControl.toggleMapObjectPanel(event, { forceState: PANEL_STATE.OPEN });
                 }
 
                 const workingLayer = e.workingLayer;
@@ -610,7 +627,7 @@ const lControl = {
                 const source = popup._source;
 
                 // Se o Elemento estiver sendo editado ou for inválido, evite a abertura do seu Popup.
-                if (!source || source.pm.enabled() || map.getActiveLayer()?.pm.enabled()) {
+                if (!source || source.pm.enabled() || map.getActiveLayer()?.pm.enabled() || lControl.isEditModeON) {
                     source.closePopup();
                     return
                 };
@@ -673,13 +690,25 @@ const lControl = {
                 // A Tecla foi o 'Enter'.
                 case 'Enter': {
                     try {
+                        // Obtém o elemento que está sendo editado no momento.
                         let layer = lControl.map.getActiveLayer();
+
+                        // Não há nenhuma edição ativa, verifique na cache de edição.
+                        if (!layer) {
+                            // Busque na cache de edição.
+                            layer = lControl.editCache.layer;
+
+                            // Se ainda assim não houver nenhum elemento ativo, aborte.
+                            if (!layer) return;
+                        };
+
                         const latlngs = layer._latlngs || layer._latlng;
 
                         // Abre uma transação no banco de dados para adicionar o elemento.
                         await uniforge.db.beginTransaction();
 
                         let points = '';
+                        // Se o elemento for um polígono, obtenha os seus pontos.
                         if (Array.isArray(latlngs)) {
                             points = latlngs.first().map(point => `${point.lat},${point.lng}`).join(';');
                         } else points = `${latlngs.lat},${latlngs.lng}`;
@@ -689,7 +718,7 @@ const lControl = {
                             meid: layer._id,
                             epoch: uniforge.time.y.value,
                             type: layer.type,
-                            icon: (layer.type === 'marker') ? layer.options.icon.options.iconUrl : layer.type,
+                            icon: (layer instanceof L.Marker) ? layer.options.icon.options.iconUrl : layer.type,
                             source: `${layer.source.type}{${layer.source._id}}`,
                             points: points,
                             style: JSON.stringify(layer.options)
@@ -715,7 +744,7 @@ const lControl = {
         async function _onDrawCreated(e, isPM) {
             let layer = e.layer;
 
-            if(e.shape !== 'Marker')
+            if (e.shape !== 'Marker')
                 // Atualiza o estilo da camada desenhada.
                 layer.setStyle(utils.drawStyle.style);
 
@@ -750,7 +779,7 @@ const lControl = {
                             mid: lControl.constants.DEFAULT_OVERLAY,
                             epoch: uniforge.time.y.value,
                             type: layer.type,
-                            icon: (layer.type === 'marker') ? layer.options.icon.options.iconUrl : layer.type,
+                            icon: (layer instanceof L.Marker) ? layer.options.icon.options.iconUrl : layer.type,
                             source: `${layer.source.type}{${layer.source._id}}`,
                             points: points,
                             style: JSON.stringify(utils.drawStyle.style)
@@ -923,7 +952,7 @@ const lControl = {
         footer.appendChild(editButton);
         footer.appendChild(deleteButton);
 
-        if (layer.type === 'marker') {
+        if (layer instanceof L.Marker) {
             const coordsSpan = document.createElement('span');
             coordsSpan.classList.add('layer-popup-coords');
             coordsSpan.innerText = `Y: ${layer._latlng.lat.toFixed(2)}, X: ${layer._latlng.lng.toFixed(2)}`;
@@ -1094,11 +1123,14 @@ const lControl = {
             }
         }
     },
-    toggleMapObjectPanel: function (event, options = { forceState: PANEL_STATE.NONE, style: {} }) {
-        const forceState = options.forceState ?? PANEL_STATE.NONE;
-        event.stopPropagation();
+    toggleMapObjectPanel: function (event, options = { name: 'regular-shapes', forceState: PANEL_STATE.NONE, icon: null, style: {} }) {
+        if (event instanceof PointerEvent) event.stopPropagation();
 
-        const container = document.querySelector('.map-objects-container.regular-shapes');
+        const forceState = options.forceState ?? PANEL_STATE.NONE;
+        const name = options.name ?? 'regular-shapes';
+        const icon = options.icon ?? null;
+
+        const container = document.querySelector(`.map-objects-container.${name}`);
         if (!container) return;
 
         // Desativa todas as opções de desenho, para redesenho.
@@ -1112,6 +1144,27 @@ const lControl = {
             else if (forceState === PANEL_STATE.OPEN) container.classList.add('active');
         }
         else container.classList.toggle('active');
+
+        // Se foi um Marcador, é ncessário mudar as seleções do painel adequadamente.
+        if (container.classList.contains('active') && name === 'marker' && icon != null) {
+            const iconName = icon.split('\\').pop().split('/').pop().split('.').shift().split('_');
+
+            // Seleciona a opção de Cor correspondente ao Elemento selecionado.
+            const colorsOptions = container.querySelectorAll('.map-objects-panel .tools-content .config-group.colors a');
+            colorsOptions.forEach(option => {
+                if (iconName[0] === option.dataset.color) {
+                    option.classList.add('active');
+                } else option.classList.remove('active');
+            });
+
+            // Seleciona a opção de Símbolo correspondente ao Elemento selecionado.
+            const markersOptions = container.querySelectorAll('.map-objects-panel .tools-content .config-group.markers a');
+            markersOptions.forEach(option => {
+                if (iconName[1] === option.dataset.marker) {
+                    option.classList.add('active');
+                } else option.classList.remove('active');
+            });
+        }
     },
 
     startEditMode: async function (layerId) {
@@ -1124,48 +1177,57 @@ const lControl = {
 
         // Fecha o Popup do Elemento para edição.
         layer.closePopup();
+
         // Ativa o Modo de Edição para o Elemento.
         layer.pm.enable({
             allowSelfIntersection: false,
         });
 
-        if (layer.type !== 'marker') {
+        // Verifica o tipo do Elemento para abrir o Painel de Edição adequado.
+        if (!(layer instanceof L.Marker)) {
+            // Abre o Painel de Edição para o Elemento.
             lControl.toggleMapObjectPanel(event, { forceState: PANEL_STATE.OPEN });
+
+            style.line = style.line;
+            style.dashArray = style.dashArray;
+
+            const hasBorder = style.hasBorder || true;
+
+            const hasBorderCheck = document.querySelector('#hasBorderSwitch #checkbox');
+            hasBorderCheck.checked = hasBorder;
+
+            const shapeSizeSlider = uniforge.ctrls.sliders.shapeSizeSlider;
+            shapeSizeSlider.setValue(style.weight, true);
+
+            const shapeBorderCombo = document.getElementById('shapeBorderCombo');
+            shapeBorderCombo.value = style.line;
+
+            shapeBorderCombo.dispatchEvent(new Event('change'));
+
+            const fillColorPicker = uniforge.ctrls.colorPickers.fillColorPicker;
+            fillColorPicker.setColor(style.fillColor, true);
+
+            const borderColorPicker = uniforge.ctrls.colorPickers.borderColorPicker;
+            borderColorPicker.setColor(style.color, true);
+
+            uniforge.leaflet.drawStyle.update(uniforge.leaflet.core.map, style);
+
+            await _refreshPreviewStyle(layer.options);
         }
         else {
+            // Destaca o Elemento durante a edição.
             layer._icon?.classList.add("editing");
+
+            const iconURL = layer.options.icon.options.iconUrl;
+
+            // Abre o Painel de Edição para o Elemento.
+            lControl.toggleMapObjectPanel(event, { name: 'marker', forceState: PANEL_STATE.OPEN, icon: iconURL });
         }
-
-        style.line = style.line;
-        style.dashArray = style.dashArray;
-
-        const hasBorder = style.hasBorder || true;
-
-        const hasBorderCheck = document.querySelector('#hasBorderSwitch #checkbox');
-        hasBorderCheck.checked = hasBorder;
-
-        const shapeSizeSlider = uniforge.ctrls.sliders.shapeSizeSlider;
-        shapeSizeSlider.setValue(style.weight, true);
-
-        const shapeBorderCombo = document.getElementById('shapeBorderCombo');
-        shapeBorderCombo.value = style.line;
-
-        shapeBorderCombo.dispatchEvent(new Event('change'));
-
-        const fillColorPicker = uniforge.ctrls.colorPickers.fillColorPicker;
-        fillColorPicker.setColor(style.fillColor, true);
-
-        const borderColorPicker = uniforge.ctrls.colorPickers.borderColorPicker;
-        borderColorPicker.setColor(style.color, true);
-
-        uniforge.leaflet.drawStyle.update(uniforge.leaflet.core.default.map, style);
-
-        await _refreshPreviewStyle(layer.options);
     },
 
     endEditMode: function (event, hasRollback = true) {
         // Busca o Elemento atualmente ativo.
-        const layer = lControl.map.getActiveLayer();
+        const layer = lControl.map.getActiveLayer() ?? lControl.editCache?.layer ?? null;
 
         // Se houver Rollback, restaura o estado do Elemento para o caso de cancelamento da edição.
         if (hasRollback)
@@ -1175,10 +1237,14 @@ const lControl = {
         // Há algum Elemento atualmente ativo, cancela a edição.
         if (layer) {
             layer.pm.disable();
-            lControl.toggleMapObjectPanel(event, { forceState: PANEL_STATE.CLOSE });
+
+            const name = (layer instanceof L.Marker) ? "marker" : "regular-shapes";
+
+            // Fecha o Painel do Elemento para edição.
+            lControl.toggleMapObjectPanel(event, { name, forceState: PANEL_STATE.CLOSE });
 
             // Se o elemento é do tipo de Marker, remove a classe de edição.
-            if (layer.type === 'marker') {
+            if (layer instanceof L.Marker) {
                 layer._icon?.classList.remove("editing");
             }
 
@@ -1188,10 +1254,13 @@ const lControl = {
     },
 
     saveLayerState: function (layer) {
-        const state = {};
+        const state = {
+            layer: layer
+        };
 
         if (layer instanceof L.Marker) {
             state.latlng = layer.getLatLng();
+            state.icon = layer.options.icon.options;
         }
 
         else if (layer instanceof L.Circle) {
@@ -1207,12 +1276,18 @@ const lControl = {
             state.latlngs = L.LatLngUtil.cloneLatLngs(layer.getLatLngs());
         }
 
-        lControl.editCache.set(layer, state);
+        _editCache.set(lControl.map, state);
     },
 
     restoreLayerState: function (layer) {
-        const state = lControl.editCache.get(layer);
+        let state = _editCache.get(lControl.map);
+
         if (!state) return;
+
+        if (layer instanceof L.Marker) {
+            const originalIcon = L.icon(state.icon);
+            layer.setIcon(originalIcon);
+        }
 
         if (state.latlngs) {
             layer.setLatLngs(state.latlngs);
@@ -1227,6 +1302,8 @@ const lControl = {
         }
 
         layer.redraw?.();
+
+        _editCache.set(lControl.map, null);
     }
 }
 
@@ -1348,8 +1425,7 @@ function _updateLayerControl() {
             }
         }
 
-        element.style.outline = '';
-        element.style.outlineOffset = '';
+        element.classList.remove('highlight');
     }
 
     function _onLayerItemMouseOver(event) {
@@ -1378,8 +1454,7 @@ function _updateLayerControl() {
             }
         }
 
-        element.style.outline = "5px ridge var(--light-text-color)";
-        element.style.outlineOffset = "5px";
+        element.classList.add('highlight');
     }
 }
 

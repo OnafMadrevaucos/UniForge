@@ -216,7 +216,7 @@ function _updateStyle(map, newStyle) {
         const activeLayer = map.getActiveLayer();
 
         // Verifica se há um elemento sendo editado no momento.
-        if (activeLayer && activeLayer.type !== 'marker') {
+        if (activeLayer && activeLayer instanceof L.Marker) {
             // Atualiza o estilo do desenho ativo.
             activeLayer.setStyle(drawOptions.pathOptions);
             return;
@@ -396,6 +396,11 @@ async function _onMarkerDraw(map, event) {
     const target = event.target;
     const button = target.closest('.leaflet-buttons-control-button');
     const mapMarkersContainer = document.querySelector('.map-objects-container.marker');
+
+    // Se já houver uma edição ocorrendo neste momento, aborte a edição atual para iniciar uma nova.
+    if (uniforge.leaflet.core.isEditModeON) {
+        uniforge.leaflet.core.endEditMode(event, true);
+    }
 
     // Desativa todas as opções de desenho.
     mapMarkersContainer.querySelectorAll('.marker-options').forEach(option => option.classList.remove('active'));

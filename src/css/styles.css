@@ -942,11 +942,12 @@ button.disabled:hover {
     margin: 4px;
 }
 
+.leaflet-interactive.highlight,
 .leaflet-marker-icon.editing[alt="Marker"] {
     filter:
-        drop-shadow(0 0 2px white)
-        drop-shadow(0 0 4px #4da3ff)
-        drop-shadow(0 0 8px #4da3ff);
+        drop-shadow(0 0 2px var(--light-color-d))
+        drop-shadow(0 0 4px var(--highlight-color))
+        drop-shadow(0 0 8px var(--dark-highlight-color));
 }
 
 /* ------ Leaflet Layer Controls ------*/

@@ -11,8 +11,8 @@
     <link rel="icon" type="image/svg" sizes="16x16" href="./ui/icons/icone.svg">
 
     <link rel="stylesheet" href="css/styles.css" />
-    <link rel="stylesheet" href="css/themes.css" />    
-    
+    <link rel="stylesheet" href="css/themes.css" />
+
     <link rel="stylesheet" href="../node_modules/leaflet/dist/leaflet.css" />
     <link rel="stylesheet" href="../node_modules/leaflet-draw/dist/leaflet.draw.css" />
 
@@ -34,7 +34,7 @@
                 <button id="codexBtn" class="topbarBtn" data-tooltip="Códex" data-target="codex"><i
                         class="fas fa-book"></i></button>
                 <button id="timelineBtn" class="topbarBtn" data-tooltip="Linha do Tempo" data-target="timeline"><i
-                        class="fas fa-timeline"></i></button>                
+                        class="fas fa-timeline"></i></button>
             </div>
             <div id="timeTool" class="time-tool flexrow">
                 <button id="tenYearsBack" class="arrow" data-tooltip="Voltar 10 Anos"><i
@@ -86,36 +86,34 @@
     </div>
 
     <div class="map-objects-container regular-shapes">
-        <div class="tools-container map-objects-panel">            
+        <div class="tools-container map-objects-panel">
             <div class="tools-content flexcol">
-                <div class="tools-content flexcol">
-                    <div class="config-group preview flexcol">
-                        <legend class="label">Prévia</legend>
-                        <div class="shape-canvas flexrow">
-                            <div class="shape-preview"></div>
+                <div class="config-group preview flexcol">
+                    <legend class="label">Prévia</legend>
+                    <div class="shape-canvas flexrow">
+                        <div class="shape-preview"></div>
+                    </div>
+                </div>
+                <div class="config-colors flexrow">
+                    <color id="fillColorPicker"></color>
+                    <color id="borderColorPicker"></color>
+                </div>
+                <div class="config-group sizes">
+                    <div class="data-group check">
+                        <span class="data-label">Contorno</span>
+                        <switch id="hasBorderSwitch" />
+                    </div>
+                    <div id="borderSizeGroup" class="data-group">
+                        <span class="data-label">Tamanho</span>
+                        <div class="size flexrow hidden">
+                            <slider id="shapeSizeSlider" />
+                            <span id="shapeSizeSpan">5 px</span>
                         </div>
                     </div>
-                    <div class="config-colors flexrow">
-                        <color id="fillColorPicker"></color>
-                        <color id="borderColorPicker"></color>                        
+                    <div id="borderSizeGroup" class="data-group options combo">
+                        <span class="data-label">Linha</span>
+                        <combo id="shapeBorderCombo" value="lineTypes" />
                     </div>
-                    <div class="config-group sizes">                        
-                        <div class="data-group check">
-                            <span class="data-label">Contorno</span>
-                            <switch id="hasBorderSwitch" />
-                        </div>
-                        <div id="borderSizeGroup" class="data-group">
-                            <span class="data-label">Tamanho</span>
-                            <div class="size flexrow hidden">
-                                <slider id="shapeSizeSlider" />
-                                <span id="shapeSizeSpan">5 px</span>
-                            </div>
-                        </div>
-                        <div id="borderSizeGroup" class="data-group options combo">
-                            <span class="data-label">Linha</span>
-                            <combo id="shapeBorderCombo" value="lineTypes" />
-                        </div>
-                    </div>                    
                 </div>
             </div>
             <div id="toggleShapesPanel" class="toggle-tab flexrow visible">

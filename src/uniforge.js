@@ -438,7 +438,7 @@ async function configureLeaflet() {
     const borderColorPicker = uniforge.ctrls.colorPickers.borderColorPicker;
     borderColorPicker.setColor(style.color, true);
 
-    uniforge.leaflet.drawStyle.update(uniforge.leaflet.core.default.map, style);
+    uniforge.leaflet.drawStyle.update(uniforge.leaflet.core.map, style);
 
     await refreshPreviewStyle();
 }
@@ -595,18 +595,12 @@ function activateMainListeners() {
 
     const toggleShapesPanel = document.getElementById('toggleShapesPanel');
     toggleShapesPanel.addEventListener('click', (event) => {
-        const mapShapesContainer = document.querySelector('.map-objects-container.regular-shapes');
-        if (!mapShapesContainer) return;
-
-        onToggleMapObjectPanelClick(event, mapShapesContainer);
+        uniforge.leaflet.core.toggleMapObjectPanel(event);
     });
 
     const toggleObjectsPanel = document.getElementById('toggleObjectsPanel');
-    toggleObjectsPanel.addEventListener('click', (event) => {
-        const mapLayerObjsContainer = document.querySelector('.map-objects-container.layer-objects');
-        if (!mapLayerObjsContainer) return;
-
-        onToggleMapObjectPanelClick(event, mapLayerObjsContainer);
+    toggleObjectsPanel.addEventListener('click', (event) => { 
+        uniforge.leaflet.core.toggleMapObjectPanel(event, {name: 'layer-objects'});
     });
 
     const hasBorderSwitch = document.querySelector('#hasBorderSwitch');
@@ -770,10 +764,7 @@ async function onMarkerIconClick(event) {
     event.stopPropagation();
     const option = event.currentTarget;
 
-    option.classList.toggle('active');
-
-    const signMarker = document.querySelector('.map-objects-panel .config-group .options.marker .active');
-    const colorMarker = document.querySelector('.map-objects-panel .config-group .options.color .active');
+    option.classList.toggle('active');    
 
     const options = option.parentElement.querySelectorAll('a');
     options.forEach(opt => {
@@ -782,23 +773,18 @@ async function onMarkerIconClick(event) {
         }
     });
 
+    const signMarker = document.querySelector('.map-objects-panel .config-group .options.marker .active');
+    const colorMarker = document.querySelector('.map-objects-panel .config-group .options.color .active');
+
+    const editCache = uniforge.leaflet.core.editCache;
+
     if (signMarker && colorMarker) {
         const marker = `${colorMarker.getAttribute('data-color')}_${signMarker.getAttribute('data-marker')}`;
-        await startMarkerDrawing(marker);
+
+        if(editCache && editCache.layer instanceof L.Marker) await refreshMarkerDrawing(marker); 
+        else await startMarkerDrawing(marker);
     }
     else if (uniforge.ctrls.marker) uniforge.ctrls.marker.disable();
-}
-
-function onToggleMapObjectPanelClick(event, container) {
-    event.stopPropagation();
-
-    // Desativa todas as opções de desenho, para redesenho.
-    const mapObjContainers = document.querySelectorAll('.map-objects-container');
-    mapObjContainers.forEach(moc => {
-        if (moc !== container) moc.classList.remove('active');
-    });
-
-    container.classList.toggle('active');
 }
 
 async function onHasBorderSwitchChange(event) {
@@ -816,7 +802,7 @@ async function onHasBorderSwitchChange(event) {
         borderSizeGroup.classList.add('hidden');
     }
 
-    uniforge.leaflet.drawStyle.update(uniforge.leaflet.core.default.map, uniforge.leaflet.drawStyle.style);
+    uniforge.leaflet.drawStyle.update(uniforge.leaflet.core.map, uniforge.leaflet.drawStyle.style);
 
     await refreshPreviewStyle();
 }
@@ -827,7 +813,7 @@ async function onShapeSizeSliderChange(event) {
     const size = uniforge.ctrls.sliders.shapeSizeSlider.getValueNumber();
     uniforge.leaflet.drawStyle.style.weight = size;
 
-    uniforge.leaflet.drawStyle.update(uniforge.leaflet.core.default.map, uniforge.leaflet.drawStyle.style);
+    uniforge.leaflet.drawStyle.update(uniforge.leaflet.core.map, uniforge.leaflet.drawStyle.style);
 
     await refreshPreviewStyle();
 }
@@ -843,7 +829,7 @@ async function onShapeBorderComboChange(event) {
         ...style,
     }
 
-    uniforge.leaflet.drawStyle.update(uniforge.leaflet.core.default.map, uniforge.leaflet.drawStyle.style);
+    uniforge.leaflet.drawStyle.update(uniforge.leaflet.core.map, uniforge.leaflet.drawStyle.style);
 
     await refreshPreviewStyle();
 }
@@ -852,7 +838,7 @@ async function onFillColorPickerChange(picker) {
     uniforge.leaflet.drawStyle.style.fillColor = picker.value;
     uniforge.leaflet.drawStyle.style.fillOpacity = picker.alpha;
 
-    uniforge.leaflet.drawStyle.update(uniforge.leaflet.core.default.map, uniforge.leaflet.drawStyle.style);
+    uniforge.leaflet.drawStyle.update(uniforge.leaflet.core.map, uniforge.leaflet.drawStyle.style);
 
     await refreshPreviewStyle();
 }
@@ -863,7 +849,7 @@ async function onBorderColorPickerChange(picker) {
     uniforge.leaflet.drawStyle.style.color = picker.value;
     uniforge.leaflet.drawStyle.style.opacity = picker.alpha;
 
-    uniforge.leaflet.drawStyle.update(uniforge.leaflet.core.default.map, uniforge.leaflet.drawStyle.style);
+    uniforge.leaflet.drawStyle.update(uniforge.leaflet.core.map, uniforge.leaflet.drawStyle.style);
 
     await refreshPreviewStyle();
 }
@@ -919,7 +905,7 @@ async function recoverForm(form) {
 }
 
 async function startMarkerDrawing(marker) {
-    const map = uniforge.leaflet.core.default.map;
+    const map = uniforge.leaflet.core.map;
     const markerURL = uniforge.urls.markers.join(`${marker}.png`);
 
     // O controlador de Marker já está ativo. 
@@ -927,6 +913,14 @@ async function startMarkerDrawing(marker) {
 
     // Ativa o controle de posicionamento de Markers.
     uniforge.ctrls.marker = uniforge.leaflet.drawer.marker(map, markerURL);
+};
+
+async function refreshMarkerDrawing(marker) {    
+    const markerURL = uniforge.urls.markers.join(`${marker}.png`);  
+    const newStyle = uniforge.leaflet.drawStyle.factories.marker(markerURL).markerStyle.icon.options;  
+
+    const newIcon = L.icon(newStyle);
+    uniforge.leaflet.core.editCache.layer.setIcon(newIcon);
 };
 
 async function refreshPreviewStyle() {

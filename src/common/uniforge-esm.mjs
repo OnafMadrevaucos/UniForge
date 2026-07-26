@@ -70,7 +70,10 @@ const parser = {
 const leaflet = {
     core: leafletEsm.core,
     drawer: leafletEsm.utils.default.drawer,   
-    drawStyle: leafletEsm.utils.default.drawStyle 
+    drawStyle: {
+        factories: leafletEsm.utils.default.options, 
+        ...leafletEsm.utils.default.drawStyle
+    } 
 }
 
 const state = {
@@ -187,7 +190,11 @@ globalThis.uniforge = {
     * 
     * @type {Leaflet}
     */
-    leaflet: Object.freeze(leaflet),
+    leaflet: Object.freeze({
+        core: leaflet.core.default, 
+        drawer: leaflet.drawer, 
+        drawStyle: leaflet.drawStyle
+    }),
 
     /**
     * Instância de gerenciamento das tooltips usada pela aplicação.

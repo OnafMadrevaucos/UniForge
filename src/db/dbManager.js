@@ -742,6 +742,7 @@ export default class DBManager {
         const updateSet = this.buildUpdateSet([
             ['source', data.source],
             ['points', data.points],
+            ['icon', data.icon],
             ['style', data.style]
         ]);
 
