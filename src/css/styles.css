@@ -1389,8 +1389,13 @@ button.disabled:hover {
     z-index: 1002;
 }
 
+.map-objects-container.regular-shapes {
+    z-index: 1002;
+}
+
 .map-objects-container.active {
     right: 0;
+    z-index: 1005;
 }
 .map-objects-container.marker.active {
     right: 0em;
@@ -1410,11 +1415,19 @@ button.disabled:hover {
     font-size: 12px;
 }
 
-.map-objects-container .toggle-tab {
+/* Contêiner de Abas Verticais do Mapa */
+.map-objects-container .map-objects-tabs {
     position: absolute;
+    top: 35px;
+    left: -49px;
+    gap: 10px;
+    z-index: 1006;
+}
+
+.map-objects-container .map-objects-tabs .toggle-tab {
     width: 50px;
     height: 25px;
-    left: -49px;
+    display: flex;
     align-items: center;
     justify-content: center;
     background-color: var(--dark-red);
@@ -1422,20 +1435,14 @@ button.disabled:hover {
     border-radius: 4px 0 0 4px;
     cursor: pointer;
     color: var(--text-color);
-    transform: translateY(-100%);
-    transition: all 0.05s ease-in-out;
+    transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out;
     padding-block: 2px;
 }
 
-.map-objects-container #toggleShapesPanel.toggle-tab {
-    top: 50px;    
-}
-.map-objects-container #toggleObjectsPanel.toggle-tab {
-    top: 85px;
-}
-
-.map-objects-container.active .toggle-tab,
-.map-objects-container .toggle-tab:hover {
+/* Destaque amarelo somente no botão do painel que estiver ativo no momento */
+.map-objects-container.regular-shapes.active .tab-shapes,
+.map-objects-container.layer-objects.active .tab-objects,
+.map-objects-container .map-objects-tabs .toggle-tab:hover {
     color: var(--dark-red);
     background-color: var(--border-yellow);
 }
