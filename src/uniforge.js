@@ -594,20 +594,15 @@ function activateMainListeners() {
         option.addEventListener('click', (event) => { onMarkerIconClick(event); });
     });
 
-    const toggleShapesPanel = document.getElementById('toggleShapesPanel');
-    toggleShapesPanel.addEventListener('click', (event) => {
-        const mapShapesContainer = document.querySelector('.map-objects-container.regular-shapes');
-        if (!mapShapesContainer) return;
+    const toggleTabs = document.querySelectorAll('.map-objects-container .toggle-tab');
+    toggleTabs.forEach(tab => {
+        tab.addEventListener('click', (event) => {
+            const targetClass = tab.getAttribute('data-target');
+            const targetContainer = document.querySelector(`.map-objects-container.${targetClass}`);
+            if (!targetContainer) return;
 
-        onToggleMapObjectPanelClick(event, mapShapesContainer);
-    });
-
-    const toggleObjectsPanel = document.getElementById('toggleObjectsPanel');
-    toggleObjectsPanel.addEventListener('click', (event) => {
-        const mapLayerObjsContainer = document.querySelector('.map-objects-container.layer-objects');
-        if (!mapLayerObjsContainer) return;
-
-        onToggleMapObjectPanelClick(event, mapLayerObjsContainer);
+            onToggleMapObjectPanelClick(event, targetContainer);
+        });
     });
 
     const hasBorderSwitch = document.querySelector('#hasBorderSwitch');
@@ -797,15 +792,19 @@ async function onMarkerIconClick(event) {
 }
 
 function onToggleMapObjectPanelClick(event, container) {
-    event.stopPropagation();
+    if (event && event.stopPropagation) event.stopPropagation();
 
-    // Desativa todas as opções de desenho, para redesenho.
+    const isOpening = !container.classList.contains('active');
+
+    // Desativa todos os painéis de objetos do mapa
     const mapObjContainers = document.querySelectorAll('.map-objects-container');
     mapObjContainers.forEach(moc => {
-        if (moc !== container) moc.classList.remove('active');
+        moc.classList.remove('active');
     });
 
-    container.classList.toggle('active');
+    if (isOpening) {
+        container.classList.add('active');
+    }
 }
 
 async function onHasBorderSwitchChange(event) {
