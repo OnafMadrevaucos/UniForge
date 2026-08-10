@@ -38,11 +38,15 @@ export default class SettingsForm extends EntryForm {
         */
         this.isEventForm = false;
 
-        this.slider = new Slider('testSlider', this, { linkedLabel: 'slider-span', labelMask: 'Valor: {value}' });
+        this.sliders = {
+            monthSize: null
+        };
     }
 
     /**@inheritdoc */
     async prepareData() {
+        this.prepareCalendars();
+
         this.prepareGroups();
 
         this.data.tilerHint = 'NodeTiler é uma ferramenta de geração de Tile Maps para uso com a biblioteca Leaflet. ' +
@@ -54,6 +58,11 @@ export default class SettingsForm extends EntryForm {
         await this.prepareMetadata();
 
         return super.prepareData();
+    }
+
+    prepareCalendars() {
+        const calendars = uniforge.doc.calendars.toArray();
+        this.data.calendars = calendars;
     }
 
     prepareGroups() {
@@ -152,6 +161,9 @@ export default class SettingsForm extends EntryForm {
 
         themeSelector.value = selectedTheme;
         themeSelector.dispatchEvent(new Event('change'));
+
+        this.sliders.monthSize = new Slider('monthSizeSlider', this.form, { min: 1, max: 50, step: 1, value: 30, linkedLabel: 'monthSizeSpan', tooltip: 'Dias do Mês', width: '100%' });
+        this.sliders.monthSize.config();
     }
     /**
     * Configura o conteúdo do panel de Banco de Dados.
@@ -236,7 +248,10 @@ export default class SettingsForm extends EntryForm {
         const themeSelector = this.querySelector('#themeSelector');
         themeSelector.addEventListener('change', (event) => { this.onThemeSelectorChange(event); });
 
-        this.slider.activateBaseListeners();
+        const calendarItems = this.querySelectorAll('.calendar-item');
+        calendarItems.forEach(item => {
+            item.addEventListener('click', (event) => { this.onCalendarItemClick(event); });
+        });
 
         // ------------------------------------------------------------------------------------------------
         // Eventos do painel de Banco de Dados ------------------------------------------------------------      
@@ -302,6 +317,25 @@ export default class SettingsForm extends EntryForm {
         buttons.forEach(button => {
             button.addEventListener('click', (event) => { this.onOptionButtonClick(event); });
         });
+    }
+
+    /**
+     * Configura o evento de seleção de um calendário.
+     * @param {Event} event 
+     */
+    onCalendarItemClick(event) {
+        event.stopPropagation();
+        const item = event.target.closest('.calendar-item');
+        const calendarId = Number(event.target.closest('.calendar-item').dataset.value);
+        const calendar = uniforge.doc.calendars.get(calendarId);
+
+        const calendarItems = this.querySelectorAll('.calendar-item');
+        calendarItems.forEach(item => {
+            item.classList.remove('selected');
+        });
+        item.classList.toggle('selected');
+
+        this._loadCalendarData(calendar);
     }
 
     /**
@@ -686,6 +720,76 @@ export default class SettingsForm extends EntryForm {
         }
 
         uniforge.ctrls.progressDialog.close();
+    }
+
+    _loadCalendarData(calendar) {
+        const calendarNameInput = this.querySelector('#calendarName');
+        const calendarPrefixInput = this.querySelector('#calendarPrefix');
+        const calendarSuffixPreInput = this.querySelector('#calendarSuffixPre');
+        const calendarSuffixPosInput = this.querySelector('#calendarSuffixPos');
+
+        calendarNameInput.value = calendar.label;
+        calendarPrefixInput.value = calendar.prefix ?? '';
+
+        if (!calendar.suffix || calendar.suffix.isEmpty()) {
+            calendarSuffixPreInput.value = '';
+            calendarSuffixPosInput.value = '';
+        } else {
+            const suffix = calendar.suffix.split('|');
+            if (suffix.length === 2) {
+                calendarSuffixPreInput.value = suffix[0];
+                calendarSuffixPosInput.value = suffix[1];
+            } else throw new Error('O sufixo do calendário deve possuir apenas 2 elementos.');
+        }
+
+        const weekDays = calendar.days.toArray();
+        const weekDaysItems = this.querySelectorAll('.calendar-week-days .week-day-item');
+
+        weekDaysItems.forEach(item => {
+            const idx = Number(item.dataset.idx);
+
+            const dayNameInput = this.querySelector(`#day${idx + 1}Name`);
+            dayNameInput.value = weekDays[idx].name;
+            const dayShortNameInput = this.querySelector(`#day${idx + 1}ShortName`);            
+            dayShortNameInput.value = weekDays[idx].label;
+        });
+        
+        const monthsList = this.querySelector('#monthsList');
+        monthsList.innerHTML = '';
+
+        const months = calendar.months.toArray();
+        months.forEach(month => {
+            const element = document.createElement('li');
+            element.classList.add('item', 'month-item');
+            element.dataset.clmid = month.clmid;
+
+            const dataGroup = document.createElement('div');
+            dataGroup.classList.add('data-complex', 'flexrow');
+
+            const nameSpan = document.createElement('span');
+            nameSpan.classList.add('data-label');
+            nameSpan.textContent = month.label;
+
+            const sizeGroup = document.createElement('div');
+            sizeGroup.classList.add('data-group', 'flexcol');
+
+            const sizeSpan = document.createElement('span');
+            sizeSpan.classList.add('data-value', 'size');
+            sizeSpan.textContent = month.size;
+
+            const daysLabel = document.createElement('span');
+            daysLabel.classList.add('days-label');
+            daysLabel.textContent = 'Dias';
+
+            sizeGroup.appendChild(sizeSpan);
+            sizeGroup.appendChild(daysLabel);            
+
+            dataGroup.appendChild(nameSpan);
+            dataGroup.appendChild(sizeGroup);
+
+            element.appendChild(dataGroup);            
+            monthsList.appendChild(element);
+        });
     }
 
     _handleLineageIcon(subject) {

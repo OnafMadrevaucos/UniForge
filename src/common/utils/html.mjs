@@ -22,12 +22,13 @@ export async function loadTemplate(filePath) {
 export function generateListHTML(id, listItems, options = {}) {
     const extraClasses = options.extraClasses;
     const itemClass = options.itemClass;
+    const withDelete = options.withDelete ?? false;
 
     // Variavel para armazenar o resultado do 'replace'.
     let html = `<ul id="${id}" class="list${extraClasses ? ` ${extraClasses}` : ''}">`;
 
     listItems.forEach(item => {
-        const itemHTML = generateListItemHTML(item, { itemClass: itemClass });
+        const itemHTML = generateListItemHTML(item, { itemClass: itemClass, withDelete: withDelete });
         html += itemHTML.outerHTML;
     });
 
@@ -111,7 +112,7 @@ export function generateListItemHTML(item, options = { itemClass: null, withDele
     const { itemClass, withDelete } = options;
 
     const li = document.createElement('li');
-    li.className = itemClass ?? 'item';
+    li.className = `item${itemClass ? ` ${itemClass}` : ''}`;
     li.setAttribute('data-value', item._value ?? (item._id ?? ''));
 
     const div = document.createElement('div');

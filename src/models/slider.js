@@ -4,7 +4,7 @@
  * passos (steps), rótulos vinculados com máscaras de formatação e controle de estado.
  */
 export default class Slider {
-    
+
     /**
      * Direções permitidas para o funcionamento do Slider.
      * @enum {string}
@@ -50,8 +50,14 @@ export default class Slider {
         this.step = options.step ?? 1;
         this.value = options.value ?? this.min;
         this.direction = options.direction ?? Slider.Directions.horizontal;
-        this.linkedLabel = options.linkedLabel ?? null;
-        this.labelMask = options.labelMask ?? '{value}';
+
+        if (options.linkedLabel) {
+            this.linkedLabel = this.parent.querySelector(`#${options.linkedLabel}`);
+            if (this.linkedLabel) {
+                this.linkedLabel.style.width = '25px';
+                this.labelMask = options.labelMask ?? '{value}';
+            }
+        }
 
         // Atribui o tooltip apenas se ele tiver sido passado nas opções.
         if (options.tooltip)
@@ -107,7 +113,7 @@ export default class Slider {
      * @returns {boolean} 
      */
     get visible() {
-        if(!this.parent) return !this.element.classList.contains('hidden');
+        if (!this.parent) return !this.element.classList.contains('hidden');
         else return !this.parent.classList.contains('hidden') && !this.element.classList.contains('hidden');
     }
 
@@ -217,7 +223,7 @@ export default class Slider {
         // Atualiza o label atribuído ao Slider se houver vinculação.
         if (this.linkedLabel) {
             // Obtém o elemento do label dentro do escopo do elemento pai.
-            const labelElement = this.parent.querySelector(`#${this.linkedLabel}`);
+            const labelElement = this.linkedLabel;
 
             // Caso o elemento do label exista, atualiza-o.
             if (labelElement) {

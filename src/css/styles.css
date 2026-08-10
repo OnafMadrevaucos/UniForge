@@ -127,14 +127,19 @@
     /* Gradients */
     --blockquote-gradient: linear-gradient(125deg, var(--color-c) 35%, var(--light-color-c) 45%, var(--blockquote-background) 80%);
 
+    /* Highlights */
+    --text-highlight: 0 0 8px rgba(245, 158, 11, 0.3);
+    --dark-text-highlight: 0 0 8px rgba(220, 38, 38, 0.3);
+
     /* Shadows */
     --default-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
     --small-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
     --light-shadow: 0 1px 3px rgba(255, 255, 255, 0.1);
     --right-shadow: 1px 0px 4px rgba(0, 0, 0, 0.15);
     --text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
-    --text-highlight: 0 0 8px rgba(245, 158, 11, 0.3);
-    --dark-text-highlight: 0 0 8px rgba(220, 38, 38, 0.3);
+    --button-hover-shadow: var(--dark-text-highlight);
+    --button-text-hover-shadow: var(--text-highlight);
+    --new-entry-hover-shadow: 0 0 8px rgba(50, 220, 38, 0.3);
     --sidebar-shadow: 4px 0 24px rgba(0, 0, 0, 0.35);
     --dialog-shadow: 8px 0 32px rgba(0, 0, 0, 0.4);
     --calendar-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
@@ -154,25 +159,31 @@
 
 /* ------ Flex Control ------ */
 .flexrow {
-    display: flex;
-    flex-direction: row;
+    display: flex !important;
+    flex-direction: row !important;
 }
 
 .flexcol {
-    display: flex;
-    flex-direction: column;
+    display: flex !important;
+    flex-direction: column !important;
 }
 
 .flex-0 {
-    flex: 0;
+    flex: 0 !important;
 }
 
 .flex-1 {
-    flex: 1;
+    flex: 1 !important;
 }
 
 .flex-2 {
-    flex: 2;
+    flex: 2 !important;
+}
+
+/* ------ Table Control ------ */
+.table {
+    display: table;
+    width: 100%;
 }
 
 /* ------ Main Body ------ */
@@ -272,6 +283,10 @@ fieldset {
     border: none;
 }
 
+fieldset>.fieldset-content {    
+    width: var(--fill-width);
+}
+
 input[list],
 select {
     padding: 5px;
@@ -315,6 +330,17 @@ button {
     transition: background-color 0.3s;
     height: fit-content;
     width: 10em;
+}
+
+.list .item.selected,
+.list .item:hover,
+button:not(:disabled):hover {
+    cursor: pointer;
+    box-shadow: var(--dark-text-highlight);
+}
+
+legend {
+
 }
 
 a {
@@ -496,6 +522,7 @@ input:checked+.slider::before {
 
 .footer button.new-entry:hover {
     background-color: var(--dark-highlight-color);
+    box-shadow: var(--new-entry-hover-shadow);
     color: var(--text-color);
 }
 
@@ -1796,6 +1823,7 @@ button.disabled:hover {
 .form .main {
     flex: 1;
     height: var(--fill-height);
+    width: var(--fill-width);
     transition: height 0.5s ease;
 }
 
@@ -2413,6 +2441,7 @@ button.disabled:hover {
     flex-direction: column;
     overflow: hidden;
 }
+.data-group.side-list {}
 
 .data-group.buttons {
     gap: var(--default-gap-size);
@@ -2447,6 +2476,7 @@ button.disabled:hover {
     margin-block: 0;
 }
 
+ul.list li,
 .list ul li,
 .data-group.list ul li {
     margin-block: 5px;
@@ -2669,29 +2699,22 @@ button.disabled:hover {
     justify-content: center;
     align-items: center;
     border: none;
-    border-radius: none;
+    border-radius: 0;
+    box-shadow: none;
 }
 
+.tabs-control .tabs-options button:hover,
 .tabs-control .tabs-options button.selected {
     color: var(--text-color);
+    text-shadow: var(--button-text-hover-shadow);
 }
 
 .tabs-control .tabs-options button:first-of-type {
     border-top-left-radius: var(--default-border-radius);
-    border-bottom-left-radius: var(--default-border-radius);
 }
 
 .tabs-control .tabs-options button:last-of-type {
     border-top-right-radius: var(--default-border-radius);
-    border-bottom-right-radius: var(--default-border-radius);
-}
-
-#sections.tabs-control .tabs-options button:first-of-type {
-    border-bottom-left-radius: 0;
-}
-
-#sections.tabs-control .tabs-options button:last-of-type {
-    border-bottom-right-radius: 0;
 }
 
 .tabs-control .tabs-options button * {
@@ -2708,7 +2731,7 @@ button.disabled:hover {
 }
 
 .tabs-control .tab-content:not(.active) {
-    display: none;
+    display: none !important;
 }
 
 .tabs-control .tab-content div.list {
@@ -2746,24 +2769,6 @@ button.disabled:hover {
 #settings.tabs-control {
     overflow-y: auto;
 }
-
-#settings.tabs-control .tabs-options button {
-    background-color: transparent;
-    border: none;
-    border-radius: none;
-    color: var(--text-color);
-
-    border-left: var(--tab-item-border);
-    border-right: var(--tab-item-border);
-    mask-image: linear-gradient(90deg, rgba(0, 0, 0, 0.45) 0%, black 50%, rgba(0, 0, 0, 0.45) 100%);
-}
-
-#settings.tabs-control .tabs-options button.selected,
-#settings.tabs-control .tabs-options button:hover {
-    background-color: var(--dark-color-b-T85);
-    color: var(--background-color);
-}
-
 
 #settings .settings-container {
     flex: 100%;
@@ -3884,7 +3889,7 @@ hr.divider {
     font-size: var(--heading-2-size);
     font-variant: small-caps;
     width: 100%;
-    border-bottom: 1px solid var(--color-a);
+    border-bottom: 1px solid var(--dark-color-b);
     padding-bottom: 5px;
     margin-bottom: 15px;
     color: var(--title-color);
@@ -4286,6 +4291,51 @@ hr.divider {
     background-color: var(--color-a);
     color: var(--dark-color-a);
     pointer-events: none;
+}
+
+.calendars .calendar-list {
+    width: var(--fill-width);
+}
+.calendars .calendar-list .calendar-item {
+    font-size: var(--default-size);
+}
+.calendars .calendar-list .calendar-item.selected,
+.calendars .calendar-list .calendar-item:hover {
+    background-color: var(--dark-color-b);
+}
+
+.calendars .calendar-manager {
+    width: var(--fill-width);
+}
+.calendars .calendar-manager .calendar-week-days .data-complex {
+    gap: var(--small-gap-size);
+    text-align: center;    
+}
+
+.calendars .calendar-manager .month-list {
+    height: 25vh;
+}
+
+.calendars .calendar-manager .month-list .month-item {
+    font-size: var(--heading-2-size);
+    padding-inline: 10px;
+}
+.calendars .calendar-manager .month-list .month-item:hover {    
+    background-color: var(--dark-color-b);
+}
+
+.calendars  .month-list .month-item .data-complex .data-group {
+    width: auto;
+}
+.calendars  .month-list .month-item .data-complex .data-group *{
+    text-align: center;
+}
+.calendars  .month-list .month-item .data-complex .data-group .size {
+    font-size: var(--big-size);
+    font-weight: bold;
+}
+.calendars  .month-list .month-item .data-complex .data-group .days-label {
+    font-size: var(--small-size);
 }
 
 /* Visualização dos dias */
