@@ -73,7 +73,9 @@ export default class DBManager {
 
     async init() {
         try {
+            // Encerra qualquer transação aberta indevidamente antes de iniciar o gerenciador.
             await uniforge.sql.exec('ROLLBACK');
+
             console.log('UniForge | Transação aberta encerrada com sucesso.');
         } catch (error) {
             console.log('UniForge | Nenhuma transação aberta encontrada.');
@@ -223,6 +225,36 @@ export default class DBManager {
             await this.rollbackTransaction(error);
             return false;
         }
+    }
+
+    /**
+     * Adiciona uma novo calendário na tabela `calendars`.
+     * 
+     * @param {Object} data             - Dados do calendário a ser adicionado.
+     * @param {string} data.label       - Rótulo do calendário.
+     * @param {string} data.prefix      - Prefixo dos Anos do calendário (opcional).
+     * @param {string} data.suffix      - Sufixo dos Anos do calendário (opcional).
+     * 
+     * @returns {Promise<Object>} - Resultado da execução do comando, incluindo o ID do calendário adicionado.
+    */
+    async addCalendar(data) {
+        let query = 'INSERT INTO calendars (label, prefix, suffix) VALUES (?,?,?);';
+        let params = [];
+
+        const clid = (!data.clid) ? this.generateID() : data.clid;
+
+        params.push(clid);
+        params.push(data.label);
+        params.push(data.prefix);
+        params.push(data.suffix);
+        params.push(Number(data.type) ?? 0);
+        params.push(Number(data.hasLineage) ?? 0);
+
+        const result = await this.#execQuery(query, params);
+        result.lastInsertRowid = cid;
+        this.results = result;
+
+        return this.result;
     }
 
     /**
@@ -740,6 +772,7 @@ export default class DBManager {
         const updateSet = this.buildUpdateSet([
             ['source', data.source],
             ['points', data.points],
+            ['icon', data.icon],
             ['style', data.style]
         ]);
 
@@ -1212,6 +1245,8 @@ export default class DBManager {
                 _label: row.label,
                 clid: Number(row.clid),
                 label: row.label,
+                prefix: row.prefix,
+                suffix: row.suffix,
                 months: [],
                 days: [],
                 daysInMonth: [],
@@ -2316,8 +2351,10 @@ export default class DBManager {
      * @returns {Promise<Object>} Uma promessa que informa se a tabela foi criada com sucesso, com o número de alterações.
      */
     async createCalendarTable() {
-        let query = 'CREATE TABLE IF NOT EXISTS calendars (clid INTEGER PRIMARY KEY,' +
-            'label TEXT)';                 // Título do calendário
+        let query = 'CREATE TABLE IF NOT EXISTS calendars (clid AUTOINCREMENT PRIMARY KEY,' +
+            'label TEXT,' +                 // Título do calendário
+            'prefix VARCHAR(50) NULL,' +    // Prefixo dos Anos do calendário (opcional)
+            'suffix VARCHAR(50) NULL)';     // Sufixo dos Anos do calendário (opcional)            
 
         this.results = await this.#execQuery(query);
         console.log('Tabela \'calendar\' criada....OK.');
@@ -2357,7 +2394,8 @@ export default class DBManager {
     async createDaysTable() {
         let query = 'CREATE TABLE IF NOT EXISTS calendarsDays (cldid INTEGER PRIMARY KEY,' +
             'clid INTEGER,' +
-            'label TEXT)';                 // Título do DIAS do calendário
+            'label TEXT,' +         // Abreviação dos Dias da Semana do calendário.
+            'name TEXT)';           // Nome completo dos Dias da Semana do calendário.      
 
         this.results = await this.#execQuery(query);
         console.log('Tabela \'calendarsDays\' criada....OK.');

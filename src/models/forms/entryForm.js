@@ -4,7 +4,7 @@
 import SidebarForm from "./sidebarForm.js";
 import LinkDialog from "../dialogs/linkDialog.js";
 import Dialogs from "../dialogs/dialog.js";
-import DatePicker from "../datePicker.js";
+import DatePicker from "../controls/datePicker.js";
 import FilePickerDialog from "../dialogs/filePickerDialog.js";
 import Entry from "../../common/documents/entry.mjs";
 import EntryEvent from "../../common/documents/event.mjs";
@@ -765,6 +765,12 @@ export default class EntryForm extends SidebarForm {
     });
 
     await tinymce.init(options);
+
+    const iframe = this.mainEditor.getDoc().documentElement;
+    iframe.setAttribute(
+      "data-theme",
+      document.documentElement.getAttribute("data-theme")
+    );
   }
 
   /**

@@ -1,6 +1,6 @@
 import EntryForm from "./entryForm.js";
 import EntityManager from "../../scripts/managers/entityManger.js";
-import DatePicker from "../datePicker.js";
+import DatePicker from "../controls/datePicker.js";
 import EntrySearchDialog from "../dialogs/entrySearchDialog.js";
 import Dialogs from "../dialogs/dialog.js";
 import Entity from "../../common/documents/entity.mjs";

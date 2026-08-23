@@ -1,10 +1,11 @@
 import EntryForm from "./entryForm.js";
 import Dialogs from '../dialogs/dialog.js';
 import ChapterDialog from "../dialogs/chapterDialog.js";
+import ThemeDialog from "../dialogs/themeDialog.js";
 import DBManager from "../../db/dbManager.js";
 import FilePickerDialog from "../dialogs/filePickerDialog.js";
 import ProgressDialog from "../dialogs/progressDialog.js";
-import Slider from "../slider.js";
+import Slider from "../controls/slider.js";
 
 /**
   * Formulário de configurações do sistema.
@@ -38,22 +39,55 @@ export default class SettingsForm extends EntryForm {
         */
         this.isEventForm = false;
 
-        this.slider = new Slider('testSlider', this, { linkedLabel: 'slider-span', labelMask: 'Valor: {value}' });
+        /**
+         * O objeto para armazenar os dados de seleção do formulário.
+         */
+        this.selection = {
+            calendar: null,
+            chapter: null
+        }
+
+        /**
+         * O objeto para armazenar os sliders do formulário.
+         */
+        this.sliders = {
+            monthSize: null
+        };
+    }
+
+    /**
+     * Retorna o calendário selecionado.
+     */
+    get calendar() {
+        return this.selection.calendar;
+    }
+    /**
+     * Retorna o capítulo selecionado.
+     */
+    get chapter() {
+        return this.selection.chapter;
     }
 
     /**@inheritdoc */
     async prepareData() {
+        this.prepareCalendars();
+
         this.prepareGroups();
 
         this.data.tilerHint = 'NodeTiler é uma ferramenta de geração de Tile Maps para uso com a biblioteca Leaflet. ' +
             'Um Tile Map é em si um diretório localizado no \'diretório padrão\' abaixo, altere-o se desejar ' +
             'que os arquivos gerados sejam armazenados em outro diretório.';
 
-        this.prepareThemes();
+        await this.prepareThemes();
 
         await this.prepareMetadata();
 
         return super.prepareData();
+    }
+
+    prepareCalendars() {
+        const calendars = uniforge.doc.calendars.toArray();
+        this.data.calendars = calendars;
     }
 
     prepareGroups() {
@@ -75,14 +109,26 @@ export default class SettingsForm extends EntryForm {
         this.data.leaflet.MAX_ZOOM = uniforge.constants.leaflet.MAX_ZOOM;
     }
 
-    prepareThemes() {
+    async prepareThemes() {
+        const extraThemesFiles = await uniforge.fs.readDir(uniforge.urls.relativePath.customCSS);
+
+        const extraThemes = [];
+
+        extraThemesFiles.files.forEach(theme => {
+            const themeName = theme.name;
+            extraThemes.push({
+                _id: `custom/theme-${themeName}`,
+                _label: themeName.capitalize().replaceAll('.css', '')
+            });
+        });
+
         this.data.themes = {
             nativos: [
                 { _id: 'theme-medieval', _label: 'Medieval' },
                 { _id: 'theme-scifi', _label: 'Sci-fi' },
                 { _id: 'theme-neutral', _label: 'Neutro' },
             ],
-            extras: []
+            extras: extraThemes
         };
     }
 
@@ -150,8 +196,27 @@ export default class SettingsForm extends EntryForm {
         const themeSelector = this.querySelector('#themeSelector');
         const selectedTheme = this.data.misc.currentTheme ?? 'theme-neutral';
 
+        const editThemeButton = this.querySelector("#editThemeButton");
+
+        const themePath = localStorage.getItem('uniforge_theme_path') || 'css/themes.css';
+        if (themePath?.includes('custom')) {
+            editThemeButton.innerHTML = '<i class="fas fa-palette"></i';
+            editThemeButton.dataset.tooltip = 'Editar Tema';
+            editThemeButton.dataset.action = 'edit';
+
+            const deleteThemeButton = this.querySelector("#deleteThemeButton");
+            deleteThemeButton.classList.remove('hidden');
+        } else {
+            editThemeButton.innerHTML = '<i class="fas fa-clone"></i';
+            editThemeButton.dataset.tooltip = 'Clonar Tema';
+            editThemeButton.dataset.action = 'clone';
+        }
+
         themeSelector.value = selectedTheme;
         themeSelector.dispatchEvent(new Event('change'));
+
+        this.sliders.monthSize = new Slider('monthSizeSlider', this.form, { min: 1, max: 50, step: 1, value: 30, linkedLabel: 'monthSizeSpan', tooltip: 'Dias do Mês', width: '100%' });
+        this.sliders.monthSize.config();
     }
     /**
     * Configura o conteúdo do panel de Banco de Dados.
@@ -219,6 +284,7 @@ export default class SettingsForm extends EntryForm {
 
     /* ---------------------------------------------------------------------------------------------------------------- */
     // LISTENERS
+
     /**
     * Configura ouvintes de eventos básicos para o formulário.
     * @inheritdoc
@@ -226,21 +292,55 @@ export default class SettingsForm extends EntryForm {
     activateListeners() {
         super.activateListeners();
 
-        this.configureOptionsListeners();
+        this.activateOptionsListeners();
 
-        const html = this.ui.app;
+        // Eventos do painel de Configurações Gerais.
+        this.activateMainPanelListeners();
 
-        // ------------------------------------------------------------------------------------------------
-        // Eventos do painel de Configurações Gerais ------------------------------------------------------
+        // Eventos do painel de Banco de Dados.
+        this.activateDatabaseListeners();
 
+        // Eventos do painel de Capítulos.
+        this.activateChaptersListeners();
+
+        // Eventos do painel do Leaflet®.
+        this.activateLeafletListeners();
+    }
+
+    activateMainPanelListeners() {
         const themeSelector = this.querySelector('#themeSelector');
         themeSelector.addEventListener('change', (event) => { this.onThemeSelectorChange(event); });
 
-        this.slider.activateBaseListeners();
+        const newThemeButton = this.querySelector('#newThemeButton');
+        newThemeButton.addEventListener('click', (event) => { this.onNewThemeClick(event); });
 
-        // ------------------------------------------------------------------------------------------------
-        // Eventos do painel de Banco de Dados ------------------------------------------------------------      
+        const editThemeButton = this.querySelector("#editThemeButton");
+        editThemeButton.addEventListener('click', (event) => { this.onEditThemeClick(event); });
 
+        const deleteThemeButton = this.querySelector("#deleteThemeButton");
+        deleteThemeButton.addEventListener('click', (event) => { this.onDeleteThemeClick(event); });
+
+        const newCalendarButton = this.querySelector('#newCalendarButton');
+        newCalendarButton.addEventListener('click', (event) => { this.onNewCalendarClick(event); });
+
+        const calendarsList = this.querySelector('#calendarsList');
+        calendarsList.addEventListener('click', (event) => { this.onCalendarsListClick(event); });
+
+        const calendarItems = this.querySelectorAll('.calendar-item');
+        calendarItems.forEach(item => {
+            item.addEventListener('click', (event) => { this.onCalendarItemClick(event); });
+        });
+
+        const addMonthButton = this.querySelector('#addMonthButton');
+        addMonthButton.addEventListener('click', (event) => { this.onAddMonthClick(event); });
+    }
+
+    activateChaptersListeners() {
+        const newChapterButton = this.querySelector('#newChapterButton');
+        newChapterButton.addEventListener('click', (event) => { this.onNewChapterClick(event) });
+    }
+
+    activateDatabaseListeners() {
         const externalConnectionSwitch = this.querySelector('#externalConnectionSwitch input#checkbox');
         externalConnectionSwitch.addEventListener('change', (event) => { this.onExternalConnectionSwitchChange(event); });
 
@@ -264,15 +364,10 @@ export default class SettingsForm extends EntryForm {
 
         // O panel padrão é sempre o panel de Banco de Dados
         this.configureDatabasePanel();
+    }
 
-        // ------------------------------------------------------------------------------------------------
-        // Eventos do painel de Capítulos -----------------------------------------------------------------
-
-        const newChapterButton = this.querySelector('#newChapterButton');
-        newChapterButton.addEventListener('click', (event) => { this.onNewChapterClick(event) });
-
-        // ------------------------------------------------------------------------------------------------
-        // Eventos do painel do Leaflet® ------------------------------------------------------------------
+    activateLeafletListeners() {
+        const html = this.ui.app;
 
         const defaultMapButton = this.querySelector('#defaultMapButton');
         defaultMapButton.addEventListener('click', (event) => { this.onDefaultMapClick(event) });
@@ -288,14 +383,12 @@ export default class SettingsForm extends EntryForm {
 
         // Aciona o cálculo inicial ao carregar
         this._onCalculateScale();
-
-        // ------------------------------------------------------------------------------------------------
     }
 
     /**
-   * Configura os ouvidores de Eventos do menu de opções do formulário.
-   */
-    configureOptionsListeners() {
+    * Configura os ouvidores de Eventos do menu de opções do formulário.
+    */
+    activateOptionsListeners() {
         const options = this.querySelector('.tabs-options');
         const buttons = options.querySelectorAll('button');
 
@@ -305,15 +398,172 @@ export default class SettingsForm extends EntryForm {
     }
 
     /**
+     * Configura o evento de adicionar um novo calendário.
+     * @param {Event} event 
+     */
+    onNewCalendarClick(event) {
+        event.stopPropagation();
+
+        this._clearCalendarData(false);
+
+        const calendarNameInput = this.querySelector('#calendarName');
+        calendarNameInput.focus(); 
+    }
+
+    /**
+     * Configura o evento de clique em uma lista de calendários.
+     * @param {Event} event 
+     */
+    onCalendarsListClick(event) {
+        event.stopPropagation();
+        const target = event.target;
+
+        if (!target.classList.contains('calendar-item')) {
+            this._clearCalendarData();
+        }
+    }
+
+    /**
+     * Configura o evento de seleção de um calendário.
+     * @param {Event} event 
+     */
+    onCalendarItemClick(event) {
+        event.stopPropagation();
+        const item = event.target.closest('.calendar-item');
+        const calendarId = Number(event.target.closest('.calendar-item').dataset.value);
+        const calendar = uniforge.doc.calendars.get(calendarId);
+
+        // Limpa qualquer item que tenha sido selecionado antes.
+        this._clearCalendarData();
+        // Seleciona o item clicado.
+        item.classList.toggle('selected');
+
+        this._loadCalendarData(calendar);
+    }
+
+    /**
+     * Configura o evento de adicionar um novo mês ao calendário selecionado.
+     * @param {Event} event 
+     */
+    onAddMonthClick(event) {
+        event.stopPropagation();
+        const monthName = this.querySelector('#monthName')?.value || null;
+
+        if (!monthName || monthName.isEmpty()) {
+            this.msgBox.showWarning('O nome do mês não pode ser vazio.');
+            return;
+        }
+    }
+
+    /**
+     * Configura o evento de clique em um mês do calendário selecionado.
+     * @param {Event} event 
+     */
+    onMonthItemClick(event) {
+        event.stopPropagation();
+        const item = event.target.closest('.month-item');
+        const clmid = Number(item.dataset.clmid);
+        const month = this.calendar.months.get(clmid);
+
+        this._clearMonthData();       
+
+        item.classList.toggle('selected');
+
+        this._loadMonthData(month);
+    }
+
+    /**
    * Configura o evento de mudança de tema.
    * @param {Event} event - O evento de mudança de tema.
    */
     async onThemeSelectorChange(event) {
         const selectedTheme = event.target.value;
-        document.documentElement.setAttribute('data-theme', selectedTheme);
-        localStorage.setItem('uniforge_theme', selectedTheme);
+        let theme = 'theme-medieval';
+        let themePath = 'css/themes.css';
+
+        const isExtra = selectedTheme.includes("custom");
+        const editThemeButton = this.querySelector("#editThemeButton");
+        const deleteThemeButton = this.querySelector("#deleteThemeButton");
+
+        if (isExtra) {
+            theme = (selectedTheme.split('/')[1]).replaceAll('.css', '');
+            themePath = `css/${selectedTheme.replaceAll('theme-', '')}`;
+
+            editThemeButton.innerHTML = '<i class="fas fa-palette"></i>';
+            editThemeButton.dataset.tooltip = 'Editar Tema';
+            editThemeButton.dataset.action = 'edit';
+
+            deleteThemeButton.classList.remove('hidden');
+        }
+        else {
+            theme = selectedTheme;
+            editThemeButton.innerHTML = '<i class="fas fa-clone"></i>';
+            editThemeButton.dataset.tooltip = 'Clonar Tema';
+            editThemeButton.dataset.action = 'clone';
+
+            deleteThemeButton.classList.add('hidden');
+        }
+
+        const themeLink = document.getElementById("themeLink");
+        themeLink.href = themePath;
+
+        document.documentElement.setAttribute('data-theme', theme);
+        localStorage.setItem('uniforge_theme', theme);
+        localStorage.setItem('uniforge_theme_path', themePath);
 
         await uniforge.settings.set('misc.currentTheme', selectedTheme);
+    }
+
+    async onNewThemeClick(event) {
+        event.stopPropagation();
+
+        const theme = await ThemeDialog.configDialog();
+        if (theme) {
+            await this._saveTheme(theme);
+        }
+    }
+
+    async onEditThemeClick(event) {
+        event.stopPropagation();
+        const button = event.target.closest('a.button');
+
+        const isClone = button.dataset.action === 'clone';
+
+        const themeSelector = this.querySelector("#themeSelector");
+        const selectedOption = themeSelector.options[themeSelector.selectedIndex];
+
+        const css = { ...uniforge.theme.current, '--name': isClone ? '' : selectedOption.label };
+
+        const theme = await ThemeDialog.configDialog(css, { isEdit: true, isClone: isClone });
+        if (theme) {
+            await this._saveTheme(theme, { isEdit: true });
+        }
+    }
+
+    async onDeleteThemeClick(event) {
+        event.stopPropagation();
+
+        if (await Dialogs.confirm("Deletar Tema?", "Tem certeza que deseja deletar o tema selecionado?")) {
+            const themeSelector = this.querySelector("#themeSelector");
+            const selectedOption = themeSelector.options[themeSelector.selectedIndex];
+            const name = themeSelector.value.toLowerCase().replaceAll(' ', '-').replaceAll('custom/', '').replaceAll('theme-', '');
+
+            const url = uniforge.urls.customCSS;
+            const fileName = name;
+
+            const result = await uniforge.fs.deleteFile(`${url}/${fileName}`);
+            if (result.sucess) {
+                this.msgBox.showInfo(`Tema '${selectedOption.label}' deletado com sucesso.`);
+                uniforge.theme.refresh('theme-neutral', 'css/themes.css');
+                themeSelector.value = 'theme-neutral';
+                themeSelector.dispatchEvent(new Event('change'));
+
+                this.refresh();
+            }
+            else {
+                this.msgBox.showError(`Erro ao deletar tema '${selectedOption.label}'. ${result.error}`);
+            }
+        }
     }
 
     /**
@@ -686,6 +936,178 @@ export default class SettingsForm extends EntryForm {
         }
 
         uniforge.ctrls.progressDialog.close();
+    }
+
+    async _saveTheme(theme, options={isEdit: false}) {
+        try {
+            const url = uniforge.urls.customCSS;
+            const name = theme['--name'].replaceAll(' ', '-').toLowerCase();
+            delete theme['--name'];
+
+            const fileName = `${name}.css`;
+
+            const data = `:root[data-theme=\"theme-${name}\"] {\n${Object.entries(theme).map(([key, value]) => {
+                if (value.startsWith('var(') || value.startsWith('#') || key.includes("radius") || key.includes('--default-font')) return `${key}: ${value};`;
+                else return `${key}: "${value}";`;
+            }).join('\n')
+                }}`;
+
+            const result = await uniforge.fs.writeFile(url, fileName, data);
+            if (result.sucess) {
+                if(options.isEdit) this.msgBox.showInfo(`Tema '${name}' alterado com sucesso.`);
+                else this.msgBox.showInfo(`Tema '${name}' criado com sucesso.`);
+
+                uniforge.theme.refresh(`theme-${name}`, `css/custom/${fileName}`);
+                this.refresh();
+            }
+            else {
+                this.msgBox.showError(`Erro ao criar tema '${name}'. ${result.error}`);
+            }
+        }
+        catch (error) {
+            this.msgBox.showError(`Erro ao criar tema '${name}'. ${error.message}`, error);
+        }
+    }
+
+    _loadCalendarData(calendar) {
+        const calendarNameInput = this.querySelector('#calendarName');
+        const calendarPrefixInput = this.querySelector('#calendarPrefix');
+        const calendarSuffixPreInput = this.querySelector('#calendarSuffixPre');
+        const calendarSuffixPosInput = this.querySelector('#calendarSuffixPos');
+
+        calendarNameInput.value = calendar.label;
+        calendarPrefixInput.value = calendar.prefix ?? '';
+
+        if (calendar.suffix && !calendar.suffix.isEmpty()) {
+            const suffix = calendar.suffix.split('|');
+            if (suffix.length === 2) {
+                calendarSuffixPreInput.value = suffix[0];
+                calendarSuffixPosInput.value = suffix[1];
+            } else throw new Error('O sufixo do calendário deve possuir apenas 2 elementos.');
+        }
+
+        const weekDays = calendar.days.toArray();
+        const weekDaysItems = this.querySelectorAll('.calendar-week-days .week-day-item');
+
+        weekDaysItems.forEach(item => {
+            const idx = Number(item.dataset.idx);
+
+            const dayNameInput = this.querySelector(`#day${idx + 1}Name`);
+            dayNameInput.value = weekDays[idx].name;
+            const dayShortNameInput = this.querySelector(`#day${idx + 1}ShortName`);
+            dayShortNameInput.value = weekDays[idx].label;
+        });
+
+        const monthsList = this.querySelector('#monthsList');
+        const months = calendar.months.toArray();
+        months.forEach(month => {
+            const element = document.createElement('li');
+            element.classList.add('item', 'month-item');
+            element.dataset.clmid = month.clmid;
+
+            const dataGroup = document.createElement('div');
+            dataGroup.classList.add('data-complex', 'flexrow');
+
+            const nameSpan = document.createElement('span');
+            nameSpan.classList.add('data-label');
+            nameSpan.textContent = month.label;
+
+            const sizeGroup = document.createElement('div');
+            sizeGroup.classList.add('data-group', 'flexcol');
+
+            const sizeSpan = document.createElement('span');
+            sizeSpan.classList.add('data-value', 'size');
+            sizeSpan.textContent = month.size;
+
+            const daysLabel = document.createElement('span');
+            daysLabel.classList.add('days-label');
+            daysLabel.textContent = 'Dias';
+
+            sizeGroup.appendChild(sizeSpan);
+            sizeGroup.appendChild(daysLabel);
+
+            dataGroup.appendChild(nameSpan);
+            dataGroup.appendChild(sizeGroup);
+
+            element.appendChild(dataGroup);
+            monthsList.appendChild(element);
+
+            element.addEventListener('click', (event) => { this.onMonthItemClick(event); });
+        });
+
+        const addMonthButton = this.querySelector('#addMonthButton');
+        addMonthButton.classList.remove('disabled');
+
+        const saveCalendarButton = this.querySelector('#saveCalendarButton');
+        saveCalendarButton.classList.remove('disabled');
+
+        this.selection.calendar = calendar;
+
+        const fieldsets = this.querySelectorAll('.calendar-manager fieldset');
+        fieldsets.forEach(fieldset => fieldset.disabled = false);
+    }
+
+    _clearCalendarData(disableFields = true) {
+        const calendarNameInput = this.querySelector('#calendarName');
+        const calendarPrefixInput = this.querySelector('#calendarPrefix');
+        const calendarSuffixPreInput = this.querySelector('#calendarSuffixPre');
+        const calendarSuffixPosInput = this.querySelector('#calendarSuffixPos');
+
+        calendarNameInput.value = '';
+        calendarPrefixInput.value = '';
+        calendarSuffixPreInput.value = '';
+        calendarSuffixPosInput.value = '';
+
+        const weekDaysItems = this.querySelectorAll('.calendar-week-days .week-day-item');
+
+        weekDaysItems.forEach(item => {
+            const idx = Number(item.dataset.idx);
+
+            const dayNameInput = this.querySelector(`#day${idx + 1}Name`);
+            dayNameInput.value = '';
+            const dayShortNameInput = this.querySelector(`#day${idx + 1}ShortName`);
+            dayShortNameInput.value = '';
+        });
+
+        const monthsList = this.querySelector('#monthsList');
+        monthsList.innerHTML = '';
+
+        this._clearMonthData(disableFields);
+
+        const calendarItems = this.querySelectorAll('.calendar-item');
+        calendarItems.forEach(item => {
+            item.classList.remove('selected');
+        });        
+
+        const fieldsets = this.querySelectorAll('.calendar-manager fieldset');
+        fieldsets.forEach(fieldset => fieldset.disabled = disableFields);
+
+        const saveCalendarButton = this.querySelector('#saveCalendarButton');
+        if(disableFields) saveCalendarButton.classList.add('disabled');
+        else saveCalendarButton.classList.remove('disabled');
+
+        this.selection.calendar = null;
+    }
+
+    _loadMonthData(month) {
+        const monthNameInput = this.querySelector('#monthName');
+        monthNameInput.value = month.label;
+
+        this.sliders.monthSize.setValue(month.size);
+    }
+    _clearMonthData(disableButton = true) {
+        const monthItems = this.querySelectorAll('.month-item');
+        monthItems.forEach(item => item.classList.remove('selected'));
+
+        const monthNameInput = this.querySelector('#monthName');
+        monthNameInput.value = '';
+
+        this.sliders.monthSize.setValue(30);
+
+        const addMonthButton = this.querySelector('#addMonthButton');
+
+        if(disableButton) addMonthButton.classList.add('disabled');
+        else addMonthButton.classList.remove('disabled');
     }
 
     _handleLineageIcon(subject) {

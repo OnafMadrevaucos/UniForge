@@ -377,10 +377,10 @@ function _parseSidetabsTags(html) {
 function _replaceListTags(html, data) {
     console.log('UniForge | Substituindo tags de List...');
 
-    const regex = /<list id="([^"]+)" value="([^"]+)"( class="([^"]+)")?( item-class="([^"]+)")?><\/list>/g;
-    html = html.replace(regex, (match, id, valueKey, classAttr, extraClasses, itemClassAttr, itemClass) => {
+    const regex = /<list id="([^"]+)" value="([^"]+)"( class="([^"]+)")?( item-class="([^"]+)")?( fixed="(true|false|1|0)")?><\/list>/g;
+    html = html.replace(regex, (match, id, valueKey, classAttr, extraClasses, itemClassAttr, itemClass, fixed) => {
         console.log(`Correspondência encontrada: ${match}`);
-        console.log(`ID: ${id}, Item: ${valueKey}${extraClasses ? `, Extra Classes: ${extraClasses}` : ''}${itemClass ? `, Classes dos Itens: ${itemClass}` : ''}`);
+        console.log(`ID: ${id}, Item: ${valueKey}${extraClasses ? `, Extra Classes: ${extraClasses}` : ''}${itemClass ? `, Classes dos Itens: ${itemClass}` : ''}${fixed ? `, Fixed: ${fixed}` : ''}`);
 
         if (!(valueKey in data)) {
             console.log(`O identificador da lista não foi encontrado no objeto data. Retornando um <ul> vazio.`);
@@ -388,7 +388,7 @@ function _replaceListTags(html, data) {
         }
 
         // Variavel para armazenar o resultado do 'replace'.
-        const result = utils.html.generateListHTML(id, data[valueKey], { extraClasses, itemClass: itemClass });
+        const result = utils.html.generateListHTML(id, data[valueKey], { extraClasses, itemClass: itemClass, withDelete: !fixed });
         return result;
     });
     return html;

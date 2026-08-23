@@ -16,9 +16,11 @@ export default class CalendarDays extends BaseDocument {
     get type() { return 'calendarDays'; }
 
     get label() { return this.data.label; }
+    get name() { return this.data.name; }
     get clid() { return this.data.clid; }
 
     set label(value) { this.data.label = value; }
+    set name(value) { this.data.name = value; }
 
     initialize(data) {
         super.initialize(data);

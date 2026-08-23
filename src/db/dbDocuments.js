@@ -248,6 +248,8 @@ export default class DBDocuments {
                 _label: calendar.label,
                 clid: calendar.clid,
                 label: calendar.label,
+                suffix: calendar.suffix,
+                prefix: calendar.prefix,
                 months: new Set(),
                 days: new Set()
             };

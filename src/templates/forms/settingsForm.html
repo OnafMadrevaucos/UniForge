@@ -11,41 +11,164 @@
         <div id="mainPanel" class="panel flexrow">
             <div class="content flexcol">
                 <fieldset class="info-set core flexcol not-disable">
-                    <div class="data-group flexrow combo">
-                        <span class="data-label">Tema: </span>
-                        <combo id="themeSelector" value="themes" grouped="true"/>
-                        <a id="newThemeButton" data-tooltip="Novo Tema"><i class="fas fa-plus"></i></a>  
-                        <a id="editThemeButton" class="hidden" data-tooltip="Editar Temas"><i class="fa-solid fa-palette"></i></a>                      
-                    </div>                    
+                    <div class="data-complex flexrow">
+                        <div class="data-group flexrow flex-1 combo">
+                            <span class="data-label">Tema: </span>
+                            <combo id="themeSelector" value="themes" grouped="true" />
+                        </div>
+                        <div class="theme-buttons flexrow">
+                            <a id="newThemeButton" class="button" data-tooltip="Novo Tema"><i class="fas fa-plus"></i></a>
+                            <a id="editThemeButton" class="button" data-tooltip="Editar Tema" data-action="edit"><i class="fas fa-palette"></i></a>
+                            <a id="deleteThemeButton" class="button hidden" data-tooltip="Deletar Tema"><i class="fas fa-trash"></i></a>
+                        </div>
+                    </div>
                 </fieldset>
-                <fieldset class="info-set flexcol not-disable">
-                    <div class="data-group text">
-                        <span class="data-label">Text Edit: </span>
-                        <input type="text" class="data" />
+                <fieldset class="info-set calendars flexcol not-disable">
+                    <div class="fieldset-content">
+                        <h3>Geranciador de Calendários</h3>
+                        <div class="data-group side-list right">
+                            <div class="data-complex flexcol flex-1">
+                                <h4>Calendários</h4>
+                                <a id="newCalendarButton" class="flyer-button"><i class="fas fa-calendar-plus"></i> Novo
+                                    Calendário</a>
+                                <list id="calendarsList" value="calendars" class="calendar-list"
+                                    item-class="calendar-item"></list>
+                            </div>
+                            <div class="data-complex flexcol flex-2">
+                                <div class="calendar-manager">
+                                    <fieldset disabled>
+                                        <div class="fieldset-content">
+                                            <h4>Geral</h4>
+                                            <div class="data-group flexrow input">
+                                                <span class="data-label">Nome Calendário:</span>
+                                                <input id="calendarName" type="text" class="data" />
+                                            </div>
+                                            <div class="data-group flexrow input">
+                                                <div class="data-complex flexrow flex-1">
+                                                    <span class="data-label">Prefixo:</span>
+                                                    <input id="calendarPrefix" type="text" class="data" />
+                                                </div>
+                                                <div class="data-complex flexrow flex-1">
+                                                    <span class="data-label">Sufixo:</span>
+                                                    <input id="calendarSuffixPre" type="text" class="data"
+                                                        placeholder="a.C." />
+                                                    <input id="calendarSuffixPos" type="text" class="data"
+                                                        placeholder="d.C." />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </fieldset>
+                                    <fieldset disabled>
+                                        <div class="fieldset-content">
+                                            <h4>Semana</h4>
+                                            <table class="table calendar-week-days">
+                                                <tr>
+                                                    <td>
+                                                        <div class="data-complex week-day-item flexcol" data-idx="0">
+                                                            <span class="data-label">1º Dia</span>
+                                                            <input id="day1Name" type="text" class="data"
+                                                                placeholder="Domingo" />
+                                                            <input id="day1ShortName" type="text" class="data"
+                                                                placeholder="Dom" />
+                                                        </div>
+                                                    </td>
+                                                    <td>
+                                                        <div class="data-complex week-day-item flexcol" data-idx="1">
+                                                            <span class="data-label">2º Dia</span>
+                                                            <input id="day2Name" type="text" class="data"
+                                                                placeholder="Segunda-feira" />
+                                                            <input id="day2ShortName" type="text" class="data"
+                                                                placeholder="Seg" />
+                                                        </div>
+                                                    </td>
+                                                    <td>
+                                                        <div class="data-complex week-day-item flexcol" data-idx="2">
+                                                            <span class="data-label">3º Dia</span>
+                                                            <input id="day3Name" type="text" class="data"
+                                                                placeholder="Terça-feira" />
+                                                            <input id="day3ShortName" type="text" class="data"
+                                                                placeholder="Ter" />
+                                                        </div>
+                                                    </td>
+                                                    <td>
+                                                        <div class="data-complex week-day-item flexcol" data-idx="3">
+                                                            <span class="data-label">4º Dia</span>
+                                                            <input id="day4Name" type="text" class="data"
+                                                                placeholder="Quarta-feira" />
+                                                            <input id="day4ShortName" type="text" class="data"
+                                                                placeholder="Qua" />
+                                                        </div>
+                                                    </td>
+                                                    <td>
+                                                        <div class="data-complex week-day-item flexcol" data-idx="4">
+                                                            <span class="data-label">5º Dia</span>
+                                                            <input id="day5Name" type="text" class="data"
+                                                                placeholder="Quinta-feira" />
+                                                            <input id="day5ShortName" type="text" class="data"
+                                                                placeholder="Qui" />
+                                                        </div>
+                                                    </td>
+                                                    <td>
+                                                        <div class="data-complex week-day-item flexcol" data-idx="5">
+                                                            <span class="data-label">6º Dia</span>
+                                                            <input id="day6Name" type="text" class="data"
+                                                                placeholder="Sexta-feira" />
+                                                            <input id="day6ShortName" type="text" class="data"
+                                                                placeholder="Sex" />
+                                                        </div>
+                                                    </td>
+                                                    <td>
+                                                        <div class="data-complex week-day-item flexcol" data-idx="6">
+                                                            <span class="data-label">7º Dia</span>
+                                                            <input id="day7Name" type="text" class="data"
+                                                                placeholder="Sábado" />
+                                                            <input id="day7ShortName" type="text" class="data"
+                                                                placeholder="Sáb" />
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            </table>
+                                            <span class="hint">Todo calendário deve possuir semanas com 7 dias.</span>
+                                        </div>
+                                    </fieldset>
+                                    <fieldset disabled>
+                                        <div class="fieldset-content">
+                                            <h4>Meses</h4>
+                                            <div class="data-group flexrow input">
+                                                <span class="data-label">Nome Mês:</span>
+                                                <input id="monthName" type="text" class="data" />
+                                            </div>
+                                            <div class="data-group flexrow">
+                                                <span class="data-label">Tamanho: </span>
+                                                <slider id="monthSizeSlider"></slider>
+                                                <span id="monthSizeSpan">30</span>
+                                            </div>
+                                            <div class="data-group flexrow fixed calendar-buttons">
+                                                <button id="addMonthButton" class="disabled"><i class="fas fa-plus"></i>
+                                                    Adicionar Mês</button>
+                                            </div>
+                                            <div class="separator"></div>
+                                            <ul id="monthsList" class="list month-list">
+
+                                            </ul>
+                                        </div>
+                                    </fieldset>
+                                </div>
+                                <div class="footer flexrow">                                    
+                                    <div class="fixed buttons flexrow">
+                                        <button id="saveCalendarButton" class="disabled"><i class="fa-regular fa-floppy-disk"></i> Salvar Calendário</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="data-group check">
-                        <span class="data-label">Switch: </span>
-                        <switch id="exampleSwitch" />
-                    </div>
-                    <div class="data-group text">
-                        <span class="data-label">Text Edit: </span>
-                        <input type="text" class="data" />
-                    </div>
-                    <div class="data-group check">
-                        <span class="data-label">Checkbox: </span>
-                        <combo id="exampleCombo" value="options" blank="0" />
-                    </div>
-                    <div class="data-group check">
-                        <span class="data-label">slider: </span>
-                        <slider id="testSlider"></slider>
-                    </div>                    
                 </fieldset>
             </div>
         </div>
         <div id="databasePanel" class="panel flexcol hidden">
             <div class="content flexcol">
                 <fieldset class="info-set flexcol">
-                    <div>
+                    <div class="fieldset-content">
                         <h3>Conexão Externa</h3>
                         <div class="data-complex external-connection-group">
                             <div class="data-group check">
@@ -69,7 +192,7 @@
                     </div>
                 </fieldset>
                 <fieldset class="info-set flexcol">
-                    <div>
+                    <div class="fieldset-content">
                         <h3>Ferramentas de Debug</h3>
                         <div class="data-group exec combo">
                             <span class="data-label">Executar Stored Procedure </span>
@@ -173,7 +296,7 @@
         <div id="leafletPanel" class="panel flexcol hidden">
             <div class="content flexcol">
                 <fieldset class="info-set flexcol">
-                    <div>
+                    <div class="fieldset-content">
                         <h3>Mapa Padrão</h3>
                         <div class="data-group text">
                             <span class="data-label">Local </span>
@@ -206,7 +329,7 @@
                     </div>
                 </fieldset>
                 <fieldset class="info-set flexcol">
-                    <div>
+                    <div class="fieldset-content">
                         <h3>Ferramentas</h3>
                         <span class="hint">{{tilerHint}}</span>
                         <h4>Node Tiler ®</h4>
@@ -231,7 +354,7 @@
                     </div>
                 </fieldset>
                 <fieldset class="info-set flexcol">
-                    <div>
+                    <div class="fieldset-content">
                         <h3>Escala</h3>
                         <div class="data-complex scale">
                             <div class="data-group">

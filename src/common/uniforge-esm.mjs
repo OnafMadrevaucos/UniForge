@@ -50,7 +50,7 @@ const utils = {
     timeSince: utilsEsm.helpers.timeSince,
     getFontAwesomeIcons: utilsEsm.helpers.getFontAwesomeIcons,
     formatFileSize: utilsEsm.helpers.formatFileSize,
-    refreshMarker: leafletEsm.utils.default.refreshMarker
+    getSystemFonts: utilsEsm.helpers.getSystemFonts,
 };
 
 const parser = {
@@ -61,7 +61,7 @@ const parser = {
     generateFolderlist: utilsEsm.html.generateFolderlistHTML,
     generateItemList: utilsEsm.html.generateListItemHTML,
     generateFolderItem: utilsEsm.html.generateFolderItemHTML,
-    generateEmptyItem: utilsEsm.html.generateEmptyListHTML,    
+    generateEmptyItem: utilsEsm.html.generateEmptyListHTML,
 
     applyHighlight: utilsEsm.html.applyHighlight,
     removeHighlight: utilsEsm.html.removeHighlight
@@ -70,7 +70,10 @@ const parser = {
 const leaflet = {
     core: leafletEsm.core,
     drawer: leafletEsm.utils.default.drawer,   
-    drawStyle: leafletEsm.utils.default.drawStyle 
+    drawStyle: {
+        factories: leafletEsm.utils.default.options, 
+        ...leafletEsm.utils.default.drawStyle
+    } 
 }
 
 const state = {
@@ -93,7 +96,7 @@ console.log('UniForge | Gerando variável global \'uniforge\'...');
 * @namespace uniforge
 */
 
-globalThis.uniforge = { 
+globalThis.uniforge = {
     /**
     * Referência ao corpo do documento HTML.
     * 
@@ -123,7 +126,13 @@ globalThis.uniforge = {
     * Ferramentas de manipulação de Arquivos.
     * @type {Object}
     */
-    fs: window.fs,    
+    fs: window.fs,
+
+    /**
+    * Ferramentas de manipulação de Arquivos e Regras CSS.
+    * @type {Object}
+    */
+    css: window.css,
 
     /**
     * Instância de SQL usada pela aplicação.
@@ -187,7 +196,11 @@ globalThis.uniforge = {
     * 
     * @type {Leaflet}
     */
-    leaflet: Object.freeze(leaflet),
+    leaflet: Object.freeze({
+        core: leaflet.core.default, 
+        drawer: leaflet.drawer, 
+        drawStyle: leaflet.drawStyle
+    }),
 
     /**
     * Instância de gerenciamento das tooltips usada pela aplicação.
@@ -195,6 +208,80 @@ globalThis.uniforge = {
     * @type {Utils.Tooltip}
     */
     tooltip: utilsEsm.tooltip,
+
+    /**
+    * Propriedade de gerenciamento dos temas usados pela aplicação.
+    * 
+    * @type {Utils.Tooltip}
+    */
+    theme: {
+        /**
+         * Atualiza o tema visual da aplicação.
+         *
+         * @param {string|null} theme - Identificador do tema que será aplicado.
+         * @param {string|null} path  - Indica o diretório do arquivo CSS do tema.
+         * @returns {void} Não retorna nenhum valor.
+         */
+        refresh(theme = null, path = null) {
+            // Se não for fornecido um tema, tenta obter-o do armazenamento local.
+            if (theme === null && path === null) {
+                theme = localStorage.getItem('uniforge_theme', theme) || 'theme-neutral';
+                path = localStorage.getItem('uniforge_theme_path', path) || 'css/themes.css';
+            } else {
+                localStorage.setItem('uniforge_theme', theme);
+                localStorage.setItem('uniforge_theme_path', path);
+            }
+
+            if (theme === null || path === null) throw new Error('Nenhum tema foi fornecido.');
+
+            document.documentElement.setAttribute('data-theme', theme);
+
+            window.dispatchEvent(
+                new CustomEvent('themechange', {
+                    detail: { theme, path }
+                })
+            );
+        },
+
+        /**
+         * Obtém todas as propriedades CSS declaradas para um determinado seletor.
+         *
+         * @param {string} selector - O seletor CSS que será pesquisado.
+         * @returns {Object.<string, string>} Um objeto contendo todas as propriedades CSS encontradas para o seletor informado.
+        */
+        get current() {
+            const selector = document.documentElement.getAttribute('data-theme');
+
+            /** @type {Object.<string, string>} */
+            const rules = {};
+
+            for (const stylesheet of document.styleSheets) {
+                try {
+                    for (const rule of stylesheet.cssRules) {
+                        if (
+                            rule instanceof CSSStyleRule &&
+                            rule.selectorText.includes(selector)
+                        ) {
+                            for (const property of rule.style) {
+                                if(!property.includes('--')) continue;
+
+                                rules[property] = rule.style
+                                    .getPropertyValue(property)
+                                    .trim();
+                            }
+                        }
+                    }
+                } catch (error) {
+                    console.warn(
+                        `Não foi possível acessar as regras da folha de estilo '${stylesheet.href}'.`,
+                        error
+                    );
+                }
+            }
+
+            return rules;
+        }
+    },
 
     /**
     * Classes de Forms usadas pela aplicação discriminadas por identificador.
@@ -208,11 +295,11 @@ globalThis.uniforge = {
         history: HistoryForm,
         politics: PoliticsForm,
         economy: EconomyForm,
-        military: MilitaryForm, 
+        military: MilitaryForm,
         ideologies: IdeologyForm,
         settings: SettingsForm,
         codex: CodexForm,
-        timeline: TimelineForm 
+        timeline: TimelineForm
     }),
 
     /**

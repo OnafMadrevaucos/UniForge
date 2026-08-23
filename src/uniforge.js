@@ -9,16 +9,28 @@ import DBDocuments from "./db/dbDocuments.js";
 import * as esm from "./common/uniforge-esm.mjs";
 import lControl from "./common/leaflet/core.mjs";
 import PDFManager from "./scripts/managers/pdfManager.js";
+import FontManager from "./scripts/managers/fontManager.js";
 import { set } from "./common/primitives/set.mjs";
-import Slider from "./models/slider.js";
-import ColorPicker from "./models/colorPicker.js";
+import Slider from "./models/controls/slider.js";
+import ColorPicker from "./models/controls/colorPicker.js";
 
 // Configura o tema salvo no localStorage antes de inicializar o app para evitar flash de estilo.
 document.documentElement.setAttribute('data-theme', localStorage.getItem('uniforge_theme') || 'theme-neutral');
 
 // Realiza as configurações iniciais da aplicação ao carregar o conteúdo do DOM.
 document.addEventListener('DOMContentLoaded', async () => {
+    window.addEventListener('themechange', (event) => {
+        const themeLink = document.getElementById("themeLink");
+        const themePath = event.detail.path || 'css/themes.css';
+        themeLink.href = themePath;
+
+        console.log(`Novo tema: ${event.detail.theme}`);
+    });
+
     const cssname = await uniforge.path.join('css/styles.css');
+    const csstheme = await uniforge.path.join('css/themes.css');
+
+    const localFonts = await uniforge.utils.getSystemFonts();
 
     // Adiciona as propriedades restantes ao objeto uniforge.
     uniforge.utils.mergeObjects(uniforge, {
@@ -34,7 +46,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             APP_NAME: 'UniForge',
             APP_VERSION: '0.8.9',
             CSS_NAME: cssname,
+            CSS_THEME: csstheme,
             leaflet: lControl.constants,
+            fonts: new FontManager(localFonts)
         }),
 
         /**
@@ -81,7 +95,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 resize: false,
                 statusbar: false,
                 skin: 'oxide-dark',
-                content_css: cssname,
+                content_css: [csstheme, cssname],
             },
             readonly: {
                 editable_class: 'editable',
@@ -99,7 +113,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 resize: false,
                 statusbar: false,
                 skin: 'oxide-dark',
-                content_css: cssname,
+                content_css: [csstheme, cssname],
                 readonly: true,
                 disable_focus: true
             },
@@ -113,7 +127,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 menubar: false,
                 inline: true,
                 skin: 'oxide-dark',
-                content_css: cssname,
+                content_css: [csstheme, cssname],
             },
             lite: {
                 body_class: 'lite-editor',
@@ -122,7 +136,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 menubar: false,
                 inline: true,
                 skin: 'oxide-dark',
-                content_css: cssname,
+                content_css: [csstheme, cssname],
             }
         }),
 
@@ -154,8 +168,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             },
             colorPickers: {
                 fillColorPicker: null,
-                borderColorPicker: null,
-                gradientColorPicker: null
+                borderColorPicker: null
             }
         },
 
@@ -275,6 +288,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         })
     });
 
+    // Inicia o gerenciador de temas.
+    uniforge.theme.refresh();
+
     // Configura o estado inicial da aplicação, se ele ainda não foi criado.
     uniforge.state.init();
 
@@ -371,9 +387,11 @@ async function configureURLs() {
             mapOverlays: worldMap ? `/${worldMap}/overlays` : null,
             common: '/common/',
             models: '/models/',
+            controls: '/models/controls/',
             templates: '/templates/',
             scripts: '/scripts/',
             data: '/data/',
+            customCSS: '/css/custom/',
             ui: '/ui/',
             icons: '/ui/icons/',
             signs: '/ui/icons/markers/signs/',
@@ -395,9 +413,11 @@ async function configureURLs() {
         // Urls de Diretórios usados pelo sistema.
         common: await uniforge.path.join(uniforge.urls.relativePath.common),
         models: await uniforge.path.join(uniforge.urls.relativePath.models),
+        controls: await uniforge.path.join(uniforge.urls.relativePath.controls),
         templates: await uniforge.path.join(uniforge.urls.relativePath.templates),
         scripts: await uniforge.path.join(uniforge.urls.relativePath.scripts),
         data: await uniforge.path.join(uniforge.urls.relativePath.data),
+        customCSS: await uniforge.path.join(uniforge.urls.relativePath.customCSS),
         ui: await uniforge.path.join(uniforge.urls.relativePath.ui),
         icons: await uniforge.path.join(uniforge.urls.relativePath.icons),
         signs: await uniforge.path.join(uniforge.urls.relativePath.signs),
@@ -439,7 +459,7 @@ async function configureLeaflet() {
     const borderColorPicker = uniforge.ctrls.colorPickers.borderColorPicker;
     borderColorPicker.setColor(style.color, true);
 
-    uniforge.leaflet.drawStyle.update(uniforge.leaflet.core.default.map, style);
+    uniforge.leaflet.drawStyle.update(uniforge.leaflet.core.map, style);
 
     await refreshPreviewStyle();
 }
@@ -596,18 +616,12 @@ function activateMainListeners() {
 
     const toggleShapesPanel = document.getElementById('toggleShapesPanel');
     toggleShapesPanel.addEventListener('click', (event) => {
-        const mapShapesContainer = document.querySelector('.map-objects-container.regular-shapes');
-        if (!mapShapesContainer) return;
-
-        onToggleMapObjectPanelClick(event, mapShapesContainer);
+        uniforge.leaflet.core.toggleMapObjectPanel(event);
     });
 
     const toggleObjectsPanel = document.getElementById('toggleObjectsPanel');
-    toggleObjectsPanel.addEventListener('click', (event) => {
-        const mapLayerObjsContainer = document.querySelector('.map-objects-container.layer-objects');
-        if (!mapLayerObjsContainer) return;
-
-        onToggleMapObjectPanelClick(event, mapLayerObjsContainer);
+    toggleObjectsPanel.addEventListener('click', (event) => { 
+        uniforge.leaflet.core.toggleMapObjectPanel(event, {name: 'layer-objects'});
     });
 
     const hasBorderSwitch = document.querySelector('#hasBorderSwitch');
@@ -615,7 +629,7 @@ function activateMainListeners() {
 
     hasBorderCheckbox.addEventListener('change', (event) => { onHasBorderSwitchChange(event); });
 
-    const shapeSizeSliderContainer = document.querySelector('.options.size');
+    const shapeSizeSliderContainer = document.querySelector('.size');
     const shapeSizeSlider = uniforge.ctrls.sliders.shapeSizeSlider = new Slider('shapeSizeSlider', shapeSizeSliderContainer, { min: 1, max: 10, value: 5, linkedLabel: 'shapeSizeSpan', labelMask: '{value}px', width: '80px' });
     shapeSizeSlider.config();
     shapeSizeSlider.addEventListener('change', (event) => { onShapeSizeSliderChange(event); });
@@ -623,19 +637,13 @@ function activateMainListeners() {
     const shapeBorderCombo = document.getElementById('shapeBorderCombo');
     shapeBorderCombo.addEventListener('change', (event) => { onShapeBorderComboChange(event); });
 
-    const fillColorPicker = uniforge.ctrls.colorPickers.fillColorPicker = new ColorPicker('fillColorPicker', document, { value: 'var(--red)', alpha: 0.5, tooltip: 'Cor do Preenchimento I', fixedAlpha: true });
+    const fillColorPicker = uniforge.ctrls.colorPickers.fillColorPicker = new ColorPicker('fillColorPicker', document, { value: 'var(--color-b)', alpha: 0.5, tooltip: 'Cor do Preenchimento I', fixedAlpha: true });
     fillColorPicker.config();
     fillColorPicker.addEventListener('change', (event) => { onFillColorPickerChange(fillColorPicker); });
 
-    const borderColorPicker = uniforge.ctrls.colorPickers.borderColorPicker = new ColorPicker('borderColorPicker', document, { value: 'var(--dark-red)', tooltip: 'Cor da Borda' });
+    const borderColorPicker = uniforge.ctrls.colorPickers.borderColorPicker = new ColorPicker('borderColorPicker', document, { value: 'var(--dark-color-b)', tooltip: 'Cor da Borda' });
     borderColorPicker.config();
     borderColorPicker.addEventListener('change', (event) => { onBorderColorPickerChange(borderColorPicker); });
-
-    const gradientColorPicker = uniforge.ctrls.colorPickers.gradientColorPicker = new ColorPicker('gradientColorPicker', document, { value: 'var(--dark-red)', tooltip: 'Cor da Preenchimento II', fixedAlpha: true });
-    gradientColorPicker.config();
-    gradientColorPicker.addEventListener('change', (event) => { onGradientColorPickerChange(gradientColorPicker); });
-
-    gradientColorPicker.disabled = true;
 }
 /** 
  * ------------------------------------------------------------------
@@ -777,10 +785,7 @@ async function onMarkerIconClick(event) {
     event.stopPropagation();
     const option = event.currentTarget;
 
-    option.classList.toggle('active');
-
-    const signMarker = document.querySelector('.map-objects-panel .config-group .options.marker .active');
-    const colorMarker = document.querySelector('.map-objects-panel .config-group .options.color .active');
+    option.classList.toggle('active');    
 
     const options = option.parentElement.querySelectorAll('a');
     options.forEach(opt => {
@@ -789,23 +794,18 @@ async function onMarkerIconClick(event) {
         }
     });
 
+    const signMarker = document.querySelector('.map-objects-panel .config-group .options.marker .active');
+    const colorMarker = document.querySelector('.map-objects-panel .config-group .options.color .active');
+
+    const editCache = uniforge.leaflet.core.editCache;
+
     if (signMarker && colorMarker) {
         const marker = `${colorMarker.getAttribute('data-color')}_${signMarker.getAttribute('data-marker')}`;
-        await startMarkerDrawing(marker);
+
+        if(editCache && editCache.layer instanceof L.Marker) await refreshMarkerDrawing(marker); 
+        else await startMarkerDrawing(marker);
     }
     else if (uniforge.ctrls.marker) uniforge.ctrls.marker.disable();
-}
-
-function onToggleMapObjectPanelClick(event, container) {
-    event.stopPropagation();
-
-    // Desativa todas as opções de desenho, para redesenho.
-    const mapObjContainers = document.querySelectorAll('.map-objects-container');
-    mapObjContainers.forEach(moc => {
-        if (moc !== container) moc.classList.remove('active');
-    });
-
-    container.classList.toggle('active');
 }
 
 async function onHasBorderSwitchChange(event) {
@@ -814,16 +814,16 @@ async function onHasBorderSwitchChange(event) {
     const hasBorderSwitch = document.querySelector('#hasBorderSwitch');
     const borderSizeGroup = document.querySelector('#borderSizeGroup');
 
+    uniforge.leaflet.drawStyle.style.hasBorder = hasBorder;
+
     if (hasBorder) {
-        borderSizeGroup.classList.remove('hidden');
-        uniforge.leaflet.drawStyle.style.opacity = 1;
+        borderSizeGroup.classList.remove('hidden');        
     }
     else {
         borderSizeGroup.classList.add('hidden');
-        uniforge.leaflet.drawStyle.style.opacity = 0;
     }
 
-    uniforge.leaflet.drawStyle.update(uniforge.leaflet.core.default.map, uniforge.leaflet.drawStyle.style);
+    uniforge.leaflet.drawStyle.update(uniforge.leaflet.core.map, uniforge.leaflet.drawStyle.style);
 
     await refreshPreviewStyle();
 }
@@ -834,7 +834,7 @@ async function onShapeSizeSliderChange(event) {
     const size = uniforge.ctrls.sliders.shapeSizeSlider.getValueNumber();
     uniforge.leaflet.drawStyle.style.weight = size;
 
-    uniforge.leaflet.drawStyle.update(uniforge.leaflet.core.default.map, uniforge.leaflet.drawStyle.style);
+    uniforge.leaflet.drawStyle.update(uniforge.leaflet.core.map, uniforge.leaflet.drawStyle.style);
 
     await refreshPreviewStyle();
 }
@@ -850,7 +850,7 @@ async function onShapeBorderComboChange(event) {
         ...style,
     }
 
-    uniforge.leaflet.drawStyle.update(uniforge.leaflet.core.default.map, uniforge.leaflet.drawStyle.style);
+    uniforge.leaflet.drawStyle.update(uniforge.leaflet.core.map, uniforge.leaflet.drawStyle.style);
 
     await refreshPreviewStyle();
 }
@@ -859,7 +859,7 @@ async function onFillColorPickerChange(picker) {
     uniforge.leaflet.drawStyle.style.fillColor = picker.value;
     uniforge.leaflet.drawStyle.style.fillOpacity = picker.alpha;
 
-    uniforge.leaflet.drawStyle.update(uniforge.leaflet.core.default.map, uniforge.leaflet.drawStyle.style);
+    uniforge.leaflet.drawStyle.update(uniforge.leaflet.core.map, uniforge.leaflet.drawStyle.style);
 
     await refreshPreviewStyle();
 }
@@ -870,7 +870,7 @@ async function onBorderColorPickerChange(picker) {
     uniforge.leaflet.drawStyle.style.color = picker.value;
     uniforge.leaflet.drawStyle.style.opacity = picker.alpha;
 
-    uniforge.leaflet.drawStyle.update(uniforge.leaflet.core.default.map, uniforge.leaflet.drawStyle.style);
+    uniforge.leaflet.drawStyle.update(uniforge.leaflet.core.map, uniforge.leaflet.drawStyle.style);
 
     await refreshPreviewStyle();
 }
@@ -894,7 +894,7 @@ async function onGradientColorPickerChange(picker) {
  * @returns {Promise<void>}             - Uma promessa que resolve quando o formulário for renderizado e exibido.
  * @throws {Error}                      - Se ocorrer um erro ao renderizar o formulário.
  */
-async function renderForm(targetId, button=null, showAfter = true) {
+async function renderForm(targetId, button = null, showAfter = true) {
     try {
         const form = new uniforge.forms[targetId]();
         if (!form)
@@ -903,7 +903,7 @@ async function renderForm(targetId, button=null, showAfter = true) {
         if (showAfter) await form.show(true);
     } catch (error) {
         uniforge.msgBox.showError(error.message);
-        if(button) button.classList.remove('disabled');
+        if (button) button.classList.remove('disabled');
     }
 }
 
@@ -926,7 +926,7 @@ async function recoverForm(form) {
 }
 
 async function startMarkerDrawing(marker) {
-    const map = uniforge.leaflet.core.default.map;
+    const map = uniforge.leaflet.core.map;
     const markerURL = uniforge.urls.markers.join(`${marker}.png`);
 
     // O controlador de Marker já está ativo. 
@@ -934,6 +934,14 @@ async function startMarkerDrawing(marker) {
 
     // Ativa o controle de posicionamento de Markers.
     uniforge.ctrls.marker = uniforge.leaflet.drawer.marker(map, markerURL);
+};
+
+async function refreshMarkerDrawing(marker) {    
+    const markerURL = uniforge.urls.markers.join(`${marker}.png`);  
+    const newStyle = uniforge.leaflet.drawStyle.factories.marker(markerURL).markerStyle.icon.options;  
+
+    const newIcon = L.icon(newStyle);
+    uniforge.leaflet.core.editCache.layer.setIcon(newIcon);
 };
 
 async function refreshPreviewStyle() {
