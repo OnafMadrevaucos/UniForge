@@ -48,6 +48,10 @@ contextBridge.exposeInMainWorld('fs', {
     const result = await ipcRenderer.invoke('write-file', url, name, Buffer.from(data, options.encoding), options);
     return result;
   },
+  deleteFile: async (path) => {     
+    const result = await ipcRenderer.invoke('delete-file', path);
+    return result;
+  },
   readDir: (path) => {
     const result = ipcRenderer.invoke('read-dir', path);
     return result;

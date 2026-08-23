@@ -79,13 +79,13 @@ export default class SettingsForm extends EntryForm {
     async prepareThemes() {
         const extraThemesFiles = await uniforge.fs.readDir(uniforge.urls.relativePath.customCSS);
 
-        const extraThemes = []; 
-        
+        const extraThemes = [];
+
         extraThemesFiles.files.forEach(theme => {
             const themeName = theme.name;
             extraThemes.push({
                 _id: `custom/theme-${themeName}`,
-                _label: themeName.capitalize().replaceAll('.css','')
+                _label: themeName.capitalize().replaceAll('.css', '')
             });
         });
 
@@ -162,6 +162,22 @@ export default class SettingsForm extends EntryForm {
     async configureMiscPanel() {
         const themeSelector = this.querySelector('#themeSelector');
         const selectedTheme = this.data.misc.currentTheme ?? 'theme-neutral';
+
+        const editThemeButton = this.querySelector("#editThemeButton");
+
+        const themePath = localStorage.getItem('uniforge_theme_path') || 'css/themes.css';
+        if (themePath?.includes('custom')) {
+            editThemeButton.innerHTML = '<i class="fas fa-palette"></i';
+            editThemeButton.dataset.tooltip = 'Editar Tema';
+            editThemeButton.dataset.action = 'edit';
+
+            const deleteThemeButton = this.querySelector("#deleteThemeButton");
+            deleteThemeButton.classList.remove('hidden');
+        } else {
+            editThemeButton.innerHTML = '<i class="fas fa-clone"></i';
+            editThemeButton.dataset.tooltip = 'Clonar Tema';
+            editThemeButton.dataset.action = 'clone';
+        }
 
         themeSelector.value = selectedTheme;
         themeSelector.dispatchEvent(new Event('change'));
@@ -240,8 +256,8 @@ export default class SettingsForm extends EntryForm {
     activateListeners() {
         super.activateListeners();
 
-        this.activateOptionsListeners();        
-        
+        this.activateOptionsListeners();
+
         // Eventos do painel de Configurações Gerais.
         this.activateMainPanelListeners();
 
@@ -264,6 +280,9 @@ export default class SettingsForm extends EntryForm {
 
         const editThemeButton = this.querySelector("#editThemeButton");
         editThemeButton.addEventListener('click', (event) => { this.onEditThemeClick(event); });
+
+        const deleteThemeButton = this.querySelector("#deleteThemeButton");
+        deleteThemeButton.addEventListener('click', (event) => { this.onDeleteThemeClick(event); });
 
         this.slider.activateBaseListeners();
     }
@@ -341,16 +360,25 @@ export default class SettingsForm extends EntryForm {
 
         const isExtra = selectedTheme.includes("custom");
         const editThemeButton = this.querySelector("#editThemeButton");
+        const deleteThemeButton = this.querySelector("#deleteThemeButton");
 
-        if(isExtra) {
-            theme = (selectedTheme.split('/')[1]).replaceAll('.css','');        
-            themePath = `css/${selectedTheme.replaceAll('theme-','')}`;
-            
-            editThemeButton.classList.remove('hidden');
+        if (isExtra) {
+            theme = (selectedTheme.split('/')[1]).replaceAll('.css', '');
+            themePath = `css/${selectedTheme.replaceAll('theme-', '')}`;
+
+            editThemeButton.innerHTML = '<i class="fas fa-palette"></i>';
+            editThemeButton.dataset.tooltip = 'Editar Tema';
+            editThemeButton.dataset.action = 'edit';
+
+            deleteThemeButton.classList.remove('hidden');
         }
         else {
-            theme = selectedTheme; 
-            editThemeButton.classList.add('hidden');
+            theme = selectedTheme;
+            editThemeButton.innerHTML = '<i class="fas fa-clone"></i>';
+            editThemeButton.dataset.tooltip = 'Clonar Tema';
+            editThemeButton.dataset.action = 'clone';
+
+            deleteThemeButton.classList.add('hidden');
         }
 
         const themeLink = document.getElementById("themeLink");
@@ -358,6 +386,7 @@ export default class SettingsForm extends EntryForm {
 
         document.documentElement.setAttribute('data-theme', theme);
         localStorage.setItem('uniforge_theme', theme);
+        localStorage.setItem('uniforge_theme_path', themePath);
 
         await uniforge.settings.set('misc.currentTheme', selectedTheme);
     }
@@ -366,47 +395,51 @@ export default class SettingsForm extends EntryForm {
         event.stopPropagation();
 
         const theme = await ThemeDialog.configDialog();
-        if(theme) {
-            const url = uniforge.urls.customCSS;
-            const name = theme['name'].replaceAll(' ', '-').toLowerCase();
-            delete theme['name'];
-
-            const fileName = `${name}.css`;
-
-            const data = `:root[data-theme=\"theme-${name}\"] {\n${
-                Object.entries(theme).map(([key, value]) => {
-                    if(value.startsWith('var(') || value.startsWith('#')|| key.includes("radius")) return `${key}: ${value};`;
-                    else return `${key}: "${value}";`;
-                }).join('\n')
-            }}`;
-
-            const result = await uniforge.fs.writeFile(url, fileName, data);
-            if(result.sucess) {
-                this.msgBox.showInfo(`Tema '${name}' criado com sucesso.`);
-                this.refresh();
-            }
-            else {
-                this.msgBox.showError(`Erro ao criar tema '${name}'. ${result.error}`);
-            }
+        if (theme) {
+            await this._saveTheme(theme);
         }
     }
 
     async onEditThemeClick(event) {
         event.stopPropagation();
+        const button = event.target.closest('a.button');
+
+        const isClone = button.dataset.action === 'clone';
 
         const themeSelector = this.querySelector("#themeSelector");
         const selectedOption = themeSelector.options[themeSelector.selectedIndex];
-        const name = themeSelector.value.toLowerCase().replaceAll(' ', '-').replaceAll('custom/', '').replaceAll('theme-', '');
 
-        const url = uniforge.urls.customCSS;
-        const fileName = name;
+        const css = { ...uniforge.theme.current, '--name': isClone ? '' : selectedOption.label };
 
-        const css = await uniforge.css.parseCSStoJSON(`${url}/${fileName}`);
-        css['name'] = selectedOption.label;
+        const theme = await ThemeDialog.configDialog(css, { isEdit: true, isClone: isClone });
+        if (theme) {
+            await this._saveTheme(theme, { isEdit: true });
+        }
+    }
 
-        const theme = await ThemeDialog.configDialog(css, {isEdit: true});
-        if(theme) {                       
-            delete theme['name'];    
+    async onDeleteThemeClick(event) {
+        event.stopPropagation();
+
+        if (await Dialogs.confirm("Deletar Tema?", "Tem certeza que deseja deletar o tema selecionado?")) {
+            const themeSelector = this.querySelector("#themeSelector");
+            const selectedOption = themeSelector.options[themeSelector.selectedIndex];
+            const name = themeSelector.value.toLowerCase().replaceAll(' ', '-').replaceAll('custom/', '').replaceAll('theme-', '');
+
+            const url = uniforge.urls.customCSS;
+            const fileName = name;
+
+            const result = await uniforge.fs.deleteFile(`${url}/${fileName}`);
+            if (result.sucess) {
+                this.msgBox.showInfo(`Tema '${selectedOption.label}' deletado com sucesso.`);
+                uniforge.theme.refresh('theme-neutral', 'css/themes.css');
+                themeSelector.value = 'theme-neutral';
+                themeSelector.dispatchEvent(new Event('change'));
+
+                this.refresh();
+            }
+            else {
+                this.msgBox.showError(`Erro ao deletar tema '${selectedOption.label}'. ${result.error}`);
+            }
         }
     }
 
@@ -780,6 +813,37 @@ export default class SettingsForm extends EntryForm {
         }
 
         uniforge.ctrls.progressDialog.close();
+    }
+
+    async _saveTheme(theme, options={isEdit: false}) {
+        try {
+            const url = uniforge.urls.customCSS;
+            const name = theme['--name'].replaceAll(' ', '-').toLowerCase();
+            delete theme['--name'];
+
+            const fileName = `${name}.css`;
+
+            const data = `:root[data-theme=\"theme-${name}\"] {\n${Object.entries(theme).map(([key, value]) => {
+                if (value.startsWith('var(') || value.startsWith('#') || key.includes("radius") || key.includes('--default-font')) return `${key}: ${value};`;
+                else return `${key}: "${value}";`;
+            }).join('\n')
+                }}`;
+
+            const result = await uniforge.fs.writeFile(url, fileName, data);
+            if (result.sucess) {
+                if(options.isEdit) this.msgBox.showInfo(`Tema '${name}' alterado com sucesso.`);
+                else this.msgBox.showInfo(`Tema '${name}' criado com sucesso.`);
+
+                uniforge.theme.refresh(`theme-${name}`, `css/custom/${fileName}`);
+                this.refresh();
+            }
+            else {
+                this.msgBox.showError(`Erro ao criar tema '${name}'. ${result.error}`);
+            }
+        }
+        catch (error) {
+            this.msgBox.showError(`Erro ao criar tema '${name}'. ${error.message}`, error);
+        }
     }
 
     _handleLineageIcon(subject) {

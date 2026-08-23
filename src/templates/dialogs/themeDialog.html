@@ -1,11 +1,14 @@
 <div class="theme-dialog flexcol">
-    <div class="data-group text">
+    <div class="data-group hinted text">
         <span class="data-label">Nome Tema:</span>
-         <input id="themeNameInput" type="text" class="data" placeholder="Novo Tema"/>
+        <input id="themeNameInput" type="text" class="data" data-name="--name" placeholder="Novo Tema" />
+        <label class="input-hint">
+            <p>O nome do tema não pode conter caracteres especiais.</p>
+        </label>
     </div>
     <div class="data-group combo">
         <span class="data-label">Fontes</span>
-        <combo id="fontSelect" value="fonts" blank="0"></combo>
+        <combo id="fontSelect" value="fonts" blank="§"></combo>
     </div>
     <div class="separator"></div>
     <h4>Paletas de Cores</h4>
@@ -89,7 +92,7 @@
         </div>
     </div>
     <div class="data-group combo">
-        <span class="data-label">Escura</span>        
+        <span class="data-label">Escura</span>
         <div class="data-complex flexrow">
             <combo id="darkTextColor" value="colorList" blank="none" grouped="true"></combo>
             <div id="previewDarkText" class="color-preview"></div>
@@ -100,6 +103,6 @@
         <div class="data-complex flexrow">
             <combo id="disabledTextColor" value="colorList" blank="none" grouped="true"></combo>
             <div id="previewDisabledText" class="color-preview"></div>
-        </div>        
+        </div>
     </div>
 </div>

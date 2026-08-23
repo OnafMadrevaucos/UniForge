@@ -9,6 +9,7 @@ import DBDocuments from "./db/dbDocuments.js";
 import * as esm from "./common/uniforge-esm.mjs";
 import lControl from "./common/leaflet/core.mjs";
 import PDFManager from "./scripts/managers/pdfManager.js";
+import FontManager from "./scripts/managers/fontManager.js";
 import { set } from "./common/primitives/set.mjs";
 import Slider from "./models/controls/slider.js";
 import ColorPicker from "./models/controls/colorPicker.js";
@@ -18,6 +19,14 @@ document.documentElement.setAttribute('data-theme', localStorage.getItem('unifor
 
 // Realiza as configurações iniciais da aplicação ao carregar o conteúdo do DOM.
 document.addEventListener('DOMContentLoaded', async () => {
+    window.addEventListener('themechange', (event) => {
+        const themeLink = document.getElementById("themeLink");
+        const themePath = event.detail.path || 'css/themes.css';
+        themeLink.href = themePath;
+
+        console.log(`Novo tema: ${event.detail.theme}`);
+    });
+
     const cssname = await uniforge.path.join('css/styles.css');
     const csstheme = await uniforge.path.join('css/themes.css');
 
@@ -39,7 +48,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             CSS_NAME: cssname,
             CSS_THEME: csstheme,
             leaflet: lControl.constants,
-            fonts: localFonts
+            fonts: new FontManager(localFonts)
         }),
 
         /**
@@ -279,6 +288,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         })
     });
+
+    // Inicia o gerenciador de temas.
+    uniforge.theme.refresh();
 
     // Configura o estado inicial da aplicação, se ele ainda não foi criado.
     uniforge.state.init();
@@ -897,7 +909,7 @@ async function onGradientColorPickerChange(picker) {
  * @returns {Promise<void>}             - Uma promessa que resolve quando o formulário for renderizado e exibido.
  * @throws {Error}                      - Se ocorrer um erro ao renderizar o formulário.
  */
-async function renderForm(targetId, button=null, showAfter = true) {
+async function renderForm(targetId, button = null, showAfter = true) {
     try {
         const form = new uniforge.forms[targetId]();
         if (!form)
@@ -906,7 +918,7 @@ async function renderForm(targetId, button=null, showAfter = true) {
         if (showAfter) await form.show(true);
     } catch (error) {
         uniforge.msgBox.showError(error.message);
-        if(button) button.classList.remove('disabled');
+        if (button) button.classList.remove('disabled');
     }
 }
 

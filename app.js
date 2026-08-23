@@ -166,6 +166,13 @@ app.whenReady().then(() => {
   ipcMain.handle('write-file', (event, path, name, buffer) => writeFile(path, name, buffer));
 
   /**
+   * Manipulador para remoção de um arquivo em um determinado diretório.
+   * @param {Electron.IpcMainEvent} event - O evento IPC recebido.
+   * @param {string} path - O caminho do arquivo a ser deletado.
+   */
+  ipcMain.handle('delete-file', (event, path) => deleteFile(path));
+
+  /**
    * Manipulador para ler o conteúdo de um diretório.
    * @param {Electron.IpcMainEvent} event - O evento IPC recebido.
    * @param {string} filePath - O caminho do diretório a ser lido.
@@ -368,6 +375,8 @@ function pathExtname(filePath) {
  * @param {string} path - O caminho completo do arquivo a ser salvo.
  * @param {string} name - O nome do arquivo sem a extensão.
  * @param {Buffer} buffer - O buffer de dados do PDF.
+ * 
+ * @async
  */
 function savePDF(target, name, buffer) {
   console.log(target);
@@ -407,11 +416,13 @@ function copyFile(src, dest) {
 }
 
 /**
- * Escreve dados em um arquivo em sincronia.
+ * Escreve dados em um arquivo.
  * @param {string} url    - O caminho completo do arquivo a ser salvo.
  * @param {string} name   - O nome do arquivo com a extensão.
  * @param {Buffer} buffer - O buffer de dados do arquivo.
  * @param {object} options - Opções adicionais para a escrita do arquivo.
+ * 
+ * @async
  */
 async function writeFile(url, name, buffer, options = { forceDir: true, encoding: "utf8" }) {
   return new Promise(async (resolve, reject) => {
@@ -433,6 +444,32 @@ async function writeFile(url, name, buffer, options = { forceDir: true, encoding
         });
       } else {
         console.error('Erro ao salvar o arquivo:', error);
+        resolve({
+          sucess: false,
+          error: error.message
+        });
+      }
+    });
+  });
+}
+
+/**
+ * Remove um arquivo de um determinado diretório.
+ * @param {string} path    - O caminho completo do arquivo a ser deletado.
+ * 
+ * @async
+ */
+async function deleteFile(path) {
+  return new Promise(async (resolve, reject) => {
+    fs.rm(path, { recursive: true, force: true }, (error) => {
+      if (!error) {
+        console.log('Arquivo deletado com sucesso em:', path);
+        resolve({
+          sucess: true,
+          error: null
+        });
+      } else {
+        console.error('Erro ao deletar o arquivo:', error);
         resolve({
           sucess: false,
           error: error.message
