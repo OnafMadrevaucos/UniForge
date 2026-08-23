@@ -8,7 +8,13 @@ export default class ThemeDialog extends BaseDialog {
             width: '350px'
         }));
 
-        this.template = 'themeDialog'; // Define o template do diálogo.
+        // Define o template do diálogo.
+        this.template = 'themeDialog'; 
+
+        this.css = this.data.css;
+
+        // Verifica se se trata de uma edição de Tema.
+        this.isEdit = options.isEdit ?? false; 
 
         // Propriedade que armazena todos os controles dos Color Pickers do Dialog.
         this.pickers = {
@@ -40,8 +46,12 @@ export default class ThemeDialog extends BaseDialog {
             quoteBackgroundColorPicker: null,
         }
 
+        // Tema padrão.
         this.theme = {
             'name': 'Novo Tema',
+
+            '--default-font': "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;",
+
             '--dark-color-a': '#1e140feb',
             '--color-a': '#231b14',
             '--light-color-a': '#36281e',
@@ -113,7 +123,7 @@ export default class ThemeDialog extends BaseDialog {
    */
     async prepareData() {
         const fonts = uniforge.constants.fonts;
-        this.data.fonts = fonts.map(font => ({ _id: font.replaceAll("\"", ""), _label: font.replaceAll("\"", "") }));
+        this.data.fonts = Object.entries(fonts).map(([key, value]) => ({ _id: key.replaceAll("\"", ""), _label: key.replaceAll("\"", "") }));
 
         this.data.colorList = {
             "Cor A": [
@@ -162,6 +172,9 @@ export default class ThemeDialog extends BaseDialog {
         });
 
         this.configureColorPickers();
+
+        const generateButton = this.querySelector("#generate.dialog-button");
+        generateButton.setAttribute('data-json', JSON.stringify(this.theme));
     }
 
     configureColorPickers() {
@@ -303,7 +316,7 @@ export default class ThemeDialog extends BaseDialog {
     activateListeners() {
 
         const themeNameInput = this.querySelector("#themeNameInput");
-        themeNameInput.addEventListener((event) => {
+        themeNameInput.addEventListener('input', (event) => {
             const input = event.target;
             const button = this.querySelector("#generate.dialog-button");
 
@@ -318,7 +331,7 @@ export default class ThemeDialog extends BaseDialog {
         this.activateComboListeners();
     }
 
-    activatePickerListeners() {  
+    activatePickerListeners() {
         Object.values(this.pickers).forEach(picker => {
             picker.addEventListener('change', (event) => {
                 const name = event.target.dataset.name;
@@ -341,7 +354,7 @@ export default class ThemeDialog extends BaseDialog {
             const previewMainText = this.querySelector('#previewMainText');
 
             previewMainText.style.backgroundColor = `var(--${combo.value})`;
-            this.theme['--text-color'] = combo.value;
+            this.theme['--text-color'] = `var(--${combo.value});`;
             button.setAttribute('data-json', JSON.stringify(this.theme));
         });
 
@@ -351,7 +364,7 @@ export default class ThemeDialog extends BaseDialog {
             const previewLightText = this.querySelector('#previewLightText');
 
             previewLightText.style.backgroundColor = `var(--${combo.value})`;
-            this.theme['--light-text-color'] = combo.value;
+            this.theme['--light-text-color'] = `var(--${combo.value});`;
             button.setAttribute('data-json', JSON.stringify(this.theme));
         });
 
@@ -361,7 +374,7 @@ export default class ThemeDialog extends BaseDialog {
             const previewDarkText = this.querySelector('#previewDarkText');
 
             previewDarkText.style.backgroundColor = `var(--${combo.value})`;
-            this.theme['--dark-text-color'] = combo.value;
+            this.theme['--dark-text-color'] = `var(--${combo.value});`;
             button.setAttribute('data-json', JSON.stringify(this.theme));
         });
 
@@ -371,16 +384,25 @@ export default class ThemeDialog extends BaseDialog {
             const previewDisabledText = this.querySelector('#previewDisabledText');
 
             previewDisabledText.style.backgroundColor = `var(--${combo.value})`;
-            this.theme['--disabled-text-color'] = combo.value;
+            this.theme['--disabled-text-color'] = `var(--${combo.value});`;
             button.setAttribute('data-json', JSON.stringify(this.theme));
         });
     }
 
-    static async configDialog(options = {}) {
+    static async configDialog(css = null, options = {}) {
+        function verifyTheme(theme) {
+
+            if([' ', ':', '@', '$', '&'].includes(theme['name'])) return 'O nome do tema é inválido.';
+            if(['theme', 'theme-'].includes(theme['name'])) return 'O nome do tema não pode conter o trecho\'theme\'.';
+
+
+            return '';
+        }
         options = uniforge.utils.mergeObjects(options, { alwaysClose: true });
         return new Promise((resolve, reject) => {
             const dialog = new this({
                 title: 'Gerenciar Temas',
+                css: css,
                 buttons: {
                     cancel: {
                         label: "Cancelar",
@@ -394,8 +416,22 @@ export default class ThemeDialog extends BaseDialog {
                             const button = event.target;
                             const theme = JSON.parse(button.dataset.json);
 
-                            if(theme) resolve(theme);
-                            else resolve(null);
+                            if (theme) {
+                                const result = verifyTheme(theme);
+
+                                if (result.isEmpty()) {
+                                    resolve(theme);
+                                    return true;
+                                } else {
+                                    uniforge.msgBox.showWarning(result);
+
+                                    resolve(null);
+                                    return false;
+                                }
+                            }
+
+                            resolve(null);
+                            return false;
                         }
                     }
                 },

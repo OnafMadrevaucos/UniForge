@@ -21,6 +21,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     const cssname = await uniforge.path.join('css/styles.css');
     const csstheme = await uniforge.path.join('css/themes.css');
 
+    const localFonts = await uniforge.utils.getSystemFonts();
+
     // Adiciona as propriedades restantes ao objeto uniforge.
     uniforge.utils.mergeObjects(uniforge, {
         /**
@@ -37,7 +39,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             CSS_NAME: cssname,
             CSS_THEME: csstheme,
             leaflet: lControl.constants,
-            fonts: await uniforge.app.listFonts()
+            fonts: localFonts
         }),
 
         /**

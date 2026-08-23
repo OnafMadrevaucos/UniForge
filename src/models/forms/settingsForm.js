@@ -50,7 +50,7 @@ export default class SettingsForm extends EntryForm {
             'Um Tile Map é em si um diretório localizado no \'diretório padrão\' abaixo, altere-o se desejar ' +
             'que os arquivos gerados sejam armazenados em outro diretório.';
 
-        this.prepareThemes();
+        await this.prepareThemes();
 
         await this.prepareMetadata();
 
@@ -76,14 +76,26 @@ export default class SettingsForm extends EntryForm {
         this.data.leaflet.MAX_ZOOM = uniforge.constants.leaflet.MAX_ZOOM;
     }
 
-    prepareThemes() {
+    async prepareThemes() {
+        const extraThemesFiles = await uniforge.fs.readDir(uniforge.urls.relativePath.customCSS);
+
+        const extraThemes = []; 
+        
+        extraThemesFiles.files.forEach(theme => {
+            const themeName = theme.name;
+            extraThemes.push({
+                _id: `custom/theme-${themeName}`,
+                _label: themeName.capitalize().replaceAll('.css','')
+            });
+        });
+
         this.data.themes = {
             nativos: [
                 { _id: 'theme-medieval', _label: 'Medieval' },
                 { _id: 'theme-scifi', _label: 'Sci-fi' },
                 { _id: 'theme-neutral', _label: 'Neutro' },
             ],
-            extras: []
+            extras: extraThemes
         };
     }
 
@@ -250,6 +262,9 @@ export default class SettingsForm extends EntryForm {
         const newThemeButton = this.querySelector('#newThemeButton');
         newThemeButton.addEventListener('click', (event) => { this.onNewThemeClick(event); });
 
+        const editThemeButton = this.querySelector("#editThemeButton");
+        editThemeButton.addEventListener('click', (event) => { this.onEditThemeClick(event); });
+
         this.slider.activateBaseListeners();
     }
 
@@ -321,8 +336,28 @@ export default class SettingsForm extends EntryForm {
    */
     async onThemeSelectorChange(event) {
         const selectedTheme = event.target.value;
-        document.documentElement.setAttribute('data-theme', selectedTheme);
-        localStorage.setItem('uniforge_theme', selectedTheme);
+        let theme = 'theme-medieval';
+        let themePath = 'css/themes.css';
+
+        const isExtra = selectedTheme.includes("custom");
+        const editThemeButton = this.querySelector("#editThemeButton");
+
+        if(isExtra) {
+            theme = (selectedTheme.split('/')[1]).replaceAll('.css','');        
+            themePath = `css/${selectedTheme.replaceAll('theme-','')}`;
+            
+            editThemeButton.classList.remove('hidden');
+        }
+        else {
+            theme = selectedTheme; 
+            editThemeButton.classList.add('hidden');
+        }
+
+        const themeLink = document.getElementById("themeLink");
+        themeLink.href = themePath;
+
+        document.documentElement.setAttribute('data-theme', theme);
+        localStorage.setItem('uniforge_theme', theme);
 
         await uniforge.settings.set('misc.currentTheme', selectedTheme);
     }
@@ -333,13 +368,45 @@ export default class SettingsForm extends EntryForm {
         const theme = await ThemeDialog.configDialog();
         if(theme) {
             const url = uniforge.urls.customCSS;
-            const name = `${theme['nome']}.css`;
+            const name = theme['name'].replaceAll(' ', '-').toLowerCase();
+            delete theme['name'];
 
-            const data = `:root[data-theme=\"${theme["nome"].pop().replaceAll(' ', '-').toLowerCase()}\"] {
-                ${theme.join(';\n')}    
-            }`;
+            const fileName = `${name}.css`;
 
-            await uniforge.fs.writeFile(url, name, data);
+            const data = `:root[data-theme=\"theme-${name}\"] {\n${
+                Object.entries(theme).map(([key, value]) => {
+                    if(value.startsWith('var(') || value.startsWith('#')|| key.includes("radius")) return `${key}: ${value};`;
+                    else return `${key}: "${value}";`;
+                }).join('\n')
+            }}`;
+
+            const result = await uniforge.fs.writeFile(url, fileName, data);
+            if(result.sucess) {
+                this.msgBox.showInfo(`Tema '${name}' criado com sucesso.`);
+                this.refresh();
+            }
+            else {
+                this.msgBox.showError(`Erro ao criar tema '${name}'. ${result.error}`);
+            }
+        }
+    }
+
+    async onEditThemeClick(event) {
+        event.stopPropagation();
+
+        const themeSelector = this.querySelector("#themeSelector");
+        const selectedOption = themeSelector.options[themeSelector.selectedIndex];
+        const name = themeSelector.value.toLowerCase().replaceAll(' ', '-').replaceAll('custom/', '').replaceAll('theme-', '');
+
+        const url = uniforge.urls.customCSS;
+        const fileName = name;
+
+        const css = await uniforge.css.parseCSStoJSON(`${url}/${fileName}`);
+        css['name'] = selectedOption.label;
+
+        const theme = await ThemeDialog.configDialog(css, {isEdit: true});
+        if(theme) {                       
+            delete theme['name'];    
         }
     }
 

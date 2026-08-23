@@ -2,6 +2,7 @@ import { app, BrowserWindow, Menu, globalShortcut, ipcMain, dialog } from 'elect
 import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
+import css from 'css';
 import Database from 'better-sqlite3';
 import { result } from 'lodash-es';
 import fontList from "font-list";
@@ -181,6 +182,14 @@ app.whenReady().then(() => {
   ipcMain.handle('list-files', (event, filePath) => listFiles(filePath));
 
   /**
+   * Manipulador para converter regras CSS para a estrutura JSON.
+   * @param {Electron.IpcMainEvent} event - O evento IPC recebido.
+   * @param {string} filePath - O caminho do arquivo a ser lido.
+   * @returns {Object} - O conteúdo do arquivo lido.
+   */
+  ipcMain.handle('CSS-to-JSON', (event, filePath) => parseCSStoJSON(filePath));
+
+  /**
    * Manipulador para buscar templates de arquivos.
    * @param {string} fileName - Nome do arquivo do template.
    */
@@ -319,13 +328,6 @@ async function selectFile(type) {
   return canceled ? null : filePaths[0];
 }
 
-async function listFonts() {
-  const fonts = await fontList.getFonts();
-  fonts.sort((a, b) => a.localeCompare(b));
-
-  return fonts;
-}
-
 /**
  * Junta um ou mais caminhos relativos dentro da pasta `src` em um caminho absoluto.
  * @param {string[]} paths - Os caminhos relativos a serem unidos.
@@ -406,18 +408,37 @@ function copyFile(src, dest) {
 
 /**
  * Escreve dados em um arquivo em sincronia.
- * @param {string} path - O caminho completo do arquivo a ser salvo.
- * @param {string} name - O nome do arquivo com a extensão.
+ * @param {string} url    - O caminho completo do arquivo a ser salvo.
+ * @param {string} name   - O nome do arquivo com a extensão.
  * @param {Buffer} buffer - O buffer de dados do arquivo.
+ * @param {object} options - Opções adicionais para a escrita do arquivo.
  */
-async function writeFile(path, data) {
-  const fullPath = path.join(__srcname, target);
-  await fs.writeFile(fullPath, buffer, (error) => {
-    if (error) {
-      console.error('Erro ao salvar o arquivo:', error);
-    } else {
-      console.log('Arquivo salvo com sucesso em:', path);
+async function writeFile(url, name, buffer, options = { forceDir: true, encoding: "utf8" }) {
+  return new Promise(async (resolve, reject) => {
+    // Verifica se o diretório de destino existe, caso contrário, cria-o
+    if (options.forceDir && !fs.existsSync(url)) {
+      fs.mkdirSync(url);
     }
+
+    // Gera o caminho completo do arquivo a ser salvo.
+    const fullPath = path.join(url, name);
+
+    // Escreve o buffer de dados no arquivo.
+    const result = await fs.writeFile(fullPath, buffer, (error) => {
+      if (!error) {
+        console.log('Arquivo salvo com sucesso em:', fullPath);
+        resolve({
+          sucess: true,
+          error: null
+        });
+      } else {
+        console.error('Erro ao salvar o arquivo:', error);
+        resolve({
+          sucess: false,
+          error: error.message
+        });
+      }
+    });
   });
 }
 
@@ -482,6 +503,47 @@ function listFiles(dir) {
   });
 
   return files;
+}
+
+/**
+ * Transforma um arquivo CSS em um objeto JSON.
+ * @param {string} filePath - O caminho absoluto do diretório a ser lido.
+ * @returns {Object}        - O Objeto JSON construido.
+ */
+function parseCSStoJSON(filePath) {
+  try {
+    // 1. Lê o conteúdo do arquivo CSS usando fs
+    const cssContent = fs.readFileSync(filePath, 'utf-8');
+
+    // 2. Transforma o texto CSS em AST (Estrutura de Árvore Sintática)
+    const parsedCSS = css.parse(cssContent, { source: filePath });
+
+    const resultJSON = {};
+
+    // 3. Varre as regras do CSS e constrói o objeto JSON
+    parsedCSS.stylesheet.rules.forEach(rule => {
+      // Processa apenas regras comuns de estilo (ignora @import, @keyframes etc se não preciso)
+      if (rule.type === 'rule') {
+        rule.selectors.forEach(selector => {
+          if (!resultJSON[selector]) {
+            resultJSON[selector] = {};
+          }
+
+          // Adiciona cada propriedade CSS (declarations) ao seletor correspondente
+          rule.declarations.forEach(declaration => {
+            if (declaration.type === 'declaration') {
+              resultJSON[selector][declaration.property] = declaration.value;
+            }
+          });
+        });
+      }
+    });
+
+    return Object.values(resultJSON)[0] ?? resultJSON;
+  } catch (error) {
+    console.error('Erro ao ler ou converter o arquivo CSS:', error);
+    return null;
+  }
 }
 
 /**

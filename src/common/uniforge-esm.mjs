@@ -50,7 +50,7 @@ const utils = {
     timeSince: utilsEsm.helpers.timeSince,
     getFontAwesomeIcons: utilsEsm.helpers.getFontAwesomeIcons,
     formatFileSize: utilsEsm.helpers.formatFileSize,
-    refreshMarker: leafletEsm.utils.default.refreshMarker
+    getSystemFonts: utilsEsm.helpers.getSystemFonts,
 };
 
 const parser = {
@@ -124,6 +124,12 @@ globalThis.uniforge = {
     * @type {Object}
     */
     fs: window.fs,    
+
+    /**
+    * Ferramentas de manipulação de Arquivos e Regras CSS.
+    * @type {Object}
+    */
+    css: window.css,    
 
     /**
     * Instância de SQL usada pela aplicação.

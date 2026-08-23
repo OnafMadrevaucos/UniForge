@@ -110,6 +110,27 @@ export function timeSince(timeStamp) {
     return since;
 }
 
+export async function getSystemFonts() {
+    const availableFonts = await window.queryLocalFonts();
+    const fontObjects = availableFonts.map(font => ({
+        family: font.family,
+        fullName: font.fullName,
+        postscriptName: font.postscriptName,
+        style: font.style
+    }));
+
+    const groupedFonts = fontObjects.reduce((acc, font) => {
+        const family = font.family;
+        if (!acc[family]) {
+            acc[family] = {};
+        }
+        acc[family][font.style] = font;
+        return acc;
+    }, {});
+
+    return groupedFonts;
+}
+
 /**
      * Função assíncrona para extrair os ícones do FontAwesome de um arquivo CSS.
      * Faz a leitura do arquivo CSS, converte seu conteúdo em texto, e tenta parseá-lo para JSON.
