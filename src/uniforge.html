@@ -117,8 +117,13 @@
                     </div>
                 </div>
             </div>
-            <div id="toggleShapesPanel" class="toggle-tab flexrow visible">
-                <i class="fas fa-screwdriver-wrench"></i>
+            <div class="map-objects-tabs flexcol">
+                <div class="toggle-tab tab-shapes flexrow visible" data-target="regular-shapes" data-tooltip="Ferramentas de Desenho">
+                    <i class="fas fa-screwdriver-wrench"></i>
+                </div>
+                <div class="toggle-tab tab-objects flexrow visible" data-target="layer-objects" data-tooltip="Lista de Objetos">
+                    <i class="fas fa-list"></i>
+                </div>
             </div>
         </div>
     </div>
@@ -137,8 +142,13 @@
                 <ul id="mapElementsList" class="map-elements flexcol"></ul>
                 <span id="noObjectsFoundMessage" class="no-results hidden">Nenhum objeto encontrado.</span>
             </div>
-            <div id="toggleObjectsPanel" class="toggle-tab flexrow visible">
-                <i class="fas fa-list"></i>
+            <div class="map-objects-tabs flexcol">
+                <div class="toggle-tab tab-shapes flexrow visible" data-target="regular-shapes" data-tooltip="Ferramentas de Desenho">
+                    <i class="fas fa-screwdriver-wrench"></i>
+                </div>
+                <div class="toggle-tab tab-objects flexrow visible" data-target="layer-objects" data-tooltip="Lista de Objetos">
+                    <i class="fas fa-list"></i>
+                </div>
             </div>
         </div>
     </div>

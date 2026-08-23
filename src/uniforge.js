@@ -614,14 +614,15 @@ function activateMainListeners() {
         option.addEventListener('click', (event) => { onMarkerIconClick(event); });
     });
 
-    const toggleShapesPanel = document.getElementById('toggleShapesPanel');
-    toggleShapesPanel.addEventListener('click', (event) => {
-        uniforge.leaflet.core.toggleMapObjectPanel(event);
-    });
+    const toggleTabs = document.querySelectorAll('.map-objects-container .toggle-tab');
+    toggleTabs.forEach(tab => {
+        tab.addEventListener('click', (event) => {
+            const targetClass = tab.getAttribute('data-target');
+            const targetContainer = document.querySelector(`.map-objects-container.${targetClass}`);
+            if (!targetContainer) return;
 
-    const toggleObjectsPanel = document.getElementById('toggleObjectsPanel');
-    toggleObjectsPanel.addEventListener('click', (event) => { 
-        uniforge.leaflet.core.toggleMapObjectPanel(event, {name: 'layer-objects'});
+            onToggleMapObjectPanelClick(event, targetContainer);
+        });
     });
 
     const hasBorderSwitch = document.querySelector('#hasBorderSwitch');
@@ -806,6 +807,22 @@ async function onMarkerIconClick(event) {
         else await startMarkerDrawing(marker);
     }
     else if (uniforge.ctrls.marker) uniforge.ctrls.marker.disable();
+}
+
+function onToggleMapObjectPanelClick(event, container) {
+    if (event && event.stopPropagation) event.stopPropagation();
+
+    const isOpening = !container.classList.contains('active');
+
+    // Desativa todos os painéis de objetos do mapa
+    const mapObjContainers = document.querySelectorAll('.map-objects-container');
+    mapObjContainers.forEach(moc => {
+        moc.classList.remove('active');
+    });
+
+    if (isOpening) {
+        container.classList.add('active');
+    }
 }
 
 async function onHasBorderSwitchChange(event) {

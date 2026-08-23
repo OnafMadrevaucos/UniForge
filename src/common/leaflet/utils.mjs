@@ -452,7 +452,13 @@ function onAddDrawControl(map) {
 
 function _onExpandLayer() {
     const layerControl = document.querySelector('#layerControl');
-    layerControl.classList.toggle('active');
+    if (layerControl) {
+        const isOpening = !layerControl.classList.contains('active');
+        document.querySelectorAll('.map-objects-container').forEach(c => c.classList.remove('active'));
+        if (isOpening) {
+            layerControl.classList.add('active');
+        }
+    }
 }
 
 function onAddLayer(map) {
