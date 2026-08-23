@@ -40,8 +40,6 @@ export default class ColorPicker {
             this.alpha = options.alpha ?? 1;
         }
 
-
-
         // Configuração de tooltip opcional.
         if (options.tooltip) {
             this.tooltip = options.tooltip;
@@ -54,6 +52,9 @@ export default class ColorPicker {
             // Inicializa o canal alpha, respeitando a configuração de opacidade fixa se definida.
             this.alpha = options.alpha ?? 1;
         }
+
+        // Armazena as opções informadas pelo usuário.
+        this.options = options;
     }
 
     /**
@@ -78,11 +79,11 @@ export default class ColorPicker {
     }
     /** @returns {HTMLElement|null} O quadrado/círculo que mostra a cor atualmente selecionada. */
     get preview() {
-        return this.colorPicker?.querySelector('.color-picker-preview') ?? null;
+        return this.colorPicker?.querySelector(`#${this.id} .color-picker-preview`) ?? null;
     }
     /** @returns {HTMLElement|null} O painel flutuante (dropdown) que contém os seletores. */
     get popup() {
-        return this.colorPicker?.querySelector('.color-picker-popup') ?? null;
+        return this.colorPicker?.querySelector(`#${this.id} .color-picker-popup`) ?? null;
     }
     /** @returns {HTMLElement|null} A área bidimensional de saturação e brilho (Value). */
     get spectrum() {
@@ -179,14 +180,23 @@ export default class ColorPicker {
 
     /**
      * Inicializa o componente ativando os ouvintes de eventos e atualizando a interface visual.
+     * @param {Object} [options={}] - Opções de configurações do Color Picker.
+     * @param {Object|null} [options.dataset={}] - Pares de valores para ser atribuídos ao dataset 
+     *                                             do HTMLElement do Color Picker. 
      */
-    config() {
+    config(options={}) {
         this.activateBaseListeners();
         this.update();
 
         if (this.fixedAlpha) {
             this.alphaSlider.style.display = 'none';
             this.alphaThumb.style.display = 'none';
+        }
+
+        if(options?.dataset) {
+            Object.entries(options.dataset).forEach(([key,value]) => {
+                this.colorPicker.setAttribute(`data-${key}`, value);
+            });
         }
 
         this.configured = true;
@@ -296,7 +306,7 @@ export default class ColorPicker {
         this.saturation = hsv.s;
         this.level = hsv.v;
         this.alpha = this.fixedAlpha ? this.alpha : alpha;
-
+        
         // Renderiza as mudanças na tela.
         this.update(propagate);
     }
@@ -308,6 +318,15 @@ export default class ColorPicker {
      */
     setColor(value, propagate = true) {
         this.setValue(value, propagate);
+    }    
+
+    /**
+     * Adiciona valores aos atributos do HTMLElement do Color Picker.
+     * @param {string} attr 
+     * @param {*} value 
+     */
+    setAttribute(attr, value) {
+        this.colorPicker.setAttribute(attr, value);
     }
 
     /**
@@ -339,9 +358,7 @@ export default class ColorPicker {
      */
     activateBaseListeners() {
         // Alterna abertura ao clicar no botão/quadrado de preview.
-        this.preview.addEventListener('click', () => {
-            this.opened = !this.opened;
-        });
+        this.preview.addEventListener('click', (event) => { this.onPreviewClick(event); });
 
         // Clique com botão direito no preview copia a cor para a área de transferência.
         this.preview.addEventListener('contextmenu', async (event) => {
@@ -452,23 +469,23 @@ export default class ColorPicker {
         const popup = this.popup;
 
         // Reset de posicionamento padrão css inicial relativo.
-        popup.style.left = '5px';
-        popup.style.top = '140px';
+        popup.style.left = previewRect.left;
+        popup.style.top = previewRect.top;
 
         const popupRect = popup.getBoundingClientRect();
 
         let left = previewRect.left;
-        let top = previewRect.height + 10; // Posiciona logo abaixo do preview com 10px de margem.
+        let top = previewRect.top + previewRect.height + 10; // Posiciona logo abaixo do preview com 10px de margem.
 
         // Prevenção de estouro na borda direita da viewport.
         if (left + popupRect.width > window.innerWidth) {
-            left = (popupRect.width) * -1;
-        }        
+            left = left - (popupRect.width / 2);
+        }
 
         // Prevenção de estouro na borda inferior (joga o popup para cima do preview).
         if (top + popupRect.height > window.innerHeight) {
-            top = (10 + popupRect.height) * -1;
-        }       
+            top = top - (popupRect.height / 2);
+        }
 
         // Aplica o posicionamento absoluto calculado baseado na viewport.
         popup.style.left = `${left}px`;
@@ -556,6 +573,24 @@ export default class ColorPicker {
 
         // Retorna priorizando: Valor resolvido do CSS > Fallback declarado > Valor bruto original.
         return resolved || fallback || value;
+    }
+
+    /**
+     * Abre o popup se o clique do usuário ocorrer na árvore de nós do Color Picker.
+     * @param {MouseEvent} event 
+     */
+    onPreviewClick(event) {
+        event.stopPropagation();
+
+        // Verifica se há outros Color Pickers abertos.
+        const openedColorPikers = document.querySelectorAll(".color-picker.open");
+        // Fecha todos que estiverem abertos.
+        openedColorPikers.forEach(picker => {
+            picker.classList.remove('open');
+        });
+
+        // Abre o Color Picker atual.
+        this.opened = !this.opened;
     }
 
     /**

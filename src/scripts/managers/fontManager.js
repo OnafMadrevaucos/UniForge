@@ -1,26 +1,55 @@
 export default class FontManager {
+    constructor(fonts) {
+        this.#families = new Map(
+            [...Object.entries(fonts)]
+                .sort((a, b) => a[0].localeCompare(b[0]))
+        );
+    }   
 
-    /**
-     * @param {Array<Object>} fonts Retorno do font-finder.list()
-     */
-    constructor(fonts = []) {
-        if(!Array.isArray(fonts)) {
-            fonts = Object.entries(fonts).map(([key, value]) => {
-                return {
-                    family: key,
-                    variants: value
-                };
-            });            
-        }            
+    get FALLBACKS() {
+        return {
+            serif: [
+                "Times New Roman",
+                "Times",
+                "Georgia",
+                "serif"
+            ],
 
-        this.families = this.#build(fonts);
+            sansSerif: [
+                "Arial",
+                "Helvetica",
+                "sans-serif"
+            ],
+
+            monospace: [
+                "Consolas",
+                "Courier New",
+                "monospace"
+            ],
+
+            cursive: [
+                "Comic Sans MS",
+                "cursive"
+            ],
+
+            fantasy: [
+                "Impact",
+                "fantasy"
+            ]
+        }
+    };
+
+    #families = new Map();
+
+    get families() {
+        return this.#families;
     }
 
     /**
      * Retorna todas as famílias ordenadas.
      */
-    getAll() {
-        return [...this.families.values()];
+    toArray() {
+        return [...this.#families.values()];
     }
 
     /**
@@ -29,109 +58,47 @@ export default class FontManager {
     search(text) {
         text = text.trim().toLowerCase();
 
-        return this.getAll().filter(f =>
+        return this.toArray().filter(f =>
             f.family.toLowerCase().includes(text)
         );
-    }
-
-    /**
-     * Obtém uma família.
-     */
-    get(family) {
-        return this.families.get(family) ?? null;
     }
 
     /**
      * Traduz uma família para CSS.
      */
     toCSS(family) {
-        const font = this.get(family);
+        if(family.isEmpty()) return '';
 
-        if (!font)
-            return "system-ui";
+        const category = this.#findFontCategory(family);
+        const fallbackCandidates = this.FALLBACKS[category];
 
-        return `"${font.family}", ${font.fallback}`;
-    }
-    toOptions() {
-        return this.getAll().map(f => ({ _id: f.family, _label: f.family }));
-    }
+        const availableFonts = this.#families.keys();
+        const availableFallbacks = fallbackCandidates.filter(fallback => {
+            if (fallback === "serif") return true;
+            if (fallback === "sans-serif") return true;
+            if (fallback === "monospace") return true;
+            if (fallback === "cursive") return true;
+            if (fallback === "fantasy") return true;
 
-    /**
-     * Cria a regra CSS completa.
-     */
-    createCSSVariable(variable, family) {
-        return `${variable}: ${this.toCSS(family)};`;
-    }
+            return availableFonts.some(
+                font => font.toLowerCase() === fallback.toLowerCase()
+            );
+        });
 
-    /**
-     * Retorna todas as categorias.
-     */
-    getCategories() {
-        const map = new Map();
-
-        for (const family of this.families.values()) {
-
-            if (!map.has(family.category))
-                map.set(family.category, []);
-
-            map.get(family.category).push(family);
-        }
-
-        return map;
+        return [
+            `"${family}"`,
+            ...availableFallbacks.map(font => {
+                return font.includes(" ")
+                    ? `${font}`
+                    : font;
+            })
+        ].join(", ");
     }
 
     // ----------------------------------------------------------------------
 
     #build(fonts) {
-
         const map = new Map();
-
-        for (const font of fonts) {
-
-            const family =
-                font.family ||
-                font.familyName ||
-                font.name;
-
-            if (!family)
-                continue;
-
-            if (!map.has(family)) {
-
-                let fallback = font.variants[0].type || font.variants[0].category || font.variants[0].fallback;
-                if(!fallback || fallback === "unknown")
-                    fallback = this.#detectFallback(family);
-
-                map.set(family, {
-                    family,
-                    fallback,
-                    css: `"${family}", ${fallback}`,
-                    faces: []
-                });
-            }
-
-            font.variants.forEach(variant => {
-                map.get(family).faces.push(variant);
-            });            
-        }
-
-        // Ordena faces
-        for (const family of map.values()) {
-
-            family.faces.sort((a, b) => {
-
-                const wa = this.#weight(a);
-                const wb = this.#weight(b);
-
-                return wa - wb;
-            });
-        }
-
-        // Ordena famílias
-        return new Map(
-            [...map.entries()]
-                .sort((a, b) => a[0].localeCompare(b[0]))
-        );
     }
 
     #weight(font) {
@@ -154,34 +121,76 @@ export default class FontManager {
         return 400;
     }
 
-    #detectFallback(name) {
+    #findFontCategory(font) {
+        const family = font.toLowerCase();
 
-        name = name.toLowerCase();
+        const monospaceFonts = [
+            "consolas",
+            "courier",
+            "courier new",
+            "monaco",
+            "menlo",
+            "source code",
+            "fira code",
+            "jetbrains mono",
+            "cascadia",
+            "ubuntu mono"
+        ];
 
-        if (
-            name.includes("mono") ||
-            name.includes("code") ||
-            name.includes("console") ||
-            name.includes("courier") ||
-            name.includes("consolas")
-        )
+        const serifFonts = [
+            "times",
+            "times new roman",
+            "georgia",
+            "garamond",
+            "cambria",
+            "palatino",
+            "baskerville",
+            "libre baskerville",
+            "merriweather"
+        ];
+
+        const sansSerifFonts = [
+            "arial",
+            "helvetica",
+            "roboto",
+            "open sans",
+            "inter",
+            "verdana",
+            "tahoma",
+            "calibri",
+            "segoe",
+            "segoe ui",
+            "ubuntu",
+            "noto sans",
+            "fira sans",
+            "lato",
+            "montserrat",
+            "poppins"
+        ];
+
+        const cursiveFonts = [
+            "comic sans",
+            "brush script",
+            "pacifico",
+            "dancing script"
+        ];
+
+        if (monospaceFonts.some(font => family.includes(font))) {
             return "monospace";
+        }
 
-        if (
-            name.includes("times") ||
-            name.includes("georgia") ||
-            name.includes("garamond") ||
-            name.includes("cambria") ||
-            name.includes("serif")
-        )
+        if (serifFonts.some(font => family.includes(font))) {
             return "serif";
+        }
 
-        if (
-            name.includes("emoji")
-        )
-            return "emoji";
+        if (sansSerifFonts.some(font => family.includes(font))) {
+            return "sansSerif";
+        }
 
-        return "sans-serif";
+        if (cursiveFonts.some(font => family.includes(font))) {
+            return "cursive";
+        }
+
+        return "sansSerif";
     }
-
 }

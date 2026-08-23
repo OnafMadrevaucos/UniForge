@@ -260,16 +260,7 @@ const lControl = {
 
         // Configura o controle de escala.
         const scaleControl = _configureScaleControl();
-
-        const grid = new lControl.TransparentGridLayer({
-            tileSize: lControl.constants.TILE_SIZE,
-            opacity: 0.8, // Adjust transparency.
-            zIndex: 1000, // Ensure the grid is above other layers.
-        });
-
-        grid.addTo(map);
-        grid.bringToFront();
-
+        
         L.GeometryUtil.geodesicArea = function (latLngs) {
             let area = 0;
 

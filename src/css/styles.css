@@ -78,21 +78,25 @@
 /* ------ Variables ------ */
 :root {
     --default-font: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-    
-    /* Cores Universais */
-    --info-color: #2b6cb0;
-    --male-color: #4299e1;
-    --female-color: #bd5959;
+
+    /* Cores do Sistema */
+    --sys-info-color: #2b6cb0;
+    --sys-warn-color: #ffd900;
+    --sys-err-color: #ca1b1b;
+    --sys-male-color: #4299e1;
+    --sys-female-color: #bd5959;
+    --sys-text-color: #464646;
+    --sys-light-text-color: #f5f5f5;
 
     --hover-color: var(--dark-color-b);
-    --border-color: var(--light-color-b); 
-    
-    --title-color: var(--dark-color-b);    
+    --border-color: var(--light-color-b);
+
+    --title-color: var(--dark-color-b);
     --focus-color: var(--color-b);
     --stroke-color: var(--dark-color-b);
-    
-    --layer-control-text: var(--light-color-b);  
-    
+
+    --layer-control-text: var(--light-color-b);
+
     --header-background-color: var(--dark-color-b);
 
     /* Font Sizes */
@@ -123,7 +127,7 @@
     --data-group-border: 1px solid var(--special-color);
     --focused-data-group-border: 1px solid var(--light-color-c);
     --focused-div-border: 1px solid var(--light-text-color);
-    --blockquote-border: 4px solid var(--color-b);    
+    --blockquote-border: 4px solid var(--color-b);
 
     /* Gradients */
     --blockquote-gradient: linear-gradient(125deg, var(--color-c) 35%, var(--light-color-c) 45%, var(--blockquote-background) 80%);
@@ -906,7 +910,7 @@ button.disabled:hover {
     border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-.leaflet-container .leaflet-popup-pane .leaflet-popup .leaflet-popup-content .layer-popup-title {    
+.leaflet-container .leaflet-popup-pane .leaflet-popup .leaflet-popup-content .layer-popup-title {
     color: var(--color-b);
     font-size: var(--big-size);
     font-weight: 800;
@@ -923,7 +927,7 @@ button.disabled:hover {
     margin: 0;
 }
 
-.leaflet-container .leaflet-popup-pane .leaflet-popup .leaflet-popup-content .layer-popup-footer {    
+.leaflet-container .leaflet-popup-pane .leaflet-popup .leaflet-popup-content .layer-popup-footer {
     height: fit-content;
     width: var(--fill-width);
     padding-right: 5px;
@@ -1380,6 +1384,7 @@ button.disabled:hover {
 .map-objects-container.active {
     right: 0;
 }
+
 .map-objects-container.marker.active {
     right: 0em;
 }
@@ -1418,8 +1423,9 @@ button.disabled:hover {
 }
 
 .map-objects-container #toggleShapesPanel.toggle-tab {
-    top: 50px;    
+    top: 50px;
 }
+
 .map-objects-container #toggleObjectsPanel.toggle-tab {
     top: 85px;
 }
@@ -1487,6 +1493,7 @@ button.disabled:hover {
     font-size: var(--default-size);
     font-weight: 700;
 }
+
 .map-objects-container ul .layer-item .layer-item-content .layer-item-content-body span {
     flex: 1;
     font-size: var(--small-size);
@@ -1572,6 +1579,7 @@ button.disabled:hover {
     overflow-y: hidden;
     overflow-x: scroll;
 }
+
 .map-objects-panel .tools-content .config-group.misc {
     overflow-y: auto;
     overflow-x: hidden;
@@ -2423,7 +2431,8 @@ button.disabled:hover {
     margin-block: 5px;
     gap: var(--default-gap-size);
 }
-.data-group > a:not(.hidden) {
+
+.data-group>a:not(.hidden) {
     flex: 0.05;
     text-align: end;
 }
@@ -2577,8 +2586,9 @@ ul.list li,
 .data-group .data:not(div) {
     flex: 2;
 }
+
 .data-group .data:not(div):has(+a) {
-    flex: 1.96;    
+    flex: 1.96;
 }
 
 .data-group .type-label {
@@ -2802,6 +2812,15 @@ ul.list li,
 
 #settings .content .info-set {
     height: auto;
+}
+
+#settings .content .data-complex select#themeSelector {
+    flex: 0 0 65.4%;
+}
+
+#settings .content .data-complex .theme-buttons {
+    gap: var(--small-gap-size);
+    flex: 0 0 54px;
 }
 
 #settings #mainPanel.panel,
@@ -4869,14 +4888,19 @@ hr.divider {
 }
 
 .message.error {
-    background-color: var(--color-b);
-    color: var(--light-color-d);
+    background-color: var(--sys-err-color);
+    background-image: url(../ui/denim065.png);
+    color: var(--sys-light-text-color);
 }
 .message.warning {
-    background-color: var(--light-color-c);
+    background-color: var(--sys-warn-color);
+    background-image: url(../ui/denim065.png);
+    color: var(--sys-light-text-color);
 }
 .message.info {
-    background-color: var(--info-color);
+    background-color: var(--sys-info-color);
+    background-image: url(../ui/denim065.png);
+    color: var(--sys-light-text-color);
 }
 
 /* ------ Lineage ------*/
@@ -4986,7 +5010,7 @@ hr.divider {
 .lineage-tree .node-text .node-gender.male {
     background-color: rgb(82 121 173);
     color: var(--dark-color-a);
-    border-color: var(--info-color);
+    border-color: var(--sys-info-color);
 }
 
 .lineage-tree .node-text .node-gender.female {

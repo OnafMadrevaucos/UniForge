@@ -1,5 +1,5 @@
-import CustomDate from "../common/primitives/date.mjs";
-import Application from "./application.js";
+import CustomDate from "../../common/primitives/date.mjs";
+import Application from "../application.js";
 
 export default class DatePicker {
 
