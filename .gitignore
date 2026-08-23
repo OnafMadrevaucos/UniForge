@@ -4,3 +4,4 @@
 /common/backend
 /src/css/custom
 /common
+*.db

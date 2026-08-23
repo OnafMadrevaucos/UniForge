@@ -104,6 +104,7 @@
     --heading-1-size: 40px;
     --heading-2-size: 30px;
     --heading-3-size: 14px;
+    --huge-size: 24px;
     --big-size: 16px;
     --tmce-size: 14px;
     --grid-tile-size: 90px;
@@ -133,8 +134,8 @@
     --blockquote-gradient: linear-gradient(125deg, var(--color-c) 35%, var(--light-color-c) 45%, var(--blockquote-background) 80%);
 
     /* Highlights */
-    --text-highlight: 0 0 8px rgba(245, 158, 11, 0.3);
-    --dark-text-highlight: 0 0 8px rgba(220, 38, 38, 0.3);
+    --text-highlight: 0 0 8px var(--color-b-T50);
+    --dark-text-highlight: 0 0 8px var(--dark-color-b-T50);
 
     /* Shadows */
     --default-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
@@ -156,6 +157,7 @@
     --flavor-height: 5vh;
 
     /* Gaps */
+    --tiny-gap-size: 2px;
     --small-gap-size: 4px;
     --default-gap-size: 8px;
     --big-gap-size: 14px;
@@ -288,7 +290,7 @@ fieldset {
     border: none;
 }
 
-fieldset>.fieldset-content {    
+fieldset>.fieldset-content {
     width: var(--fill-width);
 }
 
@@ -344,9 +346,11 @@ button:not(:disabled):hover {
     box-shadow: var(--dark-text-highlight);
 }
 
-legend {
-
+.list .item:hover {
+    outline: 0.5px solid;
 }
+
+legend {}
 
 a {
     align-self: center;
@@ -735,7 +739,7 @@ button.disabled:hover {
 .leaflet-pm-toolbar.leaflet-control .button-container a.leaflet-buttons-control-button:hover {
     background-color: var(--color-b) !important;
     color: var(--light-color-d) !important;
-    box-shadow: 0 0 10px rgba(184, 37, 37, 0.6) !important;
+    box-shadow: var(--button-hover-shadow) !important;
 }
 
 .leaflet-pm-toolbar.leaflet-control {
@@ -979,9 +983,7 @@ button.disabled:hover {
 .leaflet-interactive.highlight,
 .leaflet-marker-icon.editing[alt="Marker"] {
     filter:
-        drop-shadow(0 0 2px var(--light-color-d))
-        drop-shadow(0 0 4px var(--highlight-color))
-        drop-shadow(0 0 8px var(--dark-highlight-color));
+        drop-shadow(0 0 2px var(--light-color-d)) drop-shadow(0 0 4px var(--highlight-color)) drop-shadow(0 0 8px var(--dark-highlight-color));
 }
 
 /* ------ Leaflet Layer Controls ------*/
@@ -1435,15 +1437,10 @@ button.disabled:hover {
     padding-block: 2px;
 }
 
-.map-objects-container #toggleShapesPanel.toggle-tab {
-    top: 50px;    
-}
-.map-objects-container #toggleObjectsPanel.toggle-tab {
-    top: 85px;
-}
-
-.map-objects-container.active .toggle-tab,
-.map-objects-container .toggle-tab:hover {
+/* Destaque amarelo somente no botão do painel que estiver ativo no momento */
+.map-objects-container.regular-shapes.active .tab-shapes,
+.map-objects-container.layer-objects.active .tab-objects,
+.map-objects-container .map-objects-tabs .toggle-tab:hover {
     color: var(--dark-color-b);
     background-color: var(--light-color-c);
 }
@@ -1561,14 +1558,14 @@ button.disabled:hover {
 }
 
 .map-objects-edit-tip {
-    position: absolute;
+    position: fixed;
     bottom: -100px;
     left: calc(50% - 200px);
     width: 400px;
     text-align: center;
     background-color: var(--dark-color-b);
     color: var(--light-text-color);
-    
+
     padding: 5px 25px;
     border-radius: var(--default-border-radius);
     box-shadow: var(--default-shadow);
@@ -1578,7 +1575,7 @@ button.disabled:hover {
 }
 
 .map-objects-edit-tip.active {
-    bottom: 10px;
+    bottom: 30px;
 }
 
 .map-objects-panel .tools-content .config-group {
@@ -1678,6 +1675,11 @@ button.disabled:hover {
 .map-objects-panel .tools-content .config-group .options a:hover,
 .map-objects-panel .tools-content .config-group .options a.active {
     border: var(--filled-border);
+}
+
+.map-objects-panel .tools-content .config-group .options a:hover {
+    outline: 1px solid;
+
 }
 
 .map-objects-panel .tools-content .config-group .options input {
@@ -2053,6 +2055,11 @@ button.disabled:hover {
     color: var(--color-b);
 }
 
+.dialog .main .folder-list .folder .folder-header:hover {
+    outline: 1px solid;
+
+}
+
 .dialog .main .folder-list .folder.created:not(.selected) a {
     display: none;
 }
@@ -2084,6 +2091,10 @@ button.disabled:hover {
 
 .dialog .main .file-dialog {
     height: var(--fill-height);
+}
+
+.dialog .main  .file-dialog button {
+    color: var(--text-color);
 }
 
 .dialog .main .file-dialog .current-dir {
@@ -2153,7 +2164,7 @@ button.disabled:hover {
     flex-direction: row;
     flex-wrap: nowrap;
     width: fit-content;
-    gap: 0;
+    gap: var(--tiny-gap-size);
 }
 
 .dialog .split-buttons button {
@@ -2189,7 +2200,7 @@ button.disabled:hover {
     gap: var(--default-gap-size);
     overflow-y: auto;
     overflow-x: hidden;
-    padding: 0;
+    padding: 5px;
 }
 
 .dialog .directory ul li {
@@ -2197,13 +2208,12 @@ button.disabled:hover {
 }
 
 .dialog .directory .folders-list li {
-    background-color: var(--dark-color-a-T50);
+    background-color: var(--dark-color-b-T85);
     border-radius: var(--default-border-radius);
 }
 
 .dialog .directory .files-list li {
     align-items: center;
-    border: var(--filled-border);
     gap: var(--default-gap-size);
 }
 
@@ -2267,14 +2277,16 @@ button.disabled:hover {
     height: var(--images-size);
 }
 
-.dialog .directory .files-list li.selected,
-.dialog .directory ul li:hover {
-    color: var(--focus-color);
-    text-shadow: var(--text-shadow);
+.dialog .directory .files-list li:not(.file).selected,
+.dialog .directory ul li:not(.file):hover {
+    box-shadow: var(--button-hover-shadow);
 }
-
 .dialog .directory ul li:hover {
     cursor: pointer;
+}
+.dialog .directory ul li.file.selected,
+.dialog .directory ul li.file:hover {
+    outline: 1px solid;
 }
 
 .dialog .sidebar {
@@ -2464,6 +2476,7 @@ button.disabled:hover {
     flex-direction: column;
     overflow: hidden;
 }
+
 .data-group.side-list {}
 
 .data-group.buttons {
@@ -2503,6 +2516,7 @@ ul.list li,
 .list ul li,
 .data-group.list ul li {
     margin-block: 5px;
+    margin-inline: 1px;
     font-size: 32px;
     border-radius: var(--default-border-radius);
     background-color: var(--light-background-color);
@@ -2524,6 +2538,8 @@ ul.list li,
 .list ul li:hover,
 .data-group.list ul li:hover {
     cursor: pointer;
+    outline: 1px solid;
+
 }
 
 .data-group.check {
@@ -2732,6 +2748,7 @@ ul.list li,
     color: var(--text-color);
     text-shadow: var(--button-text-hover-shadow);
 }
+
 
 .tabs-control .tabs-options button:first-of-type {
     border-top-left-radius: var(--default-border-radius);
@@ -4330,9 +4347,11 @@ hr.divider {
 .calendars .calendar-list {
     width: var(--fill-width);
 }
+
 .calendars .calendar-list .calendar-item {
     font-size: var(--default-size);
 }
+
 .calendars .calendar-list .calendar-item.selected,
 .calendars .calendar-list .calendar-item:hover {
     background-color: var(--dark-color-b);
@@ -4341,9 +4360,10 @@ hr.divider {
 .calendars .calendar-manager {
     width: var(--fill-width);
 }
+
 .calendars .calendar-manager .calendar-week-days .data-complex {
     gap: var(--small-gap-size);
-    text-align: center;    
+    text-align: center;
 }
 
 .calendars .calendar-manager .month-list {
@@ -4355,22 +4375,38 @@ hr.divider {
     padding-inline: 10px;
     margin-right: 5px;
 }
+
 .calendars .calendar-manager .month-list .month-item.selected,
-.calendars .calendar-manager .month-list .month-item:hover {    
+.calendars .calendar-manager .month-list .month-item:hover {
     background-color: var(--dark-color-b);
 }
 
-.calendars  .month-list .month-item .data-complex .data-group {
-    width: auto;
+.calendars .calendar-manager .month-list .month-item:hover {
+    outline: 1px solid;
+
 }
-.calendars  .month-list .month-item .data-complex .data-group *{
+
+
+.calendars .month-list .month-item .data-complex .data-group {
+    width: auto;
+    border-left: 1px solid;
+    padding-left: 5px;
+}
+
+.calendars .month-list .month-item .data-complex a.delete-button {
+    font-size: var(--huge-size);
+}
+
+.calendars .month-list .month-item .data-complex .data-group * {
     text-align: center;
 }
-.calendars  .month-list .month-item .data-complex .data-group .size {
+
+.calendars .month-list .month-item .data-complex .data-group .size {
     font-size: var(--big-size);
     font-weight: bold;
 }
-.calendars  .month-list .month-item .data-complex .data-group .days-label {
+
+.calendars .month-list .month-item .data-complex .data-group .days-label {
     font-size: var(--small-size);
 }
 
@@ -4693,6 +4729,9 @@ hr.divider {
     border-bottom-right-radius: var(--strong-border-radius);
     border: var(--filled-border);
 }
+.tox.tox-edit-focus .tox-edit-area::before {
+    opacity: 0;
+}
 
 .tox-edit-area iframe {
     min-height: var(--fill-height);
@@ -4730,7 +4769,12 @@ hr.divider {
     padding: 5px;
     height: 100%;
     margin: 0;
-    outline: none;
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+}
+#tinymce:focus-visible {
+    outline: 1px solid;
+    outline-offset: -2px;
 }
 
 .non-editable {
@@ -4904,11 +4948,13 @@ hr.divider {
     background-image: url(../ui/denim065.png);
     color: var(--sys-light-text-color);
 }
+
 .message.warning {
     background-color: var(--sys-warn-color);
     background-image: url(../ui/denim065.png);
     color: var(--sys-light-text-color);
 }
+
 .message.info {
     background-color: var(--sys-info-color);
     background-image: url(../ui/denim065.png);

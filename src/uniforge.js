@@ -786,7 +786,7 @@ async function onMarkerIconClick(event) {
     event.stopPropagation();
     const option = event.currentTarget;
 
-    option.classList.toggle('active');    
+    option.classList.toggle('active');
 
     const options = option.parentElement.querySelectorAll('a');
     options.forEach(opt => {
@@ -803,7 +803,7 @@ async function onMarkerIconClick(event) {
     if (signMarker && colorMarker) {
         const marker = `${colorMarker.getAttribute('data-color')}_${signMarker.getAttribute('data-marker')}`;
 
-        if(editCache && editCache.layer instanceof L.Marker) await refreshMarkerDrawing(marker); 
+        if (editCache && editCache.layer instanceof L.Marker) await refreshMarkerDrawing(marker);
         else await startMarkerDrawing(marker);
     }
     else if (uniforge.ctrls.marker) uniforge.ctrls.marker.disable();
@@ -834,7 +834,7 @@ async function onHasBorderSwitchChange(event) {
     uniforge.leaflet.drawStyle.style.hasBorder = hasBorder;
 
     if (hasBorder) {
-        borderSizeGroup.classList.remove('hidden');        
+        borderSizeGroup.classList.remove('hidden');
     }
     else {
         borderSizeGroup.classList.add('hidden');
@@ -953,9 +953,9 @@ async function startMarkerDrawing(marker) {
     uniforge.ctrls.marker = uniforge.leaflet.drawer.marker(map, markerURL);
 };
 
-async function refreshMarkerDrawing(marker) {    
-    const markerURL = uniforge.urls.markers.join(`${marker}.png`);  
-    const newStyle = uniforge.leaflet.drawStyle.factories.marker(markerURL).markerStyle.icon.options;  
+async function refreshMarkerDrawing(marker) {
+    const markerURL = uniforge.urls.markers.join(`${marker}.png`);
+    const newStyle = uniforge.leaflet.drawStyle.factories.marker(markerURL).markerStyle.icon.options;
 
     const newIcon = L.icon(newStyle);
     uniforge.leaflet.core.editCache.layer.setIcon(newIcon);

@@ -407,7 +407,7 @@ export default class SettingsForm extends EntryForm {
         this._clearCalendarData(false);
 
         const calendarNameInput = this.querySelector('#calendarName');
-        calendarNameInput.focus(); 
+        calendarNameInput.focus();
     }
 
     /**
@@ -465,11 +465,32 @@ export default class SettingsForm extends EntryForm {
         const clmid = Number(item.dataset.clmid);
         const month = this.calendar.months.get(clmid);
 
-        this._clearMonthData();       
+        const isDeselect = item.classList.contains('selected');
 
-        item.classList.toggle('selected');
+        this._clearMonthData();
 
-        this._loadMonthData(month);
+        if (!isDeselect) {
+
+            item.classList.toggle('selected');
+
+            const deleteButton = item.querySelector('a.delete-button');
+            deleteButton.classList.remove('hidden');
+
+            this._loadMonthData(month);
+        }
+    }
+
+    /**
+     * Configura o evento de clique para remover um mês do calendário selecionado.
+     * @param {Event} event 
+     */
+    onDeleteMonthClick(event) {
+        event.stopPropagation();
+        const button = event.target.closest('a.delete-button');
+        const item = event.target.closest('.month-item');
+        const clmid = Number(item.dataset.clmid);
+
+        console.log(`Mês (${clmid}) removido.`);
     }
 
     /**
@@ -938,7 +959,7 @@ export default class SettingsForm extends EntryForm {
         uniforge.ctrls.progressDialog.close();
     }
 
-    async _saveTheme(theme, options={isEdit: false}) {
+    async _saveTheme(theme, options = { isEdit: false }) {
         try {
             const url = uniforge.urls.customCSS;
             const name = theme['--name'].replaceAll(' ', '-').toLowerCase();
@@ -954,7 +975,7 @@ export default class SettingsForm extends EntryForm {
 
             const result = await uniforge.fs.writeFile(url, fileName, data);
             if (result.sucess) {
-                if(options.isEdit) this.msgBox.showInfo(`Tema '${name}' alterado com sucesso.`);
+                if (options.isEdit) this.msgBox.showInfo(`Tema '${name}' alterado com sucesso.`);
                 else this.msgBox.showInfo(`Tema '${name}' criado com sucesso.`);
 
                 uniforge.theme.refresh(`theme-${name}`, `css/custom/${fileName}`);
@@ -1012,6 +1033,11 @@ export default class SettingsForm extends EntryForm {
             nameSpan.classList.add('data-label');
             nameSpan.textContent = month.label;
 
+            const deleteButton = document.createElement('a');
+            deleteButton.classList.add('delete-button', 'flexrow', 'hidden');
+            deleteButton.dataset.tooltip = "Excluir Mês";
+            deleteButton.innerHTML = `<i class="fas fa-trash"></i>`;
+
             const sizeGroup = document.createElement('div');
             sizeGroup.classList.add('data-group', 'flexcol');
 
@@ -1027,12 +1053,14 @@ export default class SettingsForm extends EntryForm {
             sizeGroup.appendChild(daysLabel);
 
             dataGroup.appendChild(nameSpan);
+            dataGroup.appendChild(deleteButton);
             dataGroup.appendChild(sizeGroup);
 
             element.appendChild(dataGroup);
             monthsList.appendChild(element);
 
             element.addEventListener('click', (event) => { this.onMonthItemClick(event); });
+            deleteButton.addEventListener('click', (event) => { this.onDeleteMonthClick(event); });
         });
 
         const addMonthButton = this.querySelector('#addMonthButton');
@@ -1077,13 +1105,13 @@ export default class SettingsForm extends EntryForm {
         const calendarItems = this.querySelectorAll('.calendar-item');
         calendarItems.forEach(item => {
             item.classList.remove('selected');
-        });        
+        });
 
         const fieldsets = this.querySelectorAll('.calendar-manager fieldset');
         fieldsets.forEach(fieldset => fieldset.disabled = disableFields);
 
         const saveCalendarButton = this.querySelector('#saveCalendarButton');
-        if(disableFields) saveCalendarButton.classList.add('disabled');
+        if (disableFields) saveCalendarButton.classList.add('disabled');
         else saveCalendarButton.classList.remove('disabled');
 
         this.selection.calendar = null;
@@ -1097,7 +1125,12 @@ export default class SettingsForm extends EntryForm {
     }
     _clearMonthData(disableButton = true) {
         const monthItems = this.querySelectorAll('.month-item');
-        monthItems.forEach(item => item.classList.remove('selected'));
+        monthItems.forEach(item => {
+            item.classList.remove('selected')
+
+            const deleteButton = item.querySelector('a.delete-button');
+            deleteButton.classList.add('hidden');
+        });
 
         const monthNameInput = this.querySelector('#monthName');
         monthNameInput.value = '';
@@ -1106,7 +1139,7 @@ export default class SettingsForm extends EntryForm {
 
         const addMonthButton = this.querySelector('#addMonthButton');
 
-        if(disableButton) addMonthButton.classList.add('disabled');
+        if (disableButton) addMonthButton.classList.add('disabled');
         else addMonthButton.classList.remove('disabled');
     }
 
