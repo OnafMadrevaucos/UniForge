@@ -111,6 +111,7 @@
 
     /* Borders */
     --filled-border: 1px solid var(--dark-color-c);
+    --flyer-button-border: 1px solid var(--dark-color-b);
     --invisible-border: 1px solid transparent;
     --focus-border: 1px solid var(--light-color-c);
     --info-content-border: 2px solid var(--light-color-a);
@@ -518,6 +519,7 @@ input:checked+.slider::before {
 
 .footer button.new-entry {
     background-color: var(--highlight-color);
+    border: none;
 }
 
 .footer button.new-entry:hover {
@@ -3804,18 +3806,19 @@ hr.divider {
     margin-bottom: 5px;
     align-self: center;
     text-align: center;
-    padding-block: 1px;
+    padding-block: 3px;
     font-size: var(--small-size);
     color: var(--dark-color-b);
+    border: var(--flyer-button-border);
     border-radius: var(--default-border-radius);
     transition: color 0.3s ease, background-color 0.3s ease;
 }
 
 .flyer-button:hover {
     cursor: pointer;
-    border-radius: var(--strong-border-radius);
     background-color: var(--dark-color-b-T85);
     color: var(--text-color);
+    box-shadow: var(--dark-text-highlight);
 }
 
 .sidebar .footer {
@@ -4319,7 +4322,9 @@ hr.divider {
 .calendars .calendar-manager .month-list .month-item {
     font-size: var(--heading-2-size);
     padding-inline: 10px;
+    margin-right: 5px;
 }
+.calendars .calendar-manager .month-list .month-item.selected,
 .calendars .calendar-manager .month-list .month-item:hover {    
     background-color: var(--dark-color-b);
 }
@@ -4336,6 +4341,10 @@ hr.divider {
 }
 .calendars  .month-list .month-item .data-complex .data-group .days-label {
     font-size: var(--small-size);
+}
+
+.calendars .calendar-manager+.footer .buttons button {
+    flex: none;
 }
 
 /* Visualização dos dias */
@@ -4421,7 +4430,6 @@ hr.divider {
 
 .entries button {
     flex: 1;
-    border: none;
     cursor: pointer;
 }
 
@@ -4831,6 +4839,7 @@ hr.divider {
     border-radius: var(--strong-border-radius);
     box-shadow: var(--small-shadow);
     font-size: var(--heading-3-size);
+    color: var(--dark-text-color);
     z-index: 9999;
     opacity: 0;
     transition: right 0.3s ease, opacity 1s ease;
@@ -4860,21 +4869,14 @@ hr.divider {
 }
 
 .message.error {
-    background-color: var(--dark-color-a);
-    background-image: url(../ui/denim065.png);
-    color: var(--text-color);
+    background-color: var(--color-b);
+    color: var(--light-color-d);
 }
-
 .message.warning {
     background-color: var(--light-color-c);
-    background-image: url(../ui/denim065.png);
-    color: var(--color-d);
 }
-
 .message.info {
     background-color: var(--info-color);
-    background-image: url(../ui/denim065.png);
-    color: var(--color-d);
 }
 
 /* ------ Lineage ------*/

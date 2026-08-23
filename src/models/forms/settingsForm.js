@@ -38,9 +38,33 @@ export default class SettingsForm extends EntryForm {
         */
         this.isEventForm = false;
 
+        /**
+         * O objeto para armazenar os dados de seleção do formulário.
+         */
+        this.selection = {
+            calendar: null,
+            chapter: null
+        }
+
+        /**
+         * O objeto para armazenar os sliders do formulário.
+         */
         this.sliders = {
             monthSize: null
         };
+    }
+
+    /**
+     * Retorna o calendário selecionado.
+     */
+    get calendar() {
+        return this.selection.calendar;
+    }
+    /**
+     * Retorna o capítulo selecionado.
+     */
+    get chapter() {
+        return this.selection.chapter;
     }
 
     /**@inheritdoc */
@@ -248,10 +272,19 @@ export default class SettingsForm extends EntryForm {
         const themeSelector = this.querySelector('#themeSelector');
         themeSelector.addEventListener('change', (event) => { this.onThemeSelectorChange(event); });
 
+        const newCalendarButton = this.querySelector('#newCalendarButton');
+        newCalendarButton.addEventListener('click', (event) => { this.onNewCalendarClick(event); });
+
+        const calendarsList = this.querySelector('#calendarsList');
+        calendarsList.addEventListener('click', (event) => { this.onCalendarsListClick(event); });
+
         const calendarItems = this.querySelectorAll('.calendar-item');
         calendarItems.forEach(item => {
             item.addEventListener('click', (event) => { this.onCalendarItemClick(event); });
         });
+
+        const addMonthButton = this.querySelector('#addMonthButton');
+        addMonthButton.addEventListener('click', (event) => { this.onAddMonthClick(event); });
 
         // ------------------------------------------------------------------------------------------------
         // Eventos do painel de Banco de Dados ------------------------------------------------------------      
@@ -308,8 +341,8 @@ export default class SettingsForm extends EntryForm {
     }
 
     /**
-   * Configura os ouvidores de Eventos do menu de opções do formulário.
-   */
+      * Configura os ouvidores de Eventos do menu de opções do formulário.
+      */
     configureOptionsListeners() {
         const options = this.querySelector('.tabs-options');
         const buttons = options.querySelectorAll('button');
@@ -317,6 +350,32 @@ export default class SettingsForm extends EntryForm {
         buttons.forEach(button => {
             button.addEventListener('click', (event) => { this.onOptionButtonClick(event); });
         });
+    }
+
+    /**
+     * Configura o evento de adicionar um novo calendário.
+     * @param {Event} event 
+     */
+    onNewCalendarClick(event) {
+        event.stopPropagation();
+
+        this._clearCalendarData(false);
+
+        const calendarNameInput = this.querySelector('#calendarName');
+        calendarNameInput.focus(); 
+    }
+
+    /**
+     * Configura o evento de clique em uma lista de calendários.
+     * @param {Event} event 
+     */
+    onCalendarsListClick(event) {
+        event.stopPropagation();
+        const target = event.target;
+
+        if (!target.classList.contains('calendar-item')) {
+            this._clearCalendarData();
+        }
     }
 
     /**
@@ -329,13 +388,43 @@ export default class SettingsForm extends EntryForm {
         const calendarId = Number(event.target.closest('.calendar-item').dataset.value);
         const calendar = uniforge.doc.calendars.get(calendarId);
 
-        const calendarItems = this.querySelectorAll('.calendar-item');
-        calendarItems.forEach(item => {
-            item.classList.remove('selected');
-        });
+        // Limpa qualquer item que tenha sido selecionado antes.
+        this._clearCalendarData();
+        // Seleciona o item clicado.
         item.classList.toggle('selected');
 
         this._loadCalendarData(calendar);
+    }
+
+    /**
+     * Configura o evento de adicionar um novo mês ao calendário selecionado.
+     * @param {Event} event 
+     */
+    onAddMonthClick(event) {
+        event.stopPropagation();
+        const monthName = this.querySelector('#monthName')?.value || null;
+
+        if (!monthName || monthName.isEmpty()) {
+            this.msgBox.showWarning('O nome do mês não pode ser vazio.');
+            return;
+        }
+    }
+
+    /**
+     * Configura o evento de clique em um mês do calendário selecionado.
+     * @param {Event} event 
+     */
+    onMonthItemClick(event) {
+        event.stopPropagation();
+        const item = event.target.closest('.month-item');
+        const clmid = Number(item.dataset.clmid);
+        const month = this.calendar.months.get(clmid);
+
+        this._clearMonthData();       
+
+        item.classList.toggle('selected');
+
+        this._loadMonthData(month);
     }
 
     /**
@@ -731,10 +820,7 @@ export default class SettingsForm extends EntryForm {
         calendarNameInput.value = calendar.label;
         calendarPrefixInput.value = calendar.prefix ?? '';
 
-        if (!calendar.suffix || calendar.suffix.isEmpty()) {
-            calendarSuffixPreInput.value = '';
-            calendarSuffixPosInput.value = '';
-        } else {
+        if (calendar.suffix && !calendar.suffix.isEmpty()) {
             const suffix = calendar.suffix.split('|');
             if (suffix.length === 2) {
                 calendarSuffixPreInput.value = suffix[0];
@@ -750,13 +836,11 @@ export default class SettingsForm extends EntryForm {
 
             const dayNameInput = this.querySelector(`#day${idx + 1}Name`);
             dayNameInput.value = weekDays[idx].name;
-            const dayShortNameInput = this.querySelector(`#day${idx + 1}ShortName`);            
+            const dayShortNameInput = this.querySelector(`#day${idx + 1}ShortName`);
             dayShortNameInput.value = weekDays[idx].label;
         });
-        
-        const monthsList = this.querySelector('#monthsList');
-        monthsList.innerHTML = '';
 
+        const monthsList = this.querySelector('#monthsList');
         const months = calendar.months.toArray();
         months.forEach(month => {
             const element = document.createElement('li');
@@ -782,14 +866,90 @@ export default class SettingsForm extends EntryForm {
             daysLabel.textContent = 'Dias';
 
             sizeGroup.appendChild(sizeSpan);
-            sizeGroup.appendChild(daysLabel);            
+            sizeGroup.appendChild(daysLabel);
 
             dataGroup.appendChild(nameSpan);
             dataGroup.appendChild(sizeGroup);
 
-            element.appendChild(dataGroup);            
+            element.appendChild(dataGroup);
             monthsList.appendChild(element);
+
+            element.addEventListener('click', (event) => { this.onMonthItemClick(event); });
         });
+
+        const addMonthButton = this.querySelector('#addMonthButton');
+        addMonthButton.classList.remove('disabled');
+
+        const saveCalendarButton = this.querySelector('#saveCalendarButton');
+        saveCalendarButton.classList.remove('disabled');
+
+        this.selection.calendar = calendar;
+
+        const fieldsets = this.querySelectorAll('.calendar-manager fieldset');
+        fieldsets.forEach(fieldset => fieldset.disabled = false);
+    }
+
+    _clearCalendarData(disableFields = true) {
+        const calendarNameInput = this.querySelector('#calendarName');
+        const calendarPrefixInput = this.querySelector('#calendarPrefix');
+        const calendarSuffixPreInput = this.querySelector('#calendarSuffixPre');
+        const calendarSuffixPosInput = this.querySelector('#calendarSuffixPos');
+
+        calendarNameInput.value = '';
+        calendarPrefixInput.value = '';
+        calendarSuffixPreInput.value = '';
+        calendarSuffixPosInput.value = '';
+
+        const weekDaysItems = this.querySelectorAll('.calendar-week-days .week-day-item');
+
+        weekDaysItems.forEach(item => {
+            const idx = Number(item.dataset.idx);
+
+            const dayNameInput = this.querySelector(`#day${idx + 1}Name`);
+            dayNameInput.value = '';
+            const dayShortNameInput = this.querySelector(`#day${idx + 1}ShortName`);
+            dayShortNameInput.value = '';
+        });
+
+        const monthsList = this.querySelector('#monthsList');
+        monthsList.innerHTML = '';
+
+        this._clearMonthData(disableFields);
+
+        const calendarItems = this.querySelectorAll('.calendar-item');
+        calendarItems.forEach(item => {
+            item.classList.remove('selected');
+        });        
+
+        const fieldsets = this.querySelectorAll('.calendar-manager fieldset');
+        fieldsets.forEach(fieldset => fieldset.disabled = disableFields);
+
+        const saveCalendarButton = this.querySelector('#saveCalendarButton');
+        if(disableFields) saveCalendarButton.classList.add('disabled');
+        else saveCalendarButton.classList.remove('disabled');
+
+        this.selection.calendar = null;
+    }
+
+    _loadMonthData(month) {
+        const monthNameInput = this.querySelector('#monthName');
+        monthNameInput.value = month.label;
+
+        this.sliders.monthSize.setValue(month.size);
+    }
+    _clearMonthData(disableButton = true) {
+        const monthItems = this.querySelectorAll('.month-item');
+        monthItems.forEach(item => item.classList.remove('selected'));
+
+        const monthNameInput = this.querySelector('#monthName');
+        monthNameInput.value = '';
+
+        this.sliders.monthSize.setValue(30);
+
+        const addMonthButton = this.querySelector('#addMonthButton');
+
+        if(disableButton) addMonthButton.classList.add('disabled');
+        else addMonthButton.classList.remove('disabled');
     }
 
     _handleLineageIcon(subject) {
