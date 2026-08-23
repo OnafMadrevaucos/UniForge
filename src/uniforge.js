@@ -9,16 +9,28 @@ import DBDocuments from "./db/dbDocuments.js";
 import * as esm from "./common/uniforge-esm.mjs";
 import lControl from "./common/leaflet/core.mjs";
 import PDFManager from "./scripts/managers/pdfManager.js";
+import FontManager from "./scripts/managers/fontManager.js";
 import { set } from "./common/primitives/set.mjs";
-import Slider from "./models/slider.js";
-import ColorPicker from "./models/colorPicker.js";
+import Slider from "./models/controls/slider.js";
+import ColorPicker from "./models/controls/colorPicker.js";
 
 // Configura o tema salvo no localStorage antes de inicializar o app para evitar flash de estilo.
 document.documentElement.setAttribute('data-theme', localStorage.getItem('uniforge_theme') || 'theme-neutral');
 
 // Realiza as configurações iniciais da aplicação ao carregar o conteúdo do DOM.
 document.addEventListener('DOMContentLoaded', async () => {
+    window.addEventListener('themechange', (event) => {
+        const themeLink = document.getElementById("themeLink");
+        const themePath = event.detail.path || 'css/themes.css';
+        themeLink.href = themePath;
+
+        console.log(`Novo tema: ${event.detail.theme}`);
+    });
+
     const cssname = await uniforge.path.join('css/styles.css');
+    const csstheme = await uniforge.path.join('css/themes.css');
+
+    const localFonts = await uniforge.utils.getSystemFonts();
 
     // Adiciona as propriedades restantes ao objeto uniforge.
     uniforge.utils.mergeObjects(uniforge, {
@@ -34,7 +46,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             APP_NAME: 'UniForge',
             APP_VERSION: '0.8.9',
             CSS_NAME: cssname,
+            CSS_THEME: csstheme,
             leaflet: lControl.constants,
+            fonts: new FontManager(localFonts)
         }),
 
         /**
@@ -81,7 +95,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 resize: false,
                 statusbar: false,
                 skin: 'oxide-dark',
-                content_css: cssname,
+                content_css: [csstheme, cssname],
             },
             readonly: {
                 editable_class: 'editable',
@@ -99,7 +113,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 resize: false,
                 statusbar: false,
                 skin: 'oxide-dark',
-                content_css: cssname,
+                content_css: [csstheme, cssname],
                 readonly: true,
                 disable_focus: true
             },
@@ -113,7 +127,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 menubar: false,
                 inline: true,
                 skin: 'oxide-dark',
-                content_css: cssname,
+                content_css: [csstheme, cssname],
             },
             lite: {
                 body_class: 'lite-editor',
@@ -122,7 +136,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 menubar: false,
                 inline: true,
                 skin: 'oxide-dark',
-                content_css: cssname,
+                content_css: [csstheme, cssname],
             }
         }),
 
@@ -275,6 +289,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         })
     });
 
+    // Inicia o gerenciador de temas.
+    uniforge.theme.refresh();
+
     // Configura o estado inicial da aplicação, se ele ainda não foi criado.
     uniforge.state.init();
 
@@ -371,9 +388,11 @@ async function configureURLs() {
             mapOverlays: worldMap ? `/${worldMap}/overlays` : null,
             common: '/common/',
             models: '/models/',
+            controls: '/models/controls/',
             templates: '/templates/',
             scripts: '/scripts/',
             data: '/data/',
+            customCSS: '/css/custom/',
             ui: '/ui/',
             icons: '/ui/icons/',
             signs: '/ui/icons/markers/signs/',
@@ -395,9 +414,11 @@ async function configureURLs() {
         // Urls de Diretórios usados pelo sistema.
         common: await uniforge.path.join(uniforge.urls.relativePath.common),
         models: await uniforge.path.join(uniforge.urls.relativePath.models),
+        controls: await uniforge.path.join(uniforge.urls.relativePath.controls),
         templates: await uniforge.path.join(uniforge.urls.relativePath.templates),
         scripts: await uniforge.path.join(uniforge.urls.relativePath.scripts),
         data: await uniforge.path.join(uniforge.urls.relativePath.data),
+        customCSS: await uniforge.path.join(uniforge.urls.relativePath.customCSS),
         ui: await uniforge.path.join(uniforge.urls.relativePath.ui),
         icons: await uniforge.path.join(uniforge.urls.relativePath.icons),
         signs: await uniforge.path.join(uniforge.urls.relativePath.signs),
@@ -623,19 +644,13 @@ function activateMainListeners() {
     const shapeBorderCombo = document.getElementById('shapeBorderCombo');
     shapeBorderCombo.addEventListener('change', (event) => { onShapeBorderComboChange(event); });
 
-    const fillColorPicker = uniforge.ctrls.colorPickers.fillColorPicker = new ColorPicker('fillColorPicker', document, { value: 'var(--red)', alpha: 0.5, tooltip: 'Cor do Preenchimento I', fixedAlpha: true });
+    const fillColorPicker = uniforge.ctrls.colorPickers.fillColorPicker = new ColorPicker('fillColorPicker', document, { value: 'var(--color-b)', alpha: 0.5, tooltip: 'Cor do Preenchimento I', fixedAlpha: true });
     fillColorPicker.config();
     fillColorPicker.addEventListener('change', (event) => { onFillColorPickerChange(fillColorPicker); });
 
-    const borderColorPicker = uniforge.ctrls.colorPickers.borderColorPicker = new ColorPicker('borderColorPicker', document, { value: 'var(--dark-red)', tooltip: 'Cor da Borda' });
+    const borderColorPicker = uniforge.ctrls.colorPickers.borderColorPicker = new ColorPicker('borderColorPicker', document, { value: 'var(--dark-color-b)', tooltip: 'Cor da Borda' });
     borderColorPicker.config();
     borderColorPicker.addEventListener('change', (event) => { onBorderColorPickerChange(borderColorPicker); });
-
-    const gradientColorPicker = uniforge.ctrls.colorPickers.gradientColorPicker = new ColorPicker('gradientColorPicker', document, { value: 'var(--dark-red)', tooltip: 'Cor da Preenchimento II', fixedAlpha: true });
-    gradientColorPicker.config();
-    gradientColorPicker.addEventListener('change', (event) => { onGradientColorPickerChange(gradientColorPicker); });
-
-    gradientColorPicker.disabled = true;
 }
 /** 
  * ------------------------------------------------------------------
@@ -894,7 +909,7 @@ async function onGradientColorPickerChange(picker) {
  * @returns {Promise<void>}             - Uma promessa que resolve quando o formulário for renderizado e exibido.
  * @throws {Error}                      - Se ocorrer um erro ao renderizar o formulário.
  */
-async function renderForm(targetId, button=null, showAfter = true) {
+async function renderForm(targetId, button = null, showAfter = true) {
     try {
         const form = new uniforge.forms[targetId]();
         if (!form)
@@ -903,7 +918,7 @@ async function renderForm(targetId, button=null, showAfter = true) {
         if (showAfter) await form.show(true);
     } catch (error) {
         uniforge.msgBox.showError(error.message);
-        if(button) button.classList.remove('disabled');
+        if (button) button.classList.remove('disabled');
     }
 }
 

@@ -195,7 +195,7 @@ export default class FilePickerDialog extends BaseDialog {
     * Prepara os dados do diálogo e configura o diálogo com os dados preparados.
     * @inheritdoc
     */
-    async configureElements() {
+    async configureContent() {
         const uploadFileDiv = this.querySelector(".upload-file");
         const uploadFileInput = this.querySelector(".upload-file .uploader");
 
