@@ -103,7 +103,7 @@ export default class DBManager {
     async beginTransaction() {
         try {
             if (!this.transactionStarted) {
-                console.log('UniForge | Abrindo transação....');
+                console.log('UniForge | Transação aberta.');
                 // Inicia uma nova transação.
                 await uniforge.sql.exec('BEGIN TRANSACTION');
                 // Registra o início da transação.
@@ -117,7 +117,7 @@ export default class DBManager {
     async commitTransaction() {
         try {
             if (this.transactionStarted) {
-                console.log('UniForge | Confirmando transação....');
+                console.log('UniForge | Transação confirmada.');
                 await uniforge.sql.exec('COMMIT');
 
                 // Se a operação afetou alguma linha, atualiza base de dados.
@@ -411,6 +411,81 @@ export default class DBManager {
     }
 
     /**
+     * Adiciona um registro na tabela `calendars` para armazenar um calendário.
+     * 
+     * @param {Object} data - Dados contendo as informações do calendário.
+     * @param {string} data.label   - Nome do calendário.
+     * @param {string} data.prefix  - Prefixo das datas deste calendário.
+     * @param {string} data.suffix  - Suffixo das datas deste calendário.
+     * 
+     * @returns {Promise<Object>} - Resultado da execução do comando.
+    */
+    async addCalendar(data) {
+        let query = 'INSERT INTO calendars (label, prefix, suffix) ';
+        query += 'VALUES (?,?,?);';
+        const params = [];
+
+        params.push(data.label);
+        params.push(data.prefix);
+        params.push(data.suffix);
+
+        const result = await this.#execQuery(query, params);
+        this.results = result;
+
+        return this.result;
+    }
+
+    /**
+     * Adiciona um registro na tabela `calendarsDays` para armazenar os dias da semana de um calendário.
+     * 
+     * @param {Object} data - Dados contendo as informações dos dias da semana do calendário.
+     * @param {number} data.clid    - Identificador do calendário.
+     * @param {string} data.label   - Abreviação do nome do dia da semana.
+     * @param {string} data.name    - Nome completo do dia da semana.
+     * 
+     * @returns {Promise<Object>} - Resultado da execução do comando.
+    */
+    async addCalendarDays(data) {
+        let query = 'INSERT INTO calendarsDays (clid, label, name) ';
+        query += 'VALUES (?,?,?);';
+        const params = [];
+
+        params.push(data.clid);
+        params.push(data.label);
+        params.push(data.name);
+
+        const result = await this.#execQuery(query, params);
+        this.results = result;
+
+        return this.result;
+    }
+
+    /**
+     * Adiciona um registro na tabela `calendarsMonths` para armazenar os meses de um calendário.
+     * 
+     * @param {Object} data - Dados contendo as informações dos meses do calendário.
+     * @param {number} data.clid    - Identificador do calendário.
+     * @param {string} data.label   - Nome do mês.
+     * @param {number} data.size    - Tamanho (num. de dias) do mês.
+     * 
+     * @returns {Promise<Object>} - Resultado da execução do comando.
+    */
+    async addCalendarMonths(data) {
+        let query = 'INSERT INTO calendarsMonths (clid, label, size) ';
+        query += 'VALUES (?,?,?);';
+        const params = [];
+
+        params.push(data.clid);
+        params.push(data.label);
+        params.push(data.size);
+
+        const result = await this.#execQuery(query, params);
+        this.results = result;
+
+        return this.result;
+    }
+
+    /**
      * Adiciona uma nova Árvore de Linhagem ao banco de dados.
      * @param {Object} data             - Os dados da Árvore de Linhagem a serem adicionados.
      * @param {string} data.eid         - O ID da entrada fundadora da Linhagem.
@@ -689,6 +764,81 @@ export default class DBManager {
     }
 
     /**
+     * Atualiza o Calendário com o ID especificado.
+     * @param {Object} data         - Os dados do Calendário a serem atualizados.
+     * @param {number} data.clid    - O identificador do Calendário.
+     * @param {string} data.label   - O nome do Calendário.
+     * @param {string} data.prefix  - O sufixo usado nas datas do Calendário.
+     * @param {string} data.suffix  - O prefixo usado nas datas do Calendário.
+     * @returns {Promise<Object>} A resposta do banco de dados.
+     */
+    async updateCalendar(data) {
+        const updateSet = this.buildUpdateSet([
+            ['label', data.label],
+            ['prefix', data.prefix],
+            ['suffix', data.suffix]
+        ]);
+
+        let query = `UPDATE calendars SET ${updateSet} WHERE clid = ?`;
+        let params = [data.clid];
+        this.results = await this.#execQuery(query, params);
+
+        return this.result;
+    }
+
+    /**
+     * Atualiza os dias da semana do Calendário com o ID especificado.
+     * @param {Object} data         - Os dados do Calendário a serem atualizados.
+     * @param {number} data.cldid   - O identificador do dia da semana do Calendário.
+     * @param {number} data.clid    - O identificador do Calendário.
+     * @param {string} data.label   - A abreviação do nome do dia da semana do Calendário.
+     * @param {string} data.name    - O nome completo do dia da semana do Calendário.
+     * @returns {Promise<Object>} A resposta do banco de dados.
+     */
+    async updateCalendarDays(data) {
+        const updateSet = this.buildUpdateSet([
+            ['label', data.label],
+            ['name', data.name],
+        ]);
+
+        let query = `UPDATE calendarsDays SET ${updateSet} WHERE cldid = ? AND clid = ?`;
+        let params = [];
+
+        params.push(data.cldid);
+        params.push(data.clid);
+
+        this.results = await this.#execQuery(query, params);
+
+        return this.result;
+    }
+
+    /**
+     * Atualiza os dias da semana do Calendário com o ID especificado.
+     * @param {Object} data         - Os dados do Calendário a serem atualizados.
+     * @param {number} data.clmid   - O identificador do mês do Calendário.
+     * @param {number} data.clid    - O identificador do Calendário.
+     * @param {string} data.label   - A abreviação do nome do dia da semana do Calendário.
+     * @param {number} data.size    - O nome completo do dia da semana do Calendário.
+     * @returns {Promise<Object>} A resposta do banco de dados.
+     */
+    async updateCalendarMonths(data) {
+        const updateSet = this.buildUpdateSet([
+            ['label', data.label],
+            ['size', data.size],
+        ]);
+
+        let query = `UPDATE calendarsMonths SET ${updateSet} WHERE clmid = ? AND clid = ?`;
+        let params = [];
+
+        params.push(data.clmid);
+        params.push(data.clid);
+
+        this.results = await this.#execQuery(query, params);
+
+        return this.result;
+    }
+
+    /**
      * Atualiza a Árvore de Linhagem com o ID especificado.
      * @param {Object} data         - Os dados a serem atualizados.
      * @param {string} data.ltid    - O ID da Árvore de Linhagem a ser atualizada.
@@ -813,7 +963,7 @@ export default class DBManager {
      * @returns {Promise<Object>} A resposta do banco de dados.
      */
     async updateSettings(data) {
-        const updateSet = this.buildUpdateSet([            
+        const updateSet = this.buildUpdateSet([
             ['value', data.value]
         ]);
 
@@ -887,6 +1037,46 @@ export default class DBManager {
     async deleteEvent(evid) {
         let query = 'DELETE FROM event WHERE evid = ?;';
         const params = [evid];
+        this.results = await this.#execQuery(query, params);
+
+        return this.result;
+    }
+
+    /**
+     * Deleta o Calendário com o ID especificado e suas sub-tabelas.
+     * @param {number} clid       - O ID do Calendário a ser deletado.
+     * @returns {Promise<Object>} A resposta do banco de dados.
+     */
+    async deleteCalendar(clid) {
+        try {
+            this.beginTransaction();
+
+            let query = 'DELETE FROM calendarsMonths WHERE clid = ?;';
+            let params = [clid];
+            this.results = await this.#execQuery(query, params);
+
+            query = 'DELETE FROM calendarsDays WHERE clid = ?;';
+            this.results = await this.#execQuery(query, params);
+
+            query = 'DELETE FROM calendars WHERE clid = ?;';
+            this.results = await this.#execQuery(query, params);
+
+            this.commitTransaction();
+        } catch (error) {
+            this.rollbackTransaction(error);
+        }
+
+        return this.result;
+    }
+
+    /**
+     * Deleta um mês com o ID especificado de um Calendário.
+     * @param {number} clmid      - O ID do mês do Calendário a ser deletado.
+     * @returns {Promise<Object>} A resposta do banco de dados.
+     */
+    async deleteCalendarMonth(clmid) {
+        let query = 'DELETE FROM calendarsMonths WHERE clmid = ?;';
+        let params = [clmid];
         this.results = await this.#execQuery(query, params);
 
         return this.result;
@@ -2561,7 +2751,7 @@ export default class DBManager {
         const withNulls = updateOptions.withNulls || false;
 
         const updateSet = columns
-            .filter(([label, value]) => label.trim() && (withNulls || !value.isEmpty())) // Remove colunas ou valores vazios
+            .filter(([label, value]) => label.trim() && (withNulls || typeof value !== 'undefined')) // Remove colunas ou valores vazios
             .map(([label, value]) => {
                 if (value === undefined || value === '') value = null;
 

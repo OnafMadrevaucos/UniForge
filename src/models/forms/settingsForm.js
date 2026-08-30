@@ -7,6 +7,8 @@ import FilePickerDialog from "../dialogs/filePickerDialog.js";
 import ProgressDialog from "../dialogs/progressDialog.js";
 import Slider from "../controls/slider.js";
 
+import CalendarMonths from "../../common/documents/calendarMonths.mjs";
+
 /**
   * Formulário de configurações do sistema.
   * @class
@@ -38,6 +40,12 @@ export default class SettingsForm extends EntryForm {
         * @type {boolean}
         */
         this.isEventForm = false;
+
+        /**
+        * Se trata de um calendário sendo editado.
+        * @type {boolean}
+        */
+        this.isCalendarEdit = false;
 
         /**
          * O objeto para armazenar os dados de seleção do formulário.
@@ -333,6 +341,12 @@ export default class SettingsForm extends EntryForm {
 
         const addMonthButton = this.querySelector('#addMonthButton');
         addMonthButton.addEventListener('click', (event) => { this.onAddMonthClick(event); });
+
+        const saveMonthButton = this.querySelector('#saveMonthButton');
+        saveMonthButton.addEventListener('click', (event) => { this.onSaveMonthClick(event); });
+
+        const saveCalendarButton = this.querySelector('#saveCalendarButton');
+        saveCalendarButton.addEventListener('click', (event) => { this.onSaveCalendarClick(event); });
     }
 
     activateChaptersListeners() {
@@ -406,6 +420,8 @@ export default class SettingsForm extends EntryForm {
 
         this._clearCalendarData(false);
 
+        this.isCalendarEdit = false;
+
         const calendarNameInput = this.querySelector('#calendarName');
         calendarNameInput.focus();
     }
@@ -420,6 +436,8 @@ export default class SettingsForm extends EntryForm {
 
         if (!target.classList.contains('calendar-item')) {
             this._clearCalendarData();
+
+            this.isCalendarEdit = false;
         }
     }
 
@@ -438,6 +456,9 @@ export default class SettingsForm extends EntryForm {
         // Seleciona o item clicado.
         item.classList.toggle('selected');
 
+        // Identifica que o calendário selecionado está sendo editado.
+        this.isCalendarEdit = true;
+
         this._loadCalendarData(calendar);
     }
 
@@ -447,11 +468,145 @@ export default class SettingsForm extends EntryForm {
      */
     onAddMonthClick(event) {
         event.stopPropagation();
-        const monthName = this.querySelector('#monthName')?.value || null;
+        const monthName = this.querySelector('#monthName')?.value || '';
 
         if (!monthName || monthName.isEmpty()) {
             this.msgBox.showWarning('O nome do mês não pode ser vazio.');
             return;
+        }
+
+        const addMonthButton = this.querySelector('#addMonthButton');
+        const clmid = Number(addMonthButton.dataset.clmid);
+
+        const calendar = this.selection.calendar;
+        let data = {
+            clid: calendar.clid,
+            clmid: clmid || (calendar.months.size + 1) * (-1), // Id Provisório.
+            label: monthName,
+            size: this.sliders.monthSize.value
+        };
+
+        if (this.isCalendarEdit) {
+            data.dbAction = clmid ? 'u' : 'i';
+        }
+
+        calendar.months.add(new CalendarMonths(data));
+        this._realoadCalendarData(calendar);
+    }
+
+    /**
+     * Configura o evento de salva alterações em um mês ao calendário selecionado.
+     * @param {Event} event 
+     */
+    onSaveMonthClick(event) {
+        event.stopPropagation();
+        const addMonthButton = this.querySelector('#addMonthButton');
+        const clmid = Number(addMonthButton.dataset.clmid);        
+
+        const monthName = this.querySelector('#monthName')?.value || '';
+
+        this.calendar.months.get(clmid).label = monthName;
+        this.calendar.months.get(clmid).size = this.sliders.monthSize.value;
+        this.calendar.months.get(clmid).data.dbAction = 'u';
+
+        this._realoadCalendarData(this.calendar);
+    }
+
+    /**
+     * Configura o evento de salvar os dados do calendário selecionado.
+     * @param {Event} event 
+     */
+    async onSaveCalendarClick(event) {
+        event.stopPropagation();
+
+        if (await Dialogs.confirm("Salvar Calendário", "Deseja salvar o calendário?")) {
+
+            let data = {};
+            try {
+                // Inicia uma transação no Banco de Dados.
+                uniforge.db.beginTransaction();
+
+                const calendar = this.selection.calendar;
+
+                // É uma alteração em um Calendário já existente.
+                if (this.isCalendarEdit) {
+                    data = {
+                        clid: calendar.clid,
+                        label: calendar.label,
+                        prefix: calendar.prefix,
+                        suffix: calendar.suffix
+                    }
+
+                    await uniforge.db.updateCalendar(data);
+
+                    for (const day of calendar.days) {
+                        data = {
+                            cldid: day.cldid,
+                            clid: day.clid,
+                            label: day.label,
+                            name: day.name
+                        };
+
+                        await uniforge.db.updateCalendarDays(data);
+                    }
+
+                    for (const month of calendar.months) {
+                        data = {
+                            clmid: month.clmid,
+                            clid: month.clid,
+                            label: month.label,
+                            size: month.size
+                        };
+
+                        if (month.data.dbAction == 'i') {
+                            await uniforge.db.addCalendarMonths(data);
+                        } else if (month.data.dbAction == 'u') {
+                            await uniforge.db.updateCalendarMonths(data);
+                        } else if (month.data.dbAction == 'd') {
+                            await uniforge.db.deleteCalendarMonth(data.clmid);
+                        }
+                    }
+                }
+                // É a criação de um novo Calendário.
+                else {
+                    data = {
+                        clid: calendar.clid,
+                        label: calendar.label,
+                        prefix: calendar.prefix,
+                        suffix: calendar.suffix
+                    }
+
+                    await uniforge.db.addCalendar(data);
+
+                    for (const day of calendar.days) {
+                        data = {
+                            cldid: day.cldid,
+                            clid: day.clid,
+                            label: day.label,
+                            name: day.name
+                        };
+
+                        await uniforge.db.addCalendarDays(data);
+                    }
+
+                    for (const month of calendar.months) {
+                        data = {
+                            clmid: month.clmid,
+                            clid: month.clid,
+                            label: month.label,
+                            size: month.size
+                        };
+
+                        await uniforge.db.addCalendarMonths(data);
+                    }
+                }
+                // Confirma as alterações no Banco de Dados.
+                uniforge.db.commitTransaction();
+                this._clearCalendarData();
+            } catch (error) {
+                // Reverte as alterações no Banco de Dados.
+                uniforge.db.rollbackTransaction(error.message);
+            }
         }
     }
 
@@ -467,14 +622,16 @@ export default class SettingsForm extends EntryForm {
 
         const isDeselect = item.classList.contains('selected');
 
-        this._clearMonthData();
+        this._clearMonthData(!isDeselect);
 
         if (!isDeselect) {
-
             item.classList.toggle('selected');
 
             const deleteButton = item.querySelector('a.delete-button');
             deleteButton.classList.remove('hidden');
+
+            const saveMonthButton = this.querySelector('#saveMonthButton');
+            saveMonthButton.classList.remove('hidden');
 
             this._loadMonthData(month);
         }
@@ -486,11 +643,16 @@ export default class SettingsForm extends EntryForm {
      */
     onDeleteMonthClick(event) {
         event.stopPropagation();
-        const button = event.target.closest('a.delete-button');
         const item = event.target.closest('.month-item');
         const clmid = Number(item.dataset.clmid);
 
-        console.log(`Mês (${clmid}) removido.`);
+        if (this.isCalendarEdit) {
+            this.calendar.months.get(clmid).data.dbAction = 'd';
+        } else {
+            this.calendar.months.delete(clmid);
+        }
+
+        this._realoadCalendarData(this.calendar);
     }
 
     /**
@@ -588,9 +750,9 @@ export default class SettingsForm extends EntryForm {
     }
 
     /**
-   * Configura o conteúdo da opção selecionada.
-   * @param {HTMLElement} panel - O elemento que representa o panel carregado.
-   */
+    * Configura o conteúdo da opção selecionada.
+    * @param {HTMLElement} panel - O elemento que representa o panel carregado.
+    */
     onPanelSelect(panel) {
         panel.classList.remove('hidden');
     }
@@ -1022,45 +1184,47 @@ export default class SettingsForm extends EntryForm {
         const monthsList = this.querySelector('#monthsList');
         const months = calendar.months.toArray();
         months.forEach(month => {
-            const element = document.createElement('li');
-            element.classList.add('item', 'month-item');
-            element.dataset.clmid = month.clmid;
+            if (month.data.dbAction !== 'd') {
+                const element = document.createElement('li');
+                element.classList.add('item', 'month-item');
+                element.dataset.clmid = month.clmid;
 
-            const dataGroup = document.createElement('div');
-            dataGroup.classList.add('data-complex', 'flexrow');
+                const dataGroup = document.createElement('div');
+                dataGroup.classList.add('data-complex', 'flexrow');
 
-            const nameSpan = document.createElement('span');
-            nameSpan.classList.add('data-label');
-            nameSpan.textContent = month.label;
+                const nameSpan = document.createElement('span');
+                nameSpan.classList.add('data-label');
+                nameSpan.textContent = month.label;
 
-            const deleteButton = document.createElement('a');
-            deleteButton.classList.add('delete-button', 'flexrow', 'hidden');
-            deleteButton.dataset.tooltip = "Excluir Mês";
-            deleteButton.innerHTML = `<i class="fas fa-trash"></i>`;
+                const deleteButton = document.createElement('a');
+                deleteButton.classList.add('delete-button', 'flexrow', 'hidden');
+                deleteButton.dataset.tooltip = "Excluir Mês";
+                deleteButton.innerHTML = `<i class="fas fa-trash"></i>`;
 
-            const sizeGroup = document.createElement('div');
-            sizeGroup.classList.add('data-group', 'flexcol');
+                const sizeGroup = document.createElement('div');
+                sizeGroup.classList.add('data-group', 'flexcol');
 
-            const sizeSpan = document.createElement('span');
-            sizeSpan.classList.add('data-value', 'size');
-            sizeSpan.textContent = month.size;
+                const sizeSpan = document.createElement('span');
+                sizeSpan.classList.add('data-value', 'size');
+                sizeSpan.textContent = month.size;
 
-            const daysLabel = document.createElement('span');
-            daysLabel.classList.add('days-label');
-            daysLabel.textContent = 'Dias';
+                const daysLabel = document.createElement('span');
+                daysLabel.classList.add('days-label');
+                daysLabel.textContent = 'Dias';
 
-            sizeGroup.appendChild(sizeSpan);
-            sizeGroup.appendChild(daysLabel);
+                sizeGroup.appendChild(sizeSpan);
+                sizeGroup.appendChild(daysLabel);
 
-            dataGroup.appendChild(nameSpan);
-            dataGroup.appendChild(deleteButton);
-            dataGroup.appendChild(sizeGroup);
+                dataGroup.appendChild(nameSpan);
+                dataGroup.appendChild(deleteButton);
+                dataGroup.appendChild(sizeGroup);
 
-            element.appendChild(dataGroup);
-            monthsList.appendChild(element);
+                element.appendChild(dataGroup);
+                monthsList.appendChild(element);
 
-            element.addEventListener('click', (event) => { this.onMonthItemClick(event); });
-            deleteButton.addEventListener('click', (event) => { this.onDeleteMonthClick(event); });
+                element.addEventListener('click', (event) => { this.onMonthItemClick(event); });
+                deleteButton.addEventListener('click', (event) => { this.onDeleteMonthClick(event); });
+            }
         });
 
         const addMonthButton = this.querySelector('#addMonthButton');
@@ -1116,12 +1280,19 @@ export default class SettingsForm extends EntryForm {
 
         this.selection.calendar = null;
     }
+    _realoadCalendarData(calendar) {
+        this._clearCalendarData(false);
+        this._loadCalendarData(calendar);
+    }
 
     _loadMonthData(month) {
         const monthNameInput = this.querySelector('#monthName');
         monthNameInput.value = month.label;
 
         this.sliders.monthSize.setValue(month.size);
+
+        const addMonthButton = this.querySelector('#addMonthButton');
+        addMonthButton.dataset.clmid = month.clmid;
     }
     _clearMonthData(disableButton = true) {
         const monthItems = this.querySelectorAll('.month-item');
@@ -1130,6 +1301,9 @@ export default class SettingsForm extends EntryForm {
 
             const deleteButton = item.querySelector('a.delete-button');
             deleteButton.classList.add('hidden');
+
+            const saveMonthButton = this.querySelector('#saveMonthButton');
+            saveMonthButton.classList.add('hidden');
         });
 
         const monthNameInput = this.querySelector('#monthName');
@@ -1138,9 +1312,13 @@ export default class SettingsForm extends EntryForm {
         this.sliders.monthSize.setValue(30);
 
         const addMonthButton = this.querySelector('#addMonthButton');
+        delete addMonthButton.dataset.clmid;
 
         if (disableButton) addMonthButton.classList.add('disabled');
         else addMonthButton.classList.remove('disabled');
+
+        const saveMonthButton = this.querySelector('#saveMonthButton');
+        saveMonthButton.classList.add('hidden');
     }
 
     _handleLineageIcon(subject) {

@@ -16,8 +16,8 @@ export default class Calendar extends BaseDocument {
     get type() { return 'calendar'; }
 
     get label() { return this.data.label; }
-    get suffix() { return this.data.suffix; }
-    get prefix() { return this.data.prefix; }
+    get suffix() { return this.data.suffix || ''; }
+    get prefix() { return this.data.prefix || ''; }
     get months() { return this.data.months; }
     get days() { return this.data.days; }
 

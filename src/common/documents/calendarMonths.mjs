@@ -25,7 +25,8 @@ export default class CalendarMonths extends BaseDocument {
     get size() { return this.data.size; }
     get pos() { return this.#pos; }
 
-    set label(value) { this.data.label = value; }    
+    set label(value) { this.data.label = value; }   
+    set size(value) { this.data.size = value; } 
     set pos(value) { this.#pos = value; }
 
     initialize(data) {
