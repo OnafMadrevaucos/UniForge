@@ -22,7 +22,7 @@ export default class SimpleEntryForm extends BaseForm {
    * @param {HTMLElement} sourceBtn   - O botão que originou a chamada do formulário.
    * @param {Entry} entry             - Os dados da Entrada manipulada pelo formulário.
    */
-  constructor(sourceBtn, entry, onCloseCallback=null, options = {}) {
+  constructor(sourceBtn, entry, closeCallback=null, options = {}) {
     if (!sourceBtn) throw new Error('O botão de origem não pode ser nulo ou indefinido.');
     if (!entry) throw new Error('É necessário informar uma entrada válida.');
 
@@ -35,7 +35,7 @@ export default class SimpleEntryForm extends BaseForm {
 
     this.document = entry;
 
-    this.onCloseCallback = onCloseCallback;
+    this.closeCallback = closeCallback;
 
     /**
      * @type {string} - O modelo HTML utilizado pelo formulário.
@@ -284,7 +284,7 @@ export default class SimpleEntryForm extends BaseForm {
 
     super.close();
 
-    if (this.onCloseCallback) this.onCloseCallback();
+    if (this.closeCallback) this.closeCallback();
   }
 
   /**

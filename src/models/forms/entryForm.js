@@ -20,8 +20,9 @@ export default class EntryForm extends SidebarForm {
    * Construtor da classe EntryForm.
    * 
    * @param {HTMLElement} title   - O título do formulário.
+   * @param {string} type         - O tipo do formulário.
    */
-  constructor(title, options = {}) {
+  constructor(title, type, options = {}) {
     super(title, options);
 
     /**
@@ -29,7 +30,7 @@ export default class EntryForm extends SidebarForm {
      */
     this.template = 'entryForm';
 
-    this.type = 'entry'; // Define o tipo do formulário. 
+    this.type = type; // Define o tipo do formulário. 
 
     /**
     * Estados válidos para os elements do formulário.
@@ -89,7 +90,9 @@ export default class EntryForm extends SidebarForm {
 
     this.documentClass = Entry;
 
-    this.selection.event = uniforge.defaults.emptyString;; // ID do Evento selecionado na EventTab.
+    this.selection.event = uniforge.defaults.emptyString; // ID do Evento selecionado na EventTab.
+
+    if(this.options.closeCallback) this.onCloseCallback = this.options.closeCallback;
   }
 
   /* ---------------------------------------------------------------------------------------------------------------- */
@@ -606,6 +609,9 @@ export default class EntryForm extends SidebarForm {
 
   /** @inheritdoc */
   close() {
+    // Habilita o botão de origem, caso exista.
+    this.sourceBtn?.classList.remove('disabled');
+
     // Limpa o conteúdo do editor principal, se houver.
     if (this.mainEditor) {
       this.mainEditor.remove();
@@ -622,6 +628,8 @@ export default class EntryForm extends SidebarForm {
     }
 
     super.close();
+
+    if (this.closeCallback) this.closeCallback();
   }
 
   /**

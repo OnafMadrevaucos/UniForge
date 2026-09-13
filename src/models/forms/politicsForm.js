@@ -14,19 +14,6 @@ export default class PoliticsForm extends EntryForm {
       */
     constructor() {
         // Chama o construtor da classe pai com o parâmetro overlay.
-        super('Política');
-
-        this.type = 'politics'; // Define o tipo do formulário.
+        super('Política', 'politics');
     }
-    
-    /**
-    * Obtém os dados unificados necessários para o funcionamento do formulário.
-    * @implements Implemente um método filho para as especificidades de cada formulário.
-    * @async
-    * @returns {object}  - Objeto de dados unificado.
-    */
-    prepareData() {
-        super.prepareData();
-        return this.data;
-    }   
 }

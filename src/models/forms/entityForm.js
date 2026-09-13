@@ -13,11 +13,9 @@ export default class EntityForm extends EntryForm {
     */
   constructor(options = {}) {
     // Chama o construtor da classe pai com o parâmetro overlay.
-    super('Entidade', options);
+    super('Entidade', 'entity', options);
 
-    this.template = 'entityForm'; // Define o template do formulário. 
-
-    this.type = 'entity'; // Define o tipo do formulário. 
+    this.template = 'entityForm'; // Define o template do formulário.  
 
     // Inicializa o Gerenciador de Linhagens, enviando o container que conterá a árvore.
     this.manager = new EntityManager(this);

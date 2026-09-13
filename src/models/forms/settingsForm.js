@@ -1,4 +1,4 @@
-import EntryForm from "./entryForm.js";
+import BaseForm from './baseForm.js';
 import Dialogs from '../dialogs/dialog.js';
 import ChapterDialog from "../dialogs/chapterDialog.js";
 import ThemeDialog from "../dialogs/themeDialog.js";
@@ -15,7 +15,7 @@ import CalendarMonths from "../../common/documents/calendarMonths.mjs";
   * @extends BaseForm
   * 
 */
-export default class SettingsForm extends EntryForm {
+export default class SettingsForm extends BaseForm {
     /**
       * Constrói uma instância da classe derivada, inicializando as propriedades e configurando o conteúdo.
       * @class
@@ -89,8 +89,6 @@ export default class SettingsForm extends EntryForm {
         await this.prepareThemes();
 
         await this.prepareMetadata();
-
-        return super.prepareData();
     }
 
     prepareCalendars() {
@@ -185,10 +183,8 @@ export default class SettingsForm extends EntryForm {
 
     /**
      * Configura o conteúdo do formulário.
-     * @param {HTMLElement} form - O elemento que representa o formulário.
     */
-    async configureContent(form) {
-        await super.configureContent(form);
+    async configureContent() {
 
         this.configureMiscPanel();
 
@@ -298,8 +294,6 @@ export default class SettingsForm extends EntryForm {
     * @inheritdoc
     */
     activateListeners() {
-        super.activateListeners();
-
         this.activateOptionsListeners();
 
         // Eventos do painel de Configurações Gerais.
@@ -307,9 +301,6 @@ export default class SettingsForm extends EntryForm {
 
         // Eventos do painel de Banco de Dados.
         this.activateDatabaseListeners();
-
-        // Eventos do painel de Capítulos.
-        this.activateChaptersListeners();
 
         // Eventos do painel do Leaflet®.
         this.activateLeafletListeners();
@@ -347,11 +338,6 @@ export default class SettingsForm extends EntryForm {
 
         const saveCalendarButton = this.querySelector('#saveCalendarButton');
         saveCalendarButton.addEventListener('click', (event) => { this.onSaveCalendarClick(event); });
-    }
-
-    activateChaptersListeners() {
-        const newChapterButton = this.querySelector('#newChapterButton');
-        newChapterButton.addEventListener('click', (event) => { this.onNewChapterClick(event) });
     }
 
     activateDatabaseListeners() {
@@ -409,6 +395,14 @@ export default class SettingsForm extends EntryForm {
         buttons.forEach(button => {
             button.addEventListener('click', (event) => { this.onOptionButtonClick(event); });
         });
+    }
+
+    /**
+    * Configura o evento ao fechar o formulário de Capítulo.
+    * @param {Event} event 
+    */
+    onChapterFormClose(event) {
+
     }
 
     /**
