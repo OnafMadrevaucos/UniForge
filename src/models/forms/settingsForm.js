@@ -143,12 +143,7 @@ export default class SettingsForm extends BaseForm {
 
         const data = await fetch(filePath);
         this.data.metadata = await data.json();
-    }
-
-    /** @override */
-    prepareFolders(data) {
-        data.folders = uniforge.doc.chapters.sort();
-    }
+    }    
 
     /* ---------------------------------------------------------------------------------------------------------------- */
     // INTERFACE DE USUÁRIO
@@ -318,6 +313,9 @@ export default class SettingsForm extends BaseForm {
 
         const deleteThemeButton = this.querySelector("#deleteThemeButton");
         deleteThemeButton.addEventListener('click', (event) => { this.onDeleteThemeClick(event); });
+
+        const manageChaptersButton = this.querySelector('#manageChaptersButton');
+        manageChaptersButton.addEventListener('click', (event) => { this.onManageChaptersClick(event); });
 
         const newCalendarButton = this.querySelector('#newCalendarButton');
         newCalendarButton.addEventListener('click', (event) => { this.onNewCalendarClick(event); });
@@ -744,39 +742,24 @@ export default class SettingsForm extends BaseForm {
     }
 
     /**
+    * Configura o evento de abertura do Gerenciador de Capítulos.
+    * @param {PointerEvent} event - O evento de clique no botão.
+    */
+    onManageChaptersClick(event) {
+        event.stopPropagation();
+        const button = event.target.closest('button');
+
+        const form = new uniforge.forms.chapter(button, this.onChapterFormClose.bind(this));
+        form.show(true);
+    }
+
+    /**
     * Configura o conteúdo da opção selecionada.
     * @param {HTMLElement} panel - O elemento que representa o panel carregado.
     */
     onPanelSelect(panel) {
         panel.classList.remove('hidden');
-    }
-
-    /**
-       * Gerencia cliques em pastas.
-       * @param {MouseEvent} event - O evento de clique.
-       * @protected
-       */
-    onFolderClick(event) {
-        super.onFolderClick(event);
-
-        const clickedFolder = event.target.closest('.folder');
-        const chapterId = clickedFolder.dataset.id;
-        const chapter = uniforge.doc.chapters.get(chapterId);
-        const isSelected = clickedFolder.classList.contains('selected');
-
-        this._handleLineageIcon(chapter);
-
-        // Se formulário for o da Enciclopédia, e o estado do formulário seja o 'newEntry' ou 
-        // o 'default', carregue ícone do Assunto.
-        if (this.currentState <= this.states.newEntry) {
-            // Carregue ícone apenas se a pasta estiver sendo selecionada.            
-            if (isSelected) {
-                this._loadTomeIcon(clickedFolder);
-                this.controlStates(this.states.newEntry);
-            } else
-                this.controlStates(this.states.default);
-        }
-    }
+    }    
 
     /**
     * Trata o evento de ativação de uma Conexão Externa.
@@ -921,8 +904,6 @@ export default class SettingsForm extends BaseForm {
     */
     async onCancelClick(event) {
         event.stopPropagation();
-
-        super.onCancelClick(event);
         this.clearContent();
     }
 
@@ -962,21 +943,7 @@ export default class SettingsForm extends BaseForm {
             // Atualiza o estado dos elements do formulário.
             this.controlStates(this.states.editing);
         }
-    }
-
-    /**
-    * Gera um novo assunto.
-    * @param {Event} event - Evento de clique no botão.
-    */
-    async onNewChapterClick(event) {
-        event.stopPropagation();
-
-        const chapter = await ChapterDialog.configDialog();
-        if (chapter) {
-            await uniforge.db.addChapter(chapter);
-            this.refresh();
-        }
-    }
+    }    
 
     /**
     * Configura o event de click para os botões de opções do formulário.
@@ -1313,52 +1280,7 @@ export default class SettingsForm extends BaseForm {
 
         const saveMonthButton = this.querySelector('#saveMonthButton');
         saveMonthButton.classList.add('hidden');
-    }
-
-    _handleLineageIcon(subject) {
-        const lineageIcon = this.querySelector('#lineageIcon');
-        if (subject.isLineage) lineageIcon.classList.remove('hidden');
-        else lineageIcon.classList.add('hidden');
-    }
-
-    /**
-   * Carrega ícone da raíz do assunto.
-   * @protected
-   * @async
-   * @param {HTMLElement} folder - Objeto com os dados da pasta do Assunto.
-   */
-    async _loadTomeIcon(folder) {
-        const cid = folder.dataset.id;
-        let chapter = await uniforge.db.getChapterTome(cid);
-
-        if (chapter) {
-            const typeLabel = this.querySelector('#typeLabel');
-            const dataIcon = this.querySelector('#dataIcon');
-            const chapterIcon = this.querySelector('#chapterIcon');
-
-            typeLabel.textContent = chapter.title;
-
-            dataIcon.dataset.tooltip = chapter.tome.capitalize();
-            chapterIcon.classList.remove(...chapterIcon.classList);
-            chapterIcon.className = chapter.icon;
-        }
-    }
-    /**
-     * Carrega ícone da raíz do assunto.
-     * @protected
-     * @async
-     */
-    async _clearRootIcon() {
-        const typeLabel = this.querySelector('#typeLabel');
-        const dataIcon = this.querySelector('#dataIcon');
-        const chapterIcon = this.querySelector('#chapterIcon');
-
-        typeLabel.innerHTML = '&#8212';
-
-        dataIcon.dataset.tooltip = 'Escolha um assunto...';
-        chapterIcon.classList.remove(...chapterIcon.classList);
-        chapterIcon.className = 'fa-regular fa-file';
-    }
+    }   
 
     /**
      * Lógica de cálculo da escala, espelhando a função em core.mjs.

@@ -215,7 +215,7 @@ body.uniforge {
     pointer-events: none !important;
 }
 
-*:focus-visible {
+:not(.main-editor) *:not(.main-editor):focus-visible {
     outline: var(--focus-border);
 }
 
@@ -4772,7 +4772,7 @@ hr.divider {
     border-top-left-radius: 0;
     border-top-right-radius: 0;
 }
-#tinymce:focus-visible {
+#tinymce:not(.main-editor):focus-visible {
     outline: 1px solid;
     outline-offset: -2px;
 }
@@ -4792,12 +4792,12 @@ hr.divider {
     width: var(--fill-width);
     border-radius: var(--default-border-radius);
     padding: 10px;
-    background: var(--light-background-color);
+    background: var(--light-background-color) !important;
 }
 
 .simple-tmce {
     margin-block: 5px;
-    background-color: var(--color-a);
+    background-color: var(--color-a) !important;
     border-radius: var(--default-border-radius);
     box-shadow: var(--small-shadow);
     padding: 5px 10px;

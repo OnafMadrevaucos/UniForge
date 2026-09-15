@@ -8,6 +8,7 @@ import DatePicker from "../controls/datePicker.js";
 import FilePickerDialog from "../dialogs/filePickerDialog.js";
 import Entry from "../../common/documents/entry.mjs";
 import EntryEvent from "../../common/documents/event.mjs";
+import Section from "../../common/documents/section.mjs";
 import CustomDate from "../../common/primitives/date.mjs";
 
 /**
@@ -80,6 +81,30 @@ export default class EntryForm extends SidebarForm {
     this.isEventForm = true;
 
     /**
+     * O formulário possui editor de Texto de Floreio? (true por padrão)
+     * @type {boolean}
+     */
+    this.hasFlavorEditor = true;
+
+    /**
+     * O formulário possui editor de Eventos? (true por padrão)
+     * @type {boolean}
+     */
+    this.hasEventEditor = true;
+
+    /**
+     * A TAG para a fonte de dados dos documentos manipulados pelo formulário.
+     * @type {string}
+     */
+    this.docTag = 'sections';
+
+    /**
+     * A fonte de dados interna aos documentos manipulados pelo formulário.
+     * @type {string}
+     */
+    this.dataSource = 'entries';
+
+    /**
     * @property {Object} datePickers - Um objeto que gerencia os seletores de data para registro de entradas.
     * Contém duas instâncias de `DatePicker` para 'startDate' (data de início) e 'endDate' (data de término).
     */
@@ -88,15 +113,18 @@ export default class EntryForm extends SidebarForm {
       endDate: new DatePicker('endDate', this)
     }
 
-    this.documentClass = Entry;
+    /**
+     * @type {Section} - A classe de documento utilizada pelo formulário.
+     */
+    this.documentClass = Entry;    
 
-    this.selection.event = uniforge.defaults.emptyString; // ID do Evento selecionado na EventTab.
-
-    if(this.options.closeCallback) this.onCloseCallback = this.options.closeCallback;
+    // Verifica se o formulário possui um callback de fechamento e configura-o.
+    if (this.options.closeCallback) this.onCloseCallback = this.options.closeCallback;    
   }
 
   /* ---------------------------------------------------------------------------------------------------------------- */
   // GETTERS E SETTERS 
+
   /**
   * Conjunto de filtros de item que representam os estados aplicáveis na classe EntryForm.
   * Os estados estão mapeados para números inteiros que representam ações específicas.
@@ -141,7 +169,7 @@ export default class EntryForm extends SidebarForm {
   /** Identificador da Entrada atual.
    * @returns {Object} 
    * */
-  get eid() { return this.document.eid; }
+  get id() { return this.document?._id; }
 
   /**
    * @overload
@@ -291,7 +319,7 @@ export default class EntryForm extends SidebarForm {
     * @async
     * @returns {object}  - Objeto de dados unificado.
     */
-  prepareData() {
+  async prepareData() {
     // Informa ao formulário atual o seu tipo.
     this.data.type = this.type;
 
@@ -301,12 +329,14 @@ export default class EntryForm extends SidebarForm {
       this.data.calendars = uniforge.doc.calendars.toArray();
     }
 
-    return super.prepareData();
+    this.selection.event = uniforge.defaults.emptyString; // Limpa a seleção de evento.
+
+    return await super.prepareData();
   }
 
   /** @inheritdoc */
   prepareFolders(data) {
-    const folders = uniforge.doc.sections.filter(s => {
+    const folders = uniforge.doc[this.docTag].filter(s => {
       const c = uniforge.doc.chapters.get(s.cid);
       return c.tome === this.type;
     });
@@ -326,6 +356,7 @@ export default class EntryForm extends SidebarForm {
     // Atribui o estado padrão aos controles do formulário.
     this.controlStates(this.states.default);
   }
+
   /**
    * Habilita/desabilita os controles do formulário.
    * @param {Number} state - O novo estado do formulário.
@@ -380,7 +411,7 @@ export default class EntryForm extends SidebarForm {
         cancelButton.classList.add('hidden');
 
         // Não é a tela de Configurações, configura o editor de floreio para 'readonly'.
-        if (!this.isSettings)
+        if (this.hasFlavorEditor)
           flavorEditor.mode.set('readonly');
 
         this._toggleSectionButtons(true);
@@ -391,7 +422,7 @@ export default class EntryForm extends SidebarForm {
       // Ex.: O usuário clicou em "Nova Entrada".
       case this.states.adding: {
         // Limpe o conteúdo do formulário.
-        this.clearContent();
+        this.clearContent(false);
         // Está adicionando uma Entrada nova.
         this.isUpdate = false;
 
@@ -424,7 +455,7 @@ export default class EntryForm extends SidebarForm {
         cancelButton.classList.remove('hidden');
 
         // Não é a tela de Configurações, configura o editor de floreio para 'design'.
-        if (!this.isSettings)
+        if (this.hasFlavorEditor)
           flavorEditor.mode.set('design');
 
         this._toggleSectionButtons(false, false);
@@ -465,7 +496,7 @@ export default class EntryForm extends SidebarForm {
         cancelButton.classList.remove('hidden');
 
         // Não é a tela de Configurações, configura o editor de floreio para 'design'.
-        if (!this.isSettings)
+        if (this.hasFlavorEditor)
           flavorEditor.mode.set('design');
 
         this._toggleSectionButtons(false, false);
@@ -652,6 +683,7 @@ export default class EntryForm extends SidebarForm {
 
   /* ---------------------------------------------------------------------------------------------------------------- */
   // CONFIGURAÇÃO
+
   /**
    * Configura o conteúdo do formulário.
    * Sobrescreve a configuração na classe pai.
@@ -668,15 +700,15 @@ export default class EntryForm extends SidebarForm {
       await this.configureTinyMCE();
 
       // Se o formulário for de Configurações, não configure os editores de floreio.
-      if (!this.isSettings) {
+      if (this.hasFlavorEditor) {
         // Configura o editor TinyMCE de floreio associado ao formulário.
         await this.configureFlavorTinyMCE();
+      }
 
-        // Se o formulário for de Eventos, configura o editor TinyMCE de floreio dos eventos.
-        if (this.isEventForm) {
-          // Configura o editor TinyMCE de floreio dos eventos associados à entrada do formulário.
-          await this.configureEventFlavorTinyMCE();
-        }
+      // Se o formulário for de Eventos, configura o editor TinyMCE de floreio dos eventos.
+      if (this.isEventForm && this.hasEventEditor) {
+        // Configura o editor TinyMCE de floreio dos eventos associados à entrada do formulário.
+        await this.configureEventFlavorTinyMCE();
       }
     }
   }
@@ -756,6 +788,7 @@ export default class EntryForm extends SidebarForm {
     } else {
       // Trata o id do container do editor, inserindo o uuid do formulário.
       const textarea = this.querySelector('#mainEditor');
+      if (!textarea) return;
       textarea.id = this.query.main_editor;
     }
 
@@ -790,6 +823,8 @@ export default class EntryForm extends SidebarForm {
     } else {
       // Trata o id do container do editor, inserindo o uuid do formulário.
       const div = this.querySelector('#flavorEditor');
+      if (!div) return;
+
       div.id = this.query.flavor_editor;
     }
 
@@ -814,6 +849,7 @@ export default class EntryForm extends SidebarForm {
     } else {
       // Trata o id do container do editor, inserindo o uuid do formulário.
       const div = this.querySelector('#eventFlavorEditor');
+      if (!div) return;
       div.id = this.query.event_editor;
     }
 
@@ -1191,7 +1227,7 @@ export default class EntryForm extends SidebarForm {
       sid: sid,
       title: eventTitle.value,
       etid: eventEntryType.value,
-      source: this.eid,
+      source: this.id,
       relevance: relevance.value,
       clid: Number(calendarType.value),
       flavor: this.eventEditor.getContent() ?? '',
@@ -1258,8 +1294,7 @@ export default class EntryForm extends SidebarForm {
     const id = selectedFolder.dataset.id ?? null;
 
     // Define o ID da pasta no dataset do header.
-    if (this.isSettings) headerInfo.dataset.cid = id;
-    else headerInfo.dataset.sid = id;
+    headerInfo.dataset.sid = id;
 
     const titleInput = this.querySelector('#titleInput');
     titleInput.focus();
@@ -1282,12 +1317,12 @@ export default class EntryForm extends SidebarForm {
   async onSaveClick(event) {
     event.stopPropagation();
 
-    const item = this.selection.entry;
+    const item = this.selection.item;
     this.isUpdate = (item ? true : false);
 
     try {
       const title = (this.isUpdate ? 'Atualizar' : 'Registrar');
-      let dialogMessage = this.isUpdate ? 'Deseja atualizar a entrada?' : 'Deseja salvar a entrada?';
+      let dialogMessage = `Deseja ${title.toLowerCase()} a entrada?`;
 
       if (await Dialogs.confirm(title, dialogMessage)) {
         const imgInput = this.querySelector('#hiddenFileInput');
@@ -1310,14 +1345,15 @@ export default class EntryForm extends SidebarForm {
         const entryType = this.querySelector('#entryType');
 
         uniforge.utils.mergeObjects(data, {
-          eid: this.eid ?? null,
+          eid: this.id ?? null,
           etid: entryType.value,
-          sid: headerInfo.dataset.sid,
+          sid: headerInfo.dataset.sid ?? null,
           flavor: this.flavorEditor.getContent() ?? '',
           htmlString: this.mainEditor.getContent() ?? ''
         });
 
-        let validation = uniforge.db.validateEntry(data);
+        const validation = uniforge.db.validateEntry(data);
+
         if (validation !== '') {
           this.msgBox.showWarning(validation);
           return;
@@ -1367,12 +1403,11 @@ export default class EntryForm extends SidebarForm {
 
     const item = event.target.closest('.entry-item');
     const itemId = item.dataset.id;
-    const itemType = options.dataSource ?? 'entries';
+    const itemType = options.dataSource ?? this.dataSource;
     const entry = uniforge.doc[itemType].get(itemId);
 
     if (entry) {
       const headerInfo = this.querySelector('.header-info');
-      headerInfo.dataset.cid = entry.cid ?? null;
       headerInfo.dataset.sid = entry.sid ?? null;
 
       headerInfo.dataset.eid = entry.eid;
@@ -1385,6 +1420,9 @@ export default class EntryForm extends SidebarForm {
 
       titleInput.value = entry.title;
       draftCheckbox.checked = entry.isDraft;
+      const entryData = entry.data;
+
+      this.mainEditor = entryData.htmlString;
 
       if (entry.img) {
         const imageUrl = await uniforge.utils.blobToImage(entry.img, entry.ext);
@@ -1401,16 +1439,12 @@ export default class EntryForm extends SidebarForm {
         ext: entry.ext
       };
 
-      this.configureDatePickers(null);
-
       const entryType = this.querySelector('#entryType');
-
-      const entryData = entry.data
-
       entryType.value = Number(entryData.etid);
 
+      this.configureDatePickers(null);
+
       this.flavorEditor = entryData.flavor;
-      this.mainEditor = entryData.htmlString;
 
       this.#events = {};
       const events = entryData.events.toArray();
@@ -1448,6 +1482,7 @@ export default class EntryForm extends SidebarForm {
     const message = `Tem certeza que deseja excluir o item ${dataType}?`;
     this._showDialog(message);
   }
+
   /**
    * Rotina para tratamento do tooltip de confirmação de remoção.
    * @param {Event} event - Evento de clique no ícone de exclusão.
@@ -1476,7 +1511,7 @@ export default class EntryForm extends SidebarForm {
     const tooltip = this.ui.tooltip;
     const selectedHtml = editor.selection.getContent();
 
-    const id = this.selection.entry.dataset.id;
+    const id = this.selection.item.dataset.id;
     const type = ((this.querySelector('.entries')).classList.contains('timeline') ? 'timeline' : 'entry');
     const link = await LinkDialog.configDialog({ id, type });
 
@@ -1569,6 +1604,11 @@ export default class EntryForm extends SidebarForm {
     }
   }
 
+  /**
+    * Trata a ação do usuário de adição de 5 (Padrão) parágrafos de Lorem Ipsum na posição do cursor do editor.
+    * @private
+    * @param {Object} editor - Instância do editor TinyMCE.
+    */
   onAddLoremIpsum(editor) {
     const loremIpsum = uniforge.utils.loremIpsum(5);
     editor.execCommand('mceInsertContent', false, loremIpsum);
@@ -1576,6 +1616,7 @@ export default class EntryForm extends SidebarForm {
 
   /* ---------------------------------------------------------------------------------------------------------------- */
   // UTILITÁRIOS
+
   /**
    * Gera uma nova opção para o ComboBox de Assuntos.
    * @protected
@@ -1843,8 +1884,10 @@ export default class EntryForm extends SidebarForm {
 
   _filterFoldersEntryTypes(folder) {
     const sectionId = folder.dataset.id;
-    const section = uniforge.doc.sections.get(sectionId);
+    const section = uniforge.doc[this.docTag].get(sectionId);
     const type = section.chapterType;
+
+    if (!type) return;
 
     const entryTypeSelect = this.querySelector('#entryType');
     const entryTypeOptions = entryTypeSelect.options;

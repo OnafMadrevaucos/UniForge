@@ -297,12 +297,11 @@ export default class DBManager {
      * @param {string} data.title - Título da Seção.
      * @param {string} data.htmlString - String HTML a ser associada à Seção.
      * @param {boolean} data.isDraft - Indica se a Seção é um rascunho.
-     * @param {boolean} data.hasLineage - Indica se a seção possui linhagem.
      * 
      * @returns {Promise<Object>} - Resultado da execução do comando, incluindo o ID da Seção adicionada.
     */
     async addSection(data) {
-        let query = 'INSERT INTO section (sid, cid, title, htmlString, isDraft, hasLineage) VALUES (?,?,?,?,?,?);';
+        let query = 'INSERT INTO section (sid, cid, title, htmlString, isDraft) VALUES (?,?,?,?,?);';
         const params = [];
 
         const sid = (!data.sid || data.sid.isEmpty()) ? this.generateID() : data.sid;
@@ -312,7 +311,6 @@ export default class DBManager {
         params.push(data.title);
         params.push(data.htmlString);
         params.push(Number(data.isDraft));
-        params.push(Number(data.hasLineage));
 
         const result = await this.#execQuery(query, params);
         result.lastInsertRowid = sid;
@@ -666,7 +664,6 @@ export default class DBManager {
      * @param {string} data.title - Título da seção.
      * @param {string} data.htmlString - String HTML a ser associada à seção.
      * @param {boolean} data.isDraft - Indica se a seção é um rascunho.
-     * @param {boolean} data.hasLineage - Indica se a seção possui linhagem.
      * 
      * @returns {Promise<Object>} - Resultado da execução do comando de atualização.
     */
@@ -676,7 +673,6 @@ export default class DBManager {
             ['title', data.title],
             ['htmlString', data.htmlString],
             ['isDraft', Number(data.isDraft)],
-            ['hasLineage', Number(data.hasLineage)]
         ]);
 
         let query = `UPDATE section SET ${updateSet} WHERE sid = ?`;
@@ -2642,8 +2638,6 @@ export default class DBManager {
      */
     validateSection(data) {
 
-        if (data.sid?.isEmpty())
-            return 'O identificador da Seção não pode ser vazio.';
         if (data.cid.isEmpty())
             return 'O identificador de Capítulo da Seção não pode ser vazio.';
         if (data.title.isEmpty())
