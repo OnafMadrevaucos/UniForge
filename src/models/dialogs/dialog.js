@@ -28,7 +28,7 @@ export default class Dialogs extends BaseDialog {
    * @param {Function} options.hasTemplate      - Flag que indica se o diálogo deve possuir um template.
    */
   //constructor({ title = "Dialog", buttons = {}, abort = null}, options = { hasTemplate = false }) {
-  constructor(data, options = {alwaysOnTop: true}) {
+  constructor(data, options = { alwaysOnTop: true }) {
     super(data, options);
 
     this.type = options?.type ?? Dialogs.Type.CONFIRM;
@@ -110,7 +110,7 @@ export default class Dialogs extends BaseDialog {
     } catch (error) {
       this.msgBox.showError(error.message, error);
     }
-  } 
+  }
 
   /**
    * Configura ouvintes de eventos para elementos no diálogo.
@@ -132,7 +132,7 @@ export default class Dialogs extends BaseDialog {
    * @returns {Promise} Retorna uma promessa que é resolvida se o usuário clicar em "Sim" ou rejeitada se clicar em "Não".
    */
   static async confirm(title, message) {
-    return new Promise((resolve, reject) => {      
+    return new Promise((resolve, reject) => {
       const dialog = new this({
         title: title,
         buttons: {
@@ -148,7 +148,7 @@ export default class Dialogs extends BaseDialog {
           }
         },
         abort: () => reject(false)
-      }, { prompt: message, alwaysClose: true});      
+      }, { prompt: message, alwaysClose: true });
       dialog.show(true);
     });
   }
@@ -180,7 +180,8 @@ export default class Dialogs extends BaseDialog {
             callback: () => {
               const input = document.querySelector('#secureInput');
               const secureText = input.dataset.text;
-              if(input.value === secureText) {
+              //if(input.value === secureText) {
+              if (input.value.normalize('NFC') === secureText.normalize('NFC')) {
                 resolve(true);
                 return true;
               } else {
@@ -205,7 +206,7 @@ export default class Dialogs extends BaseDialog {
    * @returns {Promise} Retorna uma promessa que é resolvida se o usuário clicar em "Sim" ou rejeitada se clicar em "Não".
    */
   static async inform(title, message) {
-    return new Promise((resolve, reject) => {      
+    return new Promise((resolve, reject) => {
       const dialog = new this({
         title: title,
         buttons: {
@@ -216,7 +217,7 @@ export default class Dialogs extends BaseDialog {
           }
         },
         abort: () => reject(true)
-      }, { prompt: message, alwaysClose: true, width: '300px'});      
+      }, { prompt: message, alwaysClose: true, width: '300px' });
       dialog.show(true);
     });
   }
@@ -235,12 +236,12 @@ export default class Dialogs extends BaseDialog {
         title: title,
         abort: () => resolve()
       };
-      const dialog = new this(dialogData, { 
+      const dialog = new this(dialogData, {
         hasTemplate: false,
-        imageUrl, 
+        imageUrl,
         width: '75%',
         type: Dialogs.Type.IMAGE,
-        alwaysClose: true 
+        alwaysClose: true
       });
       dialog.show(true);
     });

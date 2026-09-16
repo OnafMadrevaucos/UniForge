@@ -89,6 +89,8 @@ export default class SettingsForm extends BaseForm {
         await this.prepareThemes();
 
         await this.prepareMetadata();
+
+        this.prepareProcedures();
     }
 
     prepareCalendars() {
@@ -143,7 +145,22 @@ export default class SettingsForm extends BaseForm {
 
         const data = await fetch(filePath);
         this.data.metadata = await data.json();
-    }    
+    }
+
+    async prepareProcedures() {
+        const procedures = Object.entries(this.db.storedProcedures);
+        this.data.procedures = Object.fromEntries(
+            procedures.map(([key, procedures]) => [
+                key, 
+                Object.keys(procedures).map(p => {
+                    return {
+                        _id: p,
+                        _label: p,                        
+                    }
+                })
+            ])
+        );
+    }
 
     /* ---------------------------------------------------------------------------------------------------------------- */
     // INTERFACE DE USUÁRIO
@@ -221,38 +238,6 @@ export default class SettingsForm extends BaseForm {
     * Configura o conteúdo do panel de Banco de Dados.
     */
     async configureDatabasePanel() {
-        const procedures = this.db.storedProcedures;
-        const proceduresSelect = this.querySelector('#procedureName');
-        proceduresSelect.innerHTML = '';
-
-        let emptyOption = document.createElement('option');
-        emptyOption.innerHTML = '&#8212';
-        proceduresSelect.appendChild(emptyOption);
-
-        Object.values(procedures).forEach(proc => {
-            const option = document.createElement('option');
-            option.dataset.name = proc.name;
-            option.textContent = proc.name.capitalize();
-
-            proceduresSelect.appendChild(option);
-        });
-
-        const tables = await this.db.getAllTables();
-        const allTablesSelect = this.querySelector('#tableName');
-        allTablesSelect.innerHTML = '';
-
-        emptyOption = document.createElement('option');
-        emptyOption.innerHTML = '&#8212';
-        allTablesSelect.appendChild(emptyOption);
-
-        tables.forEach(table => {
-            const option = document.createElement('option');
-            option.dataset.name = table.name;
-            option.textContent = table.name.capitalize();
-
-            allTablesSelect.appendChild(option);
-        });
-
         const externalConnectionSwitch = this.querySelector('#externalConnectionSwitch input#checkbox');
         externalConnectionSwitch.checked = (this.data.database.activeExternalCon === 'true');
         externalConnectionSwitch.dispatchEvent(new Event('change')); // Dispara o evento de mudança para atualizar a interface.
@@ -314,28 +299,11 @@ export default class SettingsForm extends BaseForm {
         const deleteThemeButton = this.querySelector("#deleteThemeButton");
         deleteThemeButton.addEventListener('click', (event) => { this.onDeleteThemeClick(event); });
 
+        const manageCalendarsButton = this.querySelector('#manageCalendarsButton');
+        manageCalendarsButton.addEventListener('click', (event) => { this.onManageCalendarsClick(event); });
+
         const manageChaptersButton = this.querySelector('#manageChaptersButton');
         manageChaptersButton.addEventListener('click', (event) => { this.onManageChaptersClick(event); });
-
-        const newCalendarButton = this.querySelector('#newCalendarButton');
-        newCalendarButton.addEventListener('click', (event) => { this.onNewCalendarClick(event); });
-
-        const calendarsList = this.querySelector('#calendarsList');
-        calendarsList.addEventListener('click', (event) => { this.onCalendarsListClick(event); });
-
-        const calendarItems = this.querySelectorAll('.calendar-item');
-        calendarItems.forEach(item => {
-            item.addEventListener('click', (event) => { this.onCalendarItemClick(event); });
-        });
-
-        const addMonthButton = this.querySelector('#addMonthButton');
-        addMonthButton.addEventListener('click', (event) => { this.onAddMonthClick(event); });
-
-        const saveMonthButton = this.querySelector('#saveMonthButton');
-        saveMonthButton.addEventListener('click', (event) => { this.onSaveMonthClick(event); });
-
-        const saveCalendarButton = this.querySelector('#saveCalendarButton');
-        saveCalendarButton.addEventListener('click', (event) => { this.onSaveCalendarClick(event); });
     }
 
     activateDatabaseListeners() {
@@ -349,10 +317,7 @@ export default class SettingsForm extends BaseForm {
         createConnectionButton.addEventListener('click', (event) => { this.onCreateConnectionClick(event); });
 
         const executeProcButton = this.querySelector('#procedureButton');
-        executeProcButton.addEventListener('click', (event) => { this.onExecuteProcClick(event); });
-
-        const deleteTableButton = this.querySelector('#deleteTableButton');
-        deleteTableButton.addEventListener('click', (event) => { this.onDeleteTableClick(event); });
+        executeProcButton.addEventListener('click', (event) => { this.onExecuteProcClick(event); });        
 
         const queryButton = this.querySelector('#queryButton');
         queryButton.addEventListener('click', (event) => { this.onExecuteQuery(event); });
@@ -396,7 +361,15 @@ export default class SettingsForm extends BaseForm {
     }
 
     /**
-    * Configura o evento ao fechar o formulário de Capítulo.
+    * Configura o evento ao fechar o formulário do Gerenciador de Calendários.
+    * @param {Event} event 
+    */
+    onCalendarFormClose(event) {
+
+    }
+
+    /**
+    * Configura o evento ao fechar o formulário do Gerenciador de Capítulo.
     * @param {Event} event 
     */
     onChapterFormClose(event) {
@@ -404,253 +377,9 @@ export default class SettingsForm extends BaseForm {
     }
 
     /**
-     * Configura o evento de adicionar um novo calendário.
-     * @param {Event} event 
-     */
-    onNewCalendarClick(event) {
-        event.stopPropagation();
-
-        this._clearCalendarData(false);
-
-        this.isCalendarEdit = false;
-
-        const calendarNameInput = this.querySelector('#calendarName');
-        calendarNameInput.focus();
-    }
-
-    /**
-     * Configura o evento de clique em uma lista de calendários.
-     * @param {Event} event 
-     */
-    onCalendarsListClick(event) {
-        event.stopPropagation();
-        const target = event.target;
-
-        if (!target.classList.contains('calendar-item')) {
-            this._clearCalendarData();
-
-            this.isCalendarEdit = false;
-        }
-    }
-
-    /**
-     * Configura o evento de seleção de um calendário.
-     * @param {Event} event 
-     */
-    onCalendarItemClick(event) {
-        event.stopPropagation();
-        const item = event.target.closest('.calendar-item');
-        const calendarId = Number(event.target.closest('.calendar-item').dataset.value);
-        const calendar = uniforge.doc.calendars.get(calendarId);
-
-        // Limpa qualquer item que tenha sido selecionado antes.
-        this._clearCalendarData();
-        // Seleciona o item clicado.
-        item.classList.toggle('selected');
-
-        // Identifica que o calendário selecionado está sendo editado.
-        this.isCalendarEdit = true;
-
-        this._loadCalendarData(calendar);
-    }
-
-    /**
-     * Configura o evento de adicionar um novo mês ao calendário selecionado.
-     * @param {Event} event 
-     */
-    onAddMonthClick(event) {
-        event.stopPropagation();
-        const monthName = this.querySelector('#monthName')?.value || '';
-
-        if (!monthName || monthName.isEmpty()) {
-            this.msgBox.showWarning('O nome do mês não pode ser vazio.');
-            return;
-        }
-
-        const addMonthButton = this.querySelector('#addMonthButton');
-        const clmid = Number(addMonthButton.dataset.clmid);
-
-        const calendar = this.selection.calendar;
-        let data = {
-            clid: calendar.clid,
-            clmid: clmid || (calendar.months.size + 1) * (-1), // Id Provisório.
-            label: monthName,
-            size: this.sliders.monthSize.value
-        };
-
-        if (this.isCalendarEdit) {
-            data.dbAction = clmid ? 'u' : 'i';
-        }
-
-        calendar.months.add(new CalendarMonths(data));
-        this._realoadCalendarData(calendar);
-    }
-
-    /**
-     * Configura o evento de salva alterações em um mês ao calendário selecionado.
-     * @param {Event} event 
-     */
-    onSaveMonthClick(event) {
-        event.stopPropagation();
-        const addMonthButton = this.querySelector('#addMonthButton');
-        const clmid = Number(addMonthButton.dataset.clmid);        
-
-        const monthName = this.querySelector('#monthName')?.value || '';
-
-        this.calendar.months.get(clmid).label = monthName;
-        this.calendar.months.get(clmid).size = this.sliders.monthSize.value;
-        this.calendar.months.get(clmid).data.dbAction = 'u';
-
-        this._realoadCalendarData(this.calendar);
-    }
-
-    /**
-     * Configura o evento de salvar os dados do calendário selecionado.
-     * @param {Event} event 
-     */
-    async onSaveCalendarClick(event) {
-        event.stopPropagation();
-
-        if (await Dialogs.confirm("Salvar Calendário", "Deseja salvar o calendário?")) {
-
-            let data = {};
-            try {
-                // Inicia uma transação no Banco de Dados.
-                uniforge.db.beginTransaction();
-
-                const calendar = this.selection.calendar;
-
-                // É uma alteração em um Calendário já existente.
-                if (this.isCalendarEdit) {
-                    data = {
-                        clid: calendar.clid,
-                        label: calendar.label,
-                        prefix: calendar.prefix,
-                        suffix: calendar.suffix
-                    }
-
-                    await uniforge.db.updateCalendar(data);
-
-                    for (const day of calendar.days) {
-                        data = {
-                            cldid: day.cldid,
-                            clid: day.clid,
-                            label: day.label,
-                            name: day.name
-                        };
-
-                        await uniforge.db.updateCalendarDays(data);
-                    }
-
-                    for (const month of calendar.months) {
-                        data = {
-                            clmid: month.clmid,
-                            clid: month.clid,
-                            label: month.label,
-                            size: month.size
-                        };
-
-                        if (month.data.dbAction == 'i') {
-                            await uniforge.db.addCalendarMonths(data);
-                        } else if (month.data.dbAction == 'u') {
-                            await uniforge.db.updateCalendarMonths(data);
-                        } else if (month.data.dbAction == 'd') {
-                            await uniforge.db.deleteCalendarMonth(data.clmid);
-                        }
-                    }
-                }
-                // É a criação de um novo Calendário.
-                else {
-                    data = {
-                        clid: calendar.clid,
-                        label: calendar.label,
-                        prefix: calendar.prefix,
-                        suffix: calendar.suffix
-                    }
-
-                    await uniforge.db.addCalendar(data);
-
-                    for (const day of calendar.days) {
-                        data = {
-                            cldid: day.cldid,
-                            clid: day.clid,
-                            label: day.label,
-                            name: day.name
-                        };
-
-                        await uniforge.db.addCalendarDays(data);
-                    }
-
-                    for (const month of calendar.months) {
-                        data = {
-                            clmid: month.clmid,
-                            clid: month.clid,
-                            label: month.label,
-                            size: month.size
-                        };
-
-                        await uniforge.db.addCalendarMonths(data);
-                    }
-                }
-                // Confirma as alterações no Banco de Dados.
-                uniforge.db.commitTransaction();
-                this._clearCalendarData();
-            } catch (error) {
-                // Reverte as alterações no Banco de Dados.
-                uniforge.db.rollbackTransaction(error.message);
-            }
-        }
-    }
-
-    /**
-     * Configura o evento de clique em um mês do calendário selecionado.
-     * @param {Event} event 
-     */
-    onMonthItemClick(event) {
-        event.stopPropagation();
-        const item = event.target.closest('.month-item');
-        const clmid = Number(item.dataset.clmid);
-        const month = this.calendar.months.get(clmid);
-
-        const isDeselect = item.classList.contains('selected');
-
-        this._clearMonthData(!isDeselect);
-
-        if (!isDeselect) {
-            item.classList.toggle('selected');
-
-            const deleteButton = item.querySelector('a.delete-button');
-            deleteButton.classList.remove('hidden');
-
-            const saveMonthButton = this.querySelector('#saveMonthButton');
-            saveMonthButton.classList.remove('hidden');
-
-            this._loadMonthData(month);
-        }
-    }
-
-    /**
-     * Configura o evento de clique para remover um mês do calendário selecionado.
-     * @param {Event} event 
-     */
-    onDeleteMonthClick(event) {
-        event.stopPropagation();
-        const item = event.target.closest('.month-item');
-        const clmid = Number(item.dataset.clmid);
-
-        if (this.isCalendarEdit) {
-            this.calendar.months.get(clmid).data.dbAction = 'd';
-        } else {
-            this.calendar.months.delete(clmid);
-        }
-
-        this._realoadCalendarData(this.calendar);
-    }
-
-    /**
-   * Configura o evento de mudança de tema.
-   * @param {Event} event - O evento de mudança de tema.
-   */
+    * Configura o evento de mudança de tema.
+    * @param {Event} event - O evento de mudança de tema.
+    */
     async onThemeSelectorChange(event) {
         const selectedTheme = event.target.value;
         let theme = 'theme-medieval';
@@ -742,6 +471,18 @@ export default class SettingsForm extends BaseForm {
     }
 
     /**
+    * Configura o evento de abertura do Gerenciador de Calendários.
+    * @param {PointerEvent} event - O evento de clique no botão.
+    */
+    onManageCalendarsClick(event) {
+        event.stopPropagation();
+        const button = event.target.closest('button');
+
+        const form = new uniforge.forms.calendar(button, { callback: this.onCalendarFormClose.bind(this) });
+        form.show(true);
+    }
+
+    /**
     * Configura o evento de abertura do Gerenciador de Capítulos.
     * @param {PointerEvent} event - O evento de clique no botão.
     */
@@ -749,7 +490,7 @@ export default class SettingsForm extends BaseForm {
         event.stopPropagation();
         const button = event.target.closest('button');
 
-        const form = new uniforge.forms.chapter(button, this.onChapterFormClose.bind(this));
+        const form = new uniforge.forms.chapter(button, { callback: this.onChapterFormClose.bind(this) });
         form.show(true);
     }
 
@@ -759,7 +500,7 @@ export default class SettingsForm extends BaseForm {
     */
     onPanelSelect(panel) {
         panel.classList.remove('hidden');
-    }    
+    }
 
     /**
     * Trata o evento de ativação de uma Conexão Externa.
@@ -768,7 +509,7 @@ export default class SettingsForm extends BaseForm {
     onExternalConnectionSwitchChange(event) {
         const isChecked = event.target.checked;
 
-        const externalConnectionGroup = this.querySelector('#databasePanel .external-connection');
+        const externalConnectionGroup = this.querySelector('#mainPanel .external-connection');
         if (isChecked) {
             externalConnectionGroup.classList.remove('hidden');
         } else {
@@ -943,7 +684,7 @@ export default class SettingsForm extends BaseForm {
             // Atualiza o estado dos elements do formulário.
             this.controlStates(this.states.editing);
         }
-    }    
+    }
 
     /**
     * Configura o event de click para os botões de opções do formulário.
@@ -967,40 +708,23 @@ export default class SettingsForm extends BaseForm {
     }
 
     /**
-   * Configura o event de click para os botões de executar uma Stored Procedure
-   * @param {Event} event - O evento de click do botão.
-   */
+    * Configura o event de click para os botões de executar uma Stored Procedure
+    * @param {Event} event - O evento de click do botão.
+    */
     async onExecuteProcClick(event) {
         event.stopPropagation();
         const procedureNameSelect = this.querySelector('#procedureName');
         const selectedOption = procedureNameSelect.selectedOptions[0];
-        const procedure = selectedOption.dataset.name;
-        if (procedure) {
-            const result = await this.db.storedProcedures[procedure]();
-            const selectedPanel = this.querySelector('#databasePanel');
+        const procedureType = selectedOption.closest('optgroup')?.label.toLowerCase() ?? null;
+        const procedure = selectedOption.value;
+        if (procedureType && procedure && await Dialogs.secureConfirm("Executar Stored Procedure?", `Tem certeza que deseja executar a procedure '${procedure}'?`)) {
+            const result = await this.db.storedProcedures[procedureType][procedure]();
+            procedureNameSelect.selectedIndex = -1;
 
-            this.msgBox.showInfo(`Procedure '${procedure}' executada com sucesso. (${result.changes}) linhas alteradas.`);
-            this.onPanelSelect(selectedPanel);
-            await this.refresh();
+            this.msgBox.showInfo(`Procedure '${procedure}' executada com sucesso. (${result.changes}) linhas alteradas.`);            
         }
-    }
-
-    /**
-   * Configura o event de click para os botões de exclusão de tabela.
-   * @param {Event} event - O evento de click do botão.
-   */
-    async onDeleteTableClick(event) {
-        event.stopPropagation();
-        const tableNameSelect = this.querySelector('#tableName');
-        const selectedOption = tableNameSelect.selectedOptions[0];
-        const tableName = selectedOption.dataset.name;
-        if (tableName) {
-            const result = await this.db.deleteTable(tableName);
-            const selectedPanel = this.querySelector('#databasePanel');
-
-            this.msgBox.showInfo(`Tabela '${tableName}' excluída com sucesso.`);
-            this.onPanelSelect(selectedPanel);
-            await this.refresh();
+        else if(!procedureType || !procedure) {
+            this.msgBox.showWarning('Selecione um Stored Procedure para executar.');
         }
     }
 
@@ -1015,7 +739,7 @@ export default class SettingsForm extends BaseForm {
         if (query) {
             const result = await this.db.execQuery(query);
             queryText.value = '';
-            const selectedPanel = this.querySelector('#databasePanel');
+            const selectedPanel = this.querySelector('#advancedPanel');
 
             this.msgBox.showInfo(`Query executada com sucesso. (${result.changes}) linhas alteradas.`);
             this.onPanelSelect(selectedPanel);
@@ -1112,175 +836,6 @@ export default class SettingsForm extends BaseForm {
             this.msgBox.showError(`Erro ao criar tema '${name}'. ${error.message}`, error);
         }
     }
-
-    _loadCalendarData(calendar) {
-        const calendarNameInput = this.querySelector('#calendarName');
-        const calendarPrefixInput = this.querySelector('#calendarPrefix');
-        const calendarSuffixPreInput = this.querySelector('#calendarSuffixPre');
-        const calendarSuffixPosInput = this.querySelector('#calendarSuffixPos');
-
-        calendarNameInput.value = calendar.label;
-        calendarPrefixInput.value = calendar.prefix ?? '';
-
-        if (calendar.suffix && !calendar.suffix.isEmpty()) {
-            const suffix = calendar.suffix.split('|');
-            if (suffix.length === 2) {
-                calendarSuffixPreInput.value = suffix[0];
-                calendarSuffixPosInput.value = suffix[1];
-            } else throw new Error('O sufixo do calendário deve possuir apenas 2 elementos.');
-        }
-
-        const weekDays = calendar.days.toArray();
-        const weekDaysItems = this.querySelectorAll('.calendar-week-days .week-day-item');
-
-        weekDaysItems.forEach(item => {
-            const idx = Number(item.dataset.idx);
-
-            const dayNameInput = this.querySelector(`#day${idx + 1}Name`);
-            dayNameInput.value = weekDays[idx].name;
-            const dayShortNameInput = this.querySelector(`#day${idx + 1}ShortName`);
-            dayShortNameInput.value = weekDays[idx].label;
-        });
-
-        const monthsList = this.querySelector('#monthsList');
-        const months = calendar.months.toArray();
-        months.forEach(month => {
-            if (month.data.dbAction !== 'd') {
-                const element = document.createElement('li');
-                element.classList.add('item', 'month-item');
-                element.dataset.clmid = month.clmid;
-
-                const dataGroup = document.createElement('div');
-                dataGroup.classList.add('data-complex', 'flexrow');
-
-                const nameSpan = document.createElement('span');
-                nameSpan.classList.add('data-label');
-                nameSpan.textContent = month.label;
-
-                const deleteButton = document.createElement('a');
-                deleteButton.classList.add('delete-button', 'flexrow', 'hidden');
-                deleteButton.dataset.tooltip = "Excluir Mês";
-                deleteButton.innerHTML = `<i class="fas fa-trash"></i>`;
-
-                const sizeGroup = document.createElement('div');
-                sizeGroup.classList.add('data-group', 'flexcol');
-
-                const sizeSpan = document.createElement('span');
-                sizeSpan.classList.add('data-value', 'size');
-                sizeSpan.textContent = month.size;
-
-                const daysLabel = document.createElement('span');
-                daysLabel.classList.add('days-label');
-                daysLabel.textContent = 'Dias';
-
-                sizeGroup.appendChild(sizeSpan);
-                sizeGroup.appendChild(daysLabel);
-
-                dataGroup.appendChild(nameSpan);
-                dataGroup.appendChild(deleteButton);
-                dataGroup.appendChild(sizeGroup);
-
-                element.appendChild(dataGroup);
-                monthsList.appendChild(element);
-
-                element.addEventListener('click', (event) => { this.onMonthItemClick(event); });
-                deleteButton.addEventListener('click', (event) => { this.onDeleteMonthClick(event); });
-            }
-        });
-
-        const addMonthButton = this.querySelector('#addMonthButton');
-        addMonthButton.classList.remove('disabled');
-
-        const saveCalendarButton = this.querySelector('#saveCalendarButton');
-        saveCalendarButton.classList.remove('disabled');
-
-        this.selection.calendar = calendar;
-
-        const fieldsets = this.querySelectorAll('.calendar-manager fieldset');
-        fieldsets.forEach(fieldset => fieldset.disabled = false);
-    }
-
-    _clearCalendarData(disableFields = true) {
-        const calendarNameInput = this.querySelector('#calendarName');
-        const calendarPrefixInput = this.querySelector('#calendarPrefix');
-        const calendarSuffixPreInput = this.querySelector('#calendarSuffixPre');
-        const calendarSuffixPosInput = this.querySelector('#calendarSuffixPos');
-
-        calendarNameInput.value = '';
-        calendarPrefixInput.value = '';
-        calendarSuffixPreInput.value = '';
-        calendarSuffixPosInput.value = '';
-
-        const weekDaysItems = this.querySelectorAll('.calendar-week-days .week-day-item');
-
-        weekDaysItems.forEach(item => {
-            const idx = Number(item.dataset.idx);
-
-            const dayNameInput = this.querySelector(`#day${idx + 1}Name`);
-            dayNameInput.value = '';
-            const dayShortNameInput = this.querySelector(`#day${idx + 1}ShortName`);
-            dayShortNameInput.value = '';
-        });
-
-        const monthsList = this.querySelector('#monthsList');
-        monthsList.innerHTML = '';
-
-        this._clearMonthData(disableFields);
-
-        const calendarItems = this.querySelectorAll('.calendar-item');
-        calendarItems.forEach(item => {
-            item.classList.remove('selected');
-        });
-
-        const fieldsets = this.querySelectorAll('.calendar-manager fieldset');
-        fieldsets.forEach(fieldset => fieldset.disabled = disableFields);
-
-        const saveCalendarButton = this.querySelector('#saveCalendarButton');
-        if (disableFields) saveCalendarButton.classList.add('disabled');
-        else saveCalendarButton.classList.remove('disabled');
-
-        this.selection.calendar = null;
-    }
-    _realoadCalendarData(calendar) {
-        this._clearCalendarData(false);
-        this._loadCalendarData(calendar);
-    }
-
-    _loadMonthData(month) {
-        const monthNameInput = this.querySelector('#monthName');
-        monthNameInput.value = month.label;
-
-        this.sliders.monthSize.setValue(month.size);
-
-        const addMonthButton = this.querySelector('#addMonthButton');
-        addMonthButton.dataset.clmid = month.clmid;
-    }
-    _clearMonthData(disableButton = true) {
-        const monthItems = this.querySelectorAll('.month-item');
-        monthItems.forEach(item => {
-            item.classList.remove('selected')
-
-            const deleteButton = item.querySelector('a.delete-button');
-            deleteButton.classList.add('hidden');
-
-            const saveMonthButton = this.querySelector('#saveMonthButton');
-            saveMonthButton.classList.add('hidden');
-        });
-
-        const monthNameInput = this.querySelector('#monthName');
-        monthNameInput.value = '';
-
-        this.sliders.monthSize.setValue(30);
-
-        const addMonthButton = this.querySelector('#addMonthButton');
-        delete addMonthButton.dataset.clmid;
-
-        if (disableButton) addMonthButton.classList.add('disabled');
-        else addMonthButton.classList.remove('disabled');
-
-        const saveMonthButton = this.querySelector('#saveMonthButton');
-        saveMonthButton.classList.add('hidden');
-    }   
 
     /**
      * Lógica de cálculo da escala, espelhando a função em core.mjs.

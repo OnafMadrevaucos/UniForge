@@ -505,63 +505,69 @@ input:checked+.slider::before {
 }
 
 /* ------ Footers ------ */
+.calendars .data-complex.main .footer,
 .footer {
     width: 45%;
     align-self: flex-end;
     justify-content: end;
     gap: var(--default-gap-size);
-    ;
     margin-top: 20px;
     font-size: var(--default-size);
     color: var(--color-d);
     font-weight: 700;
 }
-
+.calendars .data-complex.main .footer:has(.buttons),
 .footer:has(.buttons) {
     width: 100%;
 }
 
+.calendars .data-complex.main .footer button,
 .footer button {
     color: var(--background-color);
 }
 
+.calendars .data-complex.main .footer button.new-entry,
 .footer button.new-entry {
     background-color: var(--highlight-color);
     border: none;
 }
 
+.calendars .data-complex.main .footer button.new-entry:hover,
 .footer button.new-entry:hover {
     background-color: var(--dark-highlight-color);
     box-shadow: var(--new-entry-hover-shadow);
     color: var(--text-color);
 }
 
+.calendars .data-complex.main .footer .buttons,
 .footer .buttons {
     flex: 1;
     gap: var(--default-gap-size);
-    ;
 }
 
+.calendars .data-complex.main .footer .extra.buttons,
 .footer .extra.buttons {
     flex: 25%;
     margin-right: auto;
     justify-content: flex-start;
 }
 
+.calendars .data-complex.main .footer .fixed.buttons,
 .footer .fixed.buttons {
     flex: 1;
     justify-content: flex-end;
 }
 
+.calendars .data-complex.main .footer .buttons button,
 .footer .buttons button {
     flex: 0 0 150px;
     align-self: center;
 }
 
 button.disabled {
-    background-color: var(--background-color);
-    color: var(--text-color);
-    border: var(--filled-border);
+    background-color: var(--background-color) !important;
+    color: var(--disabled-text-color) !important;
+    border: var(--filled-border) !important;
 }
 
 button.disabled:hover {
@@ -1856,7 +1862,7 @@ button.disabled:hover {
 }
 
 .form.container:not(.maximized) .main {
-    display: none;
+    display: none !important;
 }
 
 /* ------ Dialog ------ */
@@ -2465,6 +2471,16 @@ button.disabled:hover {
     margin: 2px;
     width: auto;
 }
+#settings .footer {
+    color: var(--text-color);
+}
+#settings .data-group button {
+    margin: 0;
+    width: 100%;
+    padding-block: 5px;
+    color: var(--text-color);
+    border: var(--filled-border);
+}
 
 .data-group:disabled {
     opacity: 0.5;
@@ -2710,6 +2726,10 @@ ul.list li,
     background: url('../ui/ideologies.jpeg') no-repeat top center / cover;
 }
 
+#chapter .content:before {
+    background: url('../ui/library.jpg') no-repeat top center / cover;
+}
+
 #codex .content::before {
     background: url('../ui/grand-library.jpg') no-repeat top center / cover;
 }
@@ -2861,31 +2881,32 @@ ul.list li,
     box-shadow: none;
 }
 
-#settings #databasePanel .query {
+#settings #advancedPanel .query {
     flex-direction: column;
 }
 
-#settings #databasePanel .query .footer {
+#settings #advancedPanel .query .footer {
     justify-content: flex-end;
 }
 
-#settings #databasePanel .query .footer button {
+#settings #advancedPanel .query .footer button {
     margin: 10px 0;
 }
 
-#settings #databasePanel .query .data-label {
+#settings #advancedPanel .query .data-label {
     flex: 0;
     margin-bottom: 5px;
 }
 
-#settings #databasePanel .query textarea {
+#settings #advancedPanel .query textarea {
     width: var(--fill-width);
     resize: none;
-    background-color: var(--dark-color-a-T50);
+    background-color: var(--light-background-color);
     border-radius: var(--default-border-radius);
     color: var(--text-color);
     overflow-y: auto;
     height: 200px;
+    padding: 5px;
 }
 
 #settings #leafletPanel .scale {
@@ -2900,6 +2921,7 @@ ul.list li,
     flex: 0;
 }
 
+/*
 #settings #loadMapButton {
     margin: 0;
     width: 100%;
@@ -2907,6 +2929,7 @@ ul.list li,
     color: var(--text-color);
     border: var(--filled-border);
 }
+*/
 
 /* ------ Article Type Form ------ */
 .article {
@@ -4357,13 +4380,30 @@ hr.divider {
     background-color: var(--dark-color-b);
 }
 
+.calendars .data-complex.main {
+    flex: 80%;  
+    padding: 5px;  
+}
+
+.calendars .data-complex.main .footer button.new-entry {
+    flex: fit-content;    
+}
+
 .calendars .calendar-manager {
     width: var(--fill-width);
+}
+
+.calendars .calendar-manager #calendarName {
+    flex: 5.2;
 }
 
 .calendars .calendar-manager .calendar-week-days .data-complex {
     gap: var(--small-gap-size);
     text-align: center;
+}
+
+.calendars .calendar-manager .calendar-week-days .data-complex input {
+    width: 9.5em;
 }
 
 .calendars .calendar-manager .month-list {

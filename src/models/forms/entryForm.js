@@ -22,6 +22,7 @@ export default class EntryForm extends SidebarForm {
    * 
    * @param {HTMLElement} title   - O título do formulário.
    * @param {string} type         - O tipo do formulário.
+   * @param {Object} options      - Opções adicionais para configuração do formulário.
    */
   constructor(title, type, options = {}) {
     super(title, options);
@@ -81,6 +82,12 @@ export default class EntryForm extends SidebarForm {
     this.isEventForm = true;
 
     /**
+     * O formulário possui editor de Texto Principal? (true por padrão)
+     * @type {boolean}
+     */
+    this.hasMainEditor = true;
+
+    /**
      * O formulário possui editor de Texto de Floreio? (true por padrão)
      * @type {boolean}
      */
@@ -105,9 +112,9 @@ export default class EntryForm extends SidebarForm {
     this.dataSource = 'entries';
 
     /**
-    * @property {Object} datePickers - Um objeto que gerencia os seletores de data para registro de entradas.
-    * Contém duas instâncias de `DatePicker` para 'startDate' (data de início) e 'endDate' (data de término).
-    */
+     * @property {Object} datePickers - Um objeto que gerencia os seletores de data para registro de entradas.
+     * Contém duas instâncias de `DatePicker` para 'startDate' (data de início) e 'endDate' (data de término).
+     */
     this.datePickers = {
       startDate: new DatePicker('startDate', this),
       endDate: new DatePicker('endDate', this)
@@ -569,6 +576,7 @@ export default class EntryForm extends SidebarForm {
     // Atualiza o estado atual do formulário.
     this.currentState = state;
   }
+  
   /**
    * Recarrega os controles do formulário.
    * @protected
@@ -1948,7 +1956,7 @@ export default class EntryForm extends SidebarForm {
      * @returns {Promise<void>} - Não retorna valor, mas exibe uma mensagem de sucesso ao concluir.
     */
   async _addEntry(data) {
-    let result = await uniforge.db.addEntry(data);
+    let result = await this.db.addEntry(data);
     data.eid = result.addedId;
 
     const events = Object.values(this.#events);
@@ -1976,7 +1984,7 @@ export default class EntryForm extends SidebarForm {
        * @returns {Promise<Object>} - Resultado da execução do comando de atualização.
        */
   async _updateEntry(data) {
-    await uniforge.db.updateEntry(data);
+    await this.db.updateEntry(data);
 
     const events = Object.values(this.#events);
     if (events.length > 0) {
@@ -2002,11 +2010,11 @@ export default class EntryForm extends SidebarForm {
      */
   async _handleEventSave(data, events) {
     for (const e of events) {
-      const result = await uniforge.db.validateEvent(e);
+      const result = await this.db.validateEvent(e);
 
       switch (e.dbAction) {
         case 'd': {
-          await uniforge.db.deleteEvent(e.evid);
+          await this.db.deleteEvent(e.evid);
 
           // Busca por Linhas do Tempo as quais o evento pode ter sido associado.
           const timelines = uniforge.doc.timelines.toArray().find(t => {
@@ -2015,7 +2023,7 @@ export default class EntryForm extends SidebarForm {
 
           if (timelines) {
             for (let timeline of timelines) {
-              await uniforge.db.deleteTimelineEvent(timeline.tid, e.evid);
+              await this.db.deleteTimelineEvent(timeline.tid, e.evid);
             }
           }
         } break;
@@ -2024,14 +2032,14 @@ export default class EntryForm extends SidebarForm {
             this.msgBox.showWarning(result);
             return false;
           }
-          await uniforge.db.addEvent(e);
+          await this.db.addEvent(e);
         } break;
         case 'u': {
           if (result !== '') {
             this.msgBox.showWarning(result);
             return false;
           }
-          await uniforge.db.updateEvent(e);
+          await this.db.updateEvent(e);
         } break;
         default: break;
       }

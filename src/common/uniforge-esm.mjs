@@ -8,6 +8,7 @@ import * as leafletEsm from './leaflet/module.mjs';
 import ArticleForm from '../models/forms/articleForm.js';
 
 import AtlasForm from "../models/forms/atlasForm.js";
+import CalendarForm from "../models/forms/calendarForm.js";
 import ChapterForm from "../models/forms/chapterForm.js";
 import EntityForm from "../models/forms/entityForm.js";
 import HistoryForm from '../models/forms/historyForm.js';
@@ -292,6 +293,7 @@ globalThis.uniforge = {
     forms: Object.freeze({
         article: ArticleForm,
         atlas: AtlasForm,
+        calendar: CalendarForm,
         chapter: ChapterForm,
         entity: EntityForm,
         history: HistoryForm,

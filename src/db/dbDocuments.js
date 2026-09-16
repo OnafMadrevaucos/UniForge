@@ -53,7 +53,7 @@ export default class DBDocuments {
         this.textImages = this.createGenericSet(data.textImages, TextImage);
         this.chapterTypes = this.createGenericSet(data.chapterTypes, ChapterType);
         this.entryTypes = this.createGenericSet(data.entryTypes, EntryType);
-        this.relevances = this.createGenericSet(data.relevances, Relevance);        
+        this.relevances = this.createGenericSet(data.relevances, Relevance);
 
         this.chapters = this.createChapterSet(data.chapters, data.sections);
         this.sections = this.createSectionSet(data.sections, data.entries, data.events);
@@ -236,11 +236,12 @@ export default class DBDocuments {
      * @param {Array<Object>} calendars - Dados da tabela calendars.
      * @param {Array<Object>} calendarsMonths - Dados da tabela calendarsMonths.
      * @param {Array<Object>} calendarsDays - Dados da tabela calendarsDays.
-     * @param {Array<Object>} calendarsDaysInMonths - Dados da tabela calendarsDaysInMonths.
      * @returns {Set} Conjunto de calendários mesclados.
      */
-    createCalendarsMergedSet(calendars, calendarsMonths, calendarsDays, calendarsDaysInMonths) {
+    createCalendarsMergedSet(calendars, calendarsMonths, calendarsDays) {
         const calendarsSet = new Set();
+
+        if (!calendars || !calendarsMonths || !calendarsDays) return calendarsSet;
 
         calendars.forEach((calendar) => {
             const data = {
@@ -291,16 +292,26 @@ export default class DBDocuments {
     createEntrySet(entries, events) {
         const entrySet = new Set();
 
+        if (!entries) return entrySet;
+
         entries.forEach((entry) => {
             let eventsSet = new Set();
-            // Filtra os eventos associados à entrada atual.
-            events
-                .filter((e) => e.source === entry.eid)
-                .forEach((e) => {
-                    e.calendar = this.calendars.get(e.clid);
 
-                    eventsSet.add(new EntryEvent(e));
-                });
+            if (events) {
+                // Filtra os eventos associados à entrada atual.
+                events
+                    .filter((e) => e.source === entry.eid)
+                    .forEach((e) => {
+                        e.calendar = this.calendars.get(e.clid);
+
+                        if (e.calendar) {
+                            eventsSet.add(new EntryEvent(e));
+                        }
+                        else {
+                            console.warn(`Evento sem calendário cadastrado.`);
+                        }
+                    });
+            }
 
             const entryType = this.entryTypes.get(entry.etid);
 
@@ -342,21 +353,29 @@ export default class DBDocuments {
     createEventSet(events) {
         const eventSet = new Set();
 
+        if (!events) return eventSet;
+
         events.forEach((event) => {
             // Adiciona o Calendário usado pelo Evento.
             event.calendar = this.calendars.get(event.clid);
 
-            // Adiciona a Entrada a qual pertence o Evento.
-            event.entry = this.entries.get(event.source);
+            if (event.calendar) {
 
-            // Adiciona o Tipo de Entrada do Evento.
-            event.entryType = new EntryType(this.entryTypes.get(event.etid));
+                // Adiciona a Entrada a qual pertence o Evento.
+                event.entry = this.entries.get(event.source);
 
-            // Adiciona a Relevância do Evento.
-            event.relevance = this.relevances.get(event.relevance);
+                // Adiciona o Tipo de Entrada do Evento.
+                event.entryType = new EntryType(this.entryTypes.get(event.etid));
 
-            // Adiciona o evento ao conjunto.
-            eventSet.add(new EntryEvent(event));
+                // Adiciona a Relevância do Evento.
+                event.relevance = this.relevances.get(event.relevance);
+
+                // Adiciona o evento ao conjunto.
+                eventSet.add(new EntryEvent(event));
+            }
+            else {
+                console.warn(`Evento sem calendário cadastrado.`);
+            }
         });
 
         return eventSet;
@@ -372,6 +391,8 @@ export default class DBDocuments {
      */
     createSectionSet(sections, entries, events) {
         const sectionSet = new Set();
+
+        if (!sections) return sectionSet;
 
         if (this.chapters) {
             sections.forEach((section) => {
@@ -393,8 +414,14 @@ export default class DBDocuments {
                     .filter((event) => event.sid === section.sid)
                     .forEach((event) => {
                         event.calendar = this.calendars.get(event.clid);
-                        // Adiciona o evento ao conjunto
-                        eventSet.add(new EntryEvent(event));
+
+                        if (event.calendar) {
+                            // Adiciona o evento ao conjunto
+                            eventSet.add(new EntryEvent(event));
+                        }
+                        else {
+                            console.warn(`Evento sem calendário cadastrado.`);
+                        }
                     });
 
                 // Adiciona a categoria ao conjunto, incluindo suas entradas
@@ -414,6 +441,8 @@ export default class DBDocuments {
     createSettingsSet(settings) {
         const settingsSet = new SettingsSet();
 
+        if (!settings) return settingsSet;
+
         settings.forEach((setting) => {
             settingsSet.add(`${setting.group}.${setting.tag}`, setting.value);
         });
@@ -429,6 +458,7 @@ export default class DBDocuments {
      * @returns {Set} Conjunto simples dos dados.
      */
     createGenericSet(data, documentClass = BaseDocument) {
+        if (!data) return new Set();
         return new Set(data.map((d) => new documentClass(d)));
     }
 }

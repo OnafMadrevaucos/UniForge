@@ -10,9 +10,9 @@ export default class Calendar extends BaseDocument {
 
     #clid = '';
 
-    get _id() { return this.#clid; }
-    get _label() { return this.data.label; }
-    get clid() { return this.#clid; }
+    get _id() { return this.clid; }
+    get _label() { return this.data.label || ''; }
+    get clid() { return this.#clid || ''; }
     get type() { return 'calendar'; }
 
     get label() { return this.data.label; }

@@ -155,15 +155,19 @@ export default class Slider {
      * Configura o Slider aplicando estilos iniciais e ativando os escutadores de eventos.
      */
     config() {
-        // Define o tamanho do Slider baseado na propriedade inline especificada.
-        this.element.style.width = this.width;
+        if (this.element) {
+            // Define o tamanho do Slider baseado na propriedade inline especificada.
+            this.element.style.width = this.width;
 
-        // Ativa os listeners base do ciclo de vida e desenha a interface.
-        this.activateBaseListeners();
-        this.update();
+            // Ativa os listeners base do ciclo de vida e desenha a interface.
+            this.activateBaseListeners();
+            this.update();
 
-        // Sinaliza que a inicialização foi finalizada com sucesso.
-        this.configured = true;
+            // Sinaliza que a inicialização foi finalizada com sucesso.
+            this.configured = true;
+        } else this.configured = false;
+
+        return this.configured;
     }
 
     /**

@@ -14,14 +14,13 @@ export default class ChapterForm extends SidebarForm {
     * Construtor da classe ChapterForm.
     * 
     * @param {HTMLElement} sourceBtn   - O botão que originou a chamada do formulário.
-    * @param {Entry} entry             - Os dados da Entrada manipulada pelo formulário.
+    * @param {Function} callback             - A função de callback a ser chamada quando o formulário for fechado.
     */
-    constructor(sourceBtn, callback = null) {
+    constructor(sourceBtn, options = { callback: null }) {
         if (!sourceBtn) throw new Error('O botão de origem não pode ser nulo ou indefinido.');
 
         // Chama o construtor da classe pai com o parâmetro overlay.
-        if (callback) super('Gerenciador de Capítulos', 'chapter', { closeCallback: callback });
-        else super('Gerenciador de Capítulos', 'chapter');
+        super('Gerenciador de Capítulos', uniforge.utils.mergeObjects(options, { closeCallback: options.callback }));
 
         /**
         * @type {string} - O modelo HTML utilizado pelo formulário.
