@@ -6,11 +6,11 @@ export default class SidebarForm extends BaseForm {
 
         /**
          * Representa as seleções atuais no formulário.
-         * @type {{ folder: HTMLElement | null, entry: HTMLElement | null }}
+         * @type {{ folder: HTMLElement | null, item: HTMLElement | null }}
          */
         this.selection = {
             folder: null,
-            entry: null,
+            item: null,
         };
 
         /**
@@ -59,7 +59,7 @@ export default class SidebarForm extends BaseForm {
      * @async
      * @returns {object}  - Objeto de dados unificado.
      */
-    prepareData() {
+    async prepareData() {
         this.prepareFolders(this.data);
         return this.data;
     }
@@ -374,7 +374,7 @@ export default class SidebarForm extends BaseForm {
         itemIcon.classList.remove(...itemIcon.classList);
         itemIcon.className = this.selectedIcon;
 
-        this.selection.entry = clickedItem;
+        this.selection.item = clickedItem;
     }
 
     onSearchInput(event) {
@@ -528,6 +528,6 @@ export default class SidebarForm extends BaseForm {
             folderIcon.classList.remove(...folderIcon.classList);
             folderIcon.classList.add('fas', 'fa-file');
         });
-        this.selection.entry = null;
+        this.selection.item = null;
     }
 }

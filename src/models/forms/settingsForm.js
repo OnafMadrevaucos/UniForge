@@ -1,10 +1,13 @@
-import EntryForm from "./entryForm.js";
+import BaseForm from './baseForm.js';
 import Dialogs from '../dialogs/dialog.js';
 import ChapterDialog from "../dialogs/chapterDialog.js";
+import ThemeDialog from "../dialogs/themeDialog.js";
 import DBManager from "../../db/dbManager.js";
 import FilePickerDialog from "../dialogs/filePickerDialog.js";
 import ProgressDialog from "../dialogs/progressDialog.js";
-import Slider from "../slider.js";
+import Slider from "../controls/slider.js";
+
+import CalendarMonths from "../../common/documents/calendarMonths.mjs";
 
 /**
   * Formulário de configurações do sistema.
@@ -12,7 +15,7 @@ import Slider from "../slider.js";
   * @extends BaseForm
   * 
 */
-export default class SettingsForm extends EntryForm {
+export default class SettingsForm extends BaseForm {
     /**
       * Constrói uma instância da classe derivada, inicializando as propriedades e configurando o conteúdo.
       * @class
@@ -38,22 +41,61 @@ export default class SettingsForm extends EntryForm {
         */
         this.isEventForm = false;
 
-        this.slider = new Slider('testSlider', this, { linkedLabel: 'slider-span', labelMask: 'Valor: {value}' });
+        /**
+        * Se trata de um calendário sendo editado.
+        * @type {boolean}
+        */
+        this.isCalendarEdit = false;
+
+        /**
+         * O objeto para armazenar os dados de seleção do formulário.
+         */
+        this.selection = {
+            calendar: null,
+            chapter: null
+        }
+
+        /**
+         * O objeto para armazenar os sliders do formulário.
+         */
+        this.sliders = {
+            monthSize: null
+        };
+    }
+
+    /**
+     * Retorna o calendário selecionado.
+     */
+    get calendar() {
+        return this.selection.calendar;
+    }
+    /**
+     * Retorna o capítulo selecionado.
+     */
+    get chapter() {
+        return this.selection.chapter;
     }
 
     /**@inheritdoc */
     async prepareData() {
+        this.prepareCalendars();
+
         this.prepareGroups();
 
         this.data.tilerHint = 'NodeTiler é uma ferramenta de geração de Tile Maps para uso com a biblioteca Leaflet. ' +
             'Um Tile Map é em si um diretório localizado no \'diretório padrão\' abaixo, altere-o se desejar ' +
             'que os arquivos gerados sejam armazenados em outro diretório.';
 
-        this.prepareThemes();
+        await this.prepareThemes();
 
         await this.prepareMetadata();
 
-        return super.prepareData();
+        this.prepareProcedures();
+    }
+
+    prepareCalendars() {
+        const calendars = uniforge.doc.calendars.toArray();
+        this.data.calendars = calendars;
     }
 
     prepareGroups() {
@@ -75,14 +117,26 @@ export default class SettingsForm extends EntryForm {
         this.data.leaflet.MAX_ZOOM = uniforge.constants.leaflet.MAX_ZOOM;
     }
 
-    prepareThemes() {
+    async prepareThemes() {
+        const extraThemesFiles = await uniforge.fs.readDir(uniforge.urls.relativePath.customCSS);
+
+        const extraThemes = [];
+
+        extraThemesFiles.files.forEach(theme => {
+            const themeName = theme.name;
+            extraThemes.push({
+                _id: `custom/theme-${themeName}`,
+                _label: themeName.capitalize().replaceAll('.css', '')
+            });
+        });
+
         this.data.themes = {
             nativos: [
                 { _id: 'theme-medieval', _label: 'Medieval' },
                 { _id: 'theme-scifi', _label: 'Sci-fi' },
                 { _id: 'theme-neutral', _label: 'Neutro' },
             ],
-            extras: []
+            extras: extraThemes
         };
     }
 
@@ -93,9 +147,19 @@ export default class SettingsForm extends EntryForm {
         this.data.metadata = await data.json();
     }
 
-    /** @override */
-    prepareFolders(data) {
-        data.folders = uniforge.doc.chapters.sort();
+    async prepareProcedures() {
+        const procedures = Object.entries(this.db.storedProcedures);
+        this.data.procedures = Object.fromEntries(
+            procedures.map(([key, procedures]) => [
+                key, 
+                Object.keys(procedures).map(p => {
+                    return {
+                        _id: p,
+                        _label: p,                        
+                    }
+                })
+            ])
+        );
     }
 
     /* ---------------------------------------------------------------------------------------------------------------- */
@@ -131,10 +195,8 @@ export default class SettingsForm extends EntryForm {
 
     /**
      * Configura o conteúdo do formulário.
-     * @param {HTMLElement} form - O elemento que representa o formulário.
     */
-    async configureContent(form) {
-        await super.configureContent(form);
+    async configureContent() {
 
         this.configureMiscPanel();
 
@@ -150,45 +212,32 @@ export default class SettingsForm extends EntryForm {
         const themeSelector = this.querySelector('#themeSelector');
         const selectedTheme = this.data.misc.currentTheme ?? 'theme-neutral';
 
+        const editThemeButton = this.querySelector("#editThemeButton");
+
+        const themePath = localStorage.getItem('uniforge_theme_path') || 'css/themes.css';
+        if (themePath?.includes('custom')) {
+            editThemeButton.innerHTML = '<i class="fas fa-palette"></i';
+            editThemeButton.dataset.tooltip = 'Editar Tema';
+            editThemeButton.dataset.action = 'edit';
+
+            const deleteThemeButton = this.querySelector("#deleteThemeButton");
+            deleteThemeButton.classList.remove('hidden');
+        } else {
+            editThemeButton.innerHTML = '<i class="fas fa-clone"></i';
+            editThemeButton.dataset.tooltip = 'Clonar Tema';
+            editThemeButton.dataset.action = 'clone';
+        }
+
         themeSelector.value = selectedTheme;
         themeSelector.dispatchEvent(new Event('change'));
+
+        this.sliders.monthSize = new Slider('monthSizeSlider', this.form, { min: 1, max: 50, step: 1, value: 30, linkedLabel: 'monthSizeSpan', tooltip: 'Dias do Mês', width: '100%' });
+        this.sliders.monthSize.config();
     }
     /**
     * Configura o conteúdo do panel de Banco de Dados.
     */
     async configureDatabasePanel() {
-        const procedures = this.db.storedProcedures;
-        const proceduresSelect = this.querySelector('#procedureName');
-        proceduresSelect.innerHTML = '';
-
-        let emptyOption = document.createElement('option');
-        emptyOption.innerHTML = '&#8212';
-        proceduresSelect.appendChild(emptyOption);
-
-        Object.values(procedures).forEach(proc => {
-            const option = document.createElement('option');
-            option.dataset.name = proc.name;
-            option.textContent = proc.name.capitalize();
-
-            proceduresSelect.appendChild(option);
-        });
-
-        const tables = await this.db.getAllTables();
-        const allTablesSelect = this.querySelector('#tableName');
-        allTablesSelect.innerHTML = '';
-
-        emptyOption = document.createElement('option');
-        emptyOption.innerHTML = '&#8212';
-        allTablesSelect.appendChild(emptyOption);
-
-        tables.forEach(table => {
-            const option = document.createElement('option');
-            option.dataset.name = table.name;
-            option.textContent = table.name.capitalize();
-
-            allTablesSelect.appendChild(option);
-        });
-
         const externalConnectionSwitch = this.querySelector('#externalConnectionSwitch input#checkbox');
         externalConnectionSwitch.checked = (this.data.database.activeExternalCon === 'true');
         externalConnectionSwitch.dispatchEvent(new Event('change')); // Dispara o evento de mudança para atualizar a interface.
@@ -219,28 +268,45 @@ export default class SettingsForm extends EntryForm {
 
     /* ---------------------------------------------------------------------------------------------------------------- */
     // LISTENERS
+
     /**
     * Configura ouvintes de eventos básicos para o formulário.
     * @inheritdoc
     */
     activateListeners() {
-        super.activateListeners();
+        this.activateOptionsListeners();
 
-        this.configureOptionsListeners();
+        // Eventos do painel de Configurações Gerais.
+        this.activateMainPanelListeners();
 
-        const html = this.ui.app;
+        // Eventos do painel de Banco de Dados.
+        this.activateDatabaseListeners();
 
-        // ------------------------------------------------------------------------------------------------
-        // Eventos do painel de Configurações Gerais ------------------------------------------------------
+        // Eventos do painel do Leaflet®.
+        this.activateLeafletListeners();
+    }
 
+    activateMainPanelListeners() {
         const themeSelector = this.querySelector('#themeSelector');
         themeSelector.addEventListener('change', (event) => { this.onThemeSelectorChange(event); });
 
-        this.slider.activateBaseListeners();
+        const newThemeButton = this.querySelector('#newThemeButton');
+        newThemeButton.addEventListener('click', (event) => { this.onNewThemeClick(event); });
 
-        // ------------------------------------------------------------------------------------------------
-        // Eventos do painel de Banco de Dados ------------------------------------------------------------      
+        const editThemeButton = this.querySelector("#editThemeButton");
+        editThemeButton.addEventListener('click', (event) => { this.onEditThemeClick(event); });
 
+        const deleteThemeButton = this.querySelector("#deleteThemeButton");
+        deleteThemeButton.addEventListener('click', (event) => { this.onDeleteThemeClick(event); });
+
+        const manageCalendarsButton = this.querySelector('#manageCalendarsButton');
+        manageCalendarsButton.addEventListener('click', (event) => { this.onManageCalendarsClick(event); });
+
+        const manageChaptersButton = this.querySelector('#manageChaptersButton');
+        manageChaptersButton.addEventListener('click', (event) => { this.onManageChaptersClick(event); });
+    }
+
+    activateDatabaseListeners() {
         const externalConnectionSwitch = this.querySelector('#externalConnectionSwitch input#checkbox');
         externalConnectionSwitch.addEventListener('change', (event) => { this.onExternalConnectionSwitchChange(event); });
 
@@ -251,10 +317,7 @@ export default class SettingsForm extends EntryForm {
         createConnectionButton.addEventListener('click', (event) => { this.onCreateConnectionClick(event); });
 
         const executeProcButton = this.querySelector('#procedureButton');
-        executeProcButton.addEventListener('click', (event) => { this.onExecuteProcClick(event); });
-
-        const deleteTableButton = this.querySelector('#deleteTableButton');
-        deleteTableButton.addEventListener('click', (event) => { this.onDeleteTableClick(event); });
+        executeProcButton.addEventListener('click', (event) => { this.onExecuteProcClick(event); });        
 
         const queryButton = this.querySelector('#queryButton');
         queryButton.addEventListener('click', (event) => { this.onExecuteQuery(event); });
@@ -264,15 +327,10 @@ export default class SettingsForm extends EntryForm {
 
         // O panel padrão é sempre o panel de Banco de Dados
         this.configureDatabasePanel();
+    }
 
-        // ------------------------------------------------------------------------------------------------
-        // Eventos do painel de Capítulos -----------------------------------------------------------------
-
-        const newChapterButton = this.querySelector('#newChapterButton');
-        newChapterButton.addEventListener('click', (event) => { this.onNewChapterClick(event) });
-
-        // ------------------------------------------------------------------------------------------------
-        // Eventos do painel do Leaflet® ------------------------------------------------------------------
+    activateLeafletListeners() {
+        const html = this.ui.app;
 
         const defaultMapButton = this.querySelector('#defaultMapButton');
         defaultMapButton.addEventListener('click', (event) => { this.onDefaultMapClick(event) });
@@ -288,14 +346,12 @@ export default class SettingsForm extends EntryForm {
 
         // Aciona o cálculo inicial ao carregar
         this._onCalculateScale();
-
-        // ------------------------------------------------------------------------------------------------
     }
 
     /**
-   * Configura os ouvidores de Eventos do menu de opções do formulário.
-   */
-    configureOptionsListeners() {
+    * Configura os ouvidores de Eventos do menu de opções do formulário.
+    */
+    activateOptionsListeners() {
         const options = this.querySelector('.tabs-options');
         const buttons = options.querySelectorAll('button');
 
@@ -305,50 +361,145 @@ export default class SettingsForm extends EntryForm {
     }
 
     /**
-   * Configura o evento de mudança de tema.
-   * @param {Event} event - O evento de mudança de tema.
-   */
+    * Configura o evento ao fechar o formulário do Gerenciador de Calendários.
+    * @param {Event} event 
+    */
+    onCalendarFormClose(event) {
+
+    }
+
+    /**
+    * Configura o evento ao fechar o formulário do Gerenciador de Capítulo.
+    * @param {Event} event 
+    */
+    onChapterFormClose(event) {
+
+    }
+
+    /**
+    * Configura o evento de mudança de tema.
+    * @param {Event} event - O evento de mudança de tema.
+    */
     async onThemeSelectorChange(event) {
         const selectedTheme = event.target.value;
-        document.documentElement.setAttribute('data-theme', selectedTheme);
-        localStorage.setItem('uniforge_theme', selectedTheme);
+        let theme = 'theme-medieval';
+        let themePath = 'css/themes.css';
+
+        const isExtra = selectedTheme.includes("custom");
+        const editThemeButton = this.querySelector("#editThemeButton");
+        const deleteThemeButton = this.querySelector("#deleteThemeButton");
+
+        if (isExtra) {
+            theme = (selectedTheme.split('/')[1]).replaceAll('.css', '');
+            themePath = `css/${selectedTheme.replaceAll('theme-', '')}`;
+
+            editThemeButton.innerHTML = '<i class="fas fa-palette"></i>';
+            editThemeButton.dataset.tooltip = 'Editar Tema';
+            editThemeButton.dataset.action = 'edit';
+
+            deleteThemeButton.classList.remove('hidden');
+        }
+        else {
+            theme = selectedTheme;
+            editThemeButton.innerHTML = '<i class="fas fa-clone"></i>';
+            editThemeButton.dataset.tooltip = 'Clonar Tema';
+            editThemeButton.dataset.action = 'clone';
+
+            deleteThemeButton.classList.add('hidden');
+        }
+
+        const themeLink = document.getElementById("themeLink");
+        themeLink.href = themePath;
+
+        document.documentElement.setAttribute('data-theme', theme);
+        localStorage.setItem('uniforge_theme', theme);
+        localStorage.setItem('uniforge_theme_path', themePath);
 
         await uniforge.settings.set('misc.currentTheme', selectedTheme);
     }
 
-    /**
-   * Configura o conteúdo da opção selecionada.
-   * @param {HTMLElement} panel - O elemento que representa o panel carregado.
-   */
-    onPanelSelect(panel) {
-        panel.classList.remove('hidden');
+    async onNewThemeClick(event) {
+        event.stopPropagation();
+
+        const theme = await ThemeDialog.configDialog();
+        if (theme) {
+            await this._saveTheme(theme);
+        }
+    }
+
+    async onEditThemeClick(event) {
+        event.stopPropagation();
+        const button = event.target.closest('a.button');
+
+        const isClone = button.dataset.action === 'clone';
+
+        const themeSelector = this.querySelector("#themeSelector");
+        const selectedOption = themeSelector.options[themeSelector.selectedIndex];
+
+        const css = { ...uniforge.theme.current, '--name': isClone ? '' : selectedOption.label };
+
+        const theme = await ThemeDialog.configDialog(css, { isEdit: true, isClone: isClone });
+        if (theme) {
+            await this._saveTheme(theme, { isEdit: true });
+        }
+    }
+
+    async onDeleteThemeClick(event) {
+        event.stopPropagation();
+
+        if (await Dialogs.confirm("Deletar Tema?", "Tem certeza que deseja deletar o tema selecionado?")) {
+            const themeSelector = this.querySelector("#themeSelector");
+            const selectedOption = themeSelector.options[themeSelector.selectedIndex];
+            const name = themeSelector.value.toLowerCase().replaceAll(' ', '-').replaceAll('custom/', '').replaceAll('theme-', '');
+
+            const url = uniforge.urls.customCSS;
+            const fileName = name;
+
+            const result = await uniforge.fs.deleteFile(`${url}/${fileName}`);
+            if (result.sucess) {
+                this.msgBox.showInfo(`Tema '${selectedOption.label}' deletado com sucesso.`);
+                uniforge.theme.refresh('theme-neutral', 'css/themes.css');
+                themeSelector.value = 'theme-neutral';
+                themeSelector.dispatchEvent(new Event('change'));
+
+                this.refresh();
+            }
+            else {
+                this.msgBox.showError(`Erro ao deletar tema '${selectedOption.label}'. ${result.error}`);
+            }
+        }
     }
 
     /**
-       * Gerencia cliques em pastas.
-       * @param {MouseEvent} event - O evento de clique.
-       * @protected
-       */
-    onFolderClick(event) {
-        super.onFolderClick(event);
+    * Configura o evento de abertura do Gerenciador de Calendários.
+    * @param {PointerEvent} event - O evento de clique no botão.
+    */
+    onManageCalendarsClick(event) {
+        event.stopPropagation();
+        const button = event.target.closest('button');
 
-        const clickedFolder = event.target.closest('.folder');
-        const chapterId = clickedFolder.dataset.id;
-        const chapter = uniforge.doc.chapters.get(chapterId);
-        const isSelected = clickedFolder.classList.contains('selected');
+        const form = new uniforge.forms.calendar(button, { callback: this.onCalendarFormClose.bind(this) });
+        form.show(true);
+    }
 
-        this._handleLineageIcon(chapter);
+    /**
+    * Configura o evento de abertura do Gerenciador de Capítulos.
+    * @param {PointerEvent} event - O evento de clique no botão.
+    */
+    onManageChaptersClick(event) {
+        event.stopPropagation();
+        const button = event.target.closest('button');
 
-        // Se formulário for o da Enciclopédia, e o estado do formulário seja o 'newEntry' ou 
-        // o 'default', carregue ícone do Assunto.
-        if (this.currentState <= this.states.newEntry) {
-            // Carregue ícone apenas se a pasta estiver sendo selecionada.            
-            if (isSelected) {
-                this._loadTomeIcon(clickedFolder);
-                this.controlStates(this.states.newEntry);
-            } else
-                this.controlStates(this.states.default);
-        }
+        const form = new uniforge.forms.chapter(button, { callback: this.onChapterFormClose.bind(this) });
+        form.show(true);
+    }
+
+    /**
+    * Configura o conteúdo da opção selecionada.
+    * @param {HTMLElement} panel - O elemento que representa o panel carregado.
+    */
+    onPanelSelect(panel) {
+        panel.classList.remove('hidden');
     }
 
     /**
@@ -358,7 +509,7 @@ export default class SettingsForm extends EntryForm {
     onExternalConnectionSwitchChange(event) {
         const isChecked = event.target.checked;
 
-        const externalConnectionGroup = this.querySelector('#databasePanel .external-connection');
+        const externalConnectionGroup = this.querySelector('#mainPanel .external-connection');
         if (isChecked) {
             externalConnectionGroup.classList.remove('hidden');
         } else {
@@ -494,8 +645,6 @@ export default class SettingsForm extends EntryForm {
     */
     async onCancelClick(event) {
         event.stopPropagation();
-
-        super.onCancelClick(event);
         this.clearContent();
     }
 
@@ -538,20 +687,6 @@ export default class SettingsForm extends EntryForm {
     }
 
     /**
-    * Gera um novo assunto.
-    * @param {Event} event - Evento de clique no botão.
-    */
-    async onNewChapterClick(event) {
-        event.stopPropagation();
-
-        const chapter = await ChapterDialog.configDialog();
-        if (chapter) {
-            await uniforge.db.addChapter(chapter);
-            this.refresh();
-        }
-    }
-
-    /**
     * Configura o event de click para os botões de opções do formulário.
     * @param {Event} event - O evento de click do botão.
     */
@@ -573,40 +708,23 @@ export default class SettingsForm extends EntryForm {
     }
 
     /**
-   * Configura o event de click para os botões de executar uma Stored Procedure
-   * @param {Event} event - O evento de click do botão.
-   */
+    * Configura o event de click para os botões de executar uma Stored Procedure
+    * @param {Event} event - O evento de click do botão.
+    */
     async onExecuteProcClick(event) {
         event.stopPropagation();
         const procedureNameSelect = this.querySelector('#procedureName');
         const selectedOption = procedureNameSelect.selectedOptions[0];
-        const procedure = selectedOption.dataset.name;
-        if (procedure) {
-            const result = await this.db.storedProcedures[procedure]();
-            const selectedPanel = this.querySelector('#databasePanel');
+        const procedureType = selectedOption.closest('optgroup')?.label.toLowerCase() ?? null;
+        const procedure = selectedOption.value;
+        if (procedureType && procedure && await Dialogs.secureConfirm("Executar Stored Procedure?", `Tem certeza que deseja executar a procedure '${procedure}'?`)) {
+            const result = await this.db.storedProcedures[procedureType][procedure]();
+            procedureNameSelect.selectedIndex = -1;
 
-            this.msgBox.showInfo(`Procedure '${procedure}' executada com sucesso. (${result.changes}) linhas alteradas.`);
-            this.onPanelSelect(selectedPanel);
-            await this.refresh();
+            this.msgBox.showInfo(`Procedure '${procedure}' executada com sucesso. (${result.changes}) linhas alteradas.`);            
         }
-    }
-
-    /**
-   * Configura o event de click para os botões de exclusão de tabela.
-   * @param {Event} event - O evento de click do botão.
-   */
-    async onDeleteTableClick(event) {
-        event.stopPropagation();
-        const tableNameSelect = this.querySelector('#tableName');
-        const selectedOption = tableNameSelect.selectedOptions[0];
-        const tableName = selectedOption.dataset.name;
-        if (tableName) {
-            const result = await this.db.deleteTable(tableName);
-            const selectedPanel = this.querySelector('#databasePanel');
-
-            this.msgBox.showInfo(`Tabela '${tableName}' excluída com sucesso.`);
-            this.onPanelSelect(selectedPanel);
-            await this.refresh();
+        else if(!procedureType || !procedure) {
+            this.msgBox.showWarning('Selecione um Stored Procedure para executar.');
         }
     }
 
@@ -621,7 +739,7 @@ export default class SettingsForm extends EntryForm {
         if (query) {
             const result = await this.db.execQuery(query);
             queryText.value = '';
-            const selectedPanel = this.querySelector('#databasePanel');
+            const selectedPanel = this.querySelector('#advancedPanel');
 
             this.msgBox.showInfo(`Query executada com sucesso. (${result.changes}) linhas alteradas.`);
             this.onPanelSelect(selectedPanel);
@@ -688,49 +806,35 @@ export default class SettingsForm extends EntryForm {
         uniforge.ctrls.progressDialog.close();
     }
 
-    _handleLineageIcon(subject) {
-        const lineageIcon = this.querySelector('#lineageIcon');
-        if (subject.isLineage) lineageIcon.classList.remove('hidden');
-        else lineageIcon.classList.add('hidden');
-    }
+    async _saveTheme(theme, options = { isEdit: false }) {
+        try {
+            const url = uniforge.urls.customCSS;
+            const name = theme['--name'].replaceAll(' ', '-').toLowerCase();
+            delete theme['--name'];
 
-    /**
-   * Carrega ícone da raíz do assunto.
-   * @protected
-   * @async
-   * @param {HTMLElement} folder - Objeto com os dados da pasta do Assunto.
-   */
-    async _loadTomeIcon(folder) {
-        const cid = folder.dataset.id;
-        let chapter = await uniforge.db.getChapterTome(cid);
+            const fileName = `${name}.css`;
 
-        if (chapter) {
-            const typeLabel = this.querySelector('#typeLabel');
-            const dataIcon = this.querySelector('#dataIcon');
-            const chapterIcon = this.querySelector('#chapterIcon');
+            const data = `:root[data-theme=\"theme-${name}\"] {\n${Object.entries(theme).map(([key, value]) => {
+                if (value.startsWith('var(') || value.startsWith('#') || key.includes("radius") || key.includes('--default-font')) return `${key}: ${value};`;
+                else return `${key}: "${value}";`;
+            }).join('\n')
+                }}`;
 
-            typeLabel.textContent = chapter.title;
+            const result = await uniforge.fs.writeFile(url, fileName, data);
+            if (result.sucess) {
+                if (options.isEdit) this.msgBox.showInfo(`Tema '${name}' alterado com sucesso.`);
+                else this.msgBox.showInfo(`Tema '${name}' criado com sucesso.`);
 
-            dataIcon.dataset.tooltip = chapter.tome.capitalize();
-            chapterIcon.classList.remove(...chapterIcon.classList);
-            chapterIcon.className = chapter.icon;
+                uniforge.theme.refresh(`theme-${name}`, `css/custom/${fileName}`);
+                this.refresh();
+            }
+            else {
+                this.msgBox.showError(`Erro ao criar tema '${name}'. ${result.error}`);
+            }
         }
-    }
-    /**
-     * Carrega ícone da raíz do assunto.
-     * @protected
-     * @async
-     */
-    async _clearRootIcon() {
-        const typeLabel = this.querySelector('#typeLabel');
-        const dataIcon = this.querySelector('#dataIcon');
-        const chapterIcon = this.querySelector('#chapterIcon');
-
-        typeLabel.innerHTML = '&#8212';
-
-        dataIcon.dataset.tooltip = 'Escolha um assunto...';
-        chapterIcon.classList.remove(...chapterIcon.classList);
-        chapterIcon.className = 'fa-regular fa-file';
+        catch (error) {
+            this.msgBox.showError(`Erro ao criar tema '${name}'. ${error.message}`, error);
+        }
     }
 
     /**

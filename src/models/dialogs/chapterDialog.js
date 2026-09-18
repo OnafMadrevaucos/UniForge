@@ -17,12 +17,7 @@ export default class ChapterDialog extends BaseDialog {
    */
   async prepareData() {
     this.data.tomes = uniforge.doc.tomes.toArray();
-    this.data.chapterTypes = uniforge.doc.chapterTypes.toArray();
-
-    Object.keys(this.data.tomes).forEach((key) => {
-      const item = this.data.tomes[key];
-      item._label = item.label;
-    });
+    this.data.chapterTypes = uniforge.doc.chapterTypes.toArray();    
 
     this.data.icons = await uniforge.utils.getFontAwesomeIcons();
   }
@@ -63,8 +58,11 @@ export default class ChapterDialog extends BaseDialog {
       const value = item.dataset.value.toLowerCase();
       if (value.indexOf(filter) > -1) {
         item.style.display = '';
+        const iconElement = item.querySelector('i');
+        item.innerHTML = `${iconElement.outerHTML} ${uniforge.parser.applyHighlight(item.textContent, filter)}`;
       } else {
         item.style.display = 'none';
+        uniforge.parser.removeHighlight(item);
       }
     });
   }

@@ -2,8 +2,10 @@ import { app, BrowserWindow, Menu, globalShortcut, ipcMain, dialog } from 'elect
 import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
+import css from 'css';
 import Database from 'better-sqlite3';
 import { result } from 'lodash-es';
+import fontList from "font-list";
 import NodeTiler from './modules/nodetiler/nodeTiler.mjs';
 
 // Para resolver o `__dirname` no modo ESM
@@ -32,7 +34,7 @@ Menu.setApplicationMenu(null);
 app.whenReady().then(() => {
   console.log('============================= UNIFORGE ============================');
   CreateWindow();
-  console.log('UniForge | Criando a Tela Principal.');
+  log('Criando a Tela Principal.');
 
   mainWindow.webContents.openDevTools();
 
@@ -59,7 +61,7 @@ app.whenReady().then(() => {
       mainWindow.webContents.openDevTools();
     }
   });
-  console.log('UniForge | Registrando Atalhos.');
+  log('Registrando Atalhos.');
 
   ipcMain.handle('get-dir', (event) => { return __dirname; });
 
@@ -97,6 +99,13 @@ app.whenReady().then(() => {
   * @returns {Object} - Resultado da execução.
   */
   ipcMain.handle('select-file', (event, type) => selectFile(type));
+
+  /**
+  * Manipulador para carregar a lista de fontes usando a API do Electron.
+  * @param {Electron.IpcMainEvent} event - O evento IPC recebido.
+  * @returns {Object} - Resultado da execução.
+  */
+  ipcMain.handle('get-fonts', (event) => listFonts());
 
   /**
    * Manipulador para unir caminhos relativos dentro da pasta `src`.
@@ -148,6 +157,22 @@ app.whenReady().then(() => {
   ipcMain.handle('copy-file', (event, src, dest) => copyFile(src, dest));
 
   /**
+   * Manipulador para escrever dados em um arquivo em um determinado diretório.
+   * @param {Electron.IpcMainEvent} event - O evento IPC recebido.
+   * @param {string} path - O caminho onde o arquivo será salvo.
+   * @param {string} name - O nome do arquivo com a extensão.
+   * @param {Buffer} data - O buffer de dados a serem escritos no arquivo.
+   */
+  ipcMain.handle('write-file', (event, path, name, buffer) => writeFile(path, name, buffer));
+
+  /**
+   * Manipulador para remoção de um arquivo em um determinado diretório.
+   * @param {Electron.IpcMainEvent} event - O evento IPC recebido.
+   * @param {string} path - O caminho do arquivo a ser deletado.
+   */
+  ipcMain.handle('delete-file', (event, path) => deleteFile(path));
+
+  /**
    * Manipulador para ler o conteúdo de um diretório.
    * @param {Electron.IpcMainEvent} event - O evento IPC recebido.
    * @param {string} filePath - O caminho do diretório a ser lido.
@@ -162,6 +187,14 @@ app.whenReady().then(() => {
    * @returns {Buffer} - O conteúdo do diretório lido.
    */
   ipcMain.handle('list-files', (event, filePath) => listFiles(filePath));
+
+  /**
+   * Manipulador para converter regras CSS para a estrutura JSON.
+   * @param {Electron.IpcMainEvent} event - O evento IPC recebido.
+   * @param {string} filePath - O caminho do arquivo a ser lido.
+   * @returns {Object} - O conteúdo do arquivo lido.
+   */
+  ipcMain.handle('CSS-to-JSON', (event, filePath) => parseCSStoJSON(filePath));
 
   /**
    * Manipulador para buscar templates de arquivos.
@@ -182,7 +215,7 @@ app.whenReady().then(() => {
     if (activeTiler) activeTiler.cancel();
   });
 
-  console.log('UniForge | Criando requisição de Renders.');
+  log('Criando requisição de Renders.');
 });
 
 app.on('will-quit', () => {
@@ -243,6 +276,23 @@ function CreateWindow() {
     mainWindow = null;
   });
 }
+
+function log(message, err = null) {
+  const agora = new Date();
+  const dataHora = agora.toLocaleString("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit"
+  });
+
+  if (err) {
+    console.error(`${dataHora} - Uniforge | ${message}`, err.message);
+    return;
+  } else console.log(`${dataHora} - Uniforge | ${message}`);
+}
 // ------------------ FUNÇÕES RENDERER ------------------
 
 /**
@@ -259,7 +309,7 @@ function dbQuery(query, params = []) {
     const result = statement.all(...params); // Executa a consulta e retorna todos os resultados
     return result;
   } catch (err) {
-    console.error('UniForge | Erro no banco de dados:', err.message);
+    log('Erro no banco de dados:', err);
     throw err;
   }
 }
@@ -275,17 +325,18 @@ function dbQuery(query, params = []) {
 function dbExec(query, params = []) {
   try {
     const statement = db.prepare(query);
+    log(`Executando comando: ${Object.values(statement).join(', ')}`);
     const result = statement.run(...params); // Executa um comando (INSERT, UPDATE, DELETE)
     return result;
   } catch (err) {
-    console.error('UniForge | Erro no banco de dados:', err.message);
+    log('Erro no banco de dados:', err);
     throw err;
   }
 }
 
 function refreshWindow() {
   if (mainWindow) {
-    console.log('UniForge | Recarregando a Janela Principal.');
+    log('Recarregando a Janela Principal.');
     mainWindow.reload();
   }
 }
@@ -340,17 +391,19 @@ function pathExtname(filePath) {
  * Salva um buffer de dados em um arquivo PDF.
  *
  * @param {string} path - O caminho completo do arquivo a ser salvo.
- * @param {string} name - O nome do arquivo sem a extens o.
+ * @param {string} name - O nome do arquivo sem a extensão.
  * @param {Buffer} buffer - O buffer de dados do PDF.
+ * 
+ * @async
  */
 function savePDF(target, name, buffer) {
-  console.log(target);
+  log(target);
   const fullPath = path.join(__srcname, target);
   fs.writeFile(fullPath, buffer, (error) => {
     if (error) {
-      console.error('Erro ao salvar o PDF:', error);
+      log('Erro ao salvar o PDF:', error);
     } else {
-      console.log('PDF salvo com sucesso em:', path);
+      log('PDF salvo com sucesso em:' + path);
     }
   });
 }
@@ -378,6 +431,70 @@ function copyFile(src, dest) {
   } catch {
     return false;
   }
+}
+
+/**
+ * Escreve dados em um arquivo.
+ * @param {string} url    - O caminho completo do arquivo a ser salvo.
+ * @param {string} name   - O nome do arquivo com a extensão.
+ * @param {Buffer} buffer - O buffer de dados do arquivo.
+ * @param {object} options - Opções adicionais para a escrita do arquivo.
+ * 
+ * @async
+ */
+async function writeFile(url, name, buffer, options = { forceDir: true, encoding: "utf8" }) {
+  return new Promise(async (resolve, reject) => {
+    // Verifica se o diretório de destino existe, caso contrário, cria-o
+    if (options.forceDir && !fs.existsSync(url)) {
+      fs.mkdirSync(url);
+    }
+
+    // Gera o caminho completo do arquivo a ser salvo.
+    const fullPath = path.join(url, name);
+
+    // Escreve o buffer de dados no arquivo.
+    const result = await fs.writeFile(fullPath, buffer, (error) => {
+      if (!error) {
+        console.log('Arquivo salvo com sucesso em:', fullPath);
+        resolve({
+          sucess: true,
+          error: null
+        });
+      } else {
+        console.error('Erro ao salvar o arquivo:', error);
+        resolve({
+          sucess: false,
+          error: error.message
+        });
+      }
+    });
+  });
+}
+
+/**
+ * Remove um arquivo de um determinado diretório.
+ * @param {string} path    - O caminho completo do arquivo a ser deletado.
+ * 
+ * @async
+ */
+async function deleteFile(path) {
+  return new Promise(async (resolve, reject) => {
+    fs.rm(path, { recursive: true, force: true }, (error) => {
+      if (!error) {
+        console.log('Arquivo deletado com sucesso em:', path);
+        resolve({
+          sucess: true,
+          error: null
+        });
+      } else {
+        console.error('Erro ao deletar o arquivo:', error);
+        resolve({
+          sucess: false,
+          error: error.message
+        });
+      }
+    });
+  });
 }
 
 /**
@@ -444,6 +561,47 @@ function listFiles(dir) {
 }
 
 /**
+ * Transforma um arquivo CSS em um objeto JSON.
+ * @param {string} filePath - O caminho absoluto do diretório a ser lido.
+ * @returns {Object}        - O Objeto JSON construido.
+ */
+function parseCSStoJSON(filePath) {
+  try {
+    // 1. Lê o conteúdo do arquivo CSS usando fs
+    const cssContent = fs.readFileSync(filePath, 'utf-8');
+
+    // 2. Transforma o texto CSS em AST (Estrutura de Árvore Sintática)
+    const parsedCSS = css.parse(cssContent, { source: filePath });
+
+    const resultJSON = {};
+
+    // 3. Varre as regras do CSS e constrói o objeto JSON
+    parsedCSS.stylesheet.rules.forEach(rule => {
+      // Processa apenas regras comuns de estilo (ignora @import, @keyframes etc se não preciso)
+      if (rule.type === 'rule') {
+        rule.selectors.forEach(selector => {
+          if (!resultJSON[selector]) {
+            resultJSON[selector] = {};
+          }
+
+          // Adiciona cada propriedade CSS (declarations) ao seletor correspondente
+          rule.declarations.forEach(declaration => {
+            if (declaration.type === 'declaration') {
+              resultJSON[selector][declaration.property] = declaration.value;
+            }
+          });
+        });
+      }
+    });
+
+    return Object.values(resultJSON)[0] ?? resultJSON;
+  } catch (error) {
+    console.error('Erro ao ler ou converter o arquivo CSS:', error);
+    return null;
+  }
+}
+
+/**
  * Obtém um template de Handlebars.
  * 
  * @async
@@ -464,11 +622,11 @@ async function getTemplate(fileName, id) {
     });
     const compiled = Handlebars.compile(htmlString);
     Handlebars.registerPartial(id ?? filePath, compiled);
-    console.log(`UniForge | Template '${filePath}' obtido e compilado com sucesso.`);
+    log(`Template '${filePath}' obtido e compilado com sucesso.`);
     console.log(compiled);
     return compiled;
   } catch (err) {
-    console.error('UniForge | Erro ao carregar template: ', err.message);
+    log('Erro ao carregar template: ', err);
     throw err;
   }
 }

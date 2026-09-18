@@ -156,7 +156,7 @@ export default class LinkDialog extends BaseDialog {
         data.folders = folders.sort();
     }
 
-    async configureElements() {
+    async configureContent() {
         this.configureLists();
     }
 

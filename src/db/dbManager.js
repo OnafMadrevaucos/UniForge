@@ -5,24 +5,56 @@ import DBDocuments from "./dbDocuments.js";
 export default class DBManager {
     constructor() {
         this.storedProcedures = {
-            createCalendarTable: () => this.createCalendarTable(),
-            createMonthsTable: () => this.createMonthsTable(),
-            createDaysTable: () => this.createDaysTable(),
-            createEntryTypeTable: () => this.createEntryTypeTable(),
-            createRelevanceTable: () => this.createRelevanceTable(),
-            createChapterTable: () => this.createChapterTable(),
-            createSectionTable: () => this.createSectionTable(),
-            createEntryTable: () => this.createEntryTable(),
-            createEventTable: () => this.createEventTable(),
-            createLineageTreeTable: () => this.createLineageTreeTable(),
-            createLineageTypeTable: () => this.createLineageTypeTable(),
-            createLineageTreeEntriesTable: () => this.createLineageTreeEntriesTable(),
-            createMapTable: () => this.createMapTable(),
-            createMapElementsTable: () => this.createMapElementsTable(),
-            createTimelineTable: () => this.createTimelineTable(),
-            createTimelineEventsTable: () => this.createTimelineEventsTable(),
-            createTextImagesTable: () => this.createTextImagesTable(),
-            createSettingsTable: () => this.createSettingsTable()
+            create: {
+                createCalendarTable: () => this.createCalendarTable(),
+                createMonthsTable: () => this.createMonthsTable(),
+                createDaysTable: () => this.createDaysTable(),
+                createEntryTypeTable: () => this.createEntryTypeTable(),
+                createRelevanceTable: () => this.createRelevanceTable(),
+                createChapterTable: () => this.createChapterTable(),
+                createSectionTable: () => this.createSectionTable(),
+                createEntryTable: () => this.createEntryTable(),
+                createEventTable: () => this.createEventTable(),
+                createLineageTreeTable: () => this.createLineageTreeTable(),
+                createLineageTypeTable: () => this.createLineageTypeTable(),
+                createLineageTreeEntriesTable: () => this.createLineageTreeEntriesTable(),
+                createMapTable: () => this.createMapTable(),
+                createMapElementsTable: () => this.createMapElementsTable(),
+                createTimelineTable: () => this.createTimelineTable(),
+                createTimelineEventsTable: () => this.createTimelineEventsTable(),
+                createTextImagesTable: () => this.createTextImagesTable(),
+                createSettingsTable: () => this.createSettingsTable()
+            },
+            populate: {
+                populateMapTable: () => this.populateMapTable(),
+                populateTomeTable: () => this.populateTomeTable(),
+                populateEntryTypeTable: () => this.populateEntryTypeTable(),
+                populateRelevanceTable: () => this.populateRelevanceTable(),
+                populateSettingsTable: () => this.populateSettingsTable(),
+                populateCalendarsTable: () => this.populateCalendarsTable(),
+                populateMonthsTable: () => this.populateMonthsTable(),
+                populateDaysTable: () => this.populateDaysTable(),
+            },
+            delete: {
+                deleteCalendarTable: () => this.deleteCalendarTable(),
+                deleteMonthsTable: () => this.deleteMonthsTable(),
+                deleteDaysTable: () => this.deleteDaysTable(),
+                deleteEntryTypeTable: () => this.deleteEntryTypeTable(),
+                deleteRelevanceTable: () => this.deleteRelevanceTable(),
+                deleteChapterTable: () => this.deleteChapterTable(),
+                deleteSectionTable: () => this.deleteSectionTable(),
+                deleteEntryTable: () => this.deleteEntryTable(),
+                deleteEventTable: () => this.deleteEventTable(),
+                deleteLineageTreeTable: () => this.deleteLineageTreeTable(),
+                deleteLineageTypeTable: () => this.deleteLineageTypeTable(),
+                deleteLineageTreeEntriesTable: () => this.deleteLineageTreeEntriesTable(),
+                deleteMapTable: () => this.deleteMapTable(),
+                deleteMapElementsTable: () => this.deleteMapElementsTable(),
+                deleteTimelineTable: () => this.deleteTimelineTable(),
+                deleteTimelineEventsTable: () => this.deleteTimelineEventsTable(),
+                deleteTextImagesTable: () => this.deleteTextImagesTable(),
+                deleteSettingsTable: () => this.deleteSettingsTable()
+            }
         };
     }
 
@@ -50,6 +82,10 @@ export default class DBManager {
         return this.#state.changes;
     }
 
+    get execQuery() {
+        return this.#execQuery;
+    }
+
     set transactionStarted(value) {
         this.#state.transactionStarted = value;
     }
@@ -73,7 +109,9 @@ export default class DBManager {
 
     async init() {
         try {
+            // Encerra qualquer transação aberta indevidamente antes de iniciar o gerenciador.
             await uniforge.sql.exec('ROLLBACK');
+
             console.log('UniForge | Transação aberta encerrada com sucesso.');
         } catch (error) {
             console.log('UniForge | Nenhuma transação aberta encontrada.');
@@ -101,7 +139,7 @@ export default class DBManager {
     async beginTransaction() {
         try {
             if (!this.transactionStarted) {
-                console.log('UniForge | Abrindo transação....');
+                console.log('UniForge | Transação aberta.');
                 // Inicia uma nova transação.
                 await uniforge.sql.exec('BEGIN TRANSACTION');
                 // Registra o início da transação.
@@ -115,7 +153,7 @@ export default class DBManager {
     async commitTransaction() {
         try {
             if (this.transactionStarted) {
-                console.log('UniForge | Confirmando transação....');
+                console.log('UniForge | Transação confirmada.');
                 await uniforge.sql.exec('COMMIT');
 
                 // Se a operação afetou alguma linha, atualiza base de dados.
@@ -174,7 +212,10 @@ export default class DBManager {
             'DROP TABLE IF EXISTS timeline',
             'DROP TABLE IF EXISTS relevance',
             'DROP TABLE IF EXISTS entryType',
-            'DROP TABLE IF EXISTS settings'
+            'DROP TABLE IF EXISTS settings',
+            'DROP TABLE IF EXISTS calendars',
+            'DROP TABLE IF EXISTS calendarsDays',
+            'DROP TABLE IF EXISTS calendarsMonths'
         ];
 
         const totalQueries = queires.length;
@@ -209,11 +250,19 @@ export default class DBManager {
             await this.createTimelineEventsTable();
             await this.createSettingsTable();
 
+            await this.createCalendarTable();
+            await this.createDaysTable();
+            await this.createMonthsTable();
+
             await this.populateTomeTable();
             await this.populateEntryTypeTable();
             await this.populateRelevanceTable();
             await this.populateMapTable();
             await this.populateSettingsTable();
+
+            await this.populateCalendarsTable();
+            await this.populateDaysTable();
+            await this.populateMonthsTable();
 
             // Comita a transação.
             await this.commitTransaction();
@@ -265,12 +314,11 @@ export default class DBManager {
      * @param {string} data.title - Título da Seção.
      * @param {string} data.htmlString - String HTML a ser associada à Seção.
      * @param {boolean} data.isDraft - Indica se a Seção é um rascunho.
-     * @param {boolean} data.hasLineage - Indica se a seção possui linhagem.
      * 
      * @returns {Promise<Object>} - Resultado da execução do comando, incluindo o ID da Seção adicionada.
     */
     async addSection(data) {
-        let query = 'INSERT INTO section (sid, cid, title, htmlString, isDraft, hasLineage) VALUES (?,?,?,?,?,?);';
+        let query = 'INSERT INTO section (sid, cid, title, htmlString, isDraft) VALUES (?,?,?,?,?);';
         const params = [];
 
         const sid = (!data.sid || data.sid.isEmpty()) ? this.generateID() : data.sid;
@@ -280,7 +328,6 @@ export default class DBManager {
         params.push(data.title);
         params.push(data.htmlString);
         params.push(Number(data.isDraft));
-        params.push(Number(data.hasLineage));
 
         const result = await this.#execQuery(query, params);
         result.lastInsertRowid = sid;
@@ -373,6 +420,81 @@ export default class DBManager {
 
         const result = await this.#execQuery(query, params);
         result.lastInsertRowid = evid;
+        this.results = result;
+
+        return this.result;
+    }
+
+    /**
+     * Adiciona um registro na tabela `calendars` para armazenar um calendário.
+     * 
+     * @param {Object} data - Dados contendo as informações do calendário.
+     * @param {string} data.label   - Nome do calendário.
+     * @param {string} data.prefix  - Prefixo das datas deste calendário.
+     * @param {string} data.suffix  - Suffixo das datas deste calendário.
+     * 
+     * @returns {Promise<Object>} - Resultado da execução do comando.
+    */
+    async addCalendar(data) {
+        let query = 'INSERT INTO calendars (label, prefix, suffix) ';
+        query += 'VALUES (?,?,?);';
+        const params = [];
+
+        params.push(data.label);
+        params.push(data.prefix);
+        params.push(data.suffix);
+
+        const result = await this.#execQuery(query, params);
+        this.results = result;
+
+        return this.result;
+    }
+
+    /**
+     * Adiciona um registro na tabela `calendarsDays` para armazenar os dias da semana de um calendário.
+     * 
+     * @param {Object} data - Dados contendo as informações dos dias da semana do calendário.
+     * @param {number} data.clid    - Identificador do calendário.
+     * @param {string} data.label   - Abreviação do nome do dia da semana.
+     * @param {string} data.name    - Nome completo do dia da semana.
+     * 
+     * @returns {Promise<Object>} - Resultado da execução do comando.
+    */
+    async addCalendarDays(data) {
+        let query = 'INSERT INTO calendarsDays (clid, label, name) ';
+        query += 'VALUES (?,?,?);';
+        const params = [];
+
+        params.push(data.clid);
+        params.push(data.label);
+        params.push(data.name);
+
+        const result = await this.#execQuery(query, params);
+        this.results = result;
+
+        return this.result;
+    }
+
+    /**
+     * Adiciona um registro na tabela `calendarsMonths` para armazenar os meses de um calendário.
+     * 
+     * @param {Object} data - Dados contendo as informações dos meses do calendário.
+     * @param {number} data.clid    - Identificador do calendário.
+     * @param {string} data.label   - Nome do mês.
+     * @param {number} data.size    - Tamanho (num. de dias) do mês.
+     * 
+     * @returns {Promise<Object>} - Resultado da execução do comando.
+    */
+    async addCalendarMonths(data) {
+        let query = 'INSERT INTO calendarsMonths (clid, label, size) ';
+        query += 'VALUES (?,?,?);';
+        const params = [];
+
+        params.push(data.clid);
+        params.push(data.label);
+        params.push(data.size);
+
+        const result = await this.#execQuery(query, params);
         this.results = result;
 
         return this.result;
@@ -559,7 +681,6 @@ export default class DBManager {
      * @param {string} data.title - Título da seção.
      * @param {string} data.htmlString - String HTML a ser associada à seção.
      * @param {boolean} data.isDraft - Indica se a seção é um rascunho.
-     * @param {boolean} data.hasLineage - Indica se a seção possui linhagem.
      * 
      * @returns {Promise<Object>} - Resultado da execução do comando de atualização.
     */
@@ -569,7 +690,6 @@ export default class DBManager {
             ['title', data.title],
             ['htmlString', data.htmlString],
             ['isDraft', Number(data.isDraft)],
-            ['hasLineage', Number(data.hasLineage)]
         ]);
 
         let query = `UPDATE section SET ${updateSet} WHERE sid = ?`;
@@ -651,6 +771,81 @@ export default class DBManager {
 
         let query = `UPDATE event SET ${updateSet} WHERE evid = ?`;
         let params = [data.evid];
+        this.results = await this.#execQuery(query, params);
+
+        return this.result;
+    }
+
+    /**
+     * Atualiza o Calendário com o ID especificado.
+     * @param {Object} data         - Os dados do Calendário a serem atualizados.
+     * @param {number} data.clid    - O identificador do Calendário.
+     * @param {string} data.label   - O nome do Calendário.
+     * @param {string} data.prefix  - O sufixo usado nas datas do Calendário.
+     * @param {string} data.suffix  - O prefixo usado nas datas do Calendário.
+     * @returns {Promise<Object>} A resposta do banco de dados.
+     */
+    async updateCalendar(data) {
+        const updateSet = this.buildUpdateSet([
+            ['label', data.label],
+            ['prefix', data.prefix],
+            ['suffix', data.suffix]
+        ]);
+
+        let query = `UPDATE calendars SET ${updateSet} WHERE clid = ?`;
+        let params = [data.clid];
+        this.results = await this.#execQuery(query, params);
+
+        return this.result;
+    }
+
+    /**
+     * Atualiza os dias da semana do Calendário com o ID especificado.
+     * @param {Object} data         - Os dados do Calendário a serem atualizados.
+     * @param {number} data.cldid   - O identificador do dia da semana do Calendário.
+     * @param {number} data.clid    - O identificador do Calendário.
+     * @param {string} data.label   - A abreviação do nome do dia da semana do Calendário.
+     * @param {string} data.name    - O nome completo do dia da semana do Calendário.
+     * @returns {Promise<Object>} A resposta do banco de dados.
+     */
+    async updateCalendarDays(data) {
+        const updateSet = this.buildUpdateSet([
+            ['label', data.label],
+            ['name', data.name],
+        ]);
+
+        let query = `UPDATE calendarsDays SET ${updateSet} WHERE cldid = ? AND clid = ?`;
+        let params = [];
+
+        params.push(data.cldid);
+        params.push(data.clid);
+
+        this.results = await this.#execQuery(query, params);
+
+        return this.result;
+    }
+
+    /**
+     * Atualiza os dias da semana do Calendário com o ID especificado.
+     * @param {Object} data         - Os dados do Calendário a serem atualizados.
+     * @param {number} data.clmid   - O identificador do mês do Calendário.
+     * @param {number} data.clid    - O identificador do Calendário.
+     * @param {string} data.label   - A abreviação do nome do dia da semana do Calendário.
+     * @param {number} data.size    - O nome completo do dia da semana do Calendário.
+     * @returns {Promise<Object>} A resposta do banco de dados.
+     */
+    async updateCalendarMonths(data) {
+        const updateSet = this.buildUpdateSet([
+            ['label', data.label],
+            ['size', data.size],
+        ]);
+
+        let query = `UPDATE calendarsMonths SET ${updateSet} WHERE clmid = ? AND clid = ?`;
+        let params = [];
+
+        params.push(data.clmid);
+        params.push(data.clid);
+
         this.results = await this.#execQuery(query, params);
 
         return this.result;
@@ -740,6 +935,7 @@ export default class DBManager {
         const updateSet = this.buildUpdateSet([
             ['source', data.source],
             ['points', data.points],
+            ['icon', data.icon],
             ['style', data.style]
         ]);
 
@@ -780,7 +976,7 @@ export default class DBManager {
      * @returns {Promise<Object>} A resposta do banco de dados.
      */
     async updateSettings(data) {
-        const updateSet = this.buildUpdateSet([            
+        const updateSet = this.buildUpdateSet([
             ['value', data.value]
         ]);
 
@@ -854,6 +1050,46 @@ export default class DBManager {
     async deleteEvent(evid) {
         let query = 'DELETE FROM event WHERE evid = ?;';
         const params = [evid];
+        this.results = await this.#execQuery(query, params);
+
+        return this.result;
+    }
+
+    /**
+     * Deleta o Calendário com o ID especificado e suas sub-tabelas.
+     * @param {number} clid       - O ID do Calendário a ser deletado.
+     * @returns {Promise<Object>} A resposta do banco de dados.
+     */
+    async deleteCalendar(clid) {
+        try {
+            this.beginTransaction();
+
+            let query = 'DELETE FROM calendarsMonths WHERE clid = ?;';
+            let params = [clid];
+            this.results = await this.#execQuery(query, params);
+
+            query = 'DELETE FROM calendarsDays WHERE clid = ?;';
+            this.results = await this.#execQuery(query, params);
+
+            query = 'DELETE FROM calendars WHERE clid = ?;';
+            this.results = await this.#execQuery(query, params);
+
+            this.commitTransaction();
+        } catch (error) {
+            this.rollbackTransaction(error);
+        }
+
+        return this.result;
+    }
+
+    /**
+     * Deleta um mês com o ID especificado de um Calendário.
+     * @param {number} clmid      - O ID do mês do Calendário a ser deletado.
+     * @returns {Promise<Object>} A resposta do banco de dados.
+     */
+    async deleteCalendarMonth(clmid) {
+        let query = 'DELETE FROM calendarsMonths WHERE clmid = ?;';
+        let params = [clmid];
         this.results = await this.#execQuery(query, params);
 
         return this.result;
@@ -1212,6 +1448,8 @@ export default class DBManager {
                 _label: row.label,
                 clid: Number(row.clid),
                 label: row.label,
+                prefix: row.prefix,
+                suffix: row.suffix,
                 months: [],
                 days: [],
                 daysInMonth: [],
@@ -1266,12 +1504,16 @@ export default class DBManager {
      * @property {string} icon      - Ícone do Tomo.
      */
     async getAllTomes() {
-        const query = 'SELECT * FROM tome';
-        this.results = await uniforge.sql.query(query);
-        return this.result.map(row => ({
-            _id: row.title,
-            ...row
-        }));
+        try {
+            const query = 'SELECT * FROM tome';
+            this.results = await uniforge.sql.query(query);
+            return this.result.map(row => ({
+                _id: row.title,
+                ...row
+            }));
+        } catch (error) {
+            console.error(error);
+        }
     }
 
     /**
@@ -1286,13 +1528,17 @@ export default class DBManager {
      * @property {number} type      - Tipo do Capítulo.
      */
     async getAllChapters() {
-        const query = 'SELECT * FROM chapter ORDER BY title';
-        this.results = await uniforge.sql.query(query);
-        return this.result.map(row => ({
-            _id: row.cid,
-            _label: row.title,
-            ...row
-        }));
+        try {
+            const query = 'SELECT * FROM chapter ORDER BY title';
+            this.results = await uniforge.sql.query(query);
+            return this.result.map(row => ({
+                _id: row.cid,
+                _label: row.title,
+                ...row
+            }));
+        } catch (error) {
+            console.error(error);
+        }
     }
 
     /**
@@ -1307,13 +1553,17 @@ export default class DBManager {
      * @property {boolean} isDraft      - Seção é rascunho? (false por padrão).
      */
     async getAllSections() {
-        const query = 'SELECT * FROM section';
-        this.results = await uniforge.sql.query(query);
-        return this.result.map(row => ({
-            _id: row.sid,
-            _label: row.title,
-            ...row
-        }));
+        try {
+            const query = 'SELECT * FROM section';
+            this.results = await uniforge.sql.query(query);
+            return this.result.map(row => ({
+                _id: row.sid,
+                _label: row.title,
+                ...row
+            }));
+        } catch (error) {
+            console.error(error);
+        }
     }
 
     /**
@@ -1363,13 +1613,17 @@ export default class DBManager {
      */
 
     async getAllEntries() {
-        const query = 'SELECT * FROM entry';
-        this.results = await uniforge.sql.query(query);
-        return this.result.map(row => ({
-            _id: row.eid,
-            _label: row.title,
-            ...row
-        }));
+        try {
+            const query = 'SELECT * FROM entry';
+            this.results = await uniforge.sql.query(query);
+            return this.result.map(row => ({
+                _id: row.eid,
+                _label: row.title,
+                ...row
+            }));
+        } catch (error) {
+            console.error(error);
+        }
     }
 
     async getAllEntriesAndTimelinesExcept(id, type) {
@@ -1439,12 +1693,17 @@ export default class DBManager {
      * @property {boolean} isDraft      - Evento é rascunho? (false por padrão).
     */
     async getAllEvents() {
-        const query = 'SELECT * FROM event';
-        this.results = await uniforge.sql.query(query);
-        return this.result.map(row => ({
-            _id: row.evid,
-            ...row
-        }));
+        try {
+            const query = 'SELECT * FROM event';
+            this.results = await uniforge.sql.query(query);
+            return this.result.map(row => ({
+                _id: row.evid,
+                ...row
+            }));
+        }
+        catch (error) {
+            console.error(error);
+        }
     }
 
 
@@ -1459,13 +1718,18 @@ export default class DBManager {
      * @property {boolean} isDraft      - A Árvore de Linhagem é rascunho? (false por padrão).
     */
     async getAllLineageTrees() {
-        const query = 'SELECT * FROM lineageTree';
-        this.results = await uniforge.sql.query(query);
-        return this.result.map(row => ({
-            _id: row.ltid,
-            _label: row.title,
-            ...row
-        }));
+        try {
+            const query = 'SELECT * FROM lineageTree';
+            this.results = await uniforge.sql.query(query);
+            return this.result.map(row => ({
+                _id: row.ltid,
+                _label: row.title,
+                ...row
+            }));
+        }
+        catch (error) {
+            console.error(error);
+        }
     }
 
     /**
@@ -1479,13 +1743,18 @@ export default class DBManager {
      * @property {string} label         - Rótulo do tipo de Árvore de Linhagem.
     */
     async getAllLineageTypes() {
-        const query = 'SELECT * FROM lineageType';
-        this.results = await uniforge.sql.query(query);
-        return this.result.map(row => ({
-            _id: row.tag,
-            _label: row.label,
-            ...row
-        }));
+        try {
+            const query = 'SELECT * FROM lineageType';
+            this.results = await uniforge.sql.query(query);
+            return this.result.map(row => ({
+                _id: row.tag,
+                _label: row.label,
+                ...row
+            }));
+        }
+        catch (error) {
+            console.error(error);
+        }
     }
 
     /**
@@ -1494,12 +1763,17 @@ export default class DBManager {
      * @property {string} ltid           - ID da Árvore de Linhagem.
     */
     async getAllLineageTreeEntries() {
-        const query = 'SELECT * FROM _lineageTreeEntries';
-        this.results = await uniforge.sql.query(query);
-        return this.result.map(row => ({
-            _label: row.title,
-            ...row
-        }));
+        try {
+            const query = 'SELECT * FROM _lineageTreeEntries';
+            this.results = await uniforge.sql.query(query);
+            return this.result.map(row => ({
+                _label: row.title,
+                ...row
+            }));
+        }
+        catch (error) {
+            console.error(error);
+        }
     }
 
     /**
@@ -1516,13 +1790,18 @@ export default class DBManager {
      * @property {boolean} isDraft      - O mapa é um rascunho? (false por padrão).
     */
     async getAllMaps() {
-        const query = 'SELECT * FROM map';
-        this.results = await uniforge.sql.query(query);
-        return this.result.map(row => ({
-            _id: row.mid,
-            _label: row.title,
-            ...row
-        }));
+        try {
+            const query = 'SELECT * FROM map';
+            this.results = await uniforge.sql.query(query);
+            return this.result.map(row => ({
+                _id: row.mid,
+                _label: row.title,
+                ...row
+            }));
+        }
+        catch (error) {
+            console.error(error);
+        }
     }
 
     /**
@@ -1539,13 +1818,18 @@ export default class DBManager {
      * @property {string} points         - Coordenadas do Elemento do Mapa.
      */
     async getAllMapElements() {
-        const query = 'SELECT * FROM mapElements';
-        this.results = await uniforge.sql.query(query);
-        return this.result.map(row => ({
-            _id: row.meid,
-            _label: row.label,
-            ...row
-        }));
+        try {
+            const query = 'SELECT * FROM mapElements';
+            this.results = await uniforge.sql.query(query);
+            return this.result.map(row => ({
+                _id: row.meid,
+                _label: row.label,
+                ...row
+            }));
+        }
+        catch (error) {
+            console.error(error);
+        }
     }
 
     /**
@@ -1586,13 +1870,18 @@ export default class DBManager {
      * @property {boolean} isDraft      - Linha do Tempo é rascunho? (false por padrão).
     */
     async getAllTimelines() {
-        const query = 'SELECT * FROM timeline';
-        this.results = await uniforge.sql.query(query);
-        return this.result.map(row => ({
-            _id: row.tid,
-            _label: row.title,
-            ...row
-        }));
+        try {
+            const query = 'SELECT * FROM timeline';
+            this.results = await uniforge.sql.query(query);
+            return this.result.map(row => ({
+                _id: row.tid,
+                _label: row.title,
+                ...row
+            }));
+        }
+        catch (error) {
+            console.error(error);
+        }
     }
 
     /**
@@ -1602,73 +1891,93 @@ export default class DBManager {
      * @property {string} evid         - ID do Evento da Linha do Tempo.
     */
     async getAllTimelineEvents() {
-        const query = 'SELECT * FROM _timelineEvent';
-        this.results = await uniforge.sql.query(query);
-        return this.result;
+        try {
+            const query = 'SELECT * FROM _timelineEvent';
+            this.results = await uniforge.sql.query(query);
+            return this.result;
+        }
+        catch (error) {
+            console.error(error);
+        }
     }
 
     // Função para a tabela calendars
     async getAllCalendars() {
-        const query = 'SELECT * FROM calendars';
-        this.results = await uniforge.sql.query(query);
-        return this.result.map(row => ({
-            _id: Number(row.clid),
-            _label: row.label,
-            ...row
-        }));
+        try {
+            const query = 'SELECT * FROM calendars';
+            this.results = await uniforge.sql.query(query);
+            return this.result.map(row => ({
+                _id: Number(row.clid),
+                _label: row.label,
+                ...row
+            }));
+        }
+        catch (error) {
+            console.error(error);
+        }
     }
 
     // Função para a tabela calendarsMonths
     async getAllCalendarsMonths() {
-        const query = 'SELECT * FROM calendarsMonths';
-        this.results = await uniforge.sql.query(query);
-        return this.result.map(row => ({
-            _id: row.clmid,
-            _label: row.label,
-            ...row
-        }));
+        try {
+            const query = 'SELECT * FROM calendarsMonths';
+            this.results = await uniforge.sql.query(query);
+            return this.result.map(row => ({
+                _id: row.clmid,
+                _label: row.label,
+                ...row
+            }));
+        }
+        catch (error) {
+            console.error(error);
+        }
     }
 
     // Função para a tabela calendarsDays
     async getAllCalendarsDays() {
-        const query = 'SELECT * FROM calendarsDays';
-        this.results = await uniforge.sql.query(query);
-        return this.result.map(row => ({
-            _id: row.cldid,
-            _label: row.label,
-            ...row
-        }));
-    }
-
-    // Função para a tabela calendarsDaysInMonths
-    async getAllCalendarsDaysInMonths() {
-        const query = 'SELECT * FROM calendarsDaysInMonths';
-        this.results = await uniforge.sql.query(query);
-        return this.result.map(row => ({
-            _id: row.cldmid,
-            ...row
-        }));
+        try {
+            const query = 'SELECT * FROM calendarsDays';
+            this.results = await uniforge.sql.query(query);
+            return this.result.map(row => ({
+                _id: row.cldid,
+                _label: row.label,
+                ...row
+            }));
+        }
+        catch (error) {
+            console.error(error);
+        }
     }
 
     // Função para a tabela _textImages
     async getAllTextImages() {
-        const query = 'SELECT * FROM _textImages';
-        this.results = await uniforge.sql.query(query);
-        return this.result.map(row => ({
-            _id: row.uuid,
-            ...row
-        }));
+        try {
+            const query = 'SELECT * FROM _textImages';
+            this.results = await uniforge.sql.query(query);
+            return this.result.map(row => ({
+                _id: row.uuid,
+                ...row
+            }));
+        }
+        catch (error) {
+            console.error(error);
+        }
     }
 
     // Função para a tabela relevance
     async getAllRelevances() {
-        const query = 'SELECT * FROM relevance';
-        this.results = await uniforge.sql.query(query);
-        return this.result.map(row => ({
-            _id: row.rid,
-            _label: row.title,
-            ...row
-        }));
+        try {
+            const query = 'SELECT * FROM relevance';
+            this.results = await uniforge.sql.query(query);
+            return this.result.map(row => ({
+                _id: row.rid,
+                _label: row.title,
+                ...row
+            }));
+        }
+        catch (error) {
+            console.error(error);
+        }
     }
 
     /**
@@ -1678,35 +1987,50 @@ export default class DBManager {
      *  os dados de cada Tipo de Capítulos encontrado no banco de dados.
      */
     async getAllChapterTypes() {
-        let query = 'SELECT * FROM chapterType';
-        this.results = await uniforge.sql.query(query);
-        return this.result.map(row => ({
-            _id: row.ctid,
-            _label: row.title,
-            ...row
-        }));
+        try {
+            let query = 'SELECT * FROM chapterType';
+            this.results = await uniforge.sql.query(query);
+            return this.result.map(row => ({
+                _id: row.ctid,
+                _label: row.title,
+                ...row
+            }));
+        }
+        catch (error) {
+            console.error(error);
+        }
     }
 
     // Função para a tabela entryTypes
     async getAllEntryTypes() {
-        const query = 'SELECT * FROM entryType';
-        this.results = await uniforge.sql.query(query);
-        return this.result.map(row => ({
-            _id: row.etid,
-            _label: row.title,
-            ...row
-        }));
+        try {
+            const query = 'SELECT * FROM entryType';
+            this.results = await uniforge.sql.query(query);
+            return this.result.map(row => ({
+                _id: row.etid,
+                _label: row.title,
+                ...row
+            }));
+        }
+        catch (error) {
+            console.error(error);
+        }
     }
 
     // Função para a tabela settings
     async getAllSettings() {
-        const query = 'SELECT * FROM settings';
-        this.results = await uniforge.sql.query(query);
-        return this.result.map(row => ({
-            _id: row.tag,
-            _label: row.title,
-            ...row
-        }));
+        try {
+            const query = 'SELECT * FROM settings';
+            this.results = await uniforge.sql.query(query);
+            return this.result.map(row => ({
+                _id: row.tag,
+                _label: row.title,
+                ...row
+            }));
+        }
+        catch (error) {
+            console.error(error);
+        }
     }
 
     /**
@@ -2049,6 +2373,251 @@ export default class DBManager {
     }
 
     /**
+     * Popula a tabela 'calendars' com registros dos Calendários padrões.
+     * 
+     * @returns {Promise<Object>} Uma promessa que informa se a tabela foi populada com sucesso, com o número de alterações.
+     */
+    async populateCalendarsTable() {
+        console.log('Populando tabela \'calendars\'....');
+
+        const calendars = [
+            {
+                label: 'Ayruídico',
+                prefix: '',
+                suffix: 'a.T.|d.T.'
+            },
+            {
+                label: 'Druídico',
+                prefix: '',
+                suffix: ''
+            },
+        ];
+
+        let query = 'INSERT INTO calendars (label, prefix, suffix) ';
+        query += 'VALUES (?,?,?);';
+
+        for (let calendar of calendars) {
+            let params = [];
+
+            params.push(calendar.label);
+            params.push(calendar.prefix);
+            params.push(calendar.suffix);
+
+            this.results = await this.#execQuery(query, params);
+        }
+        
+        console.log('Tabela \'calendars\' populada....OK.');
+
+        return this.result;
+    }
+
+    /**
+     * Popula a tabela 'calendarsDays' com registros dos Dias da Semana dos Calendários padrões.
+     * 
+     * @returns {Promise<Object>} Uma promessa que informa se a tabela foi populada com sucesso, com o número de alterações.
+     */
+    async populateDaysTable() {
+        console.log('Populando tabela \'calendarsDays\'....');
+
+        const days = [
+            {
+                clid: 1,
+                label: 'Dom',
+                name: 'Domingo'
+            },
+            {
+                clid: 1,
+                label: 'Seg',
+                name: 'Segunda'
+            },
+            {
+                clid: 1,
+                label: 'Ter',
+                name: 'Terça'
+            },
+            {
+                clid: 1,
+                label: 'Qua',
+                name: 'Quarta'
+            },
+            {
+                clid: 1,
+                label: 'Qui',
+                name: 'Quinta'
+            },
+            {
+                clid: 1,
+                label: 'Sex',
+                name: 'Sexta'
+            },
+            {
+                clid: 1,
+                label: 'Sab',
+                name: 'Sábado'
+            },
+            {
+                clid: 2,
+                label: 'Dom',
+                name: 'Domingo'
+            },
+            {
+                clid: 2,
+                label: 'Seg',
+                name: 'Segunda'
+            },
+            {
+                clid: 2,
+                label: 'Ter',
+                name: 'Terça'
+            },
+            {
+                clid: 2,
+                label: 'Qua',
+                name: 'Quarta'
+            },
+            {
+                clid: 2,
+                label: 'Qui',
+                name: 'Quinta'
+            },
+            {
+                clid: 2,
+                label: 'Sex',
+                name: 'Sexta'
+            },
+            {
+                clid: 2,
+                label: 'Sab',
+                name: 'Sábado'
+            },
+        ];
+
+        let query = 'INSERT INTO calendarsDays (clid, label, name) ';
+        query += 'VALUES (?,?,?);';
+
+        for(let day of days) {
+            let params = [];
+
+            params.push(day.clid);
+            params.push(day.label);
+            params.push(day.name);
+
+            this.results = await this.#execQuery(query, params);
+        }
+        console.log('Tabela \'calendarsDays\' populada....OK.');
+
+        return this.result;
+    }
+
+    /**
+     * Popula a tabela 'calendarsMonths' com registros dos Meses dos Calendários padrões.
+     * 
+     * @returns {Promise<Object>} Uma promessa que informa se a tabela foi populada com sucesso, com o número de alterações.
+     */
+    async populateMonthsTable() {
+        console.log('Populando tabela \'calendarsMonths\'....');
+
+        const months = [
+            {
+                clid: 1,
+                label: 'Ionária',
+                size: 45
+            },
+            {
+                clid: 1,
+                label: 'Hilmíria',
+                size: 45
+            },
+            {
+                clid: 1,
+                label: 'Magníria',
+                size: 45
+            },
+            {
+                clid: 1,
+                label: 'Ebrill',
+                size: 45
+            },
+            {
+                clid: 1,
+                label: 'Baeldúria',
+                size: 45
+            },
+            {
+                clid: 1,
+                label: 'Morigúria',
+                size: 45
+            },
+            {
+                clid: 1,
+                label: 'Tydoníria',
+                size: 45
+            },
+            {
+                clid: 1,
+                label: 'Truvadíria',
+                size: 45
+            },
+            {
+                clid: 2,
+                label: 'Sam\'Hain',
+                size: 45
+            },
+            {
+                clid: 2,
+                label: 'Yul\'Etide',
+                size: 45
+            },
+            {
+                clid: 2,
+                label: 'Im\'Bolc',
+                size: 45
+            },
+            {
+                clid: 2,
+                label: 'Os\'Tara',
+                size: 45
+            },
+            {
+                clid: 2,
+                label: 'Bel\'Tane',
+                size: 45
+            },
+            {
+                clid: 2,
+                label: 'Li\'Tha',
+                size: 45
+            },
+            {
+                clid: 2,
+                label: 'Lam\'Mas',
+                size: 45
+            },
+            {
+                clid: 2,
+                label: 'Mo\'Dron',
+                size: 45
+            },
+        ];
+
+        let query = 'INSERT INTO calendarsMonths (clid, label, size) ';
+        query += 'VALUES (?,?,?);';
+
+        for(let month of months) {
+            let params = [];
+
+            params.push(month.clid);
+            params.push(month.label);
+            params.push(month.size);
+
+            this.results = await this.#execQuery(query, params);
+        }
+        console.log('Tabela \'calendarsMonths\' populada....OK.');
+
+        return this.result;
+    }
+
+    /**
      * Popula a tabela 'map' com um mapa padrão.
      * 
      * O mapa padrão é lido do arquivo 'defaultMap' na pasta raiz do projeto, e seus dados
@@ -2142,7 +2711,7 @@ export default class DBManager {
         let query = 'INSERT INTO tome (title, label, icon) ';
         query += 'VALUES (?,?,?);';
 
-        tomes.forEach(async tome => {
+        for(let tome of tomes) {
             let params = [];
 
             params.push(tome.title);
@@ -2150,7 +2719,7 @@ export default class DBManager {
             params.push(tome.icon);
 
             this.results = await this.#execQuery(query, params);
-        });
+        }
         console.log('Tabela \'tome\' populada....OK.');
 
         return this.result;
@@ -2209,7 +2778,7 @@ export default class DBManager {
         let query = 'INSERT INTO entryType (title, icon, isMaterial) ';
         query += 'VALUES (?,?,?);';
 
-        entryTypes.forEach(async entryType => {
+        for(let entryType of entryTypes) {
             let params = [];
 
             params.push(entryType.title);
@@ -2217,7 +2786,8 @@ export default class DBManager {
             params.push(entryType.isMaterial);
 
             this.results = await this.#execQuery(query, params);
-        });
+        }
+
         console.log('Tabela \'entryType\' populada....OK.');
         return this.result;
     }
@@ -2244,13 +2814,14 @@ export default class DBManager {
         let query = 'INSERT INTO relevance (title) ';
         query += 'VALUES (?);';
 
-        relevances.forEach(async relevance => {
+        for(let relevance of relevances) {
             let params = [];
 
             params.push(relevance.title);
 
             this.results = await this.#execQuery(query, params);
-        });
+        }
+
         console.log('Tabela \'relevance\' populada....OK.');
         return this.result;
     }
@@ -2274,7 +2845,7 @@ export default class DBManager {
         let query = 'INSERT INTO settings (tag, group, value) ';
         query += 'VALUES (?,?,?);';
 
-        styles.forEach(async style => {
+        for(let style of styles) {
             let params = [];
 
             params.push(style.tag);
@@ -2282,7 +2853,8 @@ export default class DBManager {
             params.push(style.value);
 
             this.results = await this.#execQuery(query, params);
-        });
+        }
+        
         console.log('Tabela \'settings\' populada....OK.');
         return this.result;
     }
@@ -2307,7 +2879,7 @@ export default class DBManager {
         return this.result;
     }
 
-    /**
+    /** 
      * Cria a tabela 'calendars' no banco de dados.
      * 
      * Essa tabela é usada para armazenar informações sobre os calendários.
@@ -2316,8 +2888,11 @@ export default class DBManager {
      * @returns {Promise<Object>} Uma promessa que informa se a tabela foi criada com sucesso, com o número de alterações.
      */
     async createCalendarTable() {
-        let query = 'CREATE TABLE IF NOT EXISTS calendars (clid INTEGER PRIMARY KEY,' +
-            'label TEXT)';                 // Título do calendário
+        let query = 'CREATE TABLE IF NOT EXISTS calendars (' +
+            'clid INTEGER PRIMARY KEY AUTOINCREMENT,' +
+            'label TEXT,' +                 // Título do calendário
+            'prefix VARCHAR(50) NULL,' +    // Prefixo dos Anos do calendário (opcional)
+            'suffix VARCHAR(50) NULL)';     // Sufixo dos Anos do calendário (opcional)            
 
         this.results = await this.#execQuery(query);
         console.log('Tabela \'calendar\' criada....OK.');
@@ -2334,7 +2909,8 @@ export default class DBManager {
      * @returns {Promise<Object>} Uma promessa que informa se a tabela foi criada com sucesso, com o número de alterações.
      */
     async createMonthsTable() {
-        let query = 'CREATE TABLE IF NOT EXISTS calendarsMonths (clmid INTEGER PRIMARY KEY,' +
+        let query = 'CREATE TABLE IF NOT EXISTS calendarsMonths (' +
+            'clmid INTEGER PRIMARY KEY AUTOINCREMENT,' +
             'clid INTEGER,' +
             'label TEXT,' +
             'size INTEGER NOT NULL DEFAULT 45)';           // Título do MÊS do calendário
@@ -2355,12 +2931,255 @@ export default class DBManager {
      * @returns {Promise<Object>} Uma promessa que informa se a tabela foi criada com sucesso, com o número de alterações.
      */
     async createDaysTable() {
-        let query = 'CREATE TABLE IF NOT EXISTS calendarsDays (cldid INTEGER PRIMARY KEY,' +
+        let query = 'CREATE TABLE IF NOT EXISTS calendarsDays (' +
+            'cldid INTEGER PRIMARY KEY AUTOINCREMENT,' +
             'clid INTEGER,' +
-            'label TEXT)';                 // Título do DIAS do calendário
+            'label TEXT,' +         // Abreviação dos Dias da Semana do calendário.
+            'name TEXT)';           // Nome completo dos Dias da Semana do calendário.      
 
         this.results = await this.#execQuery(query);
         console.log('Tabela \'calendarsDays\' criada....OK.');
+
+        return this.result;
+    }
+
+
+    /**
+     * Apaga a tabela 'calendars'.
+     *
+     * @async
+     * @returns {Promise<Object>} Uma promessa que informa se a tabela foi apagada com sucesso, com o número de alterações.
+     */
+    async deleteCalendarTable() {
+        let query = 'DROP TABLE IF EXISTS calendars;';
+        this.results = await this.#execQuery(query);
+
+        return this.result;
+    }
+
+
+    /**
+     * Apaga a tabela 'calendarsMonths'.
+     *
+     * @async
+     * @returns {Promise<Object>} Uma promessa que informa se a tabela foi apagada com sucesso, com o número de alterações.
+     */
+    async deleteMonthsTable() {
+        let query = 'DROP TABLE IF EXISTS calendarsMonths;';
+        this.results = await this.#execQuery(query);
+
+        return this.result;
+    }
+
+
+    /**
+     * Apaga a tabela 'calendarsDays'.
+     *
+     * @async
+     * @returns {Promise<Object>} Uma promessa que informa se a tabela foi apagada com sucesso, com o número de alterações.
+     */
+    async deleteDaysTable() {
+        let query = 'DROP TABLE IF EXISTS calendarsDays;';
+        this.results = await this.#execQuery(query);
+
+        return this.result;
+    }
+
+
+    /**
+     * Apaga a tabela 'entryTypes'.
+     *
+     * @async
+     * @returns {Promise<Object>} Uma promessa que informa se a tabela foi apagada com sucesso, com o número de alterações.
+     */
+    async deleteEntryTypeTable() {
+        let query = 'DROP TABLE IF EXISTS entryTypes;';
+        this.results = await this.#execQuery(query);
+
+        return this.result;
+    }
+
+
+    /**
+     * Apaga a tabela 'relevance'.
+     *
+     * @async
+     * @returns {Promise<Object>} Uma promessa que informa se a tabela foi apagada com sucesso, com o número de alterações.
+     */
+    async deleteRelevanceTable() {
+        let query = 'DROP TABLE IF EXISTS relevance;';
+        this.results = await this.#execQuery(query);
+
+        return this.result;
+    }
+
+
+    /**
+     * Apaga a tabela 'chapters'.
+     *
+     * @async
+     * @returns {Promise<Object>} Uma promessa que informa se a tabela foi apagada com sucesso, com o número de alterações.
+     */
+    async deleteChapterTable() {
+        let query = 'DROP TABLE IF EXISTS chapters;';
+        this.results = await this.#execQuery(query);
+
+        return this.result;
+    }
+
+
+    /**
+     * Apaga a tabela 'sections'.
+     *
+     * @async
+     * @returns {Promise<Object>} Uma promessa que informa se a tabela foi apagada com sucesso, com o número de alterações.
+     */
+    async deleteSectionTable() {
+        let query = 'DROP TABLE IF EXISTS sections;';
+        this.results = await this.#execQuery(query);
+
+        return this.result;
+    }
+
+    /**
+     * Apaga a tabela 'entries'.
+     *
+     * @async
+     * @returns {Promise<Object>} Uma promessa que informa se a tabela foi apagada com sucesso, com o número de alterações.
+     */
+    async deleteEntryTable() {
+        let query = 'DROP TABLE IF EXISTS entries;';
+        this.results = await this.#execQuery(query);
+
+        return this.result;
+    }
+
+    /**
+     * Apaga a tabela 'events'.
+     *
+     * @async
+     * @returns {Promise<Object>} Uma promessa que informa se a tabela foi apagada com sucesso, com o número de alterações.
+     */
+    async deleteEventTable() {
+        let query = 'DROP TABLE IF EXISTS events;';
+        this.results = await this.#execQuery(query);
+
+        return this.result;
+    }
+
+    /**
+     * Apaga a tabela 'lineageTree'.
+     *
+     * @async
+     * @returns {Promise<Object>} Uma promessa que informa se a tabela foi apagada com sucesso, com o número de alterações.
+     */
+    async deleteLineageTreeTable() {
+        let query = 'DROP TABLE IF EXISTS lineageTree;';
+        this.results = await this.#execQuery(query);
+
+        return this.result;
+    }
+
+    /**
+     * Apaga a tabela 'lineageType'.
+     *
+     * @async
+     * @returns {Promise<Object>} Uma promessa que informa se a tabela foi apagada com sucesso, com o número de alterações.
+     */
+    async deleteLineageTypeTable() {
+        let query = 'DROP TABLE IF EXISTS lineageType;';
+        this.results = await this.#execQuery(query);
+
+        return this.result;
+    }
+
+    /**
+     * Apaga a tabela '_lineageTreeEntries'.
+     *
+     * @async
+     * @returns {Promise<Object>} Uma promessa que informa se a tabela foi apagada com sucesso, com o número de alterações.
+     */
+    async deleteLineageTreeEntriesTable() {
+        let query = 'DROP TABLE IF EXISTS _lineageTreeEntries;';
+        this.results = await this.#execQuery(query);
+
+        return this.result;
+    }
+
+    /**
+     * Apaga a tabela 'maps'.
+     *
+     * @async
+     * @returns {Promise<Object>} Uma promessa que informa se a tabela foi apagada com sucesso, com o número de alterações.
+     */
+    async deleteMapTable() {
+        let query = 'DROP TABLE IF EXISTS maps;';
+        this.results = await this.#execQuery(query);
+
+        return this.result;
+    }
+
+    /**
+     * Apaga a tabela 'mapElements'.
+     *
+     * @async
+     * @returns {Promise<Object>} Uma promessa que informa se a tabela foi apagada com sucesso, com o número de alterações.
+     */
+    async deleteMapElementsTable() {
+        let query = 'DROP TABLE IF EXISTS mapElements;';
+        this.results = await this.#execQuery(query);
+
+        return this.result;
+    }
+
+    /**
+     * Apaga a tabela 'timeline'.
+     *
+     * @async
+     * @returns {Promise<Object>} Uma promessa que informa se a tabela foi apagada com sucesso, com o número de alterações.
+     */
+    async deleteTimelineTable() {
+        let query = 'DROP TABLE IF EXISTS timeline;';
+        this.results = await this.#execQuery(query);
+
+        return this.result;
+    }
+
+    /**
+     * Apaga a tabela '_timelineEvent'.
+     *
+     * @async
+     * @returns {Promise<Object>} Uma promessa que informa se a tabela foi apagada com sucesso, com o número de alterações.
+     */
+    async deleteTimelineEventsTable() {
+        let query = 'DROP TABLE IF EXISTS _timelineEvent;';
+        this.results = await this.#execQuery(query);
+
+        return this.result;
+    }
+
+    /**
+     * Apaga a tabela '_textImages'.
+     *
+     * @async
+     * @returns {Promise<Object>} Uma promessa que informa se a tabela foi apagada com sucesso, com o número de alterações.
+     */
+    async deleteTextImagesTable() {
+        let query = 'DROP TABLE IF EXISTS _textImages;';
+        this.results = await this.#execQuery(query);
+
+        return this.result;
+    }
+
+    /**
+     * Apaga a tabela 'settings'.
+     *
+     * @async
+     * @returns {Promise<Object>} Uma promessa que informa se a tabela foi apagada com sucesso, com o número de alterações.
+     */
+    async deleteSettingsTable() {
+        let query = 'DROP TABLE IF EXISTS settings;';
+        this.results = await this.#execQuery(query);
 
         return this.result;
     }
@@ -2414,8 +3233,6 @@ export default class DBManager {
      */
     validateSection(data) {
 
-        if (data.sid?.isEmpty())
-            return 'O identificador da Seção não pode ser vazio.';
         if (data.cid.isEmpty())
             return 'O identificador de Capítulo da Seção não pode ser vazio.';
         if (data.title.isEmpty())
@@ -2523,7 +3340,7 @@ export default class DBManager {
         const withNulls = updateOptions.withNulls || false;
 
         const updateSet = columns
-            .filter(([label, value]) => label.trim() && (withNulls || !value.isEmpty())) // Remove colunas ou valores vazios
+            .filter(([label, value]) => label.trim() && (withNulls || typeof value !== 'undefined')) // Remove colunas ou valores vazios
             .map(([label, value]) => {
                 if (value === undefined || value === '') value = null;
 

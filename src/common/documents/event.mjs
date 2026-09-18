@@ -45,7 +45,9 @@ export default class EntryEvent extends BaseDocument {
             }
         });
 
-        this.data.calendar = data.calendar ?? uniforge.doc.calendars.get(this.data.clid);
+        this.data.calendar = data.calendar ?? uniforge.doc.calendars?.get(this.data.clid) ?? null;
+
+        if(!this.data.calendar) return;
 
         const start = new CustomDate(this.calendar, { day: this.data.s_day, month: this.data.s_month, year: this.data.s_year });
         const end = this.data.e_day ? new CustomDate(this.calendar, { day: this.data.e_day, month: this.data.e_month, year: this.data.e_year }) : null;

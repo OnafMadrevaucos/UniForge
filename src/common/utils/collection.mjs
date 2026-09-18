@@ -294,6 +294,28 @@ export function mergeObjects(original, other = {}, {
 }
 
 /**
+ * Expande o object achatado para ser um object aninhado padrão, convertendo todas as chaves em notação de ponto para objetos internos.
+ * Apenas objetos simples serão expandidos. Outros tipos de Object, como instâncias de classe, serão mantidos como estão.
+ * @param {object} obj      - O objeto a ser expandido.
+ * @returns {object}        - Um objeto expandido.
+ * 
+*/
+function expandObject(obj) {
+  const _expand = (value, depth) => {
+    if ( depth > 32 ) throw new Error("Maximum object expansion depth exceeded");
+    if ( !value ) return value;
+    if ( Array.isArray(value) ) return value.map(v => _expand(v, depth+1)); // Map arrays
+    if ( !isPlainObject(value) ) return value;                              // Return advanced objects directly
+    const expanded = {};                                                    // Expand simple objects
+    for ( const [k, v] of Object.entries(value) ) {
+      setProperty(expanded, k, _expand(v, depth+1));
+    }
+    return expanded;
+  };
+  return _expand(obj, 0);
+}
+
+/**
    * Testa se dois objetos contêm as mesmas chaves e valores enumeráveis.
    * @param {object} a  O primeiro objeto.
    * @param {object} b  O segundo objeto.
@@ -364,4 +386,17 @@ function _mergeUpdate(original, k, v, {
         }
         original[k] = v;
     }
+}
+
+const plainObjectPrototype = Object.getPrototypeOf({});
+
+/**
+ * Determina se o valor é um objeto achatado; ou seja, cujo construtor é de um Object de null.
+ * @param {unknown} value
+ * @returns {boolean}
+ */
+function isPlainObject(value) {
+  if ( !value ) return false;
+  const prototype = Object.getPrototypeOf(value);
+  return (prototype === plainObjectPrototype) || (prototype === null);
 }

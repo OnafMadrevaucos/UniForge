@@ -14,19 +14,6 @@ export default class MilitaryForm extends EntryForm {
       */
     constructor() {
         // Chama o construtor da classe pai com o parâmetro overlay.
-        super('Exércitos');
-
-        this.type = 'military'; // Define o tipo do formulário. 
+        super('Exércitos', 'military'); 
     }
-    
-    /**
-    * Obtém os dados unificados necessários para o funcionamento do formulário.
-    * @implements Implemente um método filho para as especificidades de cada formulário.
-    * @async
-    * @returns {object}  - Objeto de dados unificado.
-    */
-    prepareData() {
-        super.prepareData();
-        return this.data;
-    }   
 }

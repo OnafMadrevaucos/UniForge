@@ -1,0 +1,63 @@
+<div id="chapter" class="entries flexrow">
+    <a id="minimizeButton" class="minimize-button">
+        <i class="fa-solid fa-chevron-left"></i>
+    </a>
+    <div id="sideBar" class="sidebar">
+        <h3>Seções</h3>
+        <a id="newChapterButton" class="flyer-button"><i class="fas fa-folder-plus"></i> Novo Capítulo</a>
+        <foldertree id="chapters" item="sections"></foldertree>
+        <div class="footer">
+            <div id="searchEntry" class="input-container search-bar flexrow">
+                <input type="text" id="searchInput" class="search-data" placeholder="Pesquisar capítulo...">
+                <a id="clearSearch" data-tooltip="Limpar busca" data-tooltip-side="left" data-tooltip-block="top"><i
+                        class="fa-solid fa-xmark"></i></a>
+            </div>
+        </div>
+    </div>
+    <div class="content flexcol">
+        <div class="header flexrow">
+            <div class="header-info flexcol">
+                <input id="titleInput" type="text" class="title" name="title" placeholder="Título da Seção"
+                    disabled />
+                <fieldset class="info-set flexcol" disabled>
+                    <div class="data-group icon">
+                        <span class="data-label">Tipo </span>
+                        <div class="icon-container flexrow">
+                            <a id="dataIcon" class="data-icon" data-tooltip="Escolha um assunto..."
+                                data-tooltip-side="left"><i id="chapterIcon" class="fa-regular fa-file"></i></a>
+                        </div>
+                        <span id="typeLabel" class="type-label">&#8212</span>
+                    </div>
+                    <div class="data-complex flexrow">
+                        <div class="data-group check">
+                            <span class="data-label">Rascunho </span>
+                            <switch id="isDraftSwitch" />
+                        </div>
+                        <a id="lineageIcon" class="lineage-icon hidden" data-tooltip="Linhagem"
+                            data-tooltip-side="left"><i class="fas fa-people-group"></i></a>
+                    </div>
+                </fieldset>
+            </div>
+        </div>
+        <div class="separator"></div>
+        <textarea id="mainEditor">
+                      <div class="text-content editable"></div>
+                  </textarea>
+        <div class="footer flexrow">
+            <div class="extra buttons flexrow">
+                <button id="cancelButton" class="cancel-entry hidden">
+                    <i class="fas fa-square-xmark"></i> Cancelar
+                </button>
+            </div>
+            <div class="fixed buttons flexrow">
+                <button id="newEntryButton" class="new-entry disabled">
+                    <i class="fas fa-square-plus"></i> Nova Seção
+                </button>
+                <button id="saveButton" class="disabled">
+                    <i class="fa-regular fa-floppy-disk"></i> Salvar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+</div>

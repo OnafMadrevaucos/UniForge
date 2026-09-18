@@ -206,8 +206,8 @@ export default class BaseDialog extends Application {
     * @inheritdoc
     */
     async initialize() {
-        // Se o diálogo implementa 'configureElements', chama o método.
-        if (this.configureElements) await this.configureElements();
+        // Se o diálogo implementa 'configureContent', chama o método.
+        if (this.configureContent) await this.configureContent();        
 
         // Centralizar o diálogo no parentElement
         this._centerDialog();

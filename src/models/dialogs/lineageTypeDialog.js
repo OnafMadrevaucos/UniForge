@@ -36,7 +36,7 @@ export default class LineageTypeDialog extends BaseDialog {
         data.types = typesCommited.merge(typesNotCommited);
     }
 
-    async configureElements() {
+    async configureContent() {
         const typeList = this.querySelector('#typeList');
         const typeListItems = typeList.querySelectorAll('.item');
 

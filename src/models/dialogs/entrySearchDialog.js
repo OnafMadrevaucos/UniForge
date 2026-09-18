@@ -137,7 +137,7 @@ export default class EntrySearchDialog extends BaseDialog {
     lineageGroupOrder.disabled = true;
   }
 
-  async configureElements() {
+  async configureContent() {
     if (this.fromLineage) this.configureForLineage();
 
     await this.configureTinyMCE();
@@ -165,6 +165,12 @@ export default class EntrySearchDialog extends BaseDialog {
     });
 
     await tinymce.init(options);
+
+    const iframe = tinymce.get('sourceMainEditor').getDoc().documentElement;
+    iframe.setAttribute(
+      "data-theme",
+      document.documentElement.getAttribute("data-theme")
+    );
   }
 
   /**

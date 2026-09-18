@@ -1,51 +1,43 @@
 <div id="settings" class="tabs-control flexcol">
     <div class="tabs-options flex-1 flexrow">
         <button id="main" class="flexcol selected" data-panel="mainPanel"><i class="fas fa-sliders"></i> Geral</button>
-        <button id="encyclopedia" class="flexcol" data-panel="chapterPanel"><i class="fas fa-bookmark"></i>
-            Capítulos</button>
-        <button id="database" class="flexcol" data-panel="databasePanel"><i class="fas fa-database"></i> Banco de
-            Dados</button>
         <button id="leaflet" class="flexcol" data-panel="leafletPanel"><i class="fas fa-map"></i> Leaflet ®</button>
+        <button id="advanced" class="flexcol" data-panel="advancedPanel"><i class="fas fa-cogs"></i> Avançado</button>        
     </div>
     <div class="settings-container flexrow">
         <div id="mainPanel" class="panel flexrow">
             <div class="content flexcol">
                 <fieldset class="info-set core flexcol not-disable">
-                    <div class="data-group flexrow combo">
-                        <span class="data-label">Tema: </span>
-                        <combo id="themeSelector" value="themes" grouped="true"/>
-                        <a id="newThemeButton" data-tooltip="Novo Tema"><i class="fas fa-plus"></i></a>  
-                        <a id="editThemeButton" class="hidden" data-tooltip="Editar Temas"><i class="fa-solid fa-palette"></i></a>                      
-                    </div>                    
+                    <div class="fieldset-content">
+                        <h3>Configurações Gerais</h3>
+                        <div class="data-complex flexrow">
+                            <div class="data-group flexrow flex-1 combo">
+                                <span class="data-label">Tema: </span>
+                                <combo id="themeSelector" value="themes" grouped="true" />
+                            </div>
+                            <div class="theme-buttons flexrow">
+                                <a id="newThemeButton" class="button" data-tooltip="Novo Tema"><i
+                                        class="fas fa-plus"></i></a>
+                                <a id="editThemeButton" class="button" data-tooltip="Editar Tema" data-action="edit"><i
+                                        class="fas fa-palette"></i></a>
+                                <a id="deleteThemeButton" class="button hidden" data-tooltip="Deletar Tema"><i
+                                        class="fas fa-trash"></i></a>
+                            </div>
+                        </div>
+                        <h4>Gerenciadores</h4>
+                        <div class="data-group flexrow flex-1">
+                            <span class="data-label">Calendários</span>
+                            <button id="manageCalendarsButton" class="data"><i class="fas fa-gears"></i> Gerenciar
+                                Calendários</button>
+                        </div>
+                        <div class="data-group flexrow flex-1">
+                            <span class="data-label">Capítulos</span>
+                            <button id="manageChaptersButton" class="data"><i class="fas fa-gears"></i> Gerenciar Capítulos</button>
+                        </div>
+                    </div>
                 </fieldset>
-                <fieldset class="info-set flexcol not-disable">
-                    <div class="data-group text">
-                        <span class="data-label">Text Edit: </span>
-                        <input type="text" class="data" />
-                    </div>
-                    <div class="data-group check">
-                        <span class="data-label">Switch: </span>
-                        <switch id="exampleSwitch" />
-                    </div>
-                    <div class="data-group text">
-                        <span class="data-label">Text Edit: </span>
-                        <input type="text" class="data" />
-                    </div>
-                    <div class="data-group check">
-                        <span class="data-label">Checkbox: </span>
-                        <combo id="exampleCombo" value="options" blank="0" />
-                    </div>
-                    <div class="data-group check">
-                        <span class="data-label">slider: </span>
-                        <slider id="testSlider"></slider>
-                    </div>                    
-                </fieldset>
-            </div>
-        </div>
-        <div id="databasePanel" class="panel flexcol hidden">
-            <div class="content flexcol">
-                <fieldset class="info-set flexcol">
-                    <div>
+                <fieldset class="info-set database flexcol not-disable">
+                    <div class="fieldset-content">
                         <h3>Conexão Externa</h3>
                         <div class="data-complex external-connection-group">
                             <div class="data-group check">
@@ -68,23 +60,20 @@
                         </div>
                     </div>
                 </fieldset>
+            </div>
+        </div>
+        <div id="advancedPanel" class="panel flexcol hidden">
+            <div class="content flexcol">               
                 <fieldset class="info-set flexcol">
-                    <div>
+                    <div class="fieldset-content">
                         <h3>Ferramentas de Debug</h3>
                         <div class="data-group exec combo">
                             <span class="data-label">Executar Stored Procedure </span>
                             <div class="data-complex flexcol flex-2">
-                                <select id="procedureName" class="data" name="procedureName"></select>
+                                <combo id="procedureName" value="procedures" blank="none" grouped="true"></combo>
                                 <button id="procedureButton"><i class="fas fa-cloud-arrow-up"></i> Executar</button>
                             </div>
-                        </div>
-                        <div class="data-group exec combo">
-                            <span class="data-label">Excluir Tabela </span>
-                            <div class="data-complex flexcol flex-2">
-                                <select id="tableName" class="data" name="tableName"></select>
-                                <button id="deleteTableButton"><i class="fas fa-cloud-arrow-up"></i> Executar</button>
-                            </div>
-                        </div>
+                        </div>                        
                         <div class="data-group query">
                             <h4 class="data-label">Executar Comando </h4>
                             <textarea id="queryText"></textarea>
@@ -102,78 +91,10 @@
                 </fieldset>
             </div>
         </div>
-        <div id="chapterPanel" class="panel flexrow hidden">
-            <div id="sideBar" class="sidebar">
-                <h3>Capítulos</h3>
-                <a id="newChapterButton" class="flyer-button"><i class="fas fa-folder-plus"></i> Novo Capítulo</a>
-                <foldertree id="chapter" item="sections"></foldertree>
-                <div class="footer">
-                    <div id="confirmDialog" class="confirmation-tooltip hidden" data-item="" data-action="">
-                        <p id="confirmation-message"></p>
-                        <div class="confirmation-buttons">
-                            <button id="confirm-yes" class="confirm-btn">Yes</button>
-                            <button id="confirm-no" class="confirm-btn">No</button>
-                        </div>
-                    </div>
-                    <div id="searchEntry" class="input-container search-bar flexrow">
-                        <input type="text" id="searchInput" class="search-data" placeholder="Pesquisar entrada...">
-                        <a id="clearSearch" data-tooltip="Limpar busca" data-tooltip-side="left"
-                            data-tooltip-block="top"><i class="fas fa-xmark"></i></a>
-                    </div>
-                </div>
-            </div>
-            <div class="content flexcol">
-                <div class="header flexrow">
-                    <div class="header-info flexcol">
-                        <input id="titleInput" type="text" class="title" name="title" placeholder="Título da Entrada"
-                            disabled />
-                        <fieldset class="info-set flexcol" disabled>
-                            <div class="data-group icon">
-                                <span class="data-label">Tipo </span>
-                                <div class="icon-container flexrow">
-                                    <a id="dataIcon" class="data-icon" data-tooltip="Escolha um assunto..."
-                                        data-tooltip-side="left"><i id="chapterIcon" class="fa-regular fa-file"></i></a>
-                                </div>
-                                <span id="typeLabel" class="type-label">&#8212</span>
-                            </div>
-                            <div class="data-complex flexrow">
-                                <div class="data-group check">
-                                    <span class="data-label">Rascunho </span>
-                                    <switch id="isDraftSwitch" />
-                                </div>
-                                <a id="lineageIcon" class="lineage-icon hidden" data-tooltip="Linhagem"
-                                    data-tooltip-side="left"><i class="fas fa-people-group"></i></a>
-                            </div>
-                        </fieldset>
-                    </div>
-                </div>
-
-                <div class="separator"></div>
-
-                <textarea id="mainEditor">
-                      <div class="text-content editable"></div>
-                  </textarea>
-                <div class="footer flexrow">
-                    <div class="extra buttons flexrow">
-                        <button id="cancelButton" class="cancel-entry hidden">
-                            <i class="fas fa-square-xmark"></i> Cancelar
-                        </button>
-                    </div>
-                    <div class="fixed buttons flexrow">
-                        <button id="newEntryButton" class="new-entry disabled">
-                            <i class="fas fa-square-plus"></i> Nova Seção
-                        </button>
-                        <button id="saveButton" class="disabled">
-                            <i class="fa-regular fa-floppy-disk"></i> Salvar
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
         <div id="leafletPanel" class="panel flexcol hidden">
             <div class="content flexcol">
                 <fieldset class="info-set flexcol">
-                    <div>
+                    <div class="fieldset-content">
                         <h3>Mapa Padrão</h3>
                         <div class="data-group text">
                             <span class="data-label">Local </span>
@@ -206,7 +127,7 @@
                     </div>
                 </fieldset>
                 <fieldset class="info-set flexcol">
-                    <div>
+                    <div class="fieldset-content">
                         <h3>Ferramentas</h3>
                         <span class="hint">{{tilerHint}}</span>
                         <h4>Node Tiler ®</h4>
@@ -231,7 +152,7 @@
                     </div>
                 </fieldset>
                 <fieldset class="info-set flexcol">
-                    <div>
+                    <div class="fieldset-content">
                         <h3>Escala</h3>
                         <div class="data-complex scale">
                             <div class="data-group">
