@@ -307,11 +307,18 @@ globalThis.uniforge = {
     }),
 
     /**
-    * Referência ao formulário, utilizado em várias partes da aplicação.
+    * Referência ao formulário ativo, utilizado em várias partes da aplicação.
     * 
-    * @type {Object|null}
+    * @type {BaseForm|null}
     */
     form: null,
+
+    /**
+    * Referência ao diálogo ativo, utilizado em várias partes da aplicação.
+    * 
+    * @type {BaseDialog|null}
+    */
+    dialog: null,
 
     /**
     * LatLng onde o último clique no mapa ocorreu.

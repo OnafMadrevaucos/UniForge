@@ -156,6 +156,15 @@ export default class Application {
     }
 
     /**
+    * Atalhos de teclado padrão do formulário.
+    *
+    * @type {Object<string, string>}
+    */
+    get shortcuts() {
+        return {};
+    }
+
+    /**
      * Obtém o observador de alteração da aplicação no DOM.
      * 
      * @returns {MutationObserver} - O observador usado pela aplicação.
@@ -323,7 +332,7 @@ export default class Application {
         return uniforge.parser.parseHTML(html, this.data);
     }
 
-    
+
     async render() {
         try {
             // Função para obter os dados comuns à toda aplicação.
@@ -428,12 +437,13 @@ export default class Application {
             this.configure();
 
             // Aplicação configurado corretamente, exiba-a.
-            if (this.configured) {
+            if (this.defaultOptions.style === Application.Styles.FORM && this.configured) {
                 this.ui.app.classList.remove('hidden');
-
+                
                 uniforge.form = this;
                 uniforge.state.save();
             }
+            else if (this.defaultOptions.style === Application.Styles.DIALOG) uniforge.dialog = this;
         } catch (error) {
             this.msgBox.showError(error.message, error);
         }
@@ -445,7 +455,9 @@ export default class Application {
         // Limpa o conteúdo do formulário dos metadados da aplicação.
         uniforge.state.update(['currentForm', { name: null, state: null, activeTab: 0 }]);
 
-        uniforge.form = null;
+        if (this.defaultOptions.style === Application.Styles.FORM) uniforge.form = null;
+        else if (this.defaultOptions.style === Application.Styles.DIALOG) uniforge.dialog = null;
+
         uniforge.state.save();
     }
 
@@ -482,6 +494,7 @@ export default class Application {
     }
     /* ---------------------------------------------------------------------------------------------------------------- */
     // LISTENERS
+
     /**
      * Configura ouvintes de eventos básicos para o formulário.
      * @private
@@ -513,7 +526,7 @@ export default class Application {
 
         this.close();
     }
-    
+
     _onMouseDown(event) {
         event.stopPropagation();
         this.state.isDragging = true;
@@ -554,7 +567,7 @@ export default class Application {
         }
     }
 
-    
+
     _onMouseUp() {
         if (!this.ui.app) return;
 
@@ -565,9 +578,18 @@ export default class Application {
         document.body.style.userSelect = "";
     }
 
+    _onAppKeyDown(event) {
+        const action = this.shortcuts[event.key];
+
+        if (!action || typeof this[action] !== 'function') return;
+
+        event.preventDefault();
+        this[action]();
+    }
+
     /* ---------------------------------------------------------------------------------------------------------------- */
     // UTILITÁRIOS  
-    
+
     querySelector(selector) {
         return this.ui.app.querySelector(selector);
     }

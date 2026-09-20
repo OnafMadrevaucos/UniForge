@@ -117,6 +117,14 @@ export default class BaseForm extends Application {
     */
   get document() { return this.#document; }
 
+  /**@overload */
+  get shortcuts() {
+    return {
+      ...super.shortcuts,
+      Escape: 'close'
+    };
+  }
+
   /**
     * O formulário é o de Configuração.
     * 
@@ -260,6 +268,8 @@ export default class BaseForm extends Application {
   activateBaseListeners() {
     super.activateBaseListeners();
 
+    document.addEventListener('keydown', (event) => { this._onAppKeyDown.bind(this)(event); });
+
     const app = this.ui.app;
     app.addEventListener('mousedown', (event) => { this._onAppActive.bind(this)(event); });
 
@@ -279,6 +289,13 @@ export default class BaseForm extends Application {
     if (clickedAppUuid === uniforge.form?.uuid) return;
 
     this._activateForm();
+  }
+
+  _onAppKeyDown(event) {
+    // Ignora eventos destinados a outro formulário ou quando um dialog estiver ativo. 
+    if (uniforge.form !== this || uniforge.dialog) return;
+
+    super._onAppKeyDown(event);
   }
 
   _onHeaderDblClick(event) {
