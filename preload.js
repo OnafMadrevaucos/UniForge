@@ -1,10 +1,11 @@
 const { contextBridge, ipcRenderer } = require('electron');
+
 console.log('============================= UNIFORGE ============================');
 
 contextBridge.exposeInMainWorld('versions', {
   node: () => process.versions.node,
-  chrome: () => process.versions.chrome,
-  electron: () => process.versions.electron
+  electron: () => process.versions.electron,
+  app: () => ipcRenderer.invoke('app-version')
 })
 console.log('UniForge | Configurando pré-carregamentos de Versão.');
 
@@ -17,6 +18,7 @@ console.log('UniForge | Configurando pré-carregamentos de SQL.');
 contextBridge.exposeInMainWorld('app', {
   refresh: () => ipcRenderer.invoke('window-refresh'),
   fileDialog: (type) => ipcRenderer.invoke('select-file', type),
+  quit: () => ipcRenderer.send('app-quit'),
 });
 console.log('UniForge | Configurando pré-carregamentos de Aplicação.');
 

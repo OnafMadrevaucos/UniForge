@@ -6,6 +6,7 @@ import * as parserEsm from './parsers/module.mjs';
 import * as leafletEsm from './leaflet/module.mjs';
 
 import ArticleForm from '../models/forms/articleForm.js';
+import AboutForm from '../models/forms/aboutForm.js';
 
 import AtlasForm from "../models/forms/atlasForm.js";
 import CalendarForm from "../models/forms/calendarForm.js";
@@ -23,6 +24,10 @@ import TimelineForm from "../models/forms/timelineForm.js";
 import { APP_STATES } from './utils/state.mjs';
 import { core } from './leaflet/module.mjs';
 import { applyHighlight, generateFolderlistHTML } from './utils/html.mjs';
+
+import BaseForm from '../models/forms/baseForm.js';
+import BaseDialog from '../models/dialogs/baseDialog.js';
+
 'use strict';
 
 globalThis.store = new WeakMap(); // WeakMap para armazenar os dados de imagens associados aos elementos.
@@ -99,6 +104,14 @@ console.log('UniForge | Gerando variável global \'uniforge\'...');
 */
 
 globalThis.uniforge = {
+
+    /**
+    * Referência às versões do UniForge.
+    * 
+    * @type {Object}
+    */
+    versions: window.versions,
+
     /**
     * Referência ao corpo do documento HTML.
     * 
@@ -199,7 +212,6 @@ globalThis.uniforge = {
     * @type {Leaflet}
     */
     leaflet: Object.freeze({
-        core: leaflet.core.default, 
         drawer: leaflet.drawer, 
         drawStyle: leaflet.drawStyle
     }),
@@ -291,6 +303,7 @@ globalThis.uniforge = {
     * @type {Forms}
     */
     forms: Object.freeze({
+        about: AboutForm,
         article: ArticleForm,
         atlas: AtlasForm,
         calendar: CalendarForm,
@@ -307,18 +320,25 @@ globalThis.uniforge = {
     }),
 
     /**
-    * Referência ao formulário ativo, utilizado em várias partes da aplicação.
+    * Referência ao conjunto de formulários abertos, utilizado em várias partes da aplicação.
     * 
-    * @type {BaseForm|null}
+    * @type {Set<BaseForm>}
     */
-    form: null,
+    form: new Set(),
 
     /**
-    * Referência ao diálogo ativo, utilizado em várias partes da aplicação.
+    * Referência ao conjunto de diálogos abertos, utilizado em várias partes da aplicação.
     * 
-    * @type {BaseDialog|null}
+    * @type {Set<BaseDialog>}
     */
-    dialog: null,
+    dialog: new Set(),
+
+    /**
+    * Referência à tela (Formulário ou Caixa de Diálogo) que está sendo ativamente usada pelo usuário, utilizado em várias partes da aplicação.
+    * 
+    * @type {Application|null}
+    */
+    active: null,
 
     /**
     * LatLng onde o último clique no mapa ocorreu.

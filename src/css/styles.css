@@ -97,7 +97,8 @@
 
     --layer-control-text: var(--light-color-b);
 
-    --header-background-color: var(--dark-color-b);
+    --header-color: var(--dark-color-b);
+    --inactive-header-color: var(--light-color-b);
 
     /* Font Sizes */
     --title-size: 56px;
@@ -516,6 +517,7 @@ input:checked+.slider::before {
     color: var(--color-d);
     font-weight: 700;
 }
+
 .calendars .data-complex.main .footer:has(.buttons),
 .footer:has(.buttons) {
     width: 100%;
@@ -707,9 +709,10 @@ button.disabled:hover {
     height: 100vh;
     margin: 0;
     padding: 0;
-    background-image: url('../ui/world-background.jpeg');
-    background-repeat: round;
     box-shadow: var(--default-shadow);
+
+    background-image: url('../ui/denim065.png');
+    background-color: var(--color-a);
 }
 
 .leaflet-bar {
@@ -1766,8 +1769,8 @@ button.disabled:hover {
 
 .form.container.fullscreen:not(.maximized),
 .form.container:not(.maximized) {
-    height: 0vh;
-    width: 20vw;
+    height: 0vh !important;
+    width: 20vw !important;
 }
 
 .form.container.fullscreen {
@@ -1778,7 +1781,7 @@ button.disabled:hover {
 .form .header-bar {
     border-top-left-radius: var(--default-border-radius);
     border-top-right-radius: var(--default-border-radius);
-    background-color: var(--header-background-color);
+    background-color: var(--header-color);
     background-image: url(../ui/denim065.png);
     width: 100%;
     height: 25px;
@@ -1786,6 +1789,10 @@ button.disabled:hover {
     top: -25px;
     flex-wrap: wrap;
     justify-content: flex-end;
+}
+
+.form:not(.active) .header-bar {
+    background-color: var(--inactive-header-color);
 }
 
 .form:not(.maximized) .header-bar {
@@ -1893,7 +1900,7 @@ button.disabled:hover {
 
 .dialog .header-bar {
     gap: var(--default-gap-size);
-    background-color: var(--header-background-color);
+    background-color: var(--header-color);
     background-image: url(../ui/denim065.png);
     border-radius: var(--title-header-radius);
     box-shadow: var(--small-shadow);
@@ -2099,7 +2106,7 @@ button.disabled:hover {
     height: var(--fill-height);
 }
 
-.dialog .main  .file-dialog button {
+.dialog .main .file-dialog button {
     color: var(--text-color);
 }
 
@@ -2287,9 +2294,11 @@ button.disabled:hover {
 .dialog .directory ul li:not(.file):hover {
     box-shadow: var(--button-hover-shadow);
 }
+
 .dialog .directory ul li:hover {
     cursor: pointer;
 }
+
 .dialog .directory ul li.file.selected,
 .dialog .directory ul li.file:hover {
     outline: 1px solid;
@@ -2471,9 +2480,11 @@ button.disabled:hover {
     margin: 2px;
     width: auto;
 }
+
 #settings .footer {
     color: var(--text-color);
 }
+
 #settings .data-group button {
     margin: 0;
     width: 100%;
@@ -2930,6 +2941,42 @@ ul.list li,
     border: var(--filled-border);
 }
 */
+
+/* ------ About Form ------ */
+#about .header {
+    text-align: center;
+    color: var(--color-b);
+    font-weight: 700;
+}
+
+#about .header .icon-container {
+    align-self: center;
+    border: 5px solid var(--text-color);
+    border-radius: var(--small-border-radius);
+    background-color: var(--dark-color-b);
+    margin: 5px;
+    padding: 5px;
+    width: fit-content;
+    box-shadow: 0 0 10px rgb(184 132 37 / 50%) !important;
+}
+
+#about .header .icon-container img {
+    height: 128px;
+    width: 128px;
+}
+
+#about .header .title {
+    font-size: 30px;
+    font-family: 'Cinzel', serif;
+    font-variant: small-caps;
+}
+
+#about fieldset {
+    background-color: var(--dark-color-d);
+    border-radius: var(--default-border-radius);
+    box-shadow: var(--small-shadow);
+    margin: 5px;
+}
 
 /* ------ Article Type Form ------ */
 .article {
@@ -3958,7 +4005,7 @@ hr.divider {
     color: var(--text-color);
 }
 
-.panel .info-set h3,
+.info-set h3,
 .sidebar h3 {
     font-size: var(--heading-2-size);
     font-variant: small-caps;
@@ -4381,12 +4428,12 @@ hr.divider {
 }
 
 .calendars .data-complex.main {
-    flex: 80%;  
-    padding: 5px;  
+    flex: 80%;
+    padding: 5px;
 }
 
 .calendars .data-complex.main .footer button.new-entry {
-    flex: fit-content;    
+    flex: fit-content;
 }
 
 .calendars .calendar-manager {
@@ -4769,6 +4816,7 @@ hr.divider {
     border-bottom-right-radius: var(--strong-border-radius);
     border: var(--filled-border);
 }
+
 .tox.tox-edit-focus .tox-edit-area::before {
     opacity: 0;
 }
@@ -4812,6 +4860,7 @@ hr.divider {
     border-top-left-radius: 0;
     border-top-right-radius: 0;
 }
+
 #tinymce:not(.main-editor):focus-visible {
     outline: 1px solid;
     outline-offset: -2px;

@@ -1,5 +1,3 @@
-import { Entry } from "../scripts/managers/libraryManager.js";
-
 /**
  * Classe NavQueue
  * Representa uma fila de navegação para gerenciar elementos provenientes de diferentes origens (biblioteca ou linha do tempo).

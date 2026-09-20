@@ -13,6 +13,8 @@ import FontManager from "./scripts/managers/fontManager.js";
 import { set } from "./common/primitives/set.mjs";
 import Slider from "./models/controls/slider.js";
 import ColorPicker from "./models/controls/colorPicker.js";
+import Dialogs from "./models/dialogs/dialog.js";
+import AboutForm from "./models/forms/aboutForm.js";
 
 // Configura o tema salvo no localStorage antes de inicializar o app para evitar flash de estilo.
 document.documentElement.setAttribute('data-theme', localStorage.getItem('uniforge_theme') || 'theme-neutral');
@@ -459,14 +461,16 @@ async function configureLeaflet() {
     const borderColorPicker = uniforge.ctrls.colorPickers.borderColorPicker;
     borderColorPicker.setColor(style.color, true);
 
-    uniforge.leaflet.drawStyle.update(uniforge.leaflet.core.map, style);
+    uniforge.leaflet.drawStyle.update(uniforge.ctrls.leaflet.map, style);
 
     await refreshPreviewStyle();
 }
+
 // Configura a ferramenta de geração de map tiles.
 function configureMapTiler() {
     uniforge.tiler.emitProgress(async (data) => await updateProgressDialog(data));
 }
+
 // Atualiza o dialog conforme eventos.
 async function updateProgressDialog(data) {
     const progressDialog = uniforge.ctrls.progressDialog;
@@ -577,6 +581,8 @@ function activateMainListeners() {
 
     const currentYearInput = document.getElementById('currentYear');
 
+    document.addEventListener('keydown', (event) => { onKeyDown(event); });
+
     toggleTab.addEventListener('click', (event) => { onToggleTopBarClick(event); });
 
     codexBtn.addEventListener('click', (event) => { onTopbarButtonClick(event); });
@@ -651,6 +657,76 @@ function activateMainListeners() {
  * FUNÇÕES DE LISTENERS DOS FORMS
  * ------------------------------------------------------------------
  * */
+
+async function onKeyDown(event) {
+    const key = event.key;
+
+    // A tecla é 'Esc'.
+    if (key == 'Escape') {
+        // Se uma edição no Leaflet está ativa.
+        if (uniforge.active instanceof L.Marker || uniforge.active instanceof L.Path) {
+            uniforge.active = null;
+            return;
+        }
+        // Não há nenhuma tela (Formulário ou Caixa de Diálogo) aberta, independente de estar ativa ou não.
+        if (!uniforge.form.isEmpty() || !uniforge.dialog.isEmpty()) return;
+
+        // Confirme a ação.
+        if (await Dialogs.confirm('Sair', 'Deseja realmente sair? Qualquer alteração não salva será perdida.')) {
+            uniforge.app.quit(); // Fecha a aplicação.
+        }
+    }
+    else if (key == 'F1') {
+        let active = false;
+        uniforge.form.forEach((f) => {
+            active = active || f.data.type === 'codex';
+        });
+
+        if (!active) {
+            const button = document.querySelector('.topbarBtn[data-target=\'codex\']');
+            button.classList.add('disabled');
+
+            renderForm(button.getAttribute('data-target'), button);
+        }
+    }
+    else if (key == 'F2') {
+        let active = false;
+        uniforge.form.forEach((f) => {
+            active = active || f.data.type === 'timeline';
+        });
+
+        if (!active) {
+            const button = document.querySelector('.topbarBtn[data-target=\'timeline\']');
+            button.classList.add('disabled');
+
+            renderForm(button.getAttribute('data-target'), button);
+        }
+    }
+    else if (key == 'F12') {
+        let active = false;
+        uniforge.form.forEach((f) => {
+            active = active || f.data.type === 'about';
+        });
+
+        if (!active) {
+            const aboutItem = document.querySelector('.tab.about-item');
+            aboutItem.dispatchEvent(new Event('click'));
+        }
+    }
+    else if (key == '.') {
+        if(event.ctrlKey)
+            onChangeTime(event, 10);
+        else
+            onChangeTime(event, 1);
+    }
+    else if (key == ',') {
+        if(event.ctrlKey)
+            onChangeTime(event, -10);
+        else
+            onChangeTime(event, -1);
+    }
+}
+
 function onTopbarButtonClick(event) {
     // Impedir que o clique no item desencadeie o clique fora do sidebar
     event.stopPropagation();
@@ -733,6 +809,10 @@ function onObjectsSearchChange(event) {
         noObjectsFoundMessage.classList.add('hidden');
 }
 
+function onEndLeafletEditMode() {
+
+}
+
 function onMarkerSearchChange(event) {
     event.stopPropagation();
     const input = event.currentTarget;
@@ -798,7 +878,7 @@ async function onMarkerIconClick(event) {
     const signMarker = document.querySelector('.map-objects-panel .config-group .options.marker .active');
     const colorMarker = document.querySelector('.map-objects-panel .config-group .options.color .active');
 
-    const editCache = uniforge.leaflet.core.editCache;
+    const editCache = uniforge.leaflet.editCache;
 
     if (signMarker && colorMarker) {
         const marker = `${colorMarker.getAttribute('data-color')}_${signMarker.getAttribute('data-marker')}`;
@@ -840,7 +920,7 @@ async function onHasBorderSwitchChange(event) {
         borderSizeGroup.classList.add('hidden');
     }
 
-    uniforge.leaflet.drawStyle.update(uniforge.leaflet.core.map, uniforge.leaflet.drawStyle.style);
+    uniforge.leaflet.drawStyle.update(uniforge.ctrls.leaflet.map, uniforge.leaflet.drawStyle.style);
 
     await refreshPreviewStyle();
 }
@@ -851,7 +931,7 @@ async function onShapeSizeSliderChange(event) {
     const size = uniforge.ctrls.sliders.shapeSizeSlider.getValueNumber();
     uniforge.leaflet.drawStyle.style.weight = size;
 
-    uniforge.leaflet.drawStyle.update(uniforge.leaflet.core.map, uniforge.leaflet.drawStyle.style);
+    uniforge.leaflet.drawStyle.update(uniforge.ctrls.leaflet.map, uniforge.leaflet.drawStyle.style);
 
     await refreshPreviewStyle();
 }
@@ -867,7 +947,7 @@ async function onShapeBorderComboChange(event) {
         ...style,
     }
 
-    uniforge.leaflet.drawStyle.update(uniforge.leaflet.core.map, uniforge.leaflet.drawStyle.style);
+    uniforge.leaflet.drawStyle.update(uniforge.ctrls.leaflet.map, uniforge.leaflet.drawStyle.style);
 
     await refreshPreviewStyle();
 }
@@ -876,7 +956,7 @@ async function onFillColorPickerChange(picker) {
     uniforge.leaflet.drawStyle.style.fillColor = picker.value;
     uniforge.leaflet.drawStyle.style.fillOpacity = picker.alpha;
 
-    uniforge.leaflet.drawStyle.update(uniforge.leaflet.core.map, uniforge.leaflet.drawStyle.style);
+    uniforge.leaflet.drawStyle.update(uniforge.ctrls.leaflet.map, uniforge.leaflet.drawStyle.style);
 
     await refreshPreviewStyle();
 }
@@ -887,7 +967,7 @@ async function onBorderColorPickerChange(picker) {
     uniforge.leaflet.drawStyle.style.color = picker.value;
     uniforge.leaflet.drawStyle.style.opacity = picker.alpha;
 
-    uniforge.leaflet.drawStyle.update(uniforge.leaflet.core.map, uniforge.leaflet.drawStyle.style);
+    uniforge.leaflet.drawStyle.update(uniforge.ctrls.leaflet.map, uniforge.leaflet.drawStyle.style);
 
     await refreshPreviewStyle();
 }
@@ -943,7 +1023,7 @@ async function recoverForm(form) {
 }
 
 async function startMarkerDrawing(marker) {
-    const map = uniforge.leaflet.core.map;
+    const map = uniforge.ctrls.leaflet.map;
     const markerURL = uniforge.urls.markers.join(`${marker}.png`);
 
     // O controlador de Marker já está ativo. 
@@ -958,7 +1038,7 @@ async function refreshMarkerDrawing(marker) {
     const newStyle = uniforge.leaflet.drawStyle.factories.marker(markerURL).markerStyle.icon.options;
 
     const newIcon = L.icon(newStyle);
-    uniforge.leaflet.core.editCache.layer.setIcon(newIcon);
+    uniforge.leaflet.editCache.layer.setIcon(newIcon);
 };
 
 async function refreshPreviewStyle() {

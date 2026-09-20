@@ -434,16 +434,27 @@ export default class Application {
             this.hookToDOM();
 
             // Configura as funcionalidades de interação da aplicação.
-            this.configure();
+            await this.configure();
 
             // Aplicação configurado corretamente, exiba-a.
             if (this.defaultOptions.style === Application.Styles.FORM && this.configured) {
                 this.ui.app.classList.remove('hidden');
                 
-                uniforge.form = this;
+                uniforge.form.add({
+                    _id: this.uuid,
+                    ...this
+                });
+
                 uniforge.state.save();
             }
-            else if (this.defaultOptions.style === Application.Styles.DIALOG) uniforge.dialog = this;
+            else if (this.defaultOptions.style === Application.Styles.DIALOG) {
+                uniforge.dialog.add({
+                    _id: this.uuid,
+                    ...this
+                });
+
+                uniforge.active = this;
+            }
         } catch (error) {
             this.msgBox.showError(error.message, error);
         }
@@ -455,10 +466,12 @@ export default class Application {
         // Limpa o conteúdo do formulário dos metadados da aplicação.
         uniforge.state.update(['currentForm', { name: null, state: null, activeTab: 0 }]);
 
-        if (this.defaultOptions.style === Application.Styles.FORM) uniforge.form = null;
-        else if (this.defaultOptions.style === Application.Styles.DIALOG) uniforge.dialog = null;
+        if (this.defaultOptions.style === Application.Styles.FORM) uniforge.form.remove(this.uuid);
+        else if (this.defaultOptions.style === Application.Styles.DIALOG) uniforge.dialog.remove(this.uuid);
 
         uniforge.state.save();
+
+        if(uniforge.active === this) uniforge.active = null;
     }
 
     /**

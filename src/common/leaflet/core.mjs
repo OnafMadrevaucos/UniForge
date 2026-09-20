@@ -156,6 +156,7 @@ const lControl = {
     * Inicializa o controle do Mapa com a imagem fornecida.
     * 
     * @param {String} worldMapURL - URL da imagem do Mapa Mundi.
+    * @returns {L.Control} Retorna o controlador do mapa do Leaflet.
     */
     init: function (worldMapURL) {
         if (!worldMapURL) {
@@ -460,7 +461,7 @@ const lControl = {
             map.on('zoomend', _onZoomEnd);
 
             // Adicione um listener para o evento 'pm:drawstart' para desabilitar o arrastre do mapa quando estiver desenhando um polígono.
-            map.on('pm:drawstart', function (e) {
+            map.on('pm:drawstart', function (e) {                
                 map.dragging.disable();
 
                 // Se já houver uma edição ocorrendo neste momento, aborte a edição atual para iniciar uma nova.
@@ -477,6 +478,8 @@ const lControl = {
 
                 const workingLayer = e.workingLayer;
                 const shape = e.shape;
+
+                uniforge.active = workingLayer;
 
                 map.on('mousemove', (e) => {
                     const shape = map.pm.Draw.getActiveShape();
@@ -816,6 +819,8 @@ const lControl = {
             containers.forEach(container => container.classList.remove('active'));
 
             utils.measurements.removeTooltip(map);
+
+            uniforge.active = null;
         }
 
         function _onZoomEnd() {
@@ -1201,7 +1206,7 @@ const lControl = {
             const borderColorPicker = uniforge.ctrls.colorPickers.borderColorPicker;
             borderColorPicker.setColor(style.color, true);
 
-            uniforge.leaflet.drawStyle.update(uniforge.leaflet.core.map, style);
+            uniforge.leaflet.drawStyle.update(uniforge.ctrls.leaflet.map, style);
 
             await _refreshPreviewStyle(layer.options);
         }
@@ -1214,6 +1219,8 @@ const lControl = {
             // Abre o Painel de Edição para o Elemento.
             lControl.toggleMapObjectPanel(event, { name: 'marker', forceState: PANEL_STATE.OPEN, icon: iconURL });
         }
+
+        uniforge.active = layer;
     },
 
     endEditMode: function (event, hasRollback = true) {
@@ -1240,7 +1247,7 @@ const lControl = {
             }
 
             const layerEditTip = document.querySelector('.map-objects-edit-tip');
-            layerEditTip.classList.remove('active');
+            layerEditTip.classList.remove('active');            
         }
     },
 

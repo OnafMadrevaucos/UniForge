@@ -293,7 +293,7 @@ export default class BaseForm extends Application {
 
   _onAppKeyDown(event) {
     // Ignora eventos destinados a outro formulário ou quando um dialog estiver ativo. 
-    if (uniforge.form !== this || uniforge.dialog) return;
+    if (uniforge.active !== this || !uniforge.dialog.isEmpty()) return;
 
     super._onAppKeyDown(event);
   }
@@ -373,8 +373,9 @@ export default class BaseForm extends Application {
     const activeApps = document.querySelectorAll('.container.active');
     activeApps.forEach((app) => app.classList.remove('active'));
 
-    this.ui.app.classList.add('active');
-    uniforge.form = this;
-  }
+    if (uniforge.active && ((uniforge.active instanceof L.Marker) || (uniforge.active instanceof L.Path))) return;
 
+    this.ui.app.classList.add('active');
+    uniforge.active = this;
+  }
 }

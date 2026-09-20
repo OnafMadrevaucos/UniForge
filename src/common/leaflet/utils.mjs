@@ -398,8 +398,8 @@ async function _onMarkerDraw(map, event) {
     const mapMarkersContainer = document.querySelector('.map-objects-container.marker');
 
     // Se já houver uma edição ocorrendo neste momento, aborte a edição atual para iniciar uma nova.
-    if (uniforge.leaflet.core.isEditModeON) {
-        uniforge.leaflet.core.endEditMode(event, true);
+    if (uniforge.ctrls.leaflet.isEditModeON) {
+        uniforge.ctrls.leaflet.endEditMode(event, true);
     }
 
     // Desativa todas as opções de desenho.
