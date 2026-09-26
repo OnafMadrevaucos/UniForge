@@ -19,35 +19,6 @@ export default class ThemeDialog extends BaseDialog {
         // Verifica se se trata de um clone de um Tema já existente.
         this.isClone = options.isClone ?? false;
 
-        // Propriedade que armazena todos os controles dos Color Pickers do Dialog.
-        this.pickers = {
-            darkAColorPicker: null,
-            mainAColorPicker: null,
-            lightAColorPicker: null,
-
-            darkBColorPicker: null,
-            mainBColorPicker: null,
-            lightBColorPicker: null,
-
-            darkCColorPicker: null,
-            mainCColorPicker: null,
-            lightCColorPicker: null,
-
-            darkDColorPicker: null,
-            mainDColorPicker: null,
-            lightDColorPicker: null,
-
-            specialColorPicker: null,
-
-            darkHighlightColorPicker: null,
-            highlightColorPicker: null,
-
-            darkBackgroundColorPicker: null,
-            mainBackgroundColorPicker: null,
-            lightBackgroundColorPicker: null,
-
-            quoteBackgroundColorPicker: null,
-        }
         // Tema padrão.
         this.theme = {
             '--name': this.isEdit ? this.css['--name'] : '',
@@ -189,132 +160,90 @@ export default class ThemeDialog extends BaseDialog {
     }
 
     configureColorPickers() {
-        var container = this.querySelector('.theme-dialog .data-complex.color-a');
+        let picker = this.querySelector("#darkAColorPicker");
+        picker.dataset.name = "--dark-color-a";
+        picker.dataset.tooltip = 'Cor A Escura';
+        picker.value = this.theme['--dark-color-a'];
 
-        this.pickers.darkAColorPicker = new ColorPicker('darkAColorPicker', container, {
-            value: this.theme['--dark-color-a'],
-            tooltip: 'Cor A Escura'
-        });
-        this.pickers.darkAColorPicker.config({ dataset: { name: '--dark-color-a' } });
+        picker = this.querySelector("#mainAColorPicker");
+        picker.dataset.name = "--color-a";
+        picker.dataset.tooltip = 'Cor A Padrão';
+        picker.value = this.theme['--color-a'];
 
-        this.pickers.mainAColorPicker = new ColorPicker('mainAColorPicker', container, {
-            value: this.theme['--color-a'],
-            tooltip: 'Cor A Padrão'
-        });
-        this.pickers.mainAColorPicker.config({ dataset: { name: '--color-a' } });
+        picker = this.querySelector("#lightAColorPicker");
+        picker.dataset.name = "--light-color-a";
+        picker.dataset.tooltip = 'Cor A Clara';
+        picker.value = this.theme['--light-color-a'];
 
-        this.pickers.lightAColorPicker = new ColorPicker('lightAColorPicker', container, {
-            value: this.theme['--light-color-a'],
-            tooltip: 'Cor A Clara'
-        });
-        this.pickers.lightAColorPicker.config({ dataset: { name: '--light-color-a' } });
+        picker = this.querySelector("#darkBColorPicker");
+        picker.dataset.name = "--dark-color-b";
+        picker.dataset.tooltip = 'Cor B Escura';
+        picker.value = this.theme['--dark-color-b'];
 
-        container = this.querySelector('.theme-dialog .data-complex.color-b');
+        picker = this.querySelector("#mainBColorPicker");
+        picker.dataset.name = "--color-b";
+        picker.dataset.tooltip = 'Cor B Padrão';
+        picker.value = this.theme['--color-b'];
 
-        this.pickers.darkBColorPicker = new ColorPicker('darkBColorPicker', container, {
-            value: this.theme['--dark-color-b'],
-            tooltip: 'Cor B Escura'
-        });
-        this.pickers.darkBColorPicker.config({ dataset: { name: '--dark-color-b' } });
+        picker = this.querySelector("#lightBColorPicker");
+        picker.dataset.name = "--light-color-b";
+        picker.dataset.tooltip = 'Cor B Clara';
+        picker.value = this.theme['--light-color-b'];
 
-        this.pickers.mainBColorPicker = new ColorPicker('mainBColorPicker', container, {
-            value: this.theme['--color-b'],
-            tooltip: 'Cor B Padrão'
-        });
-        this.pickers.mainBColorPicker.config({ dataset: { name: '--color-b' } });
+        picker = this.querySelector("#darkCColorPicker");
+        picker.dataset.name = "--dark-color-c";
+        picker.dataset.tooltip = 'Cor C Escura';
+        picker.value = this.theme['--dark-color-c'];
 
-        this.pickers.lightBColorPicker = new ColorPicker('lightBColorPicker', container, {
-            value: this.theme['--light-color-b'],
-            tooltip: 'Cor B Clara'
-        });
-        this.pickers.lightBColorPicker.config({ dataset: { name: '--light-color-b' } });
+        picker = this.querySelector("#lightCColorPicker");
+        picker.dataset.name = "--light-color-c";
+        picker.dataset.tooltip = 'Cor C Clara';
+        picker.value = this.theme['--light-color-c'];
 
-        container = this.querySelector('.theme-dialog .data-complex.color-c');
+        picker = this.querySelector("#darkDColorPicker");
+        picker.dataset.name = "--dark-color-d";
+        picker.dataset.tooltip = 'Cor D Escura';
+        picker.value = this.theme['--dark-color-d'];
 
-        this.pickers.darkCColorPicker = new ColorPicker('darkCColorPicker', container, {
-            value: this.theme['--dark-color-c'],
-            tooltip: 'Cor C Escura'
-        });
-        this.pickers.darkCColorPicker.config({ dataset: { name: '--dark-color-c' } });
+        picker = this.querySelector("#lightDColorPicker");
+        picker.dataset.name = "--light-color-d";
+        picker.dataset.tooltip = 'Cor D Clara';
+        picker.value = this.theme['--light-color-d'];
 
-        this.pickers.mainCColorPicker = new ColorPicker('mainCColorPicker', container, {
-            value: this.theme['--color-c'],
-            tooltip: 'Cor C Padrão'
-        });
-        this.pickers.mainCColorPicker.config({ dataset: { name: '--color-c' } });
+        picker = this.querySelector("#specialColorPicker");
+        picker.dataset.name = "--special-color";
+        picker.dataset.tooltip = 'Cor Especial';
+        picker.value = this.theme['--special-color'];
 
-        this.pickers.lightCColorPicker = new ColorPicker('lightCColorPicker', container, {
-            value: this.theme['--light-color-c'],
-            tooltip: 'Cor C Clara'
-        });
-        this.pickers.lightCColorPicker.config({ dataset: { name: '--light-color-c' } });
+        picker = this.querySelector("#highlightColorPicker");
+        picker.dataset.name = "--highlight-color";
+        picker.dataset.tooltip = 'Cor Destaque';
+        picker.value = this.theme['--highlight-color'];
 
-        container = this.querySelector('.theme-dialog .data-complex.color-d');
+        picker = this.querySelector("#darkHighlightColorPicker");
+        picker.dataset.name = "--dark-highlight-color";
+        picker.dataset.tooltip = 'Cor Destaque Escura';
+        picker.value = this.theme['--dark-highlight-color'];
 
-        this.pickers.darkDColorPicker = new ColorPicker('darkDColorPicker', container, {
-            value: this.theme['--dark-color-d'],
-            tooltip: 'Cor D Escura'
-        });
-        this.pickers.darkDColorPicker.config({ dataset: { name: '--dark-color-d' } });
+        picker = this.querySelector("#darkBackgroundColorPicker");
+        picker.dataset.name = "--dark-background-color";
+        picker.dataset.tooltip = 'Cor de Fundo Escura';
+        picker.value = this.theme['--dark-background-color'];
 
-        this.pickers.mainDColorPicker = new ColorPicker('mainDColorPicker', container, {
-            value: this.theme['--color-d'],
-            tooltip: 'Cor D Padrão'
-        });
-        this.pickers.mainDColorPicker.config({ dataset: { name: '--color-d' } });
+        picker = this.querySelector("#mainBackgroundColorPicker");
+        picker.dataset.name = "--background-color";
+        picker.dataset.tooltip = 'Cor de Fundo Padrão';
+        picker.value = this.theme['--background-color'];
 
-        this.pickers.lightDColorPicker = new ColorPicker('lightDColorPicker', container, {
-            value: this.theme['--light-color-d'],
-            tooltip: 'Cor D Clara'
-        });
-        this.pickers.lightDColorPicker.config({ dataset: { name: '--light-color-d' } });
+        picker = this.querySelector("#lightBackgroundColorPicker");
+        picker.dataset.name = "--light-background-color";
+        picker.dataset.tooltip = 'Cor de Fundo Clara';
+        picker.value = this.theme['--light-background-color'];
 
-        container = this.querySelector('.theme-dialog .data-complex.color-special');
-
-        this.pickers.specialColorPicker = new ColorPicker('specialColorPicker', container, {
-            value: this.theme['--special-color'],
-            tooltip: 'Cor Especial'
-        });
-        this.pickers.specialColorPicker.config({ dataset: { name: '--special-color' } });
-
-        container = this.querySelector('.theme-dialog .data-complex.color-highlight');
-
-        this.pickers.darkHighlightColorPicker = new ColorPicker('darkHighlightColorPicker', container, {
-            value: this.theme['--dark-highlight-color'],
-            tooltip: 'Cor de Destaque Escura'
-        });
-        this.pickers.darkHighlightColorPicker.config({ dataset: { name: '--dark-highlight-color' } });
-        this.pickers.highlightColorPicker = new ColorPicker('highlightColorPicker', container, {
-            value: this.theme['--highlight-color'],
-            tooltip: 'Cor de Destaque'
-        });
-        this.pickers.highlightColorPicker.config({ dataset: { name: '--highlight-color' } });
-
-        container = this.querySelector('.theme-dialog .data-complex.color-background');
-
-        this.pickers.darkBackgroundColorPicker = new ColorPicker('darkBackgroundColorPicker', container, {
-            value: this.theme['--dark-background-color'],
-            tooltip: 'Cor de Fundo Escura'
-        });
-        this.pickers.darkBackgroundColorPicker.config({ dataset: { name: '--dark-background-color' } });
-        this.pickers.mainBackgroundColorPicker = new ColorPicker('mainBackgroundColorPicker', container, {
-            value: this.theme['--background-color'],
-            tooltip: 'Cor de Fundo Padrão'
-        });
-        this.pickers.mainBackgroundColorPicker.config({ dataset: { name: '--background-color' } });
-        this.pickers.lightBackgroundColorPicker = new ColorPicker('lightBackgroundColorPicker', container, {
-            value: this.theme['--light-background-color'],
-            tooltip: 'Cor de Fundo Clara'
-        });
-        this.pickers.lightBackgroundColorPicker.config({ dataset: { name: '--light-background-color' } });
-
-        container = this.querySelector('.theme-dialog .data-complex.color-quote');
-
-        this.pickers.quoteBackgroundColorPicker = new ColorPicker('quoteBackgroundColorPicker', container, {
-            value: this.theme['--blockquote-background'],
-            tooltip: 'Cor Citações'
-        });
-        this.pickers.quoteBackgroundColorPicker.config({ dataset: { name: '--blockquote-background' } });
+        picker = this.querySelector("#quoteBackgroundColorPicker");
+        picker.dataset.name = "--blockquote-background";
+        picker.dataset.tooltip = 'Cor Citações';
+        picker.value = this.theme['--blockquote-background'];        
     }
 
     configureCombos() {
@@ -380,11 +309,14 @@ export default class ThemeDialog extends BaseDialog {
 
     activatePickerListeners() {
         const button = this.querySelector("#generate.dialog-button");
+        const pickers = this.querySelectorAll('input.color-picker');
 
-        Object.values(this.pickers).forEach(picker => {
+        Object.values(pickers).forEach(picker => {
             picker.addEventListener('change', (event) => {
-                const name = event.target.dataset.name;
-                const color = event.detail.value;
+                const picker = event.target;
+
+                const name = picker.dataset.name;
+                const color = picker.value;
 
                 this.theme[name] = color;
                 button.setAttribute('data-json', JSON.stringify(this.theme));
@@ -419,7 +351,7 @@ export default class ThemeDialog extends BaseDialog {
             });
 
             combo.dispatchEvent(new Event('change'));
-        });   
+        });
     }
 
     static async configDialog(css = null, options = {}) {
@@ -480,7 +412,7 @@ export default class ThemeDialog extends BaseDialog {
                     },
                     generate: {
                         label: (options.isClone || !options.isEdit) ? "Gerar CSS" : "Editar CSS",
-                        icon:  (options.isClone || !options.isEdit) ? "fas fa-pen-to-square" :"fas fa-file-half-dashed",
+                        icon: (options.isClone || !options.isEdit) ? "fas fa-pen-to-square" : "fas fa-file-half-dashed",
                         callback: () => {
                             const button = event.target;
                             let theme = JSON.parse(button.dataset.json);

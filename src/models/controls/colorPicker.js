@@ -184,7 +184,7 @@ export default class ColorPicker {
      * @param {Object|null} [options.dataset={}] - Pares de valores para ser atribuídos ao dataset 
      *                                             do HTMLElement do Color Picker. 
      */
-    config(options={}) {
+    config(options = {}) {
         this.activateBaseListeners();
         this.update();
 
@@ -193,8 +193,8 @@ export default class ColorPicker {
             this.alphaThumb.style.display = 'none';
         }
 
-        if(options?.dataset) {
-            Object.entries(options.dataset).forEach(([key,value]) => {
+        if (options?.dataset) {
+            Object.entries(options.dataset).forEach(([key, value]) => {
                 this.colorPicker.setAttribute(`data-${key}`, value);
             });
         }
@@ -306,7 +306,7 @@ export default class ColorPicker {
         this.saturation = hsv.s;
         this.level = hsv.v;
         this.alpha = this.fixedAlpha ? this.alpha : alpha;
-        
+
         // Renderiza as mudanças na tela.
         this.update(propagate);
     }
@@ -318,7 +318,7 @@ export default class ColorPicker {
      */
     setColor(value, propagate = true) {
         this.setValue(value, propagate);
-    }    
+    }
 
     /**
      * Adiciona valores aos atributos do HTMLElement do Color Picker.
@@ -465,26 +465,35 @@ export default class ColorPicker {
      * Ajusta dinamicamente as coordenadas X/Y do popup para evitar que ele fique cortado nas bordas da tela.
      */
     updatePopupPosition() {
+        const originRect = this.parent.getBoundingClientRect();
         const previewRect = this.preview.getBoundingClientRect();
+
         const popup = this.popup;
 
+        const origin = {
+            x: Math.abs(originRect.x - previewRect.x),
+            y: Math.abs(originRect.y - previewRect.y)
+        }
+
         // Reset de posicionamento padrão css inicial relativo.
-        popup.style.left = previewRect.left;
-        popup.style.top = previewRect.top;
+        popup.style.left = '0px';
+        popup.style.top = '0px';
 
         const popupRect = popup.getBoundingClientRect();
 
-        let left = previewRect.left;
-        let top = previewRect.top + previewRect.height + 10; // Posiciona logo abaixo do preview com 10px de margem.
+        let left = (origin.x);
+        let top = origin.y + (previewRect.height + 10); // Posiciona logo abaixo do preview com 10px de margem.
 
         // Prevenção de estouro na borda direita da viewport.
-        if (left + popupRect.width > window.innerWidth) {
-            left = left - (popupRect.width / 2);
+        if (previewRect.x + popupRect.width > window.innerWidth) {
+            const extraX = (previewRect.x + popupRect.width) - window.innerWidth;
+            left = left - (extraX + 2);
         }
 
         // Prevenção de estouro na borda inferior (joga o popup para cima do preview).
-        if (top + popupRect.height > window.innerHeight) {
-            top = top - (popupRect.height / 2);
+        if (previewRect.y + popupRect.height > window.innerHeight) {
+            const extraY = (previewRect.y + popupRect.height) - window.innerHeight;
+            top = top - (extraY + 2);
         }
 
         // Aplica o posicionamento absoluto calculado baseado na viewport.
@@ -770,5 +779,5 @@ export default class ColorPicker {
      */
     #isValidHexa(value) {
         return /^#(?:[A-Fa-f0-9]{3}|[A-Fa-f0-9]{4}|[A-Fa-f0-9]{6}|[A-Fa-f0-9]{8})$/.test(value);
-    }
+    }    
 }

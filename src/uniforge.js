@@ -166,10 +166,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             sliders: {
                 shapeSizeSlider: null
             },
-            colorPickers: {
-                fillColorPicker: null,
-                borderColorPicker: null
-            }
         },
 
         lineageEditor: Object.freeze({
@@ -453,11 +449,15 @@ async function configureLeaflet() {
 
     shapeBorderCombo.dispatchEvent(new Event('change'));
 
-    const fillColorPicker = uniforge.ctrls.colorPickers.fillColorPicker;
-    fillColorPicker.setColor(style.fillColor, true);
+    const root = getComputedStyle(document.documentElement);
+    const fillColor = style.fillColor.replace('var(','').replace(')','');
+    const borderColor = style.color.replace('var(','').replace(')','');
 
-    const borderColorPicker = uniforge.ctrls.colorPickers.borderColorPicker;
-    borderColorPicker.setColor(style.color, true);
+    const fillColorPicker = document.getElementById('fillColorPicker');
+    fillColorPicker.value = root.getPropertyValue(fillColor).trim();
+
+    const borderColorPicker = document.getElementById('borderColorPicker');
+    borderColorPicker.value = root.getPropertyValue(borderColor).trim();
 
     uniforge.leaflet.drawStyle.update(uniforge.leaflet.core.map, style);
 
@@ -638,13 +638,11 @@ function activateMainListeners() {
     const shapeBorderCombo = document.getElementById('shapeBorderCombo');
     shapeBorderCombo.addEventListener('change', (event) => { onShapeBorderComboChange(event); });
 
-    const fillColorPicker = uniforge.ctrls.colorPickers.fillColorPicker = new ColorPicker('fillColorPicker', document, { value: 'var(--color-b)', alpha: 0.5, tooltip: 'Cor do Preenchimento I', fixedAlpha: true });
-    fillColorPicker.config();
-    fillColorPicker.addEventListener('change', (event) => { onFillColorPickerChange(fillColorPicker); });
+    const fillColorPicker = document.getElementById('fillColorPicker');  
+    fillColorPicker.addEventListener('input', (event) => { onFillColorPickerChange(event); });
 
-    const borderColorPicker = uniforge.ctrls.colorPickers.borderColorPicker = new ColorPicker('borderColorPicker', document, { value: 'var(--dark-color-b)', tooltip: 'Cor da Borda' });
-    borderColorPicker.config();
-    borderColorPicker.addEventListener('change', (event) => { onBorderColorPickerChange(borderColorPicker); });
+    const borderColorPicker = document.getElementById('borderColorPicker');    
+    borderColorPicker.addEventListener('input', (event) => { onBorderColorPickerChange(event); });
 }
 /** 
  * ------------------------------------------------------------------
@@ -872,27 +870,19 @@ async function onShapeBorderComboChange(event) {
     await refreshPreviewStyle();
 }
 
-async function onFillColorPickerChange(picker) {
+async function onFillColorPickerChange(event) {
+    const picker = event.target;
     uniforge.leaflet.drawStyle.style.fillColor = picker.value;
-    uniforge.leaflet.drawStyle.style.fillOpacity = picker.alpha;
-
     uniforge.leaflet.drawStyle.update(uniforge.leaflet.core.map, uniforge.leaflet.drawStyle.style);
 
     await refreshPreviewStyle();
 }
 
-async function onBorderColorPickerChange(picker) {
-    const preview = uniforge.shapesToolBar.preview;
-
+async function onBorderColorPickerChange(event) {
+    const picker = event.target;
     uniforge.leaflet.drawStyle.style.color = picker.value;
-    uniforge.leaflet.drawStyle.style.opacity = picker.alpha;
-
     uniforge.leaflet.drawStyle.update(uniforge.leaflet.core.map, uniforge.leaflet.drawStyle.style);
 
-    await refreshPreviewStyle();
-}
-
-async function onGradientColorPickerChange(picker) {
     await refreshPreviewStyle();
 }
 
@@ -965,7 +955,7 @@ async function refreshPreviewStyle() {
     const preview = document.querySelector('.regular-shapes .config-group.preview .shape-canvas .shape-preview');
     if (!preview) return;
 
-    const hasBorderCheck = document.querySelector('#hasBorderSwitch #checkbox');
+    const hasBorderCheck = document.querySelector('#hasBorderSwitch #checkbox');    
 
     const style = uniforge.leaflet.drawStyle.style;
     const lineTypes = uniforge.shapesToolBar.constants.lineTypes;
@@ -976,6 +966,7 @@ async function refreshPreviewStyle() {
     preview.style.backgroundColor = style.fillColor;
 
     const shapeBorderCombo = document.getElementById('shapeBorderCombo');
+    const borderColorPicker = document.getElementById('borderColorPicker');
 
     if (hasBorderCheck.checked)
         preview.style.border = `${style.weight}px ${lineStyle} ${style.color}`;
@@ -983,10 +974,10 @@ async function refreshPreviewStyle() {
         preview.style.border = 'none';
 
     shapeBorderCombo.disabled = !hasBorderCheck.checked;
-    uniforge.ctrls.colorPickers.borderColorPicker.disabled = !hasBorderCheck.checked;
+    borderColorPicker.disabled = !hasBorderCheck.checked;
     uniforge.ctrls.sliders.shapeSizeSlider.setVisible(hasBorderCheck.checked, true);
 
-    await uniforge.settings.set('leafletStyle.pathOptions', JSON.stringify(uniforge.leaflet.drawStyle.style));
+    //await uniforge.settings.set('leafletStyle.pathOptions', JSON.stringify(uniforge.leaflet.drawStyle.style));
 }
 
 function _setTime(year) {
