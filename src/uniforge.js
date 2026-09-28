@@ -166,6 +166,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             sliders: {
                 shapeSizeSlider: null
             },
+            colorPickers: {
+                fillColor: null,
+                borderColor: null
+            }
         },
 
         lineageEditor: Object.freeze({
@@ -455,13 +459,15 @@ async function configureLeaflet() {
 
     const fillColorPicker = document.getElementById('fillColorPicker');
     fillColorPicker.value = root.getPropertyValue(fillColor).trim();
+    uniforge.ctrls.colorPickers.fillColor = fillColorPicker;
 
     const borderColorPicker = document.getElementById('borderColorPicker');
     borderColorPicker.value = root.getPropertyValue(borderColor).trim();
+    uniforge.ctrls.colorPickers.borderColor = borderColorPicker;
 
     uniforge.leaflet.drawStyle.update(uniforge.leaflet.core.map, style);
 
-    await refreshPreviewStyle();
+    await _refreshPreviewStyle();
 }
 // Configura a ferramenta de geração de map tiles.
 function configureMapTiler() {
@@ -593,7 +599,7 @@ function activateMainListeners() {
     tabs.forEach(tab => {
         tab.addEventListener('click', () => {
             tab.classList.add('disabled');
-            renderForm(tab.getAttribute('data-target'), tab);
+            _renderForm(tab.getAttribute('data-target'), tab);
         });
     });
 
@@ -655,7 +661,7 @@ function onTopbarButtonClick(event) {
     const button = event.target.closest('.topbarBtn');
     button.classList.add('disabled');
 
-    renderForm(button.getAttribute('data-target'), button);
+    _renderForm(button.getAttribute('data-target'), button);
 }
 
 function onToggleTopBarClick(event) {
@@ -801,8 +807,8 @@ async function onMarkerIconClick(event) {
     if (signMarker && colorMarker) {
         const marker = `${colorMarker.getAttribute('data-color')}_${signMarker.getAttribute('data-marker')}`;
 
-        if (editCache && editCache.layer instanceof L.Marker) await refreshMarkerDrawing(marker);
-        else await startMarkerDrawing(marker);
+        if (editCache && editCache.layer instanceof L.Marker) await _refreshMarkerDrawing(marker);
+        else await _startMarkerDrawing(marker);
     }
     else if (uniforge.ctrls.marker) uniforge.ctrls.marker.disable();
 }
@@ -840,7 +846,7 @@ async function onHasBorderSwitchChange(event) {
 
     uniforge.leaflet.drawStyle.update(uniforge.leaflet.core.map, uniforge.leaflet.drawStyle.style);
 
-    await refreshPreviewStyle();
+    await _refreshPreviewStyle();
 }
 
 async function onShapeSizeSliderChange(event) {
@@ -851,7 +857,7 @@ async function onShapeSizeSliderChange(event) {
 
     uniforge.leaflet.drawStyle.update(uniforge.leaflet.core.map, uniforge.leaflet.drawStyle.style);
 
-    await refreshPreviewStyle();
+    await _refreshPreviewStyle();
 }
 
 async function onShapeBorderComboChange(event) {
@@ -867,7 +873,7 @@ async function onShapeBorderComboChange(event) {
 
     uniforge.leaflet.drawStyle.update(uniforge.leaflet.core.map, uniforge.leaflet.drawStyle.style);
 
-    await refreshPreviewStyle();
+    await _refreshPreviewStyle();
 }
 
 async function onFillColorPickerChange(event) {
@@ -875,7 +881,7 @@ async function onFillColorPickerChange(event) {
     uniforge.leaflet.drawStyle.style.fillColor = picker.value;
     uniforge.leaflet.drawStyle.update(uniforge.leaflet.core.map, uniforge.leaflet.drawStyle.style);
 
-    await refreshPreviewStyle();
+    await _refreshPreviewStyle();
 }
 
 async function onBorderColorPickerChange(event) {
@@ -883,14 +889,14 @@ async function onBorderColorPickerChange(event) {
     uniforge.leaflet.drawStyle.style.color = picker.value;
     uniforge.leaflet.drawStyle.update(uniforge.leaflet.core.map, uniforge.leaflet.drawStyle.style);
 
-    await refreshPreviewStyle();
+    await _refreshPreviewStyle();
 }
 
-/** 
- * ------------------------------------------------------------------
- * FUNÇÕES DE CONTROLE INTERNO DA PÁGINA 
- * ------------------------------------------------------------------
- * */
+
+//------------------------------------------------------------------
+// FUNÇÕES DE CONTROLE INTERNO DA PÁGINA 
+//------------------------------------------------------------------
+
 /**
  * Renderiza um formulário baseado em um ID de template
  * e o exibe na tela.
@@ -901,7 +907,7 @@ async function onBorderColorPickerChange(event) {
  * @returns {Promise<void>}             - Uma promessa que resolve quando o formulário for renderizado e exibido.
  * @throws {Error}                      - Se ocorrer um erro ao renderizar o formulário.
  */
-async function renderForm(targetId, button = null, showAfter = true) {
+async function _renderForm(targetId, button = null, showAfter = true) {
     try {
         const form = new uniforge.forms[targetId]();
         if (!form)
@@ -923,7 +929,7 @@ async function renderForm(targetId, button = null, showAfter = true) {
  * @returns {Promise<void>}             - Uma promessa que resolve quando o formulário for renderizado e exibido.
  * @throws {Error}                      - Se ocorrer um erro ao renderizar o formulário.
  */
-async function recoverForm(form) {
+async function _recoverForm(form) {
     try {
         if (!form) throw new Error(`O formulário '${form}' não foi encontrado.`);
         await form.show(true);
@@ -932,7 +938,7 @@ async function recoverForm(form) {
     }
 }
 
-async function startMarkerDrawing(marker) {
+async function _startMarkerDrawing(marker) {
     const map = uniforge.leaflet.core.map;
     const markerURL = uniforge.urls.markers.join(`${marker}.png`);
 
@@ -943,7 +949,7 @@ async function startMarkerDrawing(marker) {
     uniforge.ctrls.marker = uniforge.leaflet.drawer.marker(map, markerURL);
 };
 
-async function refreshMarkerDrawing(marker) {
+async function _refreshMarkerDrawing(marker) {
     const markerURL = uniforge.urls.markers.join(`${marker}.png`);
     const newStyle = uniforge.leaflet.drawStyle.factories.marker(markerURL).markerStyle.icon.options;
 
@@ -951,7 +957,7 @@ async function refreshMarkerDrawing(marker) {
     uniforge.leaflet.core.editCache.layer.setIcon(newIcon);
 };
 
-async function refreshPreviewStyle() {
+async function _refreshPreviewStyle(storeOptions = false) {
     const preview = document.querySelector('.regular-shapes .config-group.preview .shape-canvas .shape-preview');
     if (!preview) return;
 
@@ -976,8 +982,6 @@ async function refreshPreviewStyle() {
     shapeBorderCombo.disabled = !hasBorderCheck.checked;
     borderColorPicker.disabled = !hasBorderCheck.checked;
     uniforge.ctrls.sliders.shapeSizeSlider.setVisible(hasBorderCheck.checked, true);
-
-    //await uniforge.settings.set('leafletStyle.pathOptions', JSON.stringify(uniforge.leaflet.drawStyle.style));
 }
 
 function _setTime(year) {

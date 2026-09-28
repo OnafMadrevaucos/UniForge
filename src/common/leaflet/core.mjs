@@ -54,7 +54,15 @@ const lControl = {
     },
 
     get isEditModeON() {
-        return (this.editCache && this.editCache.layer);
+        return (this.editCache && this.editCache.layer) ? true : false;
+    },
+
+    /**
+    * Limpa a cache de edição do Leaflet.
+    */
+    clearCache() {
+        if (this.map && _editCache.has(this.map)) _editCache.delete(this.map);
+        else _editCache = new WeakMap();
     },
 
     /**
@@ -260,7 +268,7 @@ const lControl = {
 
         // Configura o controle de escala.
         const scaleControl = _configureScaleControl();
-        
+
         L.GeometryUtil.geodesicArea = function (latLngs) {
             let area = 0;
 
@@ -460,150 +468,7 @@ const lControl = {
             map.on('zoomend', _onZoomEnd);
 
             // Adicione um listener para o evento 'pm:drawstart' para desabilitar o arrastre do mapa quando estiver desenhando um polígono.
-            map.on('pm:drawstart', function (e) {
-                map.dragging.disable();
-
-                // Se já houver uma edição ocorrendo neste momento, aborte a edição atual para iniciar uma nova.
-                if (lControl.isEditModeON) {
-                    lControl.endEditMode(e, true);
-                }
-
-                if (e.shape !== 'Marker') {
-                    utils.drawStyle.updateTemplineStyle(map, utils.drawStyle.style);
-
-                    // Abre o Painel de Edição para o Elemento.
-                    lControl.toggleMapObjectPanel(event, { forceState: PANEL_STATE.OPEN });
-                }
-
-                const workingLayer = e.workingLayer;
-                const shape = e.shape;
-
-                map.on('mousemove', (e) => {
-                    const shape = map.pm.Draw.getActiveShape();
-                    if (!shape) {
-                        utils.measurements.removeTooltip();
-                        return;
-                    }
-
-                    // CÍRCULO
-                    if (shape === 'Circle') {
-                        const workingLayer = map.pm.Draw.Circle._layer;
-
-                        // Pega os vértices já desenhados
-                        let latlng = e.latlng;
-
-                        const radius = workingLayer.getRadius() * lControl.constants.UNIT_TO_KM_RATIO;
-                        const area = Math.PI * radius * radius;
-
-                        utils.measurements.updateTooltip(
-                            map,
-                            latlng,
-                            `<strong>Raio:</strong> ${radius.toFixed(2)} km<br>
-                                <strong>Área:</strong> ${area.toFixed(2)} km²
-                                `
-                        );
-                    }
-                    // POLÍGONOS
-                    else if (shape === 'Polygon') {
-                        const workingLayer = map.pm.Draw.Polygon._layer;
-
-                        // Pega os vértices já desenhados
-                        let latlngs = workingLayer.getLatLngs();
-                        if (Array.isArray(latlngs[0])) latlngs = latlngs[0];
-
-                        const area = utils.measurements.calculatePolygonArea(
-                            [...latlngs, e.latlng],
-                            lControl.constants.UNIT_TO_KM_RATIO
-                        );
-                        const perimeter = utils.measurements.calculatePolygonPerimeter(
-                            [...latlngs, e.latlng],
-                            lControl.constants.UNIT_TO_KM_RATIO
-                        );
-
-                        utils.measurements.updateTooltip(
-                            map,
-                            e.latlng,
-                            `<strong>Perímetro:</strong> ${perimeter.toFixed(2)} km
-                             <strong>Área:</strong> ${area.toFixed(2)} km²<br>
-                            `
-                        );
-                    }
-                    // RETÂNGULO
-                    else if (shape === 'Rectangle') {
-                        const workingLayer = map.pm.Draw.Rectangle._layer;
-
-                        // Pega os vértices já desenhados
-                        let latlngs = workingLayer.getLatLngs();
-                        if (Array.isArray(latlngs[0])) latlngs = latlngs[0];
-
-                        const area = utils.measurements.calculatePolygonArea(
-                            latlngs,
-                            lControl.constants.UNIT_TO_KM_RATIO
-                        );
-                        const perimeter = utils.measurements.calculatePolygonPerimeter(
-                            latlngs,
-                            lControl.constants.UNIT_TO_KM_RATIO
-                        );
-
-                        utils.measurements.updateTooltip(
-                            map,
-                            e.latlng,
-                            `<strong>Perímetro:</strong> ${perimeter.toFixed(2)} km
-                             <strong>Área:</strong> ${area.toFixed(2)} km²<br>
-                            `
-                        );
-                    }
-                });
-
-                workingLayer.on('pm:vertexadded', (event) => {
-
-                    const latlngs = workingLayer.getLatLngs();
-                    if (!latlngs || !latlngs[0]) return;
-
-                    const points = latlngs[0];
-                    if (points.length < 2) return;
-
-                    const mouseLatLng = points.length ? points[points.length - 1] : points;
-
-                    // POLÍGONO
-                    if (shape === 'Polygon') {
-
-                        const area = utils.measurements.calculatePolygonArea(
-                            latlngs,
-                            lControl.constants.UNIT_TO_KM_RATIO
-                        );
-                        const perimeter = utils.measurements.calculatePolygonPerimeter(
-                            latlngs,
-                            lControl.constants.UNIT_TO_KM_RATIO
-                        );
-
-                        utils.measurements.updateTooltip(
-                            map,
-                            mouseLatLng,
-                            `<strong>Perímetro:</strong> ${perimeter.toFixed(2)} km
-                             <strong>Área:</strong> ${area.toFixed(2)} km²<br>
-                            `
-                        );
-                    }
-                });
-
-                // CÍRCULO
-                workingLayer.on('pm:centerplaced', () => {
-
-                    workingLayer.on('pm:change', () => {
-                        const radius = workingLayer.getRadius() * lControl.constants.UNIT_TO_KM_RATIO;
-                        const area = Math.PI * radius * radius;
-
-                        utils.measurements.updateTooltip(
-                            map,
-                            workingLayer.getLatLng(),
-                            `<strong>Raio:</strong> ${radius.toFixed(2)} km<br>
-                             <strong>Área:</strong> ${area.toFixed(2)} km²
-                            `
-                        );
-                    });
-                });
-            });
+            map.on('pm:drawstart', e => _onDrawStart(e));
 
             // Adicione um listener para o evento 'pm:drawend' para habilitar o arrastre do mapa.
             map.on('pm:drawend', e => _onDrawEnd());
@@ -737,7 +602,7 @@ const lControl = {
 
             if (e.shape !== 'Marker')
                 // Atualiza o estilo da camada desenhada.
-                layer.setStyle(utils.drawStyle.style);
+                layer.setStyle(uniforge.leaflet.drawStyle.style);
 
             const removeLayer = () => {
                 if (layer && lControl.map.hasLayer(layer)) {
@@ -773,7 +638,7 @@ const lControl = {
                             icon: (layer instanceof L.Marker) ? layer.options.icon.options.iconUrl : layer.type,
                             source: `${layer.source.type}{${layer.source._id}}`,
                             points: points,
-                            style: JSON.stringify(utils.drawStyle.style)
+                            style: JSON.stringify(uniforge.leaflet.drawStyle.style)
                         }
 
                         // Adiciona o elemento ao banco de dados.
@@ -789,6 +654,9 @@ const lControl = {
 
                         // Comita a transação.
                         await uniforge.db.commitTransaction();
+
+                        // Salva o Estilo da Camada como padrão.
+                        await uniforge.settings.set('leafletStyle.pathOptions', JSON.stringify(data.style));
                     }
                 }
                 // Se o link foi cancelado, remove a camada desenhada.
@@ -804,6 +672,177 @@ const lControl = {
                 if (utils.state.drawInstance) utils.state.drawInstance.disable();
                 utils.measurements.removeTooltip(map);
             }
+        }
+
+        async function _onDrawStart(e) {
+            map.dragging.disable();
+
+            // Se já houver uma edição ocorrendo neste momento, aborte a edição atual para iniciar uma nova.
+            if (lControl.isEditModeON) {
+                lControl.endEditMode(e, true);
+            }
+
+            if (e.shape !== 'Marker') {
+                utils.drawStyle.updateTemplineStyle(map, uniforge.leaflet.drawStyle.style);
+
+                // Abre o Painel de Edição para o Elemento.
+                lControl.toggleMapObjectPanel(e, { forceState: PANEL_STATE.OPEN });
+
+                const layer = map.pm.Draw[e.shape]._layer;
+
+                if (layer) {
+                    const style = layer.options;
+
+                    const fillColorPicker = uniforge.ctrls.colorPickers.fillColor;
+                    if (style.fillColor.includes('var')) {
+                        const root = getComputedStyle(document.documentElement);
+                        const fillColor = style.fillColor.replace('var(', '').replace(')', '');
+                        fillColorPicker.value = root.getPropertyValue(fillColor).trim();;
+                    } else {
+                        fillColorPicker.value = style.fillColor;
+                    }
+
+                    const borderColorPicker = uniforge.ctrls.colorPickers.borderColor;
+                    if (style.color.includes('var')) {
+                        const root = getComputedStyle(document.documentElement);
+                        const borderColor = style.color.replace('var(', '').replace(')', '');
+                        borderColorPicker.value = root.getPropertyValue(borderColor).trim();;
+                    } else {
+                        borderColorPicker.value = style.color;
+                    }
+
+                    await _refreshPreviewStyle(style)
+                };
+            }
+
+            const workingLayer = e.workingLayer;
+            const shape = e.shape;
+
+            map.on('mousemove', (e) => {
+                const shape = map.pm.Draw.getActiveShape();
+                if (!shape) {
+                    utils.measurements.removeTooltip();
+                    return;
+                }
+
+                // CÍRCULO
+                if (shape === 'Circle') {
+                    const workingLayer = map.pm.Draw.Circle._layer;
+
+                    // Pega os vértices já desenhados
+                    let latlng = e.latlng;
+
+                    const radius = workingLayer.getRadius() * lControl.constants.UNIT_TO_KM_RATIO;
+                    const area = Math.PI * radius * radius;
+
+                    utils.measurements.updateTooltip(
+                        map,
+                        latlng,
+                        `<strong>Raio:</strong> ${radius.toFixed(2)} km<br>
+                                <strong>Área:</strong> ${area.toFixed(2)} km²
+                                `
+                    );
+                }
+                // POLÍGONOS
+                else if (shape === 'Polygon') {
+                    const workingLayer = map.pm.Draw.Polygon._layer;
+
+                    // Pega os vértices já desenhados
+                    let latlngs = workingLayer.getLatLngs();
+                    if (Array.isArray(latlngs[0])) latlngs = latlngs[0];
+
+                    const area = utils.measurements.calculatePolygonArea(
+                        [...latlngs, e.latlng],
+                        lControl.constants.UNIT_TO_KM_RATIO
+                    );
+                    const perimeter = utils.measurements.calculatePolygonPerimeter(
+                        [...latlngs, e.latlng],
+                        lControl.constants.UNIT_TO_KM_RATIO
+                    );
+
+                    utils.measurements.updateTooltip(
+                        map,
+                        e.latlng,
+                        `<strong>Perímetro:</strong> ${perimeter.toFixed(2)} km
+                             <strong>Área:</strong> ${area.toFixed(2)} km²<br>
+                            `
+                    );
+                }
+                // RETÂNGULO
+                else if (shape === 'Rectangle') {
+                    const workingLayer = map.pm.Draw.Rectangle._layer;
+
+                    // Pega os vértices já desenhados
+                    let latlngs = workingLayer.getLatLngs();
+                    if (Array.isArray(latlngs[0])) latlngs = latlngs[0];
+
+                    const area = utils.measurements.calculatePolygonArea(
+                        latlngs,
+                        lControl.constants.UNIT_TO_KM_RATIO
+                    );
+                    const perimeter = utils.measurements.calculatePolygonPerimeter(
+                        latlngs,
+                        lControl.constants.UNIT_TO_KM_RATIO
+                    );
+
+                    utils.measurements.updateTooltip(
+                        map,
+                        e.latlng,
+                        `<strong>Perímetro:</strong> ${perimeter.toFixed(2)} km
+                             <strong>Área:</strong> ${area.toFixed(2)} km²<br>
+                            `
+                    );
+                }
+            });
+
+            workingLayer.on('pm:vertexadded', (event) => {
+
+                const latlngs = workingLayer.getLatLngs();
+                if (!latlngs || !latlngs[0]) return;
+
+                const points = latlngs[0];
+                if (points.length < 2) return;
+
+                const mouseLatLng = points.length ? points[points.length - 1] : points;
+
+                // POLÍGONO
+                if (shape === 'Polygon') {
+
+                    const area = utils.measurements.calculatePolygonArea(
+                        latlngs,
+                        lControl.constants.UNIT_TO_KM_RATIO
+                    );
+                    const perimeter = utils.measurements.calculatePolygonPerimeter(
+                        latlngs,
+                        lControl.constants.UNIT_TO_KM_RATIO
+                    );
+
+                    utils.measurements.updateTooltip(
+                        map,
+                        mouseLatLng,
+                        `<strong>Perímetro:</strong> ${perimeter.toFixed(2)} km
+                             <strong>Área:</strong> ${area.toFixed(2)} km²<br>
+                            `
+                    );
+                }
+            });
+
+            // CÍRCULO
+            workingLayer.on('pm:centerplaced', () => {
+
+                workingLayer.on('pm:change', () => {
+                    const radius = workingLayer.getRadius() * lControl.constants.UNIT_TO_KM_RATIO;
+                    const area = Math.PI * radius * radius;
+
+                    utils.measurements.updateTooltip(
+                        map,
+                        workingLayer.getLatLng(),
+                        `<strong>Raio:</strong> ${radius.toFixed(2)} km<br>
+                             <strong>Área:</strong> ${area.toFixed(2)} km²
+                            `
+                    );
+                });
+            });
         }
 
         function _onDrawEnd() {
@@ -1195,15 +1234,26 @@ const lControl = {
 
             shapeBorderCombo.dispatchEvent(new Event('change'));
 
-            const fillColorPicker = uniforge.ctrls.colorPickers.fillColorPicker;
-            fillColorPicker.setColor(style.fillColor, true);
+            const fillColorPicker = uniforge.ctrls.colorPickers.fillColor;
+            if (style.fillColor.includes('var')) {
+                const root = getComputedStyle(document.documentElement);
+                const fillColor = style.fillColor.replace('var(', '').replace(')', '');
+                fillColorPicker.value = root.getPropertyValue(fillColor).trim();;
+            } else {
+                fillColorPicker.value = style.fillColor;
+            }
 
-            const borderColorPicker = uniforge.ctrls.colorPickers.borderColorPicker;
-            borderColorPicker.setColor(style.color, true);
+            const borderColorPicker = uniforge.ctrls.colorPickers.borderColor;
+            if (style.color.includes('var')) {
+                const root = getComputedStyle(document.documentElement);
+                const borderColor = style.color.replace('var(', '').replace(')', '');
+                borderColorPicker.value = root.getPropertyValue(borderColor).trim();;
+            } else {
+                borderColorPicker.value = style.color;
+            }
 
             uniforge.leaflet.drawStyle.update(uniforge.leaflet.core.map, style);
-
-            await _refreshPreviewStyle(layer.options);
+            await _refreshPreviewStyle(style);
         }
         else {
             // Destaca o Elemento durante a edição.
@@ -1241,6 +1291,8 @@ const lControl = {
 
             const layerEditTip = document.querySelector('.map-objects-edit-tip');
             layerEditTip.classList.remove('active');
+
+            lControl.clearCache();
         }
     },
 
@@ -1318,7 +1370,7 @@ async function _refreshPreviewStyle(style) {
         preview.style.border = 'none';
 
     shapeBorderCombo.disabled = !hasBorderCheck.checked;
-    uniforge.ctrls.colorPickers.borderColorPicker.disabled = !hasBorderCheck.checked;
+    uniforge.ctrls.colorPickers.borderColor.disabled = !hasBorderCheck.checked;
     uniforge.ctrls.sliders.shapeSizeSlider.setVisible(hasBorderCheck.checked, true);
 
     await uniforge.settings.set('leafletStyle.pathOptions', JSON.stringify(style));

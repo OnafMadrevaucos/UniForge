@@ -16,10 +16,10 @@ const darkHintlineStyle = {
     weight: 3
 }
 
-const style = {
-    fillColor: 'var(--red)',
+var style = {
+    fillColor: 'var(--color-b)',
     fillOpacity: 0.5,
-    color: 'var(--red)',
+    color: 'var(--dark-color-b)',
     opacity: 1,
     weight: 5,
     dashArray: '0, 0',
