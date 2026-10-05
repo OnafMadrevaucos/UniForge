@@ -70,12 +70,13 @@ const parser = {
 }
 
 const leaflet = {
-    core: leafletEsm.core,
+    core: leafletEsm.core,    
     drawer: leafletEsm.utils.default.drawer,   
     drawStyle: {
         factories: leafletEsm.utils.default.options, 
         ...leafletEsm.utils.default.drawStyle
-    } 
+    },
+    iconMap: leafletEsm.utils.iconMap, 
 }
 
 const state = {

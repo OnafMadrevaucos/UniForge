@@ -4,6 +4,8 @@ import Dialogs from "../../models/dialogs/dialog.js";
 import SimpleEntryForm from "../../models/forms/simpleEntryForm.js";
 import ArticleForm from "../../models/forms/articleForm.js";
 
+import { triggerHook } from "../../scripts/hooks.js";
+
 const PANEL_STATE = {
     OPEN: 0,
     CLOSE: 1,
@@ -45,7 +47,18 @@ const lControl = {
         VIEW_WIDTH: 3840,
         VIEW_HEIGHT: 2160,
 
-        UNIT_TO_KM_RATIO: 1.5, // 1 Map Unit = 1.5 km        
+        UNIT_TO_KM_RATIO: 1.5, // 1 Map Unit = 1.5 km
+
+        STYLE: {
+            fillColor: 'var(--color-b)',
+            fillOpacity: 0.5,
+            color: 'var(--dark-color-b)',
+            opacity: 1,
+            weight: 5,
+            dashArray: '0, 0',
+            line: 'solid',
+            hasBorder: true
+        }
     },
 
     get editCache() {
@@ -352,8 +365,7 @@ const lControl = {
         }
 
         function _loadElementsStyles() {
-            const style = JSON.parse(uniforge.settings.get('leafletStyle.pathOptions'));
-            utils.drawStyle.update(map, style);
+            utils.drawStyle.update(map, uniforge.style);
         }
 
         function _configureOverlayControl() {
@@ -460,88 +472,61 @@ const lControl = {
         }
 
         function _activateEventsListener() {
+            // Adicione um listener para o evento 'click' do mapa para processar o clique do usuário.
             map.on('mousedown', _onUserMapClick);
+
+            // Adicione um listener para o evento 'keydown' para processar as teclas pressionadas pelo usuário.
             map.on('keydown', (event) => { _checkKeyPressed(event, event.originalEvent.code); });
 
+            // Adicione um listener para o evento 'pm:create' para processar a criação de um novo elemento.
             map.on('pm:create', (event) => _onDrawCreated(event, true));
 
+            // Adicione um listener para o evento 'zoomend' para processar o término do zoom.
             map.on('zoomend', _onZoomEnd);
 
             // Adicione um listener para o evento 'pm:drawstart' para desabilitar o arrastre do mapa quando estiver desenhando um polígono.
-            map.on('pm:drawstart', e => _onDrawStart(e));
+            map.on('pm:drawstart', _onDrawStart);
 
             // Adicione um listener para o evento 'pm:drawend' para habilitar o arrastre do mapa.
-            map.on('pm:drawend', e => _onDrawEnd());
+            map.on('pm:drawend', _onDrawEnd);
 
             // Adicione um listener para o evento de quando o Popup do elemento for aberto.
-            map.on('popupopen', function (event) {
-                const popup = event.popup;
-
-                const container = popup._container;
-                if (!container) return;
-
-                const source = popup._source;
-
-                // Se o Elemento estiver sendo editado ou for inválido, evite a abertura do seu Popup.
-                if (!source || source.pm.enabled() || map.getActiveLayer()?.pm.enabled() || lControl.isEditModeON) {
-                    source.closePopup();
-                    return
-                };
-
-                container.addEventListener('click', _onPopupButtonClick);
-            });
+            map.on('popupopen', _onPopupOpen);
 
             // Adicione um listener para o evento de quando o Popup do elemento for fechado.
-            map.on('popupclose', function (event) {
-                const popup = event.popup;
-
-                const container = popup._container;
-                if (!container) return;
-
-                container.removeEventListener('click', _onPopupButtonClick);
-            });
+            map.on('popupclose', _onPopupClose);
 
             // Adicione um listener para o evento de clique do botão direito para remover o ultimo vertice de um polígono.
-            map.getContainer().addEventListener('contextmenu', (event) => {
-                const drawInstance = map.pm.Draw.Polygon;
-                if (drawInstance && drawInstance.enabled()) {
-                    event.preventDefault();
-                    drawInstance._removeLastVertex();
-                }
-            });
+            map.getContainer().addEventListener('contextmenu', _onElementContextMenu);
         }
 
         function _onUserMapClick(e) {
             lControl.clickLatLang = e.latlng;  // Ponto de clique do usuário.
         }
 
-        function _onPopupButtonClick(e) {
-            const showBtn = e.target.closest('.layer-popup-show');
-            const editBtn = e.target.closest('.layer-popup-edit');
-            const deleteBtn = e.target.closest('.layer-popup-delete');
+        function _onShowEntryClick(event) {
+            const showBtn = event.target.closest('.layer-popup-show');
+            showBtn.classList.add('disabled');
 
-            if (showBtn) {
-                showBtn.classList.add('disabled');
-                lControl.showEntry(e);
-            }
+            _onShowEntry(event);
+        }
 
-            if (editBtn) {
-                lControl.editEntry(e);
+        function _onEditEntryClick(event) {
+            _onEditEntry(event);
 
-                const layerEditTip = document.querySelector('.map-objects-edit-tip');
-                layerEditTip.classList.add('active');
-            }
+            const layerEditTip = document.querySelector('.map-objects-edit-tip');
+            layerEditTip.classList.add('active');
+        }
 
-            if (deleteBtn) {
-                lControl.deleteElement(e);
-            }
+        function _onDeleteEntryClick(event) {
+            lControl.deleteElement(event);
         }
 
         async function _checkKeyPressed(event, key) {
             switch (key) {
                 // A Tecla foi o 'Esc'.
                 case 'Escape': {
-                    lControl.endEditMode(event.originalEvent);
+                    lControl.endEditMode(event.originalEvent, { hasRollback: true, saveStyle: false });
                 } break;
                 // A Tecla foi o 'Enter'.
                 case 'Enter': {
@@ -585,8 +570,11 @@ const lControl = {
                         // Confirma a transação.
                         await uniforge.db.commitTransaction();
 
+                        // Atualiza o estilo padrão das camadas do Leaflet.
+                        uniforge.style = layer.options;
+
                         // Encerra a edição.
-                        lControl.endEditMode(event.originalEvent, false);
+                        lControl.endEditMode(event.originalEvent, { hasRollback: false, saveStyle: true });
                     }
                     catch (err) {
                         console.error(err);
@@ -650,7 +638,7 @@ const lControl = {
 
                         lControl.mapElements.addLayer(layer);
                         // Adiciona a camada desenhada ao grupo de elementos do mapa.
-                        _updateLayerControl();
+                        triggerHook('layerElementsUpdated');
 
                         // Comita a transação.
                         await uniforge.db.commitTransaction();
@@ -679,11 +667,14 @@ const lControl = {
 
             // Se já houver uma edição ocorrendo neste momento, aborte a edição atual para iniciar uma nova.
             if (lControl.isEditModeON) {
-                lControl.endEditMode(e, true);
+                lControl.endEditMode(e, { hasRollback: true, saveStyle: false });
             }
 
             if (e.shape !== 'Marker') {
-                utils.drawStyle.updateTemplineStyle(map, uniforge.leaflet.drawStyle.style);
+                // Obtém o estilo salvo, se não houver obtém o valor padrão.
+                uniforge.style = JSON.parse(uniforge.settings.get('leafletStyle.pathOptions')) ?? utils.defaultStyle;
+                // Atualiza o estilo da camada desenhada.
+                utils.drawStyle.update(map, uniforge.style);
 
                 // Abre o Painel de Edição para o Elemento.
                 lControl.toggleMapObjectPanel(e, { forceState: PANEL_STATE.OPEN });
@@ -711,7 +702,7 @@ const lControl = {
                         borderColorPicker.value = style.color;
                     }
 
-                    await _refreshPreviewStyle(style)
+                    triggerHook('styleChanged');
                 };
             }
 
@@ -857,6 +848,57 @@ const lControl = {
             utils.measurements.removeTooltip(map);
         }
 
+        async function _onPopupOpen(event) {
+            const popup = event.popup;
+
+            const container = popup._container;
+            if (!container) return;
+
+            const source = popup._source;
+
+            // Se o Elemento estiver sendo editado ou for inválido, evite a abertura do seu Popup.
+            if (!source || source.pm.enabled() || map.getActiveLayer()?.pm.enabled() || lControl.isEditModeON) {
+                source.closePopup();
+                return;
+            }
+            else {
+                triggerHook('layerPopupOpened', source);
+            }
+
+            const showBtn = container.querySelector('.layer-popup-show');
+            showBtn.addEventListener('click', _onShowEntryClick);
+
+            const editBtn = container.querySelector('.layer-popup-edit');
+            editBtn.addEventListener('click', _onEditEntryClick);
+
+            const deleteBtn = container.querySelector('.layer-popup-delete');
+            deleteBtn.addEventListener('click', _onDeleteEntryClick);
+        }
+
+        function _onPopupClose(event) {
+            const popup = event.popup;
+
+            const container = popup._container;
+            if (!container) return;
+
+            const showBtn = container.querySelector('.layer-popup-show');
+            showBtn.removeEventListener('click', _onShowEntryClick);
+
+            const editBtn = container.querySelector('.layer-popup-edit');
+            editBtn.removeEventListener('click', _onEditEntryClick);
+
+            const deleteBtn = container.querySelector('.layer-popup-delete');
+            deleteBtn.removeEventListener('click', _onDeleteEntryClick);
+        }
+
+        function _onElementContextMenu(event) {
+            const drawInstance = map.pm.Draw.Polygon;
+            if (drawInstance && drawInstance.enabled()) {
+                event.preventDefault();
+                drawInstance._removeLastVertex();
+            }
+        }
+
         function _onZoomEnd() {
             scaleControl.update();
         }
@@ -938,6 +980,46 @@ const lControl = {
                 map.setView(closestPoint, map.getZoom(), {
                     animate: true
                 });
+            }
+        }
+
+        async function _onEditEntry(event) {
+            event.stopPropagation();
+            const editBtn = event.target.closest('a.layer-popup-edit');
+
+            let meid = null;
+            let layerId = null;
+
+            const layerItem = event.target.closest('.layer-item');
+            if (layerItem) {
+                meid = layerItem.id;
+                layerId = Number(layerItem.dataset.leafletId);
+            }
+            else {
+                meid = editBtn.dataset.meid;
+                layerId = Number(editBtn.dataset.leafletId);
+            }
+
+            await lControl.startEditMode(layerId);
+        }
+
+        async function _onShowEntry(event) {
+            event.stopPropagation();
+            const showBtn = event.target.closest('.layer-popup-show');
+
+            let id = null;
+            let type = null;
+
+            const button = event.target.closest('.layer-popup-show');
+            if (button) {
+                id = button.dataset.id;
+                type = button.dataset.type;
+
+                const data = uniforge.doc[type].get(id);
+                if (data) {
+                    const form = new ArticleForm(data, type === 'timeline', button);
+                    form.show(true);
+                }
             }
         }
 
@@ -1068,7 +1150,7 @@ const lControl = {
             element = lControl.createPopup(element); // Cria o elemento com o popup configurado.
             lControl.mapElements.addLayer(element);
 
-            _updateLayerControl();
+            triggerHook('layerElementsUpdated');
         });
 
         function _getSource(source) {
@@ -1083,26 +1165,6 @@ const lControl = {
                 return null;
             }
         }
-    },
-
-    editEntry: async function (event) {
-        event.stopPropagation();
-        const editBtn = event.target.closest('a.layer-popup-edit');
-
-        let meid = null;
-        let layerId = null;
-
-        const layerItem = event.target.closest('.layer-item');
-        if (layerItem) {
-            meid = layerItem.id;
-            layerId = Number(layerItem.dataset.leafletId);
-        }
-        else {
-            meid = editBtn.dataset.meid;
-            layerId = Number(editBtn.dataset.leafletId);
-        }
-
-        await lControl.startEditMode(layerId);
     },
 
     deleteElement: async function (event) {
@@ -1129,29 +1191,10 @@ const lControl = {
             lControl.mapElements.removeLayer(layerId);
 
             await uniforge.db.rebuildDocs();
-            _updateLayerControl();
+            triggerHook('layerElementsUpdated');
         }
 
         deleteBtn.classList.remove('disabled');
-    },
-    showEntry: async function (event) {
-        event.stopPropagation();
-        const showBtn = event.target.closest('.layer-popup-show');
-
-        let id = null;
-        let type = null;
-
-        const button = event.target.closest('.layer-popup-show');
-        if (button) {
-            id = button.dataset.id;
-            type = button.dataset.type;
-
-            const data = uniforge.doc[type].get(id);
-            if (data) {
-                const form = new ArticleForm(data, type === 'timeline', button);
-                form.show(true);
-            }
-        }
     },
     toggleMapObjectPanel: function (event, options = { name: 'regular-shapes', forceState: PANEL_STATE.NONE, icon: null, style: {} }) {
         if (event instanceof PointerEvent) event.stopPropagation();
@@ -1203,7 +1246,7 @@ const lControl = {
         // Salva o estado atual o Elemento para o caso de cancelamento da edição.
         lControl.saveLayerState(layer);
 
-        const style = layer.options;
+        const style = uniforge.style ?? layer.options;
 
         // Fecha o Popup do Elemento para edição.
         layer.closePopup();
@@ -1253,7 +1296,7 @@ const lControl = {
             }
 
             uniforge.leaflet.drawStyle.update(uniforge.leaflet.core.map, style);
-            await _refreshPreviewStyle(style);
+            triggerHook('styleChanged');
         }
         else {
             // Destaca o Elemento durante a edição.
@@ -1266,14 +1309,16 @@ const lControl = {
         }
     },
 
-    endEditMode: function (event, hasRollback = true) {
+    endEditMode: async function (event, options = { hasRollback: true, saveStyle: true }) {
         // Busca o Elemento atualmente ativo.
         const layer = lControl.map.getActiveLayer() ?? lControl.editCache?.layer ?? null;
 
         // Se houver Rollback, restaura o estado do Elemento para o caso de cancelamento da edição.
-        if (hasRollback)
+        if (options.hasRollback) {
             // Restaura o estado do Elemento para o caso de cancelamento da edição.
             lControl.restoreLayerState(layer);
+            utils.drawStyle.update(lControl.map, lControl.editCache?.style ?? uniforge.style ?? utils.defaultStyle);
+        }
 
         // Há algum Elemento atualmente ativo, cancela a edição.
         if (layer) {
@@ -1291,6 +1336,11 @@ const lControl = {
 
             const layerEditTip = document.querySelector('.map-objects-edit-tip');
             layerEditTip.classList.remove('active');
+
+            if (uniforge.style && options.saveStyle) {
+                await uniforge.settings.set('leafletStyle.pathOptions', JSON.stringify(uniforge.style));
+                await triggerHook('styleChanged');
+            }
 
             lControl.clearCache();
         }
@@ -1347,157 +1397,6 @@ const lControl = {
         layer.redraw?.();
 
         _editCache.set(lControl.map, null);
-    }
-}
-
-async function _refreshPreviewStyle(style) {
-    const preview = document.querySelector('.regular-shapes .config-group.preview .shape-canvas .shape-preview');
-    if (!preview) return;
-    const hasBorderCheck = document.querySelector('#hasBorderSwitch #checkbox');
-
-    const lineTypes = uniforge.shapesToolBar.constants.lineTypes;
-
-    // Obtém o tipo de linha correto baseado no estado atual
-    const lineStyle = style.line ? lineTypes[style.line].style.line : style.line;
-
-    preview.style.backgroundColor = style.fillColor;
-
-    const shapeBorderCombo = document.getElementById('shapeBorderCombo');
-
-    if (hasBorderCheck.checked)
-        preview.style.border = `${style.weight}px ${lineStyle} ${style.color}`;
-    else
-        preview.style.border = 'none';
-
-    shapeBorderCombo.disabled = !hasBorderCheck.checked;
-    uniforge.ctrls.colorPickers.borderColor.disabled = !hasBorderCheck.checked;
-    uniforge.ctrls.sliders.shapeSizeSlider.setVisible(hasBorderCheck.checked, true);
-
-    await uniforge.settings.set('leafletStyle.pathOptions', JSON.stringify(style));
-}
-
-function _updateLayerControl() {
-    const iconMap = utils.iconMap;
-    const mapElementsList = document.querySelector('#mapElementsList');
-    mapElementsList.innerHTML = ''; // Limpa a lista atual.  
-
-    const noObjectsFoundMessage = document.getElementById('noObjectsFoundMessage');
-
-    // Se não houver elementos, exibe a mensagem de "Nenhum objeto encontrado".
-    if (lControl.mapElements.getLayers().length === 0) {
-        noObjectsFoundMessage.classList.remove('hidden');
-    }
-    // Caso haja elementos, gera os itens da lista de elementos do mapa.
-    else {
-        // Garante que a mensagem de "Nenhum objeto encontrado" esteja oculta.
-        noObjectsFoundMessage.classList.add('hidden');
-
-        // Percorre os elementos do mapa e os adiciona à lista de controle de camadas.
-        lControl.mapElements.eachLayer(async function (layer) {
-            const li = document.createElement('li');
-            li.id = layer._id;
-            li.dataset.leafletId = layer._leaflet_id;
-            li.classList.add('layer-item', 'flexrow');
-
-            const content = document.createElement('div');
-            content.classList.add('layer-item-content', 'flexrow');
-
-            const img = document.createElement('img');
-            if (!layer.source.img) {
-                img.src = uniforge.urls.blankImg;
-            }
-            else {
-                img.src = await uniforge.utils.blobToImage(layer.source.img);
-            }
-
-            const contentBody = document.createElement('div');
-            contentBody.classList.add('layer-item-content-body', 'flexcol');
-
-            const h3 = document.createElement('h3');
-            h3.innerText = layer.source.title;
-
-            const span = document.createElement('span');
-            span.innerHTML = `<i class="${layer.source.entryType.icon}"></i> ${layer.source.entryType.title}`;
-
-            contentBody.appendChild(h3);
-            contentBody.appendChild(span);
-
-            content.appendChild(img);
-            content.appendChild(contentBody);
-
-            const deleteButton = document.createElement('a');
-            deleteButton.classList.add('layer-item-delete');
-            deleteButton.innerHTML = '<i class="fa-solid fa-trash"></i>';
-
-            deleteButton.addEventListener('click', lControl.deleteElement);
-
-            li.appendChild(content);
-            li.appendChild(deleteButton);
-
-            li.addEventListener('mouseover', _onLayerItemMouseOver);
-            li.addEventListener('mouseleave', _onLayerItemMouseLeave)
-
-            mapElementsList.appendChild(li);
-        })
-    }
-
-    function _onLayerItemMouseLeave(event) {
-        event.stopPropagation();
-
-        const layerItem = event.target.closest('.layer-item');
-        const layerId = layerItem.dataset.leafletId;
-        const layer = lControl.mapElements.getLayer(layerId);
-
-        let element;
-        switch (layer.type) {
-            case 'marker': {
-                element = layer._icon;
-            } break;
-            case 'circle': {
-                element = layer._path;
-            } break;
-            case 'polygon': {
-                element = layer._path;
-            } break;
-            case 'rectangle': {
-                element = layer._path;
-            } break;
-            default: {
-                console.warn(`Tipo de elemento desconhecido: ${layer.type}`);
-                return; // Ignora elementos com tipo desconhecido.
-            }
-        }
-
-        element.classList.remove('highlight');
-    }
-
-    function _onLayerItemMouseOver(event) {
-        event.stopPropagation();
-        const layerItem = event.target.closest('.layer-item');
-        const layerId = layerItem.dataset.leafletId;
-        const layer = lControl.mapElements.getLayer(layerId);
-
-        let element;
-        switch (layer.type) {
-            case 'marker': {
-                element = layer._icon;
-            } break;
-            case 'circle': {
-                element = layer._path;
-            } break;
-            case 'polygon': {
-                element = layer._path;
-            } break;
-            case 'rectangle': {
-                element = layer._path;
-            } break;
-            default: {
-                console.warn(`Tipo de elemento desconhecido: ${layer.type}`);
-                return; // Ignora elementos com tipo desconhecido.
-            }
-        }
-
-        element.classList.add('highlight');
     }
 }
 

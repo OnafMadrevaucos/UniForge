@@ -16,7 +16,7 @@ const darkHintlineStyle = {
     weight: 3
 }
 
-var style = {
+const defaultStyle = {
     fillColor: 'var(--color-b)',
     fillOpacity: 0.5,
     color: 'var(--dark-color-b)',
@@ -51,7 +51,8 @@ const options = {
         };
     },
     polygon: function (withIntersection = false, isDrawer = true) {
-        if (isDrawer) {
+        const style = uniforge.style ?? defaultStyle;
+        if (isDrawer) {            
             return {
                 snappable: true,
                 snapDistance: 20,
@@ -68,6 +69,7 @@ const options = {
         }
     },
     regularShape: function (isDrawer = true) {
+        const style = uniforge.style ?? defaultStyle;        
         if (isDrawer) {
             return {
                 hintlineStyle: defaultHintlineStyle,
@@ -194,15 +196,15 @@ const state = {
     blockEvents: false
 };
 
-function _updateStyle(map, newStyle) {
+function updateStyle(map, newStyle) {
     // Gera o objeto de opções com os estilos do desenho.    
     var drawOptions = {
         templineStyle: {
-            ...style,
+            ...defaultStyle,
             ...(newStyle ?? {})
         },
         pathOptions: {
-            ...style,
+            ...defaultStyle,
             ...(newStyle ?? {})
         },
         hintlineStyle: { ...defaultHintlineStyle }
@@ -229,9 +231,9 @@ function _updateStyle(map, newStyle) {
     }
 
     // Atualiza o estilo temporário (templine) do desenho ativo.
-    _updateTemplineStyle(map, drawOptions.templineStyle);
+    updateTemplineStyle(map, drawOptions.templineStyle);
 }
-function _updateTemplineStyle(map, newStyle) {
+function updateTemplineStyle(map, newStyle) {
     // Verifica se o estilo foi enviado corretamente.
     if (!newStyle) return;
 
@@ -242,7 +244,7 @@ function _updateTemplineStyle(map, newStyle) {
     if (!state.drawInstance) state.drawInstance = map.pm.Draw[activeShape];
 
     // Obtém a camada de desenho ativa.
-    const workingLayer = state.drawInstance._workingLayer ?? state.drawInstance._layer;
+    const workingLayer = state.drawInstance?._workingLayer ?? state.drawInstance?._layer;
 
     // Verifica se a camada de desenho ativa possui latlngs.
     if (workingLayer) {
@@ -250,17 +252,7 @@ function _updateTemplineStyle(map, newStyle) {
     }
 }
 
-function _zoomIn(map) {
-    map.zoomIn();
-    console.log('Zoom In');
-}
-
-function _zoomOut(map) {
-    map.zoomOut();
-    console.log('Zoom Out');
-}
-
-function _setupCustomButtons(map) {
+function setupCustomButtons(map) {
     // Inicializa o Geoman sem os controles padrão (vamos criar os nossos).
     map.pm.addControls({
         position: 'topright',
@@ -323,21 +315,100 @@ function _setupCustomButtons(map) {
     });
 }
 
+function onCreateTile(coords) {
+    // Cria um tile com transparência.
+    const tile = document.createElement('canvas');
+
+    var tileSize = this.getTileSize();
+    tile.setAttribute('width', tileSize.x);
+    tile.setAttribute('height', tileSize.y);
+
+    const ctx = tile.getContext('2d');
+
+    // Desenha linhas de grade.
+    ctx.strokeStyle = 'rgba(212, 198, 148, 0.5)'; // Grid line color
+    ctx.lineWidth = 1;
+
+    // Desenha linhas de grade horizontais e verticais.
+    for (let i = 0; i <= tileSize; i += 36) { // Ajusta o tamanho da celula da grade (36px).
+        ctx.beginPath();
+        ctx.moveTo(i, 0);
+        ctx.lineTo(i, tileSize);
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(0, i);
+        ctx.lineTo(tileSize, i);
+        ctx.stroke();
+    }
+
+    return tile;
+}
+
+function onAddLayer(map) {
+    const container = L.DomUtil.create('div', 'leaflet-bar flexcol');
+
+    const expandButton = L.DomUtil.create('button', 'leaflet-control-expand', container);
+    expandButton.innerHTML = '<i class="fas fa-expand"></i>';
+    L.DomEvent.on(expandButton, 'click', _onExpandLayer.bind(this));
+
+    return container;
+}
+
 function onAddMain(map) {
     const container = L.DomUtil.create('div', 'leaflet-bar flexcol');
 
     const zoomInButton = L.DomUtil.create('button', 'leaflet-control-zoomIn');
     zoomInButton.innerHTML = '<i class="fa-solid fa-plus"></i>';
-    L.DomEvent.on(zoomInButton, 'click', _zoomIn.bind(this, map));
+    L.DomEvent.on(zoomInButton, 'click', _onZoomIn.bind(this, map));
 
     const zoomOutButton = L.DomUtil.create('button', 'leaflet-control-zoomOut');
     zoomOutButton.innerHTML = '<i class="fa-solid fa-minus"></i>';
-    L.DomEvent.on(zoomOutButton, 'click', _zoomOut.bind(this, map));
+    L.DomEvent.on(zoomOutButton, 'click', _onZoomOut.bind(this, map));
 
     container.appendChild(zoomInButton);
     container.appendChild(zoomOutButton);
 
     return container;
+}
+
+function onAddDrawControl(map) {
+    const container = L.DomUtil.create('div', 'leaflet-bar flexcol');
+
+    // Cria um botão de Polígono.
+    const polygonButton = L.DomUtil.create('button', 'leaflet-draw-button polygon', container);
+    polygonButton.innerHTML = `<i class="${iconMap.polygon}"></i>`; // Emoji de atualização ou seu ícone customizado.
+    // Adiciona um evento de clique ao botão.
+    L.DomEvent.on(polygonButton, 'click', _onPolygonDraw.bind(this, map));
+
+    // Cria um botão de Retângulo.
+    const retangleButton = L.DomUtil.create('button', 'leaflet-draw-button retangle', container);
+    retangleButton.innerHTML = `<i class="${iconMap.rectangle}"></i>`; // Emoji de atualização ou seu ícone customizado.
+    // Adiciona um evento de clique ao botão.
+    L.DomEvent.on(retangleButton, 'click', _onRectangleDraw.bind(this, map));
+
+    // Cria um botão de Círculo.
+    const circleButton = L.DomUtil.create('button', 'leaflet-draw-button circle', container);
+    circleButton.innerHTML = `<i class="${iconMap.circle}"></i>`; // Emoji de atualização ou seu ícone customizado.
+    // Adiciona um evento de clique ao botão.
+    L.DomEvent.on(circleButton, 'click', _onCircleDraw.bind(this, map));
+
+    // Cria um botão de Marcador.
+    const markerButton = L.DomUtil.create('button', 'leaflet-draw-button marker', container);
+    markerButton.innerHTML = `<i class="${iconMap.marker}"></i>`; // Emoji de atualização ou seu ícone customizado.
+    // Adiciona um evento de clique ao botão
+    L.DomEvent.on(markerButton, 'click', _onMarkerDraw.bind(this, map));
+    return container;
+}
+
+function _onZoomIn(map) {
+    map.zoomIn();
+    console.log('Zoom In');
+}
+
+function _onZoomOut(map) {
+    map.zoomOut();
+    console.log('Zoom Out');
 }
 
 function _onPolygonDraw(map, event) {
@@ -421,35 +492,6 @@ async function _onMarkerDraw(map, event) {
     }
 }
 
-function onAddDrawControl(map) {
-    const container = L.DomUtil.create('div', 'leaflet-bar flexcol');
-
-    // Cria um botão de Polígono.
-    const polygonButton = L.DomUtil.create('button', 'leaflet-draw-button polygon', container);
-    polygonButton.innerHTML = `<i class="${iconMap.polygon}"></i>`; // Emoji de atualização ou seu ícone customizado.
-    // Adiciona um evento de clique ao botão.
-    L.DomEvent.on(polygonButton, 'click', _onPolygonDraw.bind(this, map));
-
-    // Cria um botão de Retângulo.
-    const retangleButton = L.DomUtil.create('button', 'leaflet-draw-button retangle', container);
-    retangleButton.innerHTML = `<i class="${iconMap.rectangle}"></i>`; // Emoji de atualização ou seu ícone customizado.
-    // Adiciona um evento de clique ao botão.
-    L.DomEvent.on(retangleButton, 'click', _onRectangleDraw.bind(this, map));
-
-    // Cria um botão de Círculo.
-    const circleButton = L.DomUtil.create('button', 'leaflet-draw-button circle', container);
-    circleButton.innerHTML = `<i class="${iconMap.circle}"></i>`; // Emoji de atualização ou seu ícone customizado.
-    // Adiciona um evento de clique ao botão.
-    L.DomEvent.on(circleButton, 'click', _onCircleDraw.bind(this, map));
-
-    // Cria um botão de Marcador.
-    const markerButton = L.DomUtil.create('button', 'leaflet-draw-button marker', container);
-    markerButton.innerHTML = `<i class="${iconMap.marker}"></i>`; // Emoji de atualização ou seu ícone customizado.
-    // Adiciona um evento de clique ao botão
-    L.DomEvent.on(markerButton, 'click', _onMarkerDraw.bind(this, map));
-    return container;
-}
-
 function _onExpandLayer() {
     const layerControl = document.querySelector('#layerControl');
     if (layerControl) {
@@ -461,48 +503,8 @@ function _onExpandLayer() {
     }
 }
 
-function onAddLayer(map) {
-    const container = L.DomUtil.create('div', 'leaflet-bar flexcol');
-
-    const expandButton = L.DomUtil.create('button', 'leaflet-control-expand', container);
-    expandButton.innerHTML = '<i class="fas fa-expand"></i>';
-    L.DomEvent.on(expandButton, 'click', _onExpandLayer.bind(this));
-
-    return container;
-}
-
-function onCreateTile(coords) {
-    // Cria um tile com transparência.
-    const tile = document.createElement('canvas');
-
-    var tileSize = this.getTileSize();
-    tile.setAttribute('width', tileSize.x);
-    tile.setAttribute('height', tileSize.y);
-
-    const ctx = tile.getContext('2d');
-
-    // Desenha linhas de grade.
-    ctx.strokeStyle = 'rgba(212, 198, 148, 0.5)'; // Grid line color
-    ctx.lineWidth = 1;
-
-    // Desenha linhas de grade horizontais e verticais.
-    for (let i = 0; i <= tileSize; i += 36) { // Ajusta o tamanho da celula da grade (36px).
-        ctx.beginPath();
-        ctx.moveTo(i, 0);
-        ctx.lineTo(i, tileSize);
-        ctx.stroke();
-
-        ctx.beginPath();
-        ctx.moveTo(0, i);
-        ctx.lineTo(tileSize, i);
-        ctx.stroke();
-    }
-
-    return tile;
-}
-
 const utils = {
-    setupCustomButtons: _setupCustomButtons,
+    setupCustomButtons: setupCustomButtons,
 
     onAddMain: onAddMain,
     onAddDrawControl: onAddDrawControl,
@@ -514,11 +516,11 @@ const utils = {
     drawer: drawer,
     state: state,
     drawStyle: {
-        style,
-        update: _updateStyle,
-        updateTemplineStyle: _updateTemplineStyle
+        update: updateStyle,
+        updateTemplineStyle: updateTemplineStyle
     },
-    measurements: measurements
+    measurements: measurements,
+    defaultStyle: defaultStyle
 }
 
 export default utils;

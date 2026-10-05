@@ -48,7 +48,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             CSS_NAME: cssname,
             CSS_THEME: csstheme,
             leaflet: lControl.constants,
-            fonts: new FontManager(localFonts)
+            fonts: new FontManager(localFonts),
         }),
 
         /**
@@ -171,6 +171,21 @@ document.addEventListener('DOMContentLoaded', async () => {
                 borderColor: null
             }
         },
+
+        /**
+         * Controles relacionados à interface do usuário.
+         * 
+         * @type {Object|null}
+         * @property {string} fillColor - Cor de Preenchimento principal.
+         * @property {number} fillOpacity - A opacidade da Cor de Preenchimento.
+         * @property {string} color - Cor da Borda do Elemento, se houver.
+         * @property {number} opacity - A opacidade da Borda, se houver.
+         * @property {number} weight - A largura (em px) da Borda do Elemento, se houver.
+         * @property {string} dashArray - O espaçamento do estilo da Borda do Elemento, se hoouver.
+         * @property {string} line - O estilo da Borda do Elemento, se houver.
+         * @property {boolean} hasBorder - Flag que infica se há ou não Borda do Elemento.
+        */
+        style: null,
 
         lineageEditor: Object.freeze({
             props: {
@@ -358,11 +373,14 @@ function parseBody() {
 async function refreshDocuments() {
     const data = await DBDocuments.UniForgeData();
     uniforge.doc = new DBDocuments(data);
+
+    uniforge.settings = uniforge.doc.settings;
+
     return uniforge.doc;
 }
 
 async function configureURLs() {
-    const worldMap = uniforge.doc.settings.get('leaflet.mainMap');
+    const worldMap = uniforge.settings.get('leaflet.mainMap');
 
     /**
     * @description Urls padrões usadas pelo sistema.
@@ -436,38 +454,16 @@ async function configureLeaflet() {
     // Inicializa o controle de mapas Leaflet.
     uniforge.ctrls.leaflet = lControl.init(uniforge.urls.worldMap);
 
-    const style = JSON.parse(uniforge.doc.settings.get('leafletStyle.pathOptions'));
+    const style = JSON.parse(uniforge.settings.get('leafletStyle.pathOptions'));
     style.line = uniforge.shapesToolBar.constants.lineTypes[style.line].style.line;
     style.dashArray = uniforge.shapesToolBar.constants.lineTypes[style.line].style.dashArray;
 
-    const hasBorder = style.opacity === 1;
-
-    const hasBorderCheck = document.querySelector('#hasBorderSwitch #checkbox');
-    hasBorderCheck.checked = hasBorder;
-
-    const shapeSizeSlider = uniforge.ctrls.sliders.shapeSizeSlider;
-    shapeSizeSlider.setValue(style.weight, true);
-
-    const shapeBorderCombo = document.getElementById('shapeBorderCombo');
-    shapeBorderCombo.value = style.line;
-
-    shapeBorderCombo.dispatchEvent(new Event('change'));
-
-    const root = getComputedStyle(document.documentElement);
-    const fillColor = style.fillColor.replace('var(','').replace(')','');
-    const borderColor = style.color.replace('var(','').replace(')','');
-
-    const fillColorPicker = document.getElementById('fillColorPicker');
-    fillColorPicker.value = root.getPropertyValue(fillColor).trim();
-    uniforge.ctrls.colorPickers.fillColor = fillColorPicker;
-
-    const borderColorPicker = document.getElementById('borderColorPicker');
-    borderColorPicker.value = root.getPropertyValue(borderColor).trim();
-    uniforge.ctrls.colorPickers.borderColor = borderColorPicker;
+    style.hasBorder = style.hasBorder || style.opacity === 1;
+    uniforge.style = style;
 
     uniforge.leaflet.drawStyle.update(uniforge.leaflet.core.map, style);
 
-    await _refreshPreviewStyle();
+    await _refreshStyle();
 }
 // Configura a ferramenta de geração de map tiles.
 function configureMapTiler() {
@@ -560,9 +556,14 @@ function configureBody() {
 
 function configureHooks() {
     registerHook('beforeRender', async () => { await refreshDocuments(); });
-    registerHook('simpleEntryFormClosed', async () => {
-        await refreshDocuments();
-        console.log('simpleEntryFormClosed');
+    registerHook('simpleEntryFormClosed', async () => { await refreshDocuments(); });
+    registerHook('styleChanged', async () => { await _refreshStyle(); });
+    registerHook('layerElementsUpdated', async () => { await _updateLayerControl(); });
+    registerHook('documentsChanged', async () => { await refreshDocuments(); });
+
+    registerHook('layerPopupOpened', async (layer) => {
+        uniforge.style = layer.options;
+        await _refreshStyle();
     });
 }
 // Configura o listeners que tratam os eventos dos tabs do Menu Lateral e as rotinas de fechamento do Form
@@ -644,10 +645,10 @@ function activateMainListeners() {
     const shapeBorderCombo = document.getElementById('shapeBorderCombo');
     shapeBorderCombo.addEventListener('change', (event) => { onShapeBorderComboChange(event); });
 
-    const fillColorPicker = document.getElementById('fillColorPicker');  
+    const fillColorPicker = document.getElementById('fillColorPicker');
     fillColorPicker.addEventListener('input', (event) => { onFillColorPickerChange(event); });
 
-    const borderColorPicker = document.getElementById('borderColorPicker');    
+    const borderColorPicker = document.getElementById('borderColorPicker');
     borderColorPicker.addEventListener('input', (event) => { onBorderColorPickerChange(event); });
 }
 /** 
@@ -835,61 +836,73 @@ async function onHasBorderSwitchChange(event) {
     const hasBorderSwitch = document.querySelector('#hasBorderSwitch');
     const borderSizeGroup = document.querySelector('#borderSizeGroup');
 
-    uniforge.leaflet.drawStyle.style.hasBorder = hasBorder;
+    if (uniforge.style) {
 
-    if (hasBorder) {
-        borderSizeGroup.classList.remove('hidden');
+        uniforge.style.hasBorder = hasBorder;
+
+        if (hasBorder) {
+            borderSizeGroup.classList.remove('hidden');
+        }
+        else {
+            borderSizeGroup.classList.add('hidden');
+        }
+
+        uniforge.leaflet.drawStyle.update(uniforge.leaflet.core.map, uniforge.style);
+
+        await _refreshPreviewStyle();
     }
-    else {
-        borderSizeGroup.classList.add('hidden');
-    }
-
-    uniforge.leaflet.drawStyle.update(uniforge.leaflet.core.map, uniforge.leaflet.drawStyle.style);
-
-    await _refreshPreviewStyle();
 }
 
 async function onShapeSizeSliderChange(event) {
     const preview = uniforge.shapesToolBar.preview;
 
-    const size = uniforge.ctrls.sliders.shapeSizeSlider.getValueNumber();
-    uniforge.leaflet.drawStyle.style.weight = size;
+    if (uniforge.style) {
+        const size = uniforge.ctrls.sliders.shapeSizeSlider.getValueNumber();
+        uniforge.style.weight = size;
 
-    uniforge.leaflet.drawStyle.update(uniforge.leaflet.core.map, uniforge.leaflet.drawStyle.style);
+        uniforge.leaflet.drawStyle.update(uniforge.leaflet.core.map, uniforge.style);
 
-    await _refreshPreviewStyle();
+        await _refreshPreviewStyle();
+    }
 }
 
 async function onShapeBorderComboChange(event) {
     const preview = uniforge.shapesToolBar.preview;
 
-    const lineTypes = uniforge.shapesToolBar.constants.lineTypes;
-    const style = lineTypes[event.target.value].style;
+    if (uniforge.style) {
+        const lineTypes = uniforge.shapesToolBar.constants.lineTypes;
+        const style = lineTypes[event.target.value].style;
 
-    uniforge.leaflet.drawStyle.style = {
-        ...uniforge.leaflet.drawStyle.style,
-        ...style,
+        uniforge.style = {
+            ...uniforge.style,
+            ...style,
+        }
+
+        uniforge.leaflet.drawStyle.update(uniforge.leaflet.core.map, uniforge.style);
+
+        await _refreshPreviewStyle();
     }
-
-    uniforge.leaflet.drawStyle.update(uniforge.leaflet.core.map, uniforge.leaflet.drawStyle.style);
-
-    await _refreshPreviewStyle();
 }
 
 async function onFillColorPickerChange(event) {
     const picker = event.target;
-    uniforge.leaflet.drawStyle.style.fillColor = picker.value;
-    uniforge.leaflet.drawStyle.update(uniforge.leaflet.core.map, uniforge.leaflet.drawStyle.style);
 
-    await _refreshPreviewStyle();
+    if (uniforge.style) {
+        uniforge.style.fillColor = picker.value;
+        uniforge.leaflet.drawStyle.update(uniforge.leaflet.core.map, uniforge.style);
+
+        await _refreshPreviewStyle();
+    }
 }
 
 async function onBorderColorPickerChange(event) {
     const picker = event.target;
-    uniforge.leaflet.drawStyle.style.color = picker.value;
-    uniforge.leaflet.drawStyle.update(uniforge.leaflet.core.map, uniforge.leaflet.drawStyle.style);
+    if (uniforge.style) {
+        uniforge.style.color = picker.value;
+        uniforge.leaflet.drawStyle.update(uniforge.leaflet.core.map, uniforge.style);
 
-    await _refreshPreviewStyle();
+        await _refreshPreviewStyle();
+    }
 }
 
 
@@ -957,13 +970,51 @@ async function _refreshMarkerDrawing(marker) {
     uniforge.leaflet.core.editCache.layer.setIcon(newIcon);
 };
 
-async function _refreshPreviewStyle(storeOptions = false) {
+async function _refreshStyle() {
+    const style = uniforge.style;
+
+    const hasBorderCheckbox = hasBorderSwitch.querySelector('#checkbox');
+    const shapeSizeSlider = uniforge.ctrls.sliders.shapeSizeSlider;
+    const shapeBorderCombo = document.getElementById('shapeBorderCombo');
+    const fillColorPicker = document.getElementById('fillColorPicker');
+    const borderColorPicker = document.getElementById('borderColorPicker');
+
+    hasBorderCheckbox.checked = uniforge.style.hasBorder;
+    shapeSizeSlider.setValue(uniforge.style.weight, true);
+
+    shapeBorderCombo.value = uniforge.style.line;
+    shapeBorderCombo.dispatchEvent(new Event('change'));
+
+    const computedStyle = getComputedStyle(document.documentElement);
+
+    if (style.fillColor.includes('var(')) {
+        const fillColor = style.fillColor.replace('var(', '').replace(')', '');
+        fillColorPicker.value = computedStyle.getPropertyValue(fillColor).trim();
+    }
+    else fillColorPicker.value = style.fillColor;    
+
+    uniforge.ctrls.colorPickers.fillColor = fillColorPicker;
+
+    if (style.fillColor.includes('var(')) {
+        const borderColor = style.color.replace('var(', '').replace(')', '');
+        borderColorPicker.value = computedStyle.getPropertyValue(borderColor).trim();        
+    } 
+    else borderColorPicker.value = style.color;
+    
+
+    uniforge.ctrls.colorPickers.borderColor = borderColorPicker;
+
+    uniforge.leaflet.drawStyle.updateTemplineStyle(uniforge.leaflet.core.map, style);
+    await _refreshPreviewStyle();
+}
+
+async function _refreshPreviewStyle() {
     const preview = document.querySelector('.regular-shapes .config-group.preview .shape-canvas .shape-preview');
     if (!preview) return;
 
-    const hasBorderCheck = document.querySelector('#hasBorderSwitch #checkbox');    
+    const hasBorderCheck = document.querySelector('#hasBorderSwitch #checkbox');
 
-    const style = uniforge.leaflet.drawStyle.style;
+    const style = uniforge.style;
     const lineTypes = uniforge.shapesToolBar.constants.lineTypes;
 
     // Obtém o tipo de linha correto baseado no estado atual
@@ -982,6 +1033,133 @@ async function _refreshPreviewStyle(storeOptions = false) {
     shapeBorderCombo.disabled = !hasBorderCheck.checked;
     borderColorPicker.disabled = !hasBorderCheck.checked;
     uniforge.ctrls.sliders.shapeSizeSlider.setVisible(hasBorderCheck.checked, true);
+}
+
+function _updateLayerControl() {
+    const leaflet = uniforge.ctrls.leaflet;
+    if (leaflet) {
+        const mapElementsList = document.querySelector('#mapElementsList');
+        mapElementsList.innerHTML = ''; // Limpa a lista atual.  
+
+        const noObjectsFoundMessage = document.getElementById('noObjectsFoundMessage');
+
+        // Se não houver elementos, exibe a mensagem de "Nenhum objeto encontrado".
+        if (leaflet.mapElements.getLayers().length === 0) {
+            noObjectsFoundMessage.classList.remove('hidden');
+        }
+        // Caso haja elementos, gera os itens da lista de elementos do mapa.
+        else {
+            // Garante que a mensagem de "Nenhum objeto encontrado" esteja oculta.
+            noObjectsFoundMessage.classList.add('hidden');
+
+            // Percorre os elementos do mapa e os adiciona à lista de controle de camadas.
+            leaflet.mapElements.eachLayer(async function (layer) {
+                const li = document.createElement('li');
+                li.id = layer._id;
+                li.dataset.leafletId = layer._leaflet_id;
+                li.classList.add('layer-item', 'flexrow');
+
+                const content = document.createElement('div');
+                content.classList.add('layer-item-content', 'flexrow');
+
+                const img = document.createElement('img');
+                if (!layer.source.img) {
+                    img.src = uniforge.urls.blankImg;
+                }
+                else {
+                    img.src = await uniforge.utils.blobToImage(layer.source.img);
+                }
+
+                const contentBody = document.createElement('div');
+                contentBody.classList.add('layer-item-content-body', 'flexcol');
+
+                const h3 = document.createElement('h3');
+                h3.innerText = layer.source.title;
+
+                const span = document.createElement('span');
+                span.innerHTML = `<i class="${layer.source.entryType.icon}"></i> ${layer.source.entryType.title}`;
+
+                contentBody.appendChild(h3);
+                contentBody.appendChild(span);
+
+                content.appendChild(img);
+                content.appendChild(contentBody);
+
+                const deleteButton = document.createElement('a');
+                deleteButton.classList.add('layer-item-delete');
+                deleteButton.innerHTML = '<i class="fa-solid fa-trash"></i>';
+
+                deleteButton.addEventListener('click', leaflet.deleteElement);
+
+                li.appendChild(content);
+                li.appendChild(deleteButton);
+
+                li.addEventListener('mouseover', _onLayerItemMouseOver);
+                li.addEventListener('mouseleave', _onLayerItemMouseLeave)
+
+                mapElementsList.appendChild(li);
+            });
+        }
+    }
+
+    function _onLayerItemMouseLeave(event) {
+        event.stopPropagation();
+
+        const layerItem = event.target.closest('.layer-item');
+        const layerId = layerItem.dataset.leafletId;
+        const layer = leaflet.mapElements.getLayer(layerId);
+
+        let element;
+        switch (layer.type) {
+            case 'marker': {
+                element = layer._icon;
+            } break;
+            case 'circle': {
+                element = layer._path;
+            } break;
+            case 'polygon': {
+                element = layer._path;
+            } break;
+            case 'rectangle': {
+                element = layer._path;
+            } break;
+            default: {
+                console.warn(`Tipo de elemento desconhecido: ${layer.type}`);
+                return; // Ignora elementos com tipo desconhecido.
+            }
+        }
+
+        element.classList.remove('highlight');
+    }
+
+    function _onLayerItemMouseOver(event) {
+        event.stopPropagation();
+        const layerItem = event.target.closest('.layer-item');
+        const layerId = layerItem.dataset.leafletId;
+        const layer = leaflet.mapElements.getLayer(layerId);
+
+        let element;
+        switch (layer.type) {
+            case 'marker': {
+                element = layer._icon;
+            } break;
+            case 'circle': {
+                element = layer._path;
+            } break;
+            case 'polygon': {
+                element = layer._path;
+            } break;
+            case 'rectangle': {
+                element = layer._path;
+            } break;
+            default: {
+                console.warn(`Tipo de elemento desconhecido: ${layer.type}`);
+                return; // Ignora elementos com tipo desconhecido.
+            }
+        }
+
+        element.classList.add('highlight');
+    }
 }
 
 function _setTime(year) {
