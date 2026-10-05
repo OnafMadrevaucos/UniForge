@@ -1,3 +1,5 @@
+import { triggerHook } from "../../scripts/hooks.js";
+
 export default class SettingsSet extends Set {
     /**
      * Adiciona um item.
@@ -131,6 +133,8 @@ export default class SettingsSet extends Set {
             tag: tagId,
             value: value
         });
+
+        await triggerHook('documentsChanged');
     }
 
     /**

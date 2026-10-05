@@ -48,7 +48,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             CSS_NAME: cssname,
             CSS_THEME: csstheme,
             leaflet: lControl.constants,
-            fonts: new FontManager(localFonts)
+            fonts: new FontManager(localFonts),
         }),
 
         /**
@@ -167,10 +167,25 @@ document.addEventListener('DOMContentLoaded', async () => {
                 shapeSizeSlider: null
             },
             colorPickers: {
-                fillColorPicker: null,
-                borderColorPicker: null
+                fillColor: null,
+                borderColor: null
             }
         },
+
+        /**
+         * Controles relacionados à interface do usuário.
+         * 
+         * @type {Object|null}
+         * @property {string} fillColor - Cor de Preenchimento principal.
+         * @property {number} fillOpacity - A opacidade da Cor de Preenchimento.
+         * @property {string} color - Cor da Borda do Elemento, se houver.
+         * @property {number} opacity - A opacidade da Borda, se houver.
+         * @property {number} weight - A largura (em px) da Borda do Elemento, se houver.
+         * @property {string} dashArray - O espaçamento do estilo da Borda do Elemento, se hoouver.
+         * @property {string} line - O estilo da Borda do Elemento, se houver.
+         * @property {boolean} hasBorder - Flag que infica se há ou não Borda do Elemento.
+        */
+        style: null,
 
         lineageEditor: Object.freeze({
             props: {
@@ -358,11 +373,14 @@ function parseBody() {
 async function refreshDocuments() {
     const data = await DBDocuments.UniForgeData();
     uniforge.doc = new DBDocuments(data);
+
+    uniforge.settings = uniforge.doc.settings;
+
     return uniforge.doc;
 }
 
 async function configureURLs() {
-    const worldMap = uniforge.doc.settings.get('leaflet.mainMap');
+    const worldMap = uniforge.settings.get('leaflet.mainMap');
 
     /**
     * @description Urls padrões usadas pelo sistema.
@@ -436,32 +454,16 @@ async function configureLeaflet() {
     // Inicializa o controle de mapas Leaflet.
     uniforge.ctrls.leaflet = lControl.init(uniforge.urls.worldMap);
 
-    const style = JSON.parse(uniforge.doc.settings.get('leafletStyle.pathOptions'));
+    const style = JSON.parse(uniforge.settings.get('leafletStyle.pathOptions'));
     style.line = uniforge.shapesToolBar.constants.lineTypes[style.line].style.line;
     style.dashArray = uniforge.shapesToolBar.constants.lineTypes[style.line].style.dashArray;
 
-    const hasBorder = style.opacity === 1;
-
-    const hasBorderCheck = document.querySelector('#hasBorderSwitch #checkbox');
-    hasBorderCheck.checked = hasBorder;
-
-    const shapeSizeSlider = uniforge.ctrls.sliders.shapeSizeSlider;
-    shapeSizeSlider.setValue(style.weight, true);
-
-    const shapeBorderCombo = document.getElementById('shapeBorderCombo');
-    shapeBorderCombo.value = style.line;
-
-    shapeBorderCombo.dispatchEvent(new Event('change'));
-
-    const fillColorPicker = uniforge.ctrls.colorPickers.fillColorPicker;
-    fillColorPicker.setColor(style.fillColor, true);
-
-    const borderColorPicker = uniforge.ctrls.colorPickers.borderColorPicker;
-    borderColorPicker.setColor(style.color, true);
+    style.hasBorder = style.hasBorder || style.opacity === 1;
+    uniforge.style = style;
 
     uniforge.leaflet.drawStyle.update(uniforge.leaflet.core.map, style);
 
-    await refreshPreviewStyle();
+    await _refreshStyle();
 }
 // Configura a ferramenta de geração de map tiles.
 function configureMapTiler() {
@@ -554,9 +556,14 @@ function configureBody() {
 
 function configureHooks() {
     registerHook('beforeRender', async () => { await refreshDocuments(); });
-    registerHook('simpleEntryFormClosed', async () => {
-        await refreshDocuments();
-        console.log('simpleEntryFormClosed');
+    registerHook('simpleEntryFormClosed', async () => { await refreshDocuments(); });
+    registerHook('styleChanged', async () => { await _refreshStyle(); });
+    registerHook('layerElementsUpdated', async () => { await _updateLayerControl(); });
+    registerHook('documentsChanged', async () => { await refreshDocuments(); });
+
+    registerHook('layerPopupOpened', async (layer) => {
+        uniforge.style = layer.options;
+        await _refreshStyle();
     });
 }
 // Configura o listeners que tratam os eventos dos tabs do Menu Lateral e as rotinas de fechamento do Form
@@ -593,7 +600,7 @@ function activateMainListeners() {
     tabs.forEach(tab => {
         tab.addEventListener('click', () => {
             tab.classList.add('disabled');
-            renderForm(tab.getAttribute('data-target'), tab);
+            _renderForm(tab.getAttribute('data-target'), tab);
         });
     });
 
@@ -638,13 +645,11 @@ function activateMainListeners() {
     const shapeBorderCombo = document.getElementById('shapeBorderCombo');
     shapeBorderCombo.addEventListener('change', (event) => { onShapeBorderComboChange(event); });
 
-    const fillColorPicker = uniforge.ctrls.colorPickers.fillColorPicker = new ColorPicker('fillColorPicker', document, { value: 'var(--color-b)', alpha: 0.5, tooltip: 'Cor do Preenchimento I', fixedAlpha: true });
-    fillColorPicker.config();
-    fillColorPicker.addEventListener('change', (event) => { onFillColorPickerChange(fillColorPicker); });
+    const fillColorPicker = document.getElementById('fillColorPicker');
+    fillColorPicker.addEventListener('input', (event) => { onFillColorPickerChange(event); });
 
-    const borderColorPicker = uniforge.ctrls.colorPickers.borderColorPicker = new ColorPicker('borderColorPicker', document, { value: 'var(--dark-color-b)', tooltip: 'Cor da Borda' });
-    borderColorPicker.config();
-    borderColorPicker.addEventListener('change', (event) => { onBorderColorPickerChange(borderColorPicker); });
+    const borderColorPicker = document.getElementById('borderColorPicker');
+    borderColorPicker.addEventListener('input', (event) => { onBorderColorPickerChange(event); });
 }
 /** 
  * ------------------------------------------------------------------
@@ -657,7 +662,7 @@ function onTopbarButtonClick(event) {
     const button = event.target.closest('.topbarBtn');
     button.classList.add('disabled');
 
-    renderForm(button.getAttribute('data-target'), button);
+    _renderForm(button.getAttribute('data-target'), button);
 }
 
 function onToggleTopBarClick(event) {
@@ -803,8 +808,8 @@ async function onMarkerIconClick(event) {
     if (signMarker && colorMarker) {
         const marker = `${colorMarker.getAttribute('data-color')}_${signMarker.getAttribute('data-marker')}`;
 
-        if (editCache && editCache.layer instanceof L.Marker) await refreshMarkerDrawing(marker);
-        else await startMarkerDrawing(marker);
+        if (editCache && editCache.layer instanceof L.Marker) await _refreshMarkerDrawing(marker);
+        else await _startMarkerDrawing(marker);
     }
     else if (uniforge.ctrls.marker) uniforge.ctrls.marker.disable();
 }
@@ -831,76 +836,80 @@ async function onHasBorderSwitchChange(event) {
     const hasBorderSwitch = document.querySelector('#hasBorderSwitch');
     const borderSizeGroup = document.querySelector('#borderSizeGroup');
 
-    uniforge.leaflet.drawStyle.style.hasBorder = hasBorder;
+    if (uniforge.style) {
 
-    if (hasBorder) {
-        borderSizeGroup.classList.remove('hidden');
+        uniforge.style.hasBorder = hasBorder;
+
+        if (hasBorder) {
+            borderSizeGroup.classList.remove('hidden');
+        }
+        else {
+            borderSizeGroup.classList.add('hidden');
+        }
+
+        uniforge.leaflet.drawStyle.update(uniforge.leaflet.core.map, uniforge.style);
+
+        await _refreshPreviewStyle();
     }
-    else {
-        borderSizeGroup.classList.add('hidden');
-    }
-
-    uniforge.leaflet.drawStyle.update(uniforge.leaflet.core.map, uniforge.leaflet.drawStyle.style);
-
-    await refreshPreviewStyle();
 }
 
 async function onShapeSizeSliderChange(event) {
     const preview = uniforge.shapesToolBar.preview;
 
-    const size = uniforge.ctrls.sliders.shapeSizeSlider.getValueNumber();
-    uniforge.leaflet.drawStyle.style.weight = size;
+    if (uniforge.style) {
+        const size = uniforge.ctrls.sliders.shapeSizeSlider.getValueNumber();
+        uniforge.style.weight = size;
 
-    uniforge.leaflet.drawStyle.update(uniforge.leaflet.core.map, uniforge.leaflet.drawStyle.style);
+        uniforge.leaflet.drawStyle.update(uniforge.leaflet.core.map, uniforge.style);
 
-    await refreshPreviewStyle();
+        await _refreshPreviewStyle();
+    }
 }
 
 async function onShapeBorderComboChange(event) {
     const preview = uniforge.shapesToolBar.preview;
 
-    const lineTypes = uniforge.shapesToolBar.constants.lineTypes;
-    const style = lineTypes[event.target.value].style;
+    if (uniforge.style) {
+        const lineTypes = uniforge.shapesToolBar.constants.lineTypes;
+        const style = lineTypes[event.target.value].style;
 
-    uniforge.leaflet.drawStyle.style = {
-        ...uniforge.leaflet.drawStyle.style,
-        ...style,
+        uniforge.style = {
+            ...uniforge.style,
+            ...style,
+        }
+
+        uniforge.leaflet.drawStyle.update(uniforge.leaflet.core.map, uniforge.style);
+
+        await _refreshPreviewStyle();
     }
-
-    uniforge.leaflet.drawStyle.update(uniforge.leaflet.core.map, uniforge.leaflet.drawStyle.style);
-
-    await refreshPreviewStyle();
 }
 
-async function onFillColorPickerChange(picker) {
-    uniforge.leaflet.drawStyle.style.fillColor = picker.value;
-    uniforge.leaflet.drawStyle.style.fillOpacity = picker.alpha;
+async function onFillColorPickerChange(event) {
+    const picker = event.target;
 
-    uniforge.leaflet.drawStyle.update(uniforge.leaflet.core.map, uniforge.leaflet.drawStyle.style);
+    if (uniforge.style) {
+        uniforge.style.fillColor = picker.value;
+        uniforge.leaflet.drawStyle.update(uniforge.leaflet.core.map, uniforge.style);
 
-    await refreshPreviewStyle();
+        await _refreshPreviewStyle();
+    }
 }
 
-async function onBorderColorPickerChange(picker) {
-    const preview = uniforge.shapesToolBar.preview;
+async function onBorderColorPickerChange(event) {
+    const picker = event.target;
+    if (uniforge.style) {
+        uniforge.style.color = picker.value;
+        uniforge.leaflet.drawStyle.update(uniforge.leaflet.core.map, uniforge.style);
 
-    uniforge.leaflet.drawStyle.style.color = picker.value;
-    uniforge.leaflet.drawStyle.style.opacity = picker.alpha;
-
-    uniforge.leaflet.drawStyle.update(uniforge.leaflet.core.map, uniforge.leaflet.drawStyle.style);
-
-    await refreshPreviewStyle();
+        await _refreshPreviewStyle();
+    }
 }
 
-async function onGradientColorPickerChange(picker) {
-    await refreshPreviewStyle();
-}
 
-/** 
- * ------------------------------------------------------------------
- * FUNÇÕES DE CONTROLE INTERNO DA PÁGINA 
- * ------------------------------------------------------------------
- * */
+//------------------------------------------------------------------
+// FUNÇÕES DE CONTROLE INTERNO DA PÁGINA 
+//------------------------------------------------------------------
+
 /**
  * Renderiza um formulário baseado em um ID de template
  * e o exibe na tela.
@@ -911,7 +920,7 @@ async function onGradientColorPickerChange(picker) {
  * @returns {Promise<void>}             - Uma promessa que resolve quando o formulário for renderizado e exibido.
  * @throws {Error}                      - Se ocorrer um erro ao renderizar o formulário.
  */
-async function renderForm(targetId, button = null, showAfter = true) {
+async function _renderForm(targetId, button = null, showAfter = true) {
     try {
         const form = new uniforge.forms[targetId]();
         if (!form)
@@ -933,7 +942,7 @@ async function renderForm(targetId, button = null, showAfter = true) {
  * @returns {Promise<void>}             - Uma promessa que resolve quando o formulário for renderizado e exibido.
  * @throws {Error}                      - Se ocorrer um erro ao renderizar o formulário.
  */
-async function recoverForm(form) {
+async function _recoverForm(form) {
     try {
         if (!form) throw new Error(`O formulário '${form}' não foi encontrado.`);
         await form.show(true);
@@ -942,7 +951,7 @@ async function recoverForm(form) {
     }
 }
 
-async function startMarkerDrawing(marker) {
+async function _startMarkerDrawing(marker) {
     const map = uniforge.leaflet.core.map;
     const markerURL = uniforge.urls.markers.join(`${marker}.png`);
 
@@ -953,7 +962,7 @@ async function startMarkerDrawing(marker) {
     uniforge.ctrls.marker = uniforge.leaflet.drawer.marker(map, markerURL);
 };
 
-async function refreshMarkerDrawing(marker) {
+async function _refreshMarkerDrawing(marker) {
     const markerURL = uniforge.urls.markers.join(`${marker}.png`);
     const newStyle = uniforge.leaflet.drawStyle.factories.marker(markerURL).markerStyle.icon.options;
 
@@ -961,13 +970,51 @@ async function refreshMarkerDrawing(marker) {
     uniforge.leaflet.core.editCache.layer.setIcon(newIcon);
 };
 
-async function refreshPreviewStyle() {
+async function _refreshStyle() {
+    const style = uniforge.style;
+
+    const hasBorderCheckbox = hasBorderSwitch.querySelector('#checkbox');
+    const shapeSizeSlider = uniforge.ctrls.sliders.shapeSizeSlider;
+    const shapeBorderCombo = document.getElementById('shapeBorderCombo');
+    const fillColorPicker = document.getElementById('fillColorPicker');
+    const borderColorPicker = document.getElementById('borderColorPicker');
+
+    hasBorderCheckbox.checked = uniforge.style.hasBorder;
+    shapeSizeSlider.setValue(uniforge.style.weight, true);
+
+    shapeBorderCombo.value = uniforge.style.line;
+    shapeBorderCombo.dispatchEvent(new Event('change'));
+
+    const computedStyle = getComputedStyle(document.documentElement);
+
+    if (style.fillColor.includes('var(')) {
+        const fillColor = style.fillColor.replace('var(', '').replace(')', '');
+        fillColorPicker.value = computedStyle.getPropertyValue(fillColor).trim();
+    }
+    else fillColorPicker.value = style.fillColor;    
+
+    uniforge.ctrls.colorPickers.fillColor = fillColorPicker;
+
+    if (style.fillColor.includes('var(')) {
+        const borderColor = style.color.replace('var(', '').replace(')', '');
+        borderColorPicker.value = computedStyle.getPropertyValue(borderColor).trim();        
+    } 
+    else borderColorPicker.value = style.color;
+    
+
+    uniforge.ctrls.colorPickers.borderColor = borderColorPicker;
+
+    uniforge.leaflet.drawStyle.updateTemplineStyle(uniforge.leaflet.core.map, style);
+    await _refreshPreviewStyle();
+}
+
+async function _refreshPreviewStyle() {
     const preview = document.querySelector('.regular-shapes .config-group.preview .shape-canvas .shape-preview');
     if (!preview) return;
 
     const hasBorderCheck = document.querySelector('#hasBorderSwitch #checkbox');
 
-    const style = uniforge.leaflet.drawStyle.style;
+    const style = uniforge.style;
     const lineTypes = uniforge.shapesToolBar.constants.lineTypes;
 
     // Obtém o tipo de linha correto baseado no estado atual
@@ -976,6 +1023,7 @@ async function refreshPreviewStyle() {
     preview.style.backgroundColor = style.fillColor;
 
     const shapeBorderCombo = document.getElementById('shapeBorderCombo');
+    const borderColorPicker = document.getElementById('borderColorPicker');
 
     if (hasBorderCheck.checked)
         preview.style.border = `${style.weight}px ${lineStyle} ${style.color}`;
@@ -983,10 +1031,135 @@ async function refreshPreviewStyle() {
         preview.style.border = 'none';
 
     shapeBorderCombo.disabled = !hasBorderCheck.checked;
-    uniforge.ctrls.colorPickers.borderColorPicker.disabled = !hasBorderCheck.checked;
+    borderColorPicker.disabled = !hasBorderCheck.checked;
     uniforge.ctrls.sliders.shapeSizeSlider.setVisible(hasBorderCheck.checked, true);
+}
 
-    await uniforge.settings.set('leafletStyle.pathOptions', JSON.stringify(uniforge.leaflet.drawStyle.style));
+function _updateLayerControl() {
+    const leaflet = uniforge.ctrls.leaflet;
+    if (leaflet) {
+        const mapElementsList = document.querySelector('#mapElementsList');
+        mapElementsList.innerHTML = ''; // Limpa a lista atual.  
+
+        const noObjectsFoundMessage = document.getElementById('noObjectsFoundMessage');
+
+        // Se não houver elementos, exibe a mensagem de "Nenhum objeto encontrado".
+        if (leaflet.mapElements.getLayers().length === 0) {
+            noObjectsFoundMessage.classList.remove('hidden');
+        }
+        // Caso haja elementos, gera os itens da lista de elementos do mapa.
+        else {
+            // Garante que a mensagem de "Nenhum objeto encontrado" esteja oculta.
+            noObjectsFoundMessage.classList.add('hidden');
+
+            // Percorre os elementos do mapa e os adiciona à lista de controle de camadas.
+            leaflet.mapElements.eachLayer(async function (layer) {
+                const li = document.createElement('li');
+                li.id = layer._id;
+                li.dataset.leafletId = layer._leaflet_id;
+                li.classList.add('layer-item', 'flexrow');
+
+                const content = document.createElement('div');
+                content.classList.add('layer-item-content', 'flexrow');
+
+                const img = document.createElement('img');
+                if (!layer.source.img) {
+                    img.src = uniforge.urls.blankImg;
+                }
+                else {
+                    img.src = await uniforge.utils.blobToImage(layer.source.img);
+                }
+
+                const contentBody = document.createElement('div');
+                contentBody.classList.add('layer-item-content-body', 'flexcol');
+
+                const h3 = document.createElement('h3');
+                h3.innerText = layer.source.title;
+
+                const span = document.createElement('span');
+                span.innerHTML = `<i class="${layer.source.entryType.icon}"></i> ${layer.source.entryType.title}`;
+
+                contentBody.appendChild(h3);
+                contentBody.appendChild(span);
+
+                content.appendChild(img);
+                content.appendChild(contentBody);
+
+                const deleteButton = document.createElement('a');
+                deleteButton.classList.add('layer-item-delete');
+                deleteButton.innerHTML = '<i class="fa-solid fa-trash"></i>';
+
+                deleteButton.addEventListener('click', leaflet.deleteElement);
+
+                li.appendChild(content);
+                li.appendChild(deleteButton);
+
+                li.addEventListener('mouseover', _onLayerItemMouseOver);
+                li.addEventListener('mouseleave', _onLayerItemMouseLeave)
+
+                mapElementsList.appendChild(li);
+            });
+        }
+    }
+
+    function _onLayerItemMouseLeave(event) {
+        event.stopPropagation();
+
+        const layerItem = event.target.closest('.layer-item');
+        const layerId = layerItem.dataset.leafletId;
+        const layer = leaflet.mapElements.getLayer(layerId);
+
+        let element;
+        switch (layer.type) {
+            case 'marker': {
+                element = layer._icon;
+            } break;
+            case 'circle': {
+                element = layer._path;
+            } break;
+            case 'polygon': {
+                element = layer._path;
+            } break;
+            case 'rectangle': {
+                element = layer._path;
+            } break;
+            default: {
+                console.warn(`Tipo de elemento desconhecido: ${layer.type}`);
+                return; // Ignora elementos com tipo desconhecido.
+            }
+        }
+
+        element.classList.remove('highlight');
+    }
+
+    function _onLayerItemMouseOver(event) {
+        event.stopPropagation();
+        const layerItem = event.target.closest('.layer-item');
+        const layerId = layerItem.dataset.leafletId;
+        const layer = leaflet.mapElements.getLayer(layerId);
+
+        let element;
+        switch (layer.type) {
+            case 'marker': {
+                element = layer._icon;
+            } break;
+            case 'circle': {
+                element = layer._path;
+            } break;
+            case 'polygon': {
+                element = layer._path;
+            } break;
+            case 'rectangle': {
+                element = layer._path;
+            } break;
+            default: {
+                console.warn(`Tipo de elemento desconhecido: ${layer.type}`);
+                return; // Ignora elementos com tipo desconhecido.
+            }
+        }
+
+        element.classList.add('highlight');
+    }
 }
 
 function _setTime(year) {

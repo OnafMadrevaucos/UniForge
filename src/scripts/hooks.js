@@ -14,12 +14,12 @@ async function triggerHook(hookName, ...args) {
         if (typeof callback === 'function') {
           return await callback(...args);
         } else {
-          return Promise.resolve();
+          return Promise.resolve(false);
         }
       }));
   }
 
-  return true;
+  return Promise.resolve(true);
 }
 
 export { registerHook, triggerHook };

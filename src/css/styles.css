@@ -4585,166 +4585,15 @@ hr.divider {
 }
 
 /* ------ Color Picker ------ */
-.color-picker {
-    position: relative;
-    width: fit-content;
-    user-select: none;
+.color-picker{
+    block-size: 32px;    
 }
 
-.color-picker-preview {
-    width: 32px;
-    height: 32px;
-    border-radius: var(--small-border-radius);
-    border: 2px solid var(--light-color-d);
-    cursor: pointer;
-    background-image:
-        linear-gradient(45deg, #ddd 25%, transparent 25%),
-        linear-gradient(-45deg, #ddd 25%, transparent 25%),
-        linear-gradient(45deg, transparent 75%, #ddd 75%),
-        linear-gradient(-45deg, transparent 75%, #ddd 75%);
-    background-size: 12px 12px;
-    background-position:
-        0 0,
-        0 6px,
-        6px -6px,
-        -6px 0;
-}
-
-.color-picker-preview.disabled {
+.color-picker.disabled {
     border: 2px dashed;
     background-color: var(--dark-text-color) !important;
     pointer-events: none;
 }
-
-.color-picker-popup {
-    position: fixed;
-    top: 140px;
-    left: 5px;
-    height: min-content;
-    width: 260px;
-    padding-top: 12px;
-    padding-bottom: 0px;
-    border-radius: var(--strong-border-radius);
-    background: var(--background-color);
-    box-shadow:
-        0 10px 30px rgba(0, 0, 0, .25);
-    display: none;
-    z-index: 999;
-}
-
-.color-picker.open .color-picker-popup {
-    display: block;
-}
-
-.color-picker-spectrum {
-    position: relative;
-    width: var(--fill-width);
-    height: 180px;
-    border-radius: var(--default-border-radius);
-    cursor: crosshair;
-    overflow: hidden;
-    margin-inline: 12px;
-}
-
-.color-picker-spectrum-cursor {
-    position: absolute;
-    width: 14px;
-    height: 14px;
-    border: 2px solid var(--light-color-d);
-    border-radius: var(--circular-border-radius);
-    transform: translate(-50%, -50%);
-    box-shadow: 0 0 0 1px rgba(0, 0, 0, .4);
-    pointer-events: none;
-}
-
-.color-picker-hue,
-.color-picker-alpha {
-    position: relative;
-    width: var(--fill-width);
-    height: 14px;
-    margin-top: 12px;
-    border-radius: var(--track-border-radius);
-    cursor: pointer;
-}
-
-.color-picker-hue {
-    background:
-        linear-gradient(to right,
-            red,
-            yellow,
-            green,
-            cyan,
-            blue,
-            magenta,
-            red);
-    margin-inline: 12px;
-}
-
-.color-picker-alpha {
-    background-image:
-        linear-gradient(45deg, #ddd 25%, transparent 25%),
-        linear-gradient(-45deg, #ddd 25%, transparent 25%),
-        linear-gradient(45deg, transparent 75%, #ddd 75%),
-        linear-gradient(-45deg, transparent 75%, #ddd 75%);
-    background-size: 12px 12px;
-    background-position:
-        0 0,
-        0 6px,
-        6px -6px,
-        -6px 0;
-    margin-inline: 12px;
-}
-
-.color-picker-hue-thumb,
-.color-picker-alpha-thumb {
-    position: absolute;
-    top: 50%;
-    width: 18px;
-    height: 18px;
-    border-radius: var(--circular-border-radius);
-    background: var(--light-color-d);
-    border: 2px solid rgba(0, 0, 0, .25);
-    transform: translate(-50%, -50%);
-    pointer-events: none;
-}
-
-.color-picker-display {
-    margin-top: 14px;
-    color: var(--light-color-d);
-    font-family: monospace;
-    font-size: 14px;
-    text-align: center;
-}
-
-.color-picker-footer {
-    margin-top: auto;
-    gap: var(--default-gap-size);
-}
-
-.color-picker-footer .color-picker-button {
-    flex: 1;
-    background-color: transparent;
-    border: none;
-    box-shadow: none;
-    color: var(--text-color);
-    margin: 0;
-    margin-top: 5px;
-    border-top-left-radius: 0;
-    border-top-right-radius: 0;
-}
-
-.color-picker-footer .color-picker-button:first-of-type {
-    border-bottom-right-radius: 0;
-}
-
-.color-picker-footer .color-picker-button:last-of-type {
-    border-bottom-left-radius: 0;
-}
-
-.color-picker-footer .color-picker-button:hover {
-    background-color: var(--color-b);
-}
-
 /* ------ TinyMCE Editor ------ */
 .tox.tox-tinymce {
     box-shadow: var(--small-shadow);
@@ -5345,6 +5194,18 @@ hr.divider {
     height: 20px;
 }
 */
+
+.pointer-debugger {
+    position: absolute; 
+    background-color: var(--background-color); 
+    top: 100px; 
+    padding: 5px;
+    font-size: var(--small-size);
+    border-radius: var(--small-border-radius);
+    width: 200px; 
+    height: auto; 
+    z-index: 99999;
+}
 
 
 
