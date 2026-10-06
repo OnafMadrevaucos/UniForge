@@ -8,6 +8,10 @@ import { result } from 'lodash-es';
 import fontList from "font-list";
 import NodeTiler from './modules/nodetiler/nodeTiler.mjs';
 
+import packageConfig from './package.json' with { type: 'json' };
+
+const APP_VERSION = packageConfig.version;
+
 // Para resolver o `__dirname` no modo ESM
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -62,6 +66,8 @@ app.whenReady().then(() => {
     }
   });
   log('Registrando Atalhos.');
+
+  ipcMain.handle('app-version', (event) => { return APP_VERSION; });
 
   ipcMain.handle('get-dir', (event) => { return __dirname; });
 
@@ -215,6 +221,13 @@ app.whenReady().then(() => {
     if (activeTiler) activeTiler.cancel();
   });
 
+   /**
+   * Manipulador para forçar o fechamento da aplicação.
+   */
+  ipcMain.on('app-quit', () => {
+    app.quit();
+  });
+
   log('Criando requisição de Renders.');
 });
 
@@ -227,6 +240,8 @@ app.on('window-all-closed', () => {
     app.quit();
   }
 });
+
+
 
 /**
 * Os tipos de arquivos aceitos pelo diálogo de arquivos.

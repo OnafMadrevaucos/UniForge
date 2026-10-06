@@ -195,7 +195,7 @@ export default class SettingsForm extends BaseForm {
 
     /**
      * Configura o conteúdo do formulário.
-    */
+     */
     async configureContent() {
 
         this.configureMiscPanel();

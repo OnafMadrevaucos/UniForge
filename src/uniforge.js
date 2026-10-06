@@ -13,6 +13,8 @@ import FontManager from "./scripts/managers/fontManager.js";
 import { set } from "./common/primitives/set.mjs";
 import Slider from "./models/controls/slider.js";
 import ColorPicker from "./models/controls/colorPicker.js";
+import Dialogs from "./models/dialogs/dialog.js";
+import AboutForm from "./models/forms/aboutForm.js";
 
 // Configura o tema salvo no localStorage antes de inicializar o app para evitar flash de estilo.
 document.documentElement.setAttribute('data-theme', localStorage.getItem('uniforge_theme') || 'theme-neutral');
@@ -1018,7 +1020,118 @@ function createElement(tag, attributes = {}, children = []) {
         }
     });
 
+<<<<<<< HEAD
     return element;
+=======
+    Object.freeze(uniforge.urls);
+}
+
+// Configura a ferramenta de mapas Leaflet.
+async function configureLeaflet() {
+    /* 
+        TODO: Verificar se o usuário informou um mapa padrão alternativo no painel de configuração.
+    */
+
+    // Inicializa o controle de mapas Leaflet.
+    uniforge.ctrls.leaflet = lControl.init(uniforge.urls.worldMap);
+
+    const style = JSON.parse(uniforge.doc.settings.get('leafletStyle.pathOptions'));
+    style.line = uniforge.shapesToolBar.constants.lineTypes[style.line].style.line;
+    style.dashArray = uniforge.shapesToolBar.constants.lineTypes[style.line].style.dashArray;
+
+    const hasBorder = style.opacity === 1;
+
+    const hasBorderCheck = document.querySelector('#hasBorderSwitch #checkbox');
+    hasBorderCheck.checked = hasBorder;
+
+    const shapeSizeSlider = uniforge.ctrls.sliders.shapeSizeSlider;
+    shapeSizeSlider.setValue(style.weight, true);
+
+    const shapeBorderCombo = document.getElementById('shapeBorderCombo');
+    shapeBorderCombo.value = style.line;
+
+    shapeBorderCombo.dispatchEvent(new Event('change'));
+
+    const fillColorPicker = uniforge.ctrls.colorPickers.fillColorPicker;
+    fillColorPicker.setColor(style.fillColor, true);
+
+    const borderColorPicker = uniforge.ctrls.colorPickers.borderColorPicker;
+    borderColorPicker.setColor(style.color, true);
+
+    uniforge.leaflet.drawStyle.update(uniforge.ctrls.leaflet.map, style);
+
+    await refreshPreviewStyle();
+}
+
+// Configura a ferramenta de geração de map tiles.
+function configureMapTiler() {
+    uniforge.tiler.emitProgress(async (data) => await updateProgressDialog(data));
+}
+
+// Atualiza o dialog conforme eventos.
+async function updateProgressDialog(data) {
+    const progressDialog = uniforge.ctrls.progressDialog;
+
+    if (!progressDialog) return;
+
+    if (data.type === "start") {
+        progressDialog.updateMessage("Iniciando...");
+        return;
+    }
+
+    if (data.type === "tile-progress") {
+        progressDialog.indeterminate = false;
+        progressDialog.updateProgress(data, `Gerando tiles do zoom ${data.zoom}... (${data.processed}/${data.total})`);
+        return;
+    }
+
+    if (data.type === "zoom-done") {
+        progressDialog.updateMessage(`Nível de zoom ${data.zoom} concluído.`);
+        return;
+    }
+
+    if (data.type === "complete") {
+        progressDialog.close();
+        uniforge.msgBox.showInfo("Map tiles gerados com sucesso.");
+        return;
+    }
+}
+// Configura os elementos da Topbar de Ferramentas
+async function configureToolsBars() {
+    const currentYearInput = document.getElementById('currentYear');
+    const timeEraSpan = document.getElementById('timeEra');
+    currentYearInput.value = uniforge.time.y.label;
+    timeEraSpan.textContent = uniforge.time.era;
+
+    const signsPath = uniforge.urls.relativePath.signs;
+    const signs = await uniforge.fs.listFiles(signsPath);
+
+    uniforge.ctrls.currentMarkerIcon = 'blue_battle.svg';
+
+    const hasBorderSwitch = document.querySelector("#hasBorderSwitch");
+    hasBorderSwitch.dataset.tooltip = "Ativar contorno.";
+
+    const mapMarkersContainer = document.querySelector('.map-objects-container.marker div');
+
+    const markersOptions = mapMarkersContainer.querySelector('.options.marker');
+    signs.forEach(s => {
+        const name = s.name.split('.')[0];
+        const img = document.createElement('img');
+        img.src = '.' + s.path;
+
+        const option = createElement('a', { 'data-marker': name, 'class': 'marker-option' }, [img]);
+        markersOptions.appendChild(option);
+    });
+
+    const colorOptions = mapMarkersContainer.querySelector('.options.color');
+    const colors = uniforge.markerToolBar.constants.colors;
+    Object.entries(colors).forEach(([key, color]) => {
+        const option = createElement('a', { 'data-color': key, 'class': 'color-option' });
+        option.style.backgroundColor = `rgb(${color.value.join(',')})`;
+
+        colorOptions.appendChild(option);
+    });
+>>>>>>> feature/issue-102
 }
 
 function calculateZoomForTileScaleSimple(desiredTileScale) {
@@ -1033,6 +1146,479 @@ function calculateZoomForTileScaleSimple(desiredTileScale) {
 // FUNÇÕES DE CONTROLE INTERNO DA APLICAÇÃO
 //------------------------------------------------------------------
 
+<<<<<<< HEAD
+=======
+    activateMainListeners();
+}
+function configureBody() {
+    const body = uniforge.html;
+    const preparedBody = uniforge.parser.parseHTML(body.innerHTML, {});
+    body.innerHTML = preparedBody;
+}
+
+function configureHooks() {
+    registerHook('beforeRender', async () => { await refreshDocuments(); });
+    registerHook('simpleEntryFormClosed', async () => {
+        await refreshDocuments();
+        console.log('simpleEntryFormClosed');
+    });
+}
+// Configura o listeners que tratam os eventos dos tabs do Menu Lateral e as rotinas de fechamento do Form
+function activateMainListeners() {
+    // Lógica de UI para o Menu Lateral
+    const tabs = document.querySelectorAll('.tab');
+
+    // Lógica de UI para o Menu de Ferramentas Superior.
+    const topBar = document.getElementById('topBarContainer');
+    const toggleTab = document.getElementById('toggleTab');
+    // Lógica de UI para os botões do Menu de Ferramentas Superior.
+    const codexBtn = document.getElementById('codexBtn');
+    const timelineBtn = document.getElementById('timelineBtn');
+    const tenYrsBack = document.getElementById('tenYearsBack');
+    const oneYearBack = document.getElementById('yearBack');
+    const oneYearFwr = document.getElementById('yearForward');
+    const tenYrsFwr = document.getElementById('tenYearForward');
+
+    const currentYearInput = document.getElementById('currentYear');
+
+    document.addEventListener('keydown', (event) => { onKeyDown(event); });
+
+    toggleTab.addEventListener('click', (event) => { onToggleTopBarClick(event); });
+
+    codexBtn.addEventListener('click', (event) => { onTopbarButtonClick(event); });
+    timelineBtn.addEventListener('click', (event) => { onTopbarButtonClick(event); });
+
+    tenYrsBack.addEventListener('click', (event) => { onChangeTime(event, -10); });
+    oneYearBack.addEventListener('click', (event) => { onChangeTime(event, -1); });
+    oneYearFwr.addEventListener('click', (event) => { onChangeTime(event, 1); });
+    tenYrsFwr.addEventListener('click', (event) => { onChangeTime(event, 10); });
+
+    currentYearInput.addEventListener('change', function (event) { onChangeTimeInput(event); });
+
+    // Adiciona o Listener para chamar o Form correto ao clicar nos itens do menu.
+    tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            tab.classList.add('disabled');
+            renderForm(tab.getAttribute('data-target'), tab);
+        });
+    });
+
+    const searchLayerObjectsInput = document.querySelector("#searchLayerObjectsInput");
+    searchLayerObjectsInput.addEventListener('input', (event) => { onObjectsSearchChange(event); });
+
+    const clearLayerObjectsSearchButton = document.querySelector("#clearLayerObjectsSearchButton");
+    clearLayerObjectsSearchButton.addEventListener('click', (event) => { onClearObjectsSearchClick(event); });
+
+    const searchMarkerInput = document.querySelector("#searchMarkerInput");
+    searchMarkerInput.addEventListener('input', (event) => { onMarkerSearchChange(event); });
+
+    const clearMarkerSearchButton = document.querySelector("#clearMarkerSearchButton");
+    clearMarkerSearchButton.addEventListener('click', (event) => { onClearMarkerSearchClick(event); });
+
+    const baseOptions = document.querySelectorAll('.map-objects-panel .config-group .options a');
+    baseOptions.forEach(option => {
+        option.addEventListener('click', (event) => { onMarkerIconClick(event); });
+    });
+
+    const toggleTabs = document.querySelectorAll('.map-objects-container .toggle-tab');
+    toggleTabs.forEach(tab => {
+        tab.addEventListener('click', (event) => {
+            const targetClass = tab.getAttribute('data-target');
+            const targetContainer = document.querySelector(`.map-objects-container.${targetClass}`);
+            if (!targetContainer) return;
+
+            onToggleMapObjectPanelClick(event, targetContainer);
+        });
+    });
+
+    const hasBorderSwitch = document.querySelector('#hasBorderSwitch');
+    const hasBorderCheckbox = hasBorderSwitch.querySelector('#checkbox');
+
+    hasBorderCheckbox.addEventListener('change', (event) => { onHasBorderSwitchChange(event); });
+
+    const shapeSizeSliderContainer = document.querySelector('.size');
+    const shapeSizeSlider = uniforge.ctrls.sliders.shapeSizeSlider = new Slider('shapeSizeSlider', shapeSizeSliderContainer, { min: 1, max: 10, value: 5, linkedLabel: 'shapeSizeSpan', labelMask: '{value}px', width: '80px' });
+    shapeSizeSlider.config();
+    shapeSizeSlider.addEventListener('change', (event) => { onShapeSizeSliderChange(event); });
+
+    const shapeBorderCombo = document.getElementById('shapeBorderCombo');
+    shapeBorderCombo.addEventListener('change', (event) => { onShapeBorderComboChange(event); });
+
+    const fillColorPicker = uniforge.ctrls.colorPickers.fillColorPicker = new ColorPicker('fillColorPicker', document, { value: 'var(--color-b)', alpha: 0.5, tooltip: 'Cor do Preenchimento I', fixedAlpha: true });
+    fillColorPicker.config();
+    fillColorPicker.addEventListener('change', (event) => { onFillColorPickerChange(fillColorPicker); });
+
+    const borderColorPicker = uniforge.ctrls.colorPickers.borderColorPicker = new ColorPicker('borderColorPicker', document, { value: 'var(--dark-color-b)', tooltip: 'Cor da Borda' });
+    borderColorPicker.config();
+    borderColorPicker.addEventListener('change', (event) => { onBorderColorPickerChange(borderColorPicker); });
+}
+/** 
+ * ------------------------------------------------------------------
+ * FUNÇÕES DE LISTENERS DOS FORMS
+ * ------------------------------------------------------------------
+ * */
+
+async function onKeyDown(event) {
+    const key = event.key;
+
+    // A tecla é 'Esc'.
+    if (key == 'Escape') {
+        // Se uma edição no Leaflet está ativa.
+        if (uniforge.active instanceof L.Marker || uniforge.active instanceof L.Path) {
+            uniforge.active = null;
+
+            uniforge.ctrls.leaflet.endEditMode(event);
+            return;
+        }
+        // Não há nenhuma tela (Formulário ou Caixa de Diálogo) aberta, independente de estar ativa ou não.
+        if (!uniforge.form.isEmpty() || !uniforge.dialog.isEmpty()) return;
+
+        // Confirme a ação.
+        if (await Dialogs.confirm('Sair', 'Deseja realmente sair? Qualquer alteração não salva será perdida.')) {
+            uniforge.app.quit(); // Fecha a aplicação.
+        }
+    }
+    else if (key == 'Enter') {
+        // Se uma edição no Leaflet está ativa.
+        if (uniforge.active instanceof L.Marker || uniforge.active instanceof L.Path) {
+            uniforge.active = null;
+
+            uniforge.ctrls.leaflet.commitLayer(event);
+            return;
+        }
+    }
+    else if ((key == 'P' || key == 'p') && event.ctrlKey) {
+        _forceCustomControlClick('drawPolygonCustom');
+    }
+    else if ((key == 'C' || key == 'c') && event.ctrlKey) {
+        _forceCustomControlClick('drawCircleCustom');
+    }
+    else if ((key == 'R' || key == 'r') && event.ctrlKey) {
+        _forceCustomControlClick('drawRectangleCustom');
+    }
+    else if ((key == 'M' || key == 'm') && event.ctrlKey) {
+        _forceCustomControlClick('drawMarkerCustom');        
+    }
+    else if (key == 'F1') {
+        let active = false;
+        uniforge.form.forEach((f) => {
+            active = active || f.data.type === 'codex';
+        });
+
+        if (!active) {
+            const button = document.querySelector('.topbarBtn[data-target=\'codex\']');
+            button.classList.add('disabled');
+
+            renderForm(button.getAttribute('data-target'), button);
+        }
+    }
+    else if (key == 'F2') {
+        let active = false;
+        uniforge.form.forEach((f) => {
+            active = active || f.data.type === 'timeline';
+        });
+
+        if (!active) {
+            const button = document.querySelector('.topbarBtn[data-target=\'timeline\']');
+            button.classList.add('disabled');
+
+            renderForm(button.getAttribute('data-target'), button);
+        }
+    }
+    else if (key == 'F9') {
+        const shapeTab = document.querySelector('.map-objects-container .tab-shapes');
+
+        if (shapeTab) {
+            shapeTab.dispatchEvent(new Event('click'));
+        }
+    }
+    else if (key == 'F10') {
+        const objectsTab = document.querySelector('.map-objects-container .tab-objects');
+
+        if (objectsTab) {
+            objectsTab.dispatchEvent(new Event('click'));
+        }
+    }
+    else if (key == 'F12') {
+        let active = false;
+        uniforge.form.forEach((f) => {
+            active = active || f.data.type === 'about';
+        });
+
+        if (!active) {
+            const aboutItem = document.querySelector('.tab.about-item');
+            aboutItem.dispatchEvent(new Event('click'));
+        }
+    }
+    else if (key == '.') {
+        if (event.ctrlKey)
+            onChangeTime(event, 10);
+        else
+            onChangeTime(event, 1);
+    }
+    else if (key == ',') {
+        if (event.ctrlKey)
+            onChangeTime(event, -10);
+        else
+            onChangeTime(event, -1);
+    }
+}
+
+function onTopbarButtonClick(event) {
+    // Impedir que o clique no item desencadeie o clique fora do sidebar
+    event.stopPropagation();
+    const button = event.target.closest('.topbarBtn');
+    button.classList.add('disabled');
+
+    renderForm(button.getAttribute('data-target'), button);
+}
+
+function onToggleTopBarClick(event) {
+    event.stopPropagation();
+
+    const toggleTab = event.target.closest('.toggle-tab');
+    const topBar = document.getElementById('topBarContainer');
+
+    topBar.classList.toggle('visible');
+    toggleTab.classList.toggle('visible');
+}
+
+function onChangeTime(event, amount) {
+    // Impedir que o clique no item desencadeie o clique fora do sidebar
+    event.stopPropagation();
+
+    _setTime(uniforge.time.y.value + amount);
+}
+function onChangeTimeInput(event) {
+    var value = event.target.value;
+
+    // Remove qualquer caractere que não tenha valor numérico
+    value = value.replace(/(?!^-)[^0-9]/g, '').replace(/(?!^)-/g, '');
+
+    // Se for um número atualize o Timer
+    if (value) {
+        _setTime(value);
+    } else {
+        event.target.value = uniforge.time.y.label;
+    }
+}
+
+function onObjectsSearchChange(event) {
+    event.stopPropagation();
+    const input = event.currentTarget;
+    // Padroniza e remove espaços em branco do filtro para melhorar a busca.
+    const filter = input.value.trim().toLowerCase();
+
+    // Obtém todas os items de Objetos do Mapa.
+    const objectsItems = document.querySelectorAll('#mapElementsList li');
+    let objectsFound = 0;
+
+    objectsItems.forEach(item => {
+        const h3 = item.querySelector('.layer-item-content .layer-item-content-body h3');
+        if (h3) {
+            const title = h3.textContent.toLowerCase();
+            const titleMatch = title.toLowerCase().includes(filter);
+
+            // Se o filtro estiver vazio ou a opção contém o filtro, mostra a opção.
+            if (filter.isEmpty() || titleMatch) {
+                item.classList.remove('hidden');
+                objectsFound++;
+            }
+            // Senão, esconde a opção. 
+            else {
+                item.classList.add('hidden');
+            }
+
+            // Realce se combinar.
+            if (titleMatch) {
+                h3.innerHTML = uniforge.parser.applyHighlight(h3.textContent, filter);
+            } else {
+                uniforge.parser.removeHighlight(h3);
+            }
+        }
+    });
+
+    const noObjectsFoundMessage = document.getElementById('noObjectsFoundMessage');
+
+    if (objectsFound === 0)
+        noObjectsFoundMessage.classList.remove('hidden');
+    else
+        noObjectsFoundMessage.classList.add('hidden');
+}
+
+function onEndLeafletEditMode() {
+
+}
+
+function onMarkerSearchChange(event) {
+    event.stopPropagation();
+    const input = event.currentTarget;
+    // Padroniza e remove espaços em branco do filtro para melhorar a busca.
+    const filter = input.value.trim().toLowerCase();
+
+    // Obtém todas as opções de marcadores.
+    const markersOptions = mapMarkersContainer.querySelectorAll('.options.marker a');
+    markersOptions.forEach(option => {
+        // Se o filtro estiver vazio ou a opção contém o filtro, mostra a opção.
+        if (filter.isEmpty() || option.dataset.marker.includes(filter)) {
+            option.classList.remove('hidden');
+        }
+        // Senão, esconde a opção. 
+        else {
+            option.classList.add('hidden');
+        }
+    });
+}
+
+function onClearObjectsSearchClick(event) {
+    event.stopPropagation();
+    const input = document.querySelector('#searchLayerObjectsInput');
+
+    // Limpa o input de busca.
+    input.value = uniforge.defaults.emptyString;
+
+    // Obtém todas os items de Objetos do Mapa.
+    const objectsItems = document.querySelectorAll('#mapElementsList li');
+    // Mostra todas as opções de Objetos.
+    objectsItems.forEach(item => {
+        item.classList.remove('hidden');
+    });
+}
+function onClearMarkerSearchClick(event) {
+    event.stopPropagation();
+    const input = toolsSearchBar.querySelector('#searchMarkerInput');
+
+    // Limpa o input de busca.
+    input.value = uniforge.defaults.emptyString;
+
+    // Obtém todas as opções de marcadores.
+    const markersOptions = mapMarkersContainer.querySelectorAll('.options.marker a');
+    // Mostra todas as opções de marcadores.
+    markersOptions.forEach(option => {
+        option.classList.remove('hidden');
+    });
+}
+
+async function onMarkerIconClick(event) {
+    event.stopPropagation();
+    const option = event.currentTarget;
+
+    option.classList.toggle('active');
+
+    const options = option.parentElement.querySelectorAll('a');
+    options.forEach(opt => {
+        if (opt !== option) {
+            opt.classList.remove('active');
+        }
+    });
+
+    const signMarker = document.querySelector('.map-objects-panel .config-group .options.marker .active');
+    const colorMarker = document.querySelector('.map-objects-panel .config-group .options.color .active');
+
+    const editCache = uniforge.leaflet.editCache;
+
+    if (signMarker && colorMarker) {
+        const marker = `${colorMarker.getAttribute('data-color')}_${signMarker.getAttribute('data-marker')}`;
+
+        if (editCache && editCache.layer instanceof L.Marker) await refreshMarkerDrawing(marker);
+        else await startMarkerDrawing(marker);
+    }
+    else if (uniforge.ctrls.marker) uniforge.ctrls.marker.disable();
+}
+
+function onToggleMapObjectPanelClick(event, container) {
+    if (event && event.stopPropagation) event.stopPropagation();
+
+    const isOpening = !container.classList.contains('active');
+
+    // Desativa todos os painéis de objetos do mapa
+    const mapObjContainers = document.querySelectorAll('.map-objects-container');
+    mapObjContainers.forEach(moc => {
+        moc.classList.remove('active');
+    });
+
+    if (isOpening) {
+        container.classList.add('active');
+    }
+}
+
+async function onHasBorderSwitchChange(event) {
+    const hasBorder = event.target.checked;
+
+    const hasBorderSwitch = document.querySelector('#hasBorderSwitch');
+    const borderSizeGroup = document.querySelector('#borderSizeGroup');
+
+    uniforge.leaflet.drawStyle.style.hasBorder = hasBorder;
+
+    if (hasBorder) {
+        borderSizeGroup.classList.remove('hidden');
+    }
+    else {
+        borderSizeGroup.classList.add('hidden');
+    }
+
+    uniforge.leaflet.drawStyle.update(uniforge.ctrls.leaflet.map, uniforge.leaflet.drawStyle.style);
+
+    await refreshPreviewStyle();
+}
+
+async function onShapeSizeSliderChange(event) {
+    const preview = uniforge.shapesToolBar.preview;
+
+    const size = uniforge.ctrls.sliders.shapeSizeSlider.getValueNumber();
+    uniforge.leaflet.drawStyle.style.weight = size;
+
+    uniforge.leaflet.drawStyle.update(uniforge.ctrls.leaflet.map, uniforge.leaflet.drawStyle.style);
+
+    await refreshPreviewStyle();
+}
+
+async function onShapeBorderComboChange(event) {
+    const preview = uniforge.shapesToolBar.preview;
+
+    const lineTypes = uniforge.shapesToolBar.constants.lineTypes;
+    const style = lineTypes[event.target.value].style;
+
+    uniforge.leaflet.drawStyle.style = {
+        ...uniforge.leaflet.drawStyle.style,
+        ...style,
+    }
+
+    uniforge.leaflet.drawStyle.update(uniforge.ctrls.leaflet.map, uniforge.leaflet.drawStyle.style);
+
+    await refreshPreviewStyle();
+}
+
+async function onFillColorPickerChange(picker) {
+    uniforge.leaflet.drawStyle.style.fillColor = picker.value;
+    uniforge.leaflet.drawStyle.style.fillOpacity = picker.alpha;
+
+    uniforge.leaflet.drawStyle.update(uniforge.ctrls.leaflet.map, uniforge.leaflet.drawStyle.style);
+
+    await refreshPreviewStyle();
+}
+
+async function onBorderColorPickerChange(picker) {
+    const preview = uniforge.shapesToolBar.preview;
+
+    uniforge.leaflet.drawStyle.style.color = picker.value;
+    uniforge.leaflet.drawStyle.style.opacity = picker.alpha;
+
+    uniforge.leaflet.drawStyle.update(uniforge.ctrls.leaflet.map, uniforge.leaflet.drawStyle.style);
+
+    await refreshPreviewStyle();
+}
+
+async function onGradientColorPickerChange(picker) {
+    await refreshPreviewStyle();
+}
+
+/** 
+ * ------------------------------------------------------------------
+ * FUNÇÕES DE CONTROLE INTERNO DA PÁGINA 
+ * ------------------------------------------------------------------
+ * */
+>>>>>>> feature/issue-102
 /**
  * Renderiza um formulário baseado em um ID de template
  * e o exibe na tela.
@@ -1074,6 +1660,7 @@ async function _recoverForm(form) {
     }
 }
 
+<<<<<<< HEAD
 /**
  * Inicializa as propriedades globais do sistema UniForge.
  */
@@ -1114,6 +1701,10 @@ function _configureSliders() {
 
 async function _startMarkerDrawing(marker) {
     const map = uniforge.leaflet.core.map;
+=======
+async function startMarkerDrawing(marker) {
+    const map = uniforge.ctrls.leaflet.map;
+>>>>>>> feature/issue-102
     const markerURL = uniforge.urls.markers.join(`${marker}.png`);
 
     // O controlador de Marker já está ativo. 
@@ -1128,7 +1719,7 @@ async function _refreshMarkerDrawing(marker) {
     const newStyle = uniforge.leaflet.drawStyle.factories.marker(markerURL).markerStyle.icon.options;
 
     const newIcon = L.icon(newStyle);
-    uniforge.leaflet.core.editCache.layer.setIcon(newIcon);
+    uniforge.leaflet.editCache.layer.setIcon(newIcon);
 };
 
 async function _loadStyle() {
@@ -1393,4 +1984,73 @@ function _setTime(year) {
     const mid = uniforge.constants.leaflet.DEFAULT_OVERLAY; // Define o ID do mapa como o mapa padrão.
 
     uniforge.ctrls.leaflet.loadElements(mid, uniforge.time.y.value);
+<<<<<<< HEAD
 }
+=======
+}
+
+/**
+ * Força um evento de clique em um Botão Customizado do Leaflet.
+ * 
+ * @param {string} name   - Nome dado ao Botão Customizado do Leaflet.
+ * 
+ * @returns {void}
+ */
+function _forceCustomControlClick(name) {
+    const map = uniforge.ctrls.leaflet.map;
+        const toolBar = map.pm.Toolbar;
+
+        const control = toolBar.getButtons()[name];
+        if (control) {
+            const button = control.buttonsDomNode.querySelector('a.leaflet-buttons-control-button');
+
+            // Cria um objeto de evento sintético com as propriedades que sua função onClick espera
+            const syntheticEvent = new MouseEvent('click', {
+                bubbles: true,
+                cancelable: true,
+                view: window,
+            });
+
+            // Força o 'target' e 'currentTarget' a apontarem para o elemento desejado.
+            Object.defineProperty(syntheticEvent, 'target', {
+                value: button,
+                enumerable: true,
+                writable: false
+            });
+
+            Object.defineProperty(syntheticEvent, 'currentTarget', {
+                value: button,
+                enumerable: true,
+                writable: false
+            });
+
+            control._button.onClick.call(button, syntheticEvent);
+        }
+}
+
+// Função para criar um elemento com classes e atributos.
+function createElement(tag, attributes = {}, children = []) {
+    const element = document.createElement(tag);
+
+    // Adiciona os atributos ao elemento.
+    for (const [key, value] of Object.entries(attributes)) {
+        if (key === 'class') {
+            element.className = value;
+        } else {
+            element.setAttribute(key, value);
+        }
+    }
+
+    // Adiciona os filhos ao elemento.
+    children.forEach(child => {
+        if (typeof child === 'string') {
+            element.appendChild(document.createTextNode(child));
+        } else {
+            element.appendChild(child);
+        }
+    });
+
+    return element;
+}
+
+>>>>>>> feature/issue-102

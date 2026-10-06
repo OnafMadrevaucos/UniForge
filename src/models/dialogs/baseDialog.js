@@ -31,7 +31,7 @@ export default class BaseDialog extends Application {
 
         /** 
          * Conjunto de botões do diálogo.
-         * @type {Object<string, {label: string, icon: string, callback: Function}>}
+         * @type {Object<string, {label: string, icon: string, callback: Function, hotkey: string}>}
          */
         this.buttons = data.buttons;
 
@@ -285,6 +285,9 @@ export default class BaseDialog extends Application {
     activateBaseListeners() {
         super.activateBaseListeners();
 
+        const app = this.ui.app;
+        app.addEventListener('keydown', (event) => { this._onAppKeyDown(event); })
+
         const main = this.ui.main;
         main.addEventListener('submit', (event) => { event.preventDefault(); });
 
@@ -295,6 +298,12 @@ export default class BaseDialog extends Application {
         Object.values(buttons).forEach(button => {
             button.addEventListener("click", (event) => { this._onClickButton.bind(this)(event); });
         });
+    }
+
+    _onAppKeyDown(event) {
+        if (event.key === 'Escape') {
+            console.log('*Deu Certo!*');
+        }
     }
 
     _onOverlayClick(event) {
@@ -312,7 +321,7 @@ export default class BaseDialog extends Application {
         const id = buttonElement.id; // Pega o ID do elemento <button>
         const button = this.buttons[id];
         this.submit(button, event);
-    }
+    }    
 
     /**
      * Limita a posição X do diálogo dentro dos limites do contêiner pai.

@@ -21,7 +21,7 @@ export default class Application {
          * @type {string}
          * 
         */
-        this.style = this.options?.style ?? 'form';
+        this.style = this.options?.style ?? Application.Styles.FORM;
 
         /**
         * O título da aplicação.
@@ -153,6 +153,15 @@ export default class Application {
 
     get html() {
         return this.#html;
+    }
+
+    /**
+    * Atalhos de teclado padrão do formulário.
+    *
+    * @type {Object<string, string>}
+    */
+    get shortcuts() {
+        return {};
     }
 
     /**
@@ -323,7 +332,7 @@ export default class Application {
         return uniforge.parser.parseHTML(html, this.data);
     }
 
-    
+
     async render() {
         try {
             // Função para obter os dados comuns à toda aplicação.
@@ -425,14 +434,26 @@ export default class Application {
             this.hookToDOM();
 
             // Configura as funcionalidades de interação da aplicação.
-            this.configure();
+            await this.configure();
 
             // Aplicação configurado corretamente, exiba-a.
-            if (this.configured) {
+            if (this.defaultOptions.style === Application.Styles.FORM && this.configured) {
                 this.ui.app.classList.remove('hidden');
+                
+                uniforge.form.add({
+                    _id: this.uuid,
+                    ...this
+                });
 
-                uniforge.form = this;
                 uniforge.state.save();
+            }
+            else if (this.defaultOptions.style === Application.Styles.DIALOG) {
+                uniforge.dialog.add({
+                    _id: this.uuid,
+                    ...this
+                });
+
+                uniforge.active = this;
             }
         } catch (error) {
             this.msgBox.showError(error.message, error);
@@ -445,8 +466,12 @@ export default class Application {
         // Limpa o conteúdo do formulário dos metadados da aplicação.
         uniforge.state.update(['currentForm', { name: null, state: null, activeTab: 0 }]);
 
-        uniforge.form = null;
+        if (this.defaultOptions.style === Application.Styles.FORM) uniforge.form.remove(this.uuid);
+        else if (this.defaultOptions.style === Application.Styles.DIALOG) uniforge.dialog.remove(this.uuid);
+
         uniforge.state.save();
+
+        if(uniforge.active === this) uniforge.active = null;
     }
 
     /**
@@ -482,6 +507,7 @@ export default class Application {
     }
     /* ---------------------------------------------------------------------------------------------------------------- */
     // LISTENERS
+
     /**
      * Configura ouvintes de eventos básicos para o formulário.
      * @private
@@ -513,7 +539,7 @@ export default class Application {
 
         this.close();
     }
-    
+
     _onMouseDown(event) {
         event.stopPropagation();
         this.state.isDragging = true;
@@ -554,7 +580,7 @@ export default class Application {
         }
     }
 
-    
+
     _onMouseUp() {
         if (!this.ui.app) return;
 
@@ -565,9 +591,18 @@ export default class Application {
         document.body.style.userSelect = "";
     }
 
+    _onAppKeyDown(event) {
+        const action = this.shortcuts[event.key];
+
+        if (!action || typeof this[action] !== 'function') return;
+
+        event.preventDefault();
+        this[action]();
+    }
+
     /* ---------------------------------------------------------------------------------------------------------------- */
     // UTILITÁRIOS  
-    
+
     querySelector(selector) {
         return this.ui.app.querySelector(selector);
     }

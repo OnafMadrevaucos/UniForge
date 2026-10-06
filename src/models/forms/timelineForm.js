@@ -159,10 +159,12 @@ export default class TimelineForm extends SidebarForm {
     * Inicia a construção do formulário.
     */
     async initialize() {
-        await super.initialize();
+        let result = await super.initialize();
 
         // Atribui o estado padrão aos controles do formulário.
         this.controlStates(this.states.default);
+
+        return result;
     }
 
     controlStates(state, clearData = true) {

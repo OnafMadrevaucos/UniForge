@@ -16,6 +16,9 @@ export default class CalendarForm extends BaseForm {
     /**
     * Construtor da classe CalendarForm.
     * 
+    * @class
+    * @extends BaseForm
+    * 
     * @param {HTMLElement} sourceBtn   - O botão que originou a chamada do formulário.
     * @param {Object} options          - Opções adicionais para configuração do formulário.
     * @param {Function} options.callback - Função de callback a ser chamada quando o formulário for fechado.

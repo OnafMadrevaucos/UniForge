@@ -181,6 +181,7 @@ const lControl = {
     * Inicializa o controle do Mapa com a imagem fornecida.
     * 
     * @param {String} worldMapURL - URL da imagem do Mapa Mundi.
+    * @returns {L.Control} Retorna o controlador do mapa do Leaflet.
     */
     init: function (worldMapURL) {
         if (!worldMapURL) {
@@ -285,6 +286,7 @@ const lControl = {
 
         // Configura o controle de escala.
         const scaleControl = _configureScaleControl();
+
 
         L.GeometryUtil.geodesicArea = function (latLngs) {
             let area = 0;
@@ -478,11 +480,6 @@ const lControl = {
         function _activateEventsListener() {
             // Adicione um listener para o evento 'click' do mapa para processar o clique do usuário.
             map.on('mousedown', _onUserMapClick);
-
-            // Adicione um listener para o evento 'keydown' para processar as teclas pressionadas pelo usuário.
-            map.on('keydown', (event) => { _checkKeyPressed(event, event.originalEvent.code); });
-
-            // Adicione um listener para o evento 'pm:create' para processar a criação de um novo elemento.
             map.on('pm:create', (event) => _onDrawCreated(event, true));
 
             // Adicione um listener para o evento 'zoomend' para processar o término do zoom.
@@ -697,8 +694,10 @@ const lControl = {
                 };
             }
 
-            const workingLayer = e.workingLayer;
-            const shape = e.shape;
+                const workingLayer = e.workingLayer;
+                const shape = e.shape;
+
+                uniforge.active = workingLayer;
 
             map.on('mousemove', (e) => {
                 const shape = map.pm.Draw.getActiveShape();
@@ -1262,6 +1261,8 @@ const lControl = {
             // Abre o Painel de Edição para o Elemento.
             lControl.toggleMapObjectPanel(event, { name: 'marker', forceState: PANEL_STATE.OPEN, icon: iconURL });
         }
+
+        uniforge.active = layer;
     },
 
     endEditMode: async function (event, options = { hasRollback: true, saveStyle: true }) {
@@ -1297,6 +1298,55 @@ const lControl = {
             }
 
             lControl.clearCache();
+        }
+    },
+
+    commitLayer: async function (event) {
+        try {
+            // Obtém o elemento que está sendo editado no momento.
+            let layer = lControl.map.getActiveLayer();
+
+            // Não há nenhuma edição ativa, verifique na cache de edição.
+            if (!layer) {
+                // Busque na cache de edição.
+                layer = lControl.editCache.layer;
+
+                // Se ainda assim não houver nenhum elemento ativo, aborte.
+                if (!layer) return;
+            };
+
+            const latlngs = layer._latlngs || layer._latlng;
+
+            // Abre uma transação no banco de dados para adicionar o elemento.
+            await uniforge.db.beginTransaction();
+
+            let points = '';
+            // Se o elemento for um polígono, obtenha os seus pontos.
+            if (Array.isArray(latlngs)) {
+                points = latlngs.first().map(point => `${point.lat},${point.lng}`).join(';');
+            } else points = `${latlngs.lat},${latlngs.lng}`;
+
+            // Cria o objeto de dados a ser adicionado ao banco de dados.
+            const data = {
+                meid: layer._id,
+                epoch: uniforge.time.y.value,
+                type: layer.type,
+                icon: (layer instanceof L.Marker) ? layer.options.icon.options.iconUrl : layer.type,
+                source: `${layer.source.type}{${layer.source._id}}`,
+                points: points,
+                style: JSON.stringify(layer.options)
+            }
+            // Adiciona o elemento ao banco de dados.
+            await uniforge.db.updateMapElement(data);
+
+            // Confirma a transação.
+            await uniforge.db.commitTransaction();
+
+            // Encerra a edição.
+            lControl.endEditMode(event, false);
+        }
+        catch (err) {
+            console.error(err);
         }
     },
 

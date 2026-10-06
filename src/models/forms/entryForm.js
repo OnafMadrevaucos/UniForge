@@ -358,10 +358,12 @@ export default class EntryForm extends SidebarForm {
   * Inicia a construção do formulário.
   */
   async initialize() {
-    await super.initialize();
+    const result = await super.initialize();
 
     // Atribui o estado padrão aos controles do formulário.
     this.controlStates(this.states.default);
+
+    return result;
   }
 
   /**

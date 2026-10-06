@@ -7,20 +7,20 @@
 */
 :root[data-theme="theme-medieval"] {
     /* Herda a grande maioria do :root de styles.css, que já é medieval */
-    --default-font: "Georgia", "Times New Roman", serif;    
+    --default-font: "Georgia", "Times New Roman", serif;
 
     --dark-color-a: #1e140feb;
     --dark-color-a-T85: #1e140fd9;
     --dark-color-a-T50: #1e140f80;
     --color-a: #231b14;
-    --light-color-a: #36281e; 
-    
+    --light-color-a: #36281e;
+
     --dark-color-b: #7f1d1d;
     --dark-color-b-T50: #7f1d1d80;
     --dark-color-b-T85: #7f1d1dd9;
     --color-b: #b82525;
-    --color-b-T50:#b8252580;
-    --color-b-T85:#b82525d9;
+    --color-b-T50: #b8252580;
+    --color-b-T85: #b82525d9;
     --light-color-b: #d17272;
 
     --dark-color-c: #975508;
@@ -30,12 +30,12 @@
 
     --dark-color-d: #0a0a0f;
     --color-d: #a0aec0;
-    --light-color-d: #f7fafc;    
+    --light-color-d: #f7fafc;
 
     --special-color: #ffffff1a;
 
     --dark-highlight-color: #14532d;
-    --highlight-color: #16a34a; 
+    --highlight-color: #16a34a;
 
     --dark-background-color: #18120d;
     --background-color: #140f0ae6;
@@ -43,17 +43,17 @@
     --blockquote-background: #3b3a30;
 
     --text-color: var(--light-color-c);
-    --light-text-color: var(--light-color-d); 
+    --light-text-color: var(--light-color-d);
     --dark-text-color: var(--dark-color-d);
     --disabled-text-color: var(--color-d);
 
-    --shadow-color: rgba(0, 0, 0, 0.5); 
-    
+    --shadow-color: rgba(0, 0, 0, 0.5);
+
     /* Borders Radius */
     --tiny-border-radius: 1px;
     --small-border-radius: 5px;
     --default-border-radius: 8px;
-    --strong-border-radius: 12px;    
+    --strong-border-radius: 12px;
     --circular-border-radius: 50%;
     --scrollbar-border-radius: 4px;
     --slider-border-radius: 50%;
@@ -62,7 +62,7 @@
     --title-header-radius: 0 8px 8px 0;
     --topbar-border-radius: 0 0 8px 8px;
     --toggle-tab-border-radius: 4px 0 0 4px;
-    
+
     /* Tooltip */
     --tooltip-background: rgba(35, 27, 20, 0.98);
     --tooltip-text: #e2e8f0;
@@ -70,12 +70,18 @@
     --tooltip-border: rgba(184, 122, 37, 0.4);
     --tooltip-divider: rgba(184, 122, 37, 0.2);
     --tooltip-title: #e5a440;
-    
+
     /* Configurações padrão de contraste para a área de leitura */
     --content-bg-color: transparent;
     --content-blend-mode: normal;
     --content-text-color: var(--text-color);
     --content-viewer-bg: url(../ui/texture1.webp) no-repeat top center / auto 770px, #f4eae1 url(../ui/texture2.webp) no-repeat bottom center / auto 704px;
+}
+
+:root[data-theme="theme-medieval"] #map {
+    background-image: url(../ui/world-background.png);
+    background-repeat: no-repeat;
+    background-size: cover;
 }
 
 /* 2. TEMA SCI-FI (Cyberpunk / Neon)
@@ -88,14 +94,14 @@
     --dark-color-a-T85: #0a0a0fd9;
     --dark-color-a-T50: #0a0a0f80;
     --color-a: #0b0c10;
-    --light-color-a: #1f2833; 
-    
+    --light-color-a: #1f2833;
+
     --dark-color-b: #660066;
     --dark-color-b-T50: #66006680;
     --dark-color-b-T85: #660066d9;
     --color-b: #ff00ff;
-    --color-b-T50:#ff00ff80;
-    --color-b-T85:#ff00ffd9;
+    --color-b-T50: #ff00ff80;
+    --color-b-T85: #ff00ffd9;
     --light-color-b: #d493d4;
 
     --dark-color-c: #0b8080;
@@ -105,12 +111,12 @@
 
     --dark-color-d: #0a0a0f;
     --color-d: #a0aec0;
-    --light-color-d: #f7fafc;    
+    --light-color-d: #f7fafc;
 
     --special-color: #ffffff1a;
 
     --dark-highlight-color: #14532d;
-    --highlight-color: #16a34a; 
+    --highlight-color: #16a34a;
 
     --dark-background-color: #0b0c10;
     --background-color: #1f222c;
@@ -118,26 +124,26 @@
     --blockquote-background: var(--dark-color-d);
 
     --text-color: var(--color-d);
-    --light-text-color: var(--color-c); 
+    --light-text-color: var(--color-c);
     --dark-text-color: var(--light-color-c);
     --disabled-text-color: var(--dark-color-c);
 
-    --shadow-color: #00000080; 
+    --shadow-color: #00000080;
 
     /* Borders Radius */
     --tiny-border-radius: none;
     --small-border-radius: none;
     --default-border-radius: none;
-    --strong-border-radius: none;    
+    --strong-border-radius: none;
     --circular-border-radius: none;
     --scrollbar-border-radius: none;
     --track-border-radius: none;
-    --slider-border-radius: 50%;    
+    --slider-border-radius: 50%;
     --small-title-header-radius: none;
     --title-header-radius: none;
     --topbar-border-radius: none;
     --toggle-tab-border-radius: none;
-    
+
     /* Tooltip */
     --tooltip-background: #0b0c10fa;
     --tooltip-text: #e0e0e0;
@@ -145,25 +151,25 @@
     --tooltip-border: #00ffff66;
     --tooltip-divider: #ff00ff4d;
     --tooltip-title: #00ffff;
-    
-    /* Configurações de contraste para a área de leitura */    
+
+    /* Configurações de contraste para a área de leitura */
     --content-bg-color: transparent;
     --content-blend-mode: overlay;
     --content-text-color: var(--text-color);
     --content-viewer-bg: url(../ui/scifi_texture1.webp) no-repeat top center / 100% 40%, var(--background-color) url(../ui/scifi_texture2.webp) no-repeat bottom center / 100% 40%;
-    
+
     /* Brilhos (Glows) */
     --filled-border: 1px solid rgba(0, 255, 255, 0.6);
     --focus-border: 1px solid #ff00ff;
     --info-content-border: 2px solid #00ffff;
     --active-search-border: 1.5px solid #ff00ff;
     --tab-item-border: 1px solid rgba(255, 0, 255, 0.5);
-    
+
     --text-highlight: 0 0 10px rgba(0, 255, 255, 0.8);
     --dark-text-highlight: 0 0 10px rgba(255, 0, 255, 0.8);
     --default-shadow: 0 0 20px rgba(0, 255, 255, 0.2);
     --sidebar-shadow: 4px 0 24px rgba(0, 255, 255, 0.15);
-    
+
     /* Bordas geométricas */
     --default-border-radius: 0px;
     --strong-border-radius: 4px;
@@ -175,24 +181,30 @@
     background-color: var(--background-color) !important;
 }
 
+:root[data-theme="theme-scifi"] #map {
+    background-image: url(../ui/world-background-sci-fi.png);
+    background-repeat: no-repeat;
+    background-size: cover;    
+}
+
 /* 3. TEMA NEUTRO (Sóbrio)
    Limpo, sem cores gritantes, tons de cinza/chumbo, bordas suaves, sem texturas/glows.
 */
 :root[data-theme="theme-neutral"] {
     --default-font: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-    
+
     --dark-color-a: #1a202cf2;
     --dark-color-a-T85: #1a202cd9;
     --dark-color-a-T50: #1a202c80;
     --color-a: #2d3748;
-    --light-color-a: #4a5568; 
-    
+    --light-color-a: #4a5568;
+
     --dark-color-b: #2c5282;
     --dark-color-b-T50: #2c528280;
     --dark-color-b-T85: #2c5282d9;
     --color-b: #3182ce;
-    --color-b-T50:#3182ce80;
-    --color-b-T85:#3182ced9;
+    --color-b-T50: #3182ce80;
+    --color-b-T85: #3182ced9;
     --light-color-b: #63b3ed;
 
     --dark-color-c: #718096;
@@ -202,30 +214,30 @@
 
     --dark-color-d: #0a0a0f;
     --color-d: #a0aec0;
-    --light-color-d: #f7fafc;    
+    --light-color-d: #f7fafc;
 
     --special-color: #ffffff1a;
 
     --dark-highlight-color: #14532d;
-    --highlight-color: #16a34a; 
+    --highlight-color: #16a34a;
 
     --dark-background-color: #0b0c10;
     --background-color: #1a202cf2;
     --light-background-color: #1f2833;
     --blockquote-background: var(--color-c-T85);
 
-    --text-color:var(--light-color-c);
-    --light-text-color: var(--color-c); 
+    --text-color: var(--light-color-c);
+    --light-text-color: var(--color-c);
     --dark-text-color: var(--dark-color-a);
     --disabled-text-color: var(--dark-color-c);
 
-    --shadow-color: #00000080; 
-    
+    --shadow-color: #00000080;
+
     /* Borders Radius */
     --tiny-border-radius: 1px;
     --small-border-radius: 5px;
     --default-border-radius: 8px;
-    --strong-border-radius: 12px;    
+    --strong-border-radius: 12px;
     --circular-border-radius: 50%;
     --scrollbar-border-radius: 4px;
     --slider-border-radius: 50%;
@@ -242,14 +254,14 @@
     --tooltip-border: rgba(255, 255, 255, 0.08);
     --tooltip-divider: rgba(255, 255, 255, 0.06);
     --tooltip-title: #ffffff;
-    
+
     /* Configurações de contraste para a área de leitura */
     --content-bg-image: url(../ui/lib-background.png);
     --content-bg-color: #edf2f7;
     --content-blend-mode: normal;
     --content-text-color: #1a202c;
     --content-viewer-bg: url(../ui/lib-background.png);
-    
+
     /* Removendo excessos e bordas fortes */
     --filled-border: 1px solid rgba(255, 255, 255, 0.1);
     --focus-border: 1px solid #4299e1;
@@ -257,13 +269,13 @@
     --active-search-border: 1px solid #63b3ed;
     --tab-item-border: 1px solid rgba(255, 255, 255, 0.1);
     --img-border: 1px solid #4a5568;
-    
+
     /* Sombras contidas */
     --text-highlight: none;
     --dark-text-highlight: none;
     --default-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
     --sidebar-shadow: 2px 0 10px rgba(0, 0, 0, 0.2);
-    
+
     /* Arredondamento moderno */
     --default-border-radius: 6px;
     --strong-border-radius: 8px;
@@ -273,6 +285,11 @@
 :root[data-theme="theme-neutral"] body.uniforge {
     background-image: none !important;
     background-color: var(--background-color) !important;
+}
+
+:root[data-theme="theme-neutral"] #map {
+    background-image: url('../ui/denim065.png');
+    background-color: var(--color-a);
 }
 
 /* Altera a seta nos outros temas para combinar com a paleta de cores correspondente */
@@ -288,5 +305,3 @@
 :root[data-theme="theme-neutral"] .theme-selector {
     background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23a0aec0' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
 }
-
-
