@@ -2,12 +2,12 @@
        * Clona rapidamente um dado simples, retornando uma cópia que pode ser mutada com segurança.
        * Este método SUPORTA estruturas de dados recursivas contendo objetos ou arrays internos.
        * Este método NÃO SUPORTA tipos de objetos avançados como Set, Map ou outras classes especializadas.
-       * @param {*} original                     Algum tipo de dado
-       * @param {object} [options]               Opções para configurar o comportamento do deepClone
-       * @param {boolean} [options.strict=false]  Lançar um erro se deepClone não conseguir clonar algo, em vez de
-       *                                          retornar o original
-       * @param {number} [options._d]             Um rastreador de profundidade interno
-       * @return {*}                             O clone dos dados
+       * @param {*} original                        - Algum tipo de dado
+       * @param {object} [options]                  - Opções para configurar o comportamento do deepClone
+       * @param {boolean} [options.strict=false]    - Lançar um erro se deepClone não conseguir clonar algo, em vez de
+       *                                              retornar o original
+       * @param {number} [options._d]               - Um rastreador de profundidade interno
+       * @return {*}                                - O clone dos dados
        */
 export function deepClone(original, { strict = false, _d = 0 } = {}) {
     if (_d > 100) {

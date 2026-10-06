@@ -24,7 +24,7 @@ const defaultStyle = {
     weight: 5,
     dashArray: '0, 0',
     line: 'solid',
-    hasBorder: true
+    stroke: true
 };
 
 /**
@@ -52,7 +52,7 @@ const options = {
     },
     polygon: function (withIntersection = false, isDrawer = true) {
         const style = uniforge.style ?? defaultStyle;
-        if (isDrawer) {            
+        if (isDrawer) {
             return {
                 snappable: true,
                 snapDistance: 20,
@@ -69,7 +69,7 @@ const options = {
         }
     },
     regularShape: function (isDrawer = true) {
-        const style = uniforge.style ?? defaultStyle;        
+        const style = uniforge.style ?? defaultStyle;
         if (isDrawer) {
             return {
                 hintlineStyle: defaultHintlineStyle,
@@ -98,18 +98,27 @@ const drawer = {
 
         // Permite interseção de polígonos.
         map.pm.enableDraw('Polygon', options.polygon());
+        state.drawInstance = map.pm.Draw.Polygon;
+
+        return state.drawInstance;
     },
     circle: function (map) {
         if (state.drawInstance && state.drawInstance.enabled()) state.drawInstance.disable();
 
         // Permite interseção de círculos.
         map.pm.enableDraw('Circle', options.regularShape());
+        state.drawInstance = map.pm.Draw.Circle;
+
+        return state.drawInstance;
     },
     rectangle: function (map) {
         if (state.drawInstance && state.drawInstance.enabled()) state.drawInstance.disable();
 
         // Permite interseção de retângulos.
         map.pm.enableDraw('Rectangle', options.regularShape());
+        state.drawInstance = map.pm.Draw.Rectangle;
+
+        return state.drawInstance;
     }
 }
 
@@ -210,29 +219,42 @@ function updateStyle(map, newStyle) {
         hintlineStyle: { ...defaultHintlineStyle }
     };
 
+    drawOptions.pathOptions.stroke =
+        drawOptions.templineStyle.stroke = newStyle.stroke;
+
     // Verifica se a instância do mapa do Leaflet foi enviada corretamente.
     if (!map) return;
 
-    // Caso não exista desenho ativo, verifique se é uma edição.
-    if (!state.drawInstance || !state.drawInstance?.enabled()) {
+    const activeShape = map.pm.Draw.getActiveShape();
+
+    // Verifica se há um desenho ativo no momento (polígono, círculo ou retângulo).
+    if (activeShape) {
+        if (activeShape !== 'Marker') {
+            // Atualiza o estilo do desenho ativo (polígono, círculo ou retângulo).
+            map.pm.Draw[activeShape].setStyle(drawOptions.pathOptions);
+
+            // Atualiza o estilo temporário (templine) do desenho ativo.
+            updateTemplineStyle(map, drawOptions.templineStyle);
+        }
+    }
+    // Se não houver um desenho ativo, verifica se há um elemento sendo editado no momento.
+    else {
         const activeLayer = map.getActiveLayer();
 
         // Verifica se há um elemento sendo editado no momento.
-        if (activeLayer && activeLayer instanceof L.Marker) {
-            // Atualiza o estilo do desenho ativo.
-            activeLayer.setStyle(drawOptions.pathOptions);
-            return;
+        if (activeLayer) {
+            if (!(activeLayer instanceof L.Marker)) {
+                // Atualiza o estilo do desenho que está sendo editado.
+                activeLayer.setStyle(drawOptions.pathOptions);
+            }
         }
-        // Se não houver apenas atualize as opções globais.
         else {
+            // Se não houver um desenho ativo ou sendo editado, atualize as opções globais do Geoman.
             map.pm.setPathOptions(drawOptions.pathOptions);
-            return;
         }
     }
-
-    // Atualiza o estilo temporário (templine) do desenho ativo.
-    updateTemplineStyle(map, drawOptions.templineStyle);
 }
+
 function updateTemplineStyle(map, newStyle) {
     // Verifica se o estilo foi enviado corretamente.
     if (!newStyle) return;
@@ -248,7 +270,25 @@ function updateTemplineStyle(map, newStyle) {
 
     // Verifica se a camada de desenho ativa possui latlngs.
     if (workingLayer) {
-        workingLayer.setStyle(newStyle);
+        // Se for um polígono, algumas configurações adicionais são necessárias.
+        if (activeShape === 'Polygon') {
+            let templineStyle = { ...newStyle };
+            // O estilo temporário do polígono deve ter um contorno visível, 
+            // mesmo que o usuário tenha desativado a opção de contorno.
+            if (templineStyle.stroke === false) {
+                templineStyle.color = '#000000';
+                templineStyle.line = 'solid';
+                templineStyle.weight = 3;
+                templineStyle.stroke = true;
+            }
+
+            // Atualiza o estilo temporário (templine) do desenho ativo.
+            workingLayer.setStyle(templineStyle);
+        }
+        else {
+            // Atualiza o estilo temporário (templine) do desenho ativo.
+            workingLayer.setStyle(newStyle);
+        }
     }
 }
 

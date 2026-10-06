@@ -132,9 +132,7 @@ export default class SettingsSet extends Set {
             group: groupId,
             tag: tagId,
             value: value
-        });
-
-        await triggerHook('documentsChanged');
+        });        
     }
 
     /**
