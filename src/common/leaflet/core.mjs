@@ -261,7 +261,7 @@ const lControl = {
 
         // Configura o controle de escala.
         const scaleControl = _configureScaleControl();
-        
+
         L.GeometryUtil.geodesicArea = function (latLngs) {
             let area = 0;
 
@@ -454,14 +454,12 @@ const lControl = {
 
         function _activateEventsListener() {
             map.on('mousedown', _onUserMapClick);
-            map.on('keydown', (event) => { _checkKeyPressed(event, event.originalEvent.code); });
-
             map.on('pm:create', (event) => _onDrawCreated(event, true));
 
             map.on('zoomend', _onZoomEnd);
 
             // Adicione um listener para o evento 'pm:drawstart' para desabilitar o arrastre do mapa quando estiver desenhando um polígono.
-            map.on('pm:drawstart', function (e) {                
+            map.on('pm:drawstart', function (e) {
                 map.dragging.disable();
 
                 // Se já houver uma edição ocorrendo neste momento, aborte a edição atual para iniciar uma nova.
@@ -673,67 +671,7 @@ const lControl = {
             if (deleteBtn) {
                 lControl.deleteElement(e);
             }
-        }
-
-        async function _checkKeyPressed(event, key) {
-            switch (key) {
-                // A Tecla foi o 'Esc'.
-                case 'Escape': {
-                    lControl.endEditMode(event.originalEvent);
-                } break;
-                // A Tecla foi o 'Enter'.
-                case 'Enter': {
-                    try {
-                        // Obtém o elemento que está sendo editado no momento.
-                        let layer = lControl.map.getActiveLayer();
-
-                        // Não há nenhuma edição ativa, verifique na cache de edição.
-                        if (!layer) {
-                            // Busque na cache de edição.
-                            layer = lControl.editCache.layer;
-
-                            // Se ainda assim não houver nenhum elemento ativo, aborte.
-                            if (!layer) return;
-                        };
-
-                        const latlngs = layer._latlngs || layer._latlng;
-
-                        // Abre uma transação no banco de dados para adicionar o elemento.
-                        await uniforge.db.beginTransaction();
-
-                        let points = '';
-                        // Se o elemento for um polígono, obtenha os seus pontos.
-                        if (Array.isArray(latlngs)) {
-                            points = latlngs.first().map(point => `${point.lat},${point.lng}`).join(';');
-                        } else points = `${latlngs.lat},${latlngs.lng}`;
-
-                        // Cria o objeto de dados a ser adicionado ao banco de dados.
-                        const data = {
-                            meid: layer._id,
-                            epoch: uniforge.time.y.value,
-                            type: layer.type,
-                            icon: (layer instanceof L.Marker) ? layer.options.icon.options.iconUrl : layer.type,
-                            source: `${layer.source.type}{${layer.source._id}}`,
-                            points: points,
-                            style: JSON.stringify(layer.options)
-                        }
-                        // Adiciona o elemento ao banco de dados.
-                        await uniforge.db.updateMapElement(data);
-
-                        // Confirma a transação.
-                        await uniforge.db.commitTransaction();
-
-                        // Encerra a edição.
-                        lControl.endEditMode(event.originalEvent, false);
-                    }
-                    catch (err) {
-                        console.error(err);
-                    }
-                }
-                // Não era nenhuma tecla em especial. Ignore.
-                default: break;
-            }
-        }
+        }        
 
         async function _onDrawCreated(e, isPM) {
             let layer = e.layer;
@@ -1247,7 +1185,56 @@ const lControl = {
             }
 
             const layerEditTip = document.querySelector('.map-objects-edit-tip');
-            layerEditTip.classList.remove('active');            
+            layerEditTip.classList.remove('active');
+        }
+    },
+
+    commitLayer: async function (event) {
+        try {
+            // Obtém o elemento que está sendo editado no momento.
+            let layer = lControl.map.getActiveLayer();
+
+            // Não há nenhuma edição ativa, verifique na cache de edição.
+            if (!layer) {
+                // Busque na cache de edição.
+                layer = lControl.editCache.layer;
+
+                // Se ainda assim não houver nenhum elemento ativo, aborte.
+                if (!layer) return;
+            };
+
+            const latlngs = layer._latlngs || layer._latlng;
+
+            // Abre uma transação no banco de dados para adicionar o elemento.
+            await uniforge.db.beginTransaction();
+
+            let points = '';
+            // Se o elemento for um polígono, obtenha os seus pontos.
+            if (Array.isArray(latlngs)) {
+                points = latlngs.first().map(point => `${point.lat},${point.lng}`).join(';');
+            } else points = `${latlngs.lat},${latlngs.lng}`;
+
+            // Cria o objeto de dados a ser adicionado ao banco de dados.
+            const data = {
+                meid: layer._id,
+                epoch: uniforge.time.y.value,
+                type: layer.type,
+                icon: (layer instanceof L.Marker) ? layer.options.icon.options.iconUrl : layer.type,
+                source: `${layer.source.type}{${layer.source._id}}`,
+                points: points,
+                style: JSON.stringify(layer.options)
+            }
+            // Adiciona o elemento ao banco de dados.
+            await uniforge.db.updateMapElement(data);
+
+            // Confirma a transação.
+            await uniforge.db.commitTransaction();
+
+            // Encerra a edição.
+            lControl.endEditMode(event, false);
+        }
+        catch (err) {
+            console.error(err);
         }
     },
 

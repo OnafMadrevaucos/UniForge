@@ -92,19 +92,49 @@ const drawer = {
         return state.drawInstance;
     },
     polygon: function (map) {
-        if (state.drawInstance && state.drawInstance.enabled()) state.drawInstance.disable();
+        if (state.drawInstance) {
+            if (state.drawInstance.enabled()) state.drawInstance.disable();
+
+            if (state.drawInstance.getShape() === 'Polygon') {
+                state.drawInstance = null;
+
+                // Desativa o modo edição do Leaflet.
+                map.pm.disableDraw();
+                return;
+            }
+        }
 
         // Permite interseção de polígonos.
         map.pm.enableDraw('Polygon', options.polygon());
     },
     circle: function (map) {
-        if (state.drawInstance && state.drawInstance.enabled()) state.drawInstance.disable();
+        if (state.drawInstance) {
+            if (state.drawInstance.enabled()) state.drawInstance.disable();
+
+            if (state.drawInstance.getShape() === 'Circle') {
+                state.drawInstance = null;
+
+                // Desativa o modo edição do Leaflet.
+                map.pm.disableDraw();
+                return;
+            }
+        }
 
         // Permite interseção de círculos.
         map.pm.enableDraw('Circle', options.regularShape());
     },
     rectangle: function (map) {
-        if (state.drawInstance && state.drawInstance.enabled()) state.drawInstance.disable();
+        if (state.drawInstance) {
+            if (state.drawInstance.enabled()) state.drawInstance.disable();
+
+            if (state.drawInstance.getShape() === 'Rectangle') {
+                state.drawInstance = null;
+
+                // Desativa o modo edição do Leaflet.
+                map.pm.disableDraw();
+                return;
+            }
+        }
 
         // Permite interseção de retângulos.
         map.pm.enableDraw('Rectangle', options.regularShape());
@@ -345,7 +375,7 @@ function _onPolygonDraw(map, event) {
     const button = target.closest('.leaflet-buttons-control-button');
     const mapShapesContainer = document.querySelector('.map-objects-container.regular-shapes');
 
-    if (button.classList.contains('active')) {
+    if (state.drawInstance) {
         button.classList.remove('active');
         mapShapesContainer.classList.remove('active');
     }
@@ -363,7 +393,7 @@ function _onRectangleDraw(map, event) {
     const button = target.closest('.leaflet-buttons-control-button');
     const mapShapesContainer = document.querySelector('.map-objects-container.regular-shapes');
 
-    if (button.classList.contains('active')) {
+    if (state.drawInstance) {
         button.classList.remove('active');
         mapShapesContainer.classList.remove('active');
     }
@@ -380,7 +410,7 @@ function _onCircleDraw(map, event) {
     const button = target.closest('.leaflet-buttons-control-button');
     const mapShapesContainer = document.querySelector('.map-objects-container.regular-shapes');
 
-    if (button.classList.contains('active')) {
+    if (state.drawInstance) {
         button.classList.remove('active');
         mapShapesContainer.classList.remove('active');
     }
@@ -511,7 +541,13 @@ const utils = {
 
     iconMap: iconMap,
     options: options,
-    drawer: drawer,
+    drawer: {
+        ...drawer,
+        drawPolygon: _onPolygonDraw,
+        drawRectangle: _onRectangleDraw,
+        drawCircle: _onCircleDraw,
+        drawMarker: _onMarkerDraw
+    },
     state: state,
     drawStyle: {
         style,

@@ -2943,6 +2943,11 @@ ul.list li,
 */
 
 /* ------ About Form ------ */
+.form.container:not(.maximized):has(#about) {
+    height: 0vh !important;
+    width: 5vw !important;
+}
+
 #about .header {
     text-align: center;
     color: var(--color-b);
@@ -2976,6 +2981,18 @@ ul.list li,
     border-radius: var(--default-border-radius);
     box-shadow: var(--small-shadow);
     margin: 5px;
+}
+
+#about .fieldset-content .data-group.text input {
+    border: none;
+}
+
+#about .footer {
+    color: var(--color-b);
+    width: auto;
+    padding-inline: 10px;
+    padding-block: 5px;
+    margin-top: 5px;
 }
 
 /* ------ Article Type Form ------ */

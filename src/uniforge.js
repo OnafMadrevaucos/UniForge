@@ -666,6 +666,8 @@ async function onKeyDown(event) {
         // Se uma edição no Leaflet está ativa.
         if (uniforge.active instanceof L.Marker || uniforge.active instanceof L.Path) {
             uniforge.active = null;
+
+            uniforge.ctrls.leaflet.endEditMode(event);
             return;
         }
         // Não há nenhuma tela (Formulário ou Caixa de Diálogo) aberta, independente de estar ativa ou não.
@@ -675,6 +677,27 @@ async function onKeyDown(event) {
         if (await Dialogs.confirm('Sair', 'Deseja realmente sair? Qualquer alteração não salva será perdida.')) {
             uniforge.app.quit(); // Fecha a aplicação.
         }
+    }
+    else if (key == 'Enter') {
+        // Se uma edição no Leaflet está ativa.
+        if (uniforge.active instanceof L.Marker || uniforge.active instanceof L.Path) {
+            uniforge.active = null;
+
+            uniforge.ctrls.leaflet.commitLayer(event);
+            return;
+        }
+    }
+    else if ((key == 'P' || key == 'p') && event.ctrlKey) {
+        _forceCustomControlClick('drawPolygonCustom');
+    }
+    else if ((key == 'C' || key == 'c') && event.ctrlKey) {
+        _forceCustomControlClick('drawCircleCustom');
+    }
+    else if ((key == 'R' || key == 'r') && event.ctrlKey) {
+        _forceCustomControlClick('drawRectangleCustom');
+    }
+    else if ((key == 'M' || key == 'm') && event.ctrlKey) {
+        _forceCustomControlClick('drawMarkerCustom');        
     }
     else if (key == 'F1') {
         let active = false;
@@ -702,6 +725,20 @@ async function onKeyDown(event) {
             renderForm(button.getAttribute('data-target'), button);
         }
     }
+    else if (key == 'F9') {
+        const shapeTab = document.querySelector('.map-objects-container .tab-shapes');
+
+        if (shapeTab) {
+            shapeTab.dispatchEvent(new Event('click'));
+        }
+    }
+    else if (key == 'F10') {
+        const objectsTab = document.querySelector('.map-objects-container .tab-objects');
+
+        if (objectsTab) {
+            objectsTab.dispatchEvent(new Event('click'));
+        }
+    }
     else if (key == 'F12') {
         let active = false;
         uniforge.form.forEach((f) => {
@@ -714,13 +751,13 @@ async function onKeyDown(event) {
         }
     }
     else if (key == '.') {
-        if(event.ctrlKey)
+        if (event.ctrlKey)
             onChangeTime(event, 10);
         else
             onChangeTime(event, 1);
     }
     else if (key == ',') {
-        if(event.ctrlKey)
+        if (event.ctrlKey)
             onChangeTime(event, -10);
         else
             onChangeTime(event, -1);
@@ -1096,6 +1133,45 @@ function _setTime(year) {
     const mid = uniforge.constants.leaflet.DEFAULT_OVERLAY; // Define o ID do mapa como o mapa padrão.
 
     uniforge.ctrls.leaflet.loadElements(mid, uniforge.time.y.value);
+}
+
+/**
+ * Força um evento de clique em um Botão Customizado do Leaflet.
+ * 
+ * @param {string} name   - Nome dado ao Botão Customizado do Leaflet.
+ * 
+ * @returns {void}
+ */
+function _forceCustomControlClick(name) {
+    const map = uniforge.ctrls.leaflet.map;
+        const toolBar = map.pm.Toolbar;
+
+        const control = toolBar.getButtons()[name];
+        if (control) {
+            const button = control.buttonsDomNode.querySelector('a.leaflet-buttons-control-button');
+
+            // Cria um objeto de evento sintético com as propriedades que sua função onClick espera
+            const syntheticEvent = new MouseEvent('click', {
+                bubbles: true,
+                cancelable: true,
+                view: window,
+            });
+
+            // Força o 'target' e 'currentTarget' a apontarem para o elemento desejado.
+            Object.defineProperty(syntheticEvent, 'target', {
+                value: button,
+                enumerable: true,
+                writable: false
+            });
+
+            Object.defineProperty(syntheticEvent, 'currentTarget', {
+                value: button,
+                enumerable: true,
+                writable: false
+            });
+
+            control._button.onClick.call(button, syntheticEvent);
+        }
 }
 
 // Função para criar um elemento com classes e atributos.

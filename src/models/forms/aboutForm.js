@@ -16,7 +16,7 @@ export default class AboutForm extends BaseForm {
     constructor() {  
         // Chama o construtor da classe pai com o parâmetro overlay.
         super('Sobre', {
-            height: '575px',
+            height: 'auto',
             width: '300px'
         });
 

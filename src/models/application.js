@@ -21,7 +21,7 @@ export default class Application {
          * @type {string}
          * 
         */
-        this.style = this.options?.style ?? 'form';
+        this.style = this.options?.style ?? Application.Styles.FORM;
 
         /**
         * O título da aplicação.
