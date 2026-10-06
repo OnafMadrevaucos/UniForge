@@ -156,9 +156,6 @@ export default class DBManager {
                 console.log('UniForge | Transação confirmada.');
                 await uniforge.sql.exec('COMMIT');
 
-                // Se a operação afetou alguma linha, atualiza base de dados.
-                if (this.totalCanges > 0) this.rebuildDocs();
-
                 this.transactionStarted = false;
             } else throw new Error('Nenhuma transação aberta encontrada.');
         } catch (error) {
@@ -2405,7 +2402,7 @@ export default class DBManager {
 
             this.results = await this.#execQuery(query, params);
         }
-        
+
         console.log('Tabela \'calendars\' populada....OK.');
 
         return this.result;
@@ -2495,7 +2492,7 @@ export default class DBManager {
         let query = 'INSERT INTO calendarsDays (clid, label, name) ';
         query += 'VALUES (?,?,?);';
 
-        for(let day of days) {
+        for (let day of days) {
             let params = [];
 
             params.push(day.clid);
@@ -2603,7 +2600,7 @@ export default class DBManager {
         let query = 'INSERT INTO calendarsMonths (clid, label, size) ';
         query += 'VALUES (?,?,?);';
 
-        for(let month of months) {
+        for (let month of months) {
             let params = [];
 
             params.push(month.clid);
@@ -2711,7 +2708,7 @@ export default class DBManager {
         let query = 'INSERT INTO tome (title, label, icon) ';
         query += 'VALUES (?,?,?);';
 
-        for(let tome of tomes) {
+        for (let tome of tomes) {
             let params = [];
 
             params.push(tome.title);
@@ -2778,7 +2775,7 @@ export default class DBManager {
         let query = 'INSERT INTO entryType (title, icon, isMaterial) ';
         query += 'VALUES (?,?,?);';
 
-        for(let entryType of entryTypes) {
+        for (let entryType of entryTypes) {
             let params = [];
 
             params.push(entryType.title);
@@ -2814,7 +2811,7 @@ export default class DBManager {
         let query = 'INSERT INTO relevance (title) ';
         query += 'VALUES (?);';
 
-        for(let relevance of relevances) {
+        for (let relevance of relevances) {
             let params = [];
 
             params.push(relevance.title);
@@ -2845,7 +2842,7 @@ export default class DBManager {
         let query = 'INSERT INTO settings (tag, group, value) ';
         query += 'VALUES (?,?,?);';
 
-        for(let style of styles) {
+        for (let style of styles) {
             let params = [];
 
             params.push(style.tag);
@@ -2854,7 +2851,7 @@ export default class DBManager {
 
             this.results = await this.#execQuery(query, params);
         }
-        
+
         console.log('Tabela \'settings\' populada....OK.');
         return this.result;
     }
@@ -3195,6 +3192,8 @@ export default class DBManager {
         // Verifica se a transação é única, nesse caso, limpa o estado atual.
         if (!this.transactionStarted) await this.clear();
 
+        if (!query || query.isEmpty()) throw new Error('A consulta SQL não pode ser vazia.');
+
         let result = null;
         // É uma consulta com parâmetros.
         if (params.length > 0) {
@@ -3202,6 +3201,12 @@ export default class DBManager {
         } else {
             result = await uniforge.sql.exec(query);
         }
+
+        // Obtém os dados da Query recém-executada.
+        result.data = this.getSQLTables(query);
+
+        // Se houver alterações nas tabelas, sinalizar ao sistema que um documento foi alterado.
+        if (result.changes > 0) await triggerHook('documentsChanged', result.data.table.name);
 
         // Retorna o resultado da consulta.
         return result;
@@ -3365,14 +3370,839 @@ export default class DBManager {
     }
 
     /**
+     * Analisa uma query SQL e identifica as tabelas e estruturas utilizadas.
+     *
+     * A rotina reconhece:
+     * - SELECT.
+     * - INSERT.
+     * - UPDATE.
+     * - DELETE.
+     * - JOINs.
+     * - Aliases.
+     * - Subqueries.
+     * - Subqueries utilizadas no FROM.
+     * - CTEs com WITH.
+     * - WITH RECURSIVE.
+     * - UNION.
+     * - UNION ALL.
+     * - Subqueries aninhadas.
+     *
+     * A análise é feita recursivamente, permitindo representar a estrutura
+     * interna da consulta sem transformar CTEs ou subqueries em tabelas físicas.
+     *
+     * @param {string} query - Query SQL que será analisada.
+     * @returns {{
+     *     operation: string|null,
+     *     table: {name: string, alias: string|null}|null,
+     *     joins: Array<{
+     *         name: string,
+     *         alias: string|null
+     *     }>,
+     *     subqueries: Array<{
+     *         alias: string|null,
+     *         query: Object
+     *     }>,
+     *     ctes: Array<{
+     *         name: string,
+     *         alias: string|null,
+     *         query: Object
+     *     }>,
+     *     unions: Array<{
+     *         operator: string,
+     *         query: Object
+     *     }>
+     * }} Resultado da análise da query.
+    */
+    getSQLTables(query) {
+        /**
+         * Cria a estrutura padrão utilizada pelo analisador.
+         *
+         * @returns {Object} Estrutura vazia da análise.
+         */
+        const createResult = () => ({
+            operation: null,
+            table: null,
+            joins: [],
+            subqueries: [],
+            ctes: [],
+            unions: []
+        });
+
+        /**
+         * Analisa uma consulta recursivamente.
+         *
+         * @param {string} source - SQL a ser analisado.
+         * @returns {Object} Resultado da análise.
+         */
+        const analyze = source => {
+            const result = createResult();
+
+            if (typeof source !== 'string' || !source.trim()) {
+                return result;
+            }
+
+            let sql = removeComments(source).trim();
+
+            sql = removeTrailingSemicolon(sql);
+
+            /*
+             * WITH precisa ser processado antes da operação principal.
+             */
+            if (/^WITH\b/i.test(sql)) {
+                const withResult = parseCTEs(sql);
+
+                result.ctes = withResult.ctes;
+                sql = withResult.query;
+            }
+
+            /*
+             * UNION precisa ser separado antes de analisarmos FROM e JOIN.
+             */
+            const unionParts = splitTopLevelUnions(sql);
+
+            if (unionParts.length > 1) {
+                const firstQuery = analyze(unionParts[0].query);
+
+                result.operation = firstQuery.operation;
+                result.table = firstQuery.table;
+                result.joins = firstQuery.joins;
+                result.subqueries = firstQuery.subqueries;
+                result.ctes = [
+                    ...result.ctes,
+                    ...firstQuery.ctes
+                ];
+
+                result.unions = unionParts.slice(1).map(part => ({
+                    operator: part.operator,
+                    query: analyze(part.query)
+                }));
+
+                return result;
+            }
+
+            /*
+             * Identifica a operação principal.
+             */
+            const operationMatch = sql.match(
+                /^\s*(SELECT|INSERT|UPDATE|DELETE)\b/i
+            );
+
+            if (!operationMatch) {
+                return result;
+            }
+
+            result.operation = operationMatch[1].toUpperCase();
+
+            /*
+             * Identifica a tabela principal.
+             */
+            result.table = parseMainTable(sql, result.operation);
+
+            /*
+             * Identifica JOINs.
+             */
+            result.joins = parseJoins(sql);
+
+            /*
+             * Identifica subqueries utilizadas no FROM.
+             */
+            result.subqueries = parseFromSubqueries(sql);
+
+            /*
+             * Identifica outras subqueries presentes na consulta.
+             *
+             * As subqueries que já estão no FROM são ignoradas aqui para
+             * evitar que sejam adicionadas duas vezes.
+             */
+            const fromSubqueryRanges = getFromSubqueryRanges(sql);
+
+            result.subqueries.push(
+                ...parseOtherSubqueries(sql, fromSubqueryRanges)
+            );
+
+            return result;
+        };
+
+        /**
+         * Remove comentários de bloco e comentários de linha.
+         *
+         * @param {string} source - SQL original.
+         * @returns {string} SQL sem comentários.
+         */
+        const removeComments = source => {
+            return source
+                .replace(/\/\*[\s\S]*?\*\//g, ' ')
+                .replace(/--[^\r\n]*/g, ' ');
+        };
+
+        /**
+         * Remove o ponto e vírgula final da consulta.
+         *
+         * @param {string} source - SQL.
+         * @returns {string} SQL sem ponto e vírgula final.
+         */
+        const removeTrailingSemicolon = source => {
+            return source.replace(/;\s*$/, '');
+        };
+
+        /**
+         * Remove delimitadores de identificadores SQL.
+         *
+         * @param {string} value - Identificador.
+         * @returns {string|null} Identificador limpo.
+         */
+        const cleanIdentifier = value => {
+            if (!value) {
+                return null;
+            }
+
+            value = value.trim();
+
+            if (
+                (value.startsWith('"') && value.endsWith('"')) ||
+                (value.startsWith('`') && value.endsWith('`')) ||
+                (value.startsWith('[') && value.endsWith(']'))
+            ) {
+                return value.slice(1, -1);
+            }
+
+            return value;
+        };
+
+        /**
+         * Extrai o nome da tabela e seu alias.
+         *
+         * @param {string} source - Trecho contendo uma tabela.
+         * @returns {{name: string, alias: string|null}|null} Informações da tabela.
+         */
+        const parseTable = source => {
+            if (!source) {
+                return null;
+            }
+
+            const identifier =
+                `(?:"[^"]+"|` +
+                '`[^`]+`|' +
+                `\\[[^\\]]+\\]|` +
+                `[a-zA-Z_][\\w$]*)`;
+
+            const tablePattern = new RegExp(
+                `^(${identifier}(?:\\s*\\.\\s*${identifier})?)` +
+                `(?:\\s+(?:AS\\s+)?(${identifier}))?`,
+                'i'
+            );
+
+            const match = source.trim().match(tablePattern);
+
+            if (!match) {
+                return null;
+            }
+
+            return {
+                name: match[1]
+                    .split('.')
+                    .map(cleanIdentifier)
+                    .join('.'),
+                alias: cleanIdentifier(match[2])
+            };
+        };
+
+        /**
+         * Localiza o fechamento do parêntese correspondente.
+         *
+         * Strings SQL são ignoradas para que parênteses existentes dentro
+         * delas não alterem o nível estrutural.
+         *
+         * @param {string} source - SQL.
+         * @param {number} openingIndex - Índice do parêntese de abertura.
+         * @returns {number} Índice do parêntese correspondente ou -1.
+         */
+        const findMatchingParenthesis = (source, openingIndex) => {
+            let depth = 0;
+            let quote = null;
+
+            for (let index = openingIndex; index < source.length; index++) {
+                const char = source[index];
+
+                if (quote) {
+                    if (char === quote) {
+                        /*
+                         * Aspas duplicadas representam uma aspa literal
+                         * dentro de strings SQL.
+                         */
+                        if (source[index + 1] === quote) {
+                            index++;
+                        } else {
+                            quote = null;
+                        }
+                    }
+
+                    continue;
+                }
+
+                if (
+                    char === "'" ||
+                    char === '"' ||
+                    char === '`'
+                ) {
+                    quote = char;
+                    continue;
+                }
+
+                if (char === '[') {
+                    const closingIndex = source.indexOf(']', index + 1);
+
+                    if (closingIndex !== -1) {
+                        index = closingIndex;
+                    }
+
+                    continue;
+                }
+
+                if (char === '(') {
+                    depth++;
+                } else if (char === ')') {
+                    depth--;
+
+                    if (depth === 0) {
+                        return index;
+                    }
+                }
+            }
+
+            return -1;
+        };
+
+        /**
+         * Divide uma consulta nos operadores UNION existentes no nível
+         * estrutural zero.
+         *
+         * @param {string} source - SQL.
+         * @returns {Array<{operator: string, query: string}>} Partes da consulta.
+         */
+        const splitTopLevelUnions = source => {
+            const parts = [];
+            let start = 0;
+            let depth = 0;
+            let quote = null;
+
+            for (let index = 0; index < source.length; index++) {
+                const char = source[index];
+
+                if (quote) {
+                    if (char === quote) {
+                        if (source[index + 1] === quote) {
+                            index++;
+                        } else {
+                            quote = null;
+                        }
+                    }
+
+                    continue;
+                }
+
+                if (
+                    char === "'" ||
+                    char === '"' ||
+                    char === '`'
+                ) {
+                    quote = char;
+                    continue;
+                }
+
+                if (char === '(') {
+                    depth++;
+                    continue;
+                }
+
+                if (char === ')') {
+                    depth--;
+                    continue;
+                }
+
+                if (depth !== 0) {
+                    continue;
+                }
+
+                const match = source
+                    .slice(index)
+                    .match(/^UNION(?:\s+ALL)?\b/i);
+
+                if (!match) {
+                    continue;
+                }
+
+                const beforeUnion = source.slice(start, index).trim();
+
+                if (beforeUnion) {
+                    parts.push({
+                        operator: parts.length === 0 ? null : parts.at(-1).operator,
+                        query: beforeUnion
+                    });
+                }
+
+                const operator = match[0]
+                    .replace(/\s+/g, ' ')
+                    .toUpperCase();
+
+                parts.push({
+                    operator,
+                    query: ''
+                });
+
+                start = index + match[0].length;
+                index = start - 1;
+            }
+
+            const finalQuery = source.slice(start).trim();
+
+            if (parts.length === 0) {
+                return [{
+                    operator: null,
+                    query: source.trim()
+                }];
+            }
+
+            /*
+             * O primeiro elemento contém apenas a consulta anterior ao
+             * primeiro UNION.
+             */
+            const firstQuery = parts[0].query;
+
+            const queries = [{
+                operator: null,
+                query: firstQuery
+            }];
+
+            let operator = null;
+
+            for (let index = 1; index < parts.length; index++) {
+                if (parts[index].operator) {
+                    operator = parts[index].operator;
+                    continue;
+                }
+
+                queries.push({
+                    operator,
+                    query: parts[index].query
+                });
+            }
+
+            queries.push({
+                operator,
+                query: finalQuery
+            });
+
+            return queries.filter(part => part.query);
+        };
+
+        /**
+         * Extrai a tabela principal de uma consulta.
+         *
+         * @param {string} source - SQL.
+         * @param {string} operation - Operação SQL.
+         * @returns {{name: string, alias: string|null}|null} Tabela principal.
+         */
+        const parseMainTable = (source, operation) => {
+            let match;
+
+            if (operation === 'SELECT') {
+                match = source.match(
+                    /\bFROM\s+((?:"[^"]+"|`[^`]+`|\[[^\]]+\]|[a-zA-Z_][\w$]*)(?:\s*\.\s*(?:"[^"]+"|`[^`]+`|\[[^\]]+\]|[a-zA-Z_][\w$]*))?)(?:\s+(?:AS\s+)?([a-zA-Z_][\w$]*))?/i
+                );
+            }
+
+            if (operation === 'INSERT') {
+                match = source.match(
+                    /\bINSERT(?:\s+OR\s+\w+)?\s+INTO\s+((?:"[^"]+"|`[^`]+`|\[[^\]]+\]|[a-zA-Z_][\w$]*)(?:\s*\.\s*(?:"[^"]+"|`[^`]+`|\[[^\]]+\]|[a-zA-Z_][\w$]*))?)(?:\s+(?:AS\s+)?([a-zA-Z_][\w$]*))?/i
+                );
+            }
+
+            if (operation === 'UPDATE') {
+                match = source.match(
+                    /\bUPDATE(?:\s+OR\s+\w+)?\s+((?:"[^"]+"|`[^`]+`|\[[^\]]+\]|[a-zA-Z_][\w$]*)(?:\s*\.\s*(?:"[^"]+"|`[^`]+`|\[[^\]]+\]|[a-zA-Z_][\w$]*))?)(?:\s+(?:AS\s+)?([a-zA-Z_][\w$]*))?/i
+                );
+            }
+
+            if (operation === 'DELETE') {
+                match = source.match(
+                    /\bDELETE\s+FROM\s+((?:"[^"]+"|`[^`]+`|\[[^\]]+\]|[a-zA-Z_][\w$]*)(?:\s*\.\s*(?:"[^"]+"|`[^`]+`|\[[^\]]+\]|[a-zA-Z_][\w$]*))?)(?:\s+(?:AS\s+)?([a-zA-Z_][\w$]*))?/i
+                );
+            }
+
+            if (!match) {
+                return null;
+            }
+
+            return {
+                name: match[1]
+                    .split('.')
+                    .map(cleanIdentifier)
+                    .join('.'),
+                alias: cleanIdentifier(match[2])
+            };
+        };
+
+        /**
+         * Extrai todos os JOINs de uma consulta.
+         *
+         * @param {string} source - SQL.
+         * @returns {Array<{name: string, alias: string|null}>} JOINs encontrados.
+         */
+        const parseJoins = source => {
+            const joins = [];
+
+            const identifier =
+                `(?:"[^"]+"|` +
+                '`[^`]+`|' +
+                `\\[[^\\]]+\\]|` +
+                `[a-zA-Z_][\\w$]*)`;
+
+            const regex = new RegExp(
+                `\\b(?:LEFT|RIGHT|FULL|INNER|OUTER|CROSS)?\\s*JOIN\\s+` +
+                `(${identifier}(?:\\s*\\.\\s*${identifier})?)` +
+                `(?:\\s+(?:AS\\s+)?(${identifier}))?`,
+                'gi'
+            );
+
+            for (const match of source.matchAll(regex)) {
+                joins.push({
+                    name: match[1]
+                        .split('.')
+                        .map(cleanIdentifier)
+                        .join('.'),
+                    alias: cleanIdentifier(match[2])
+                });
+            }
+
+            return joins;
+        };
+
+        /**
+         * Extrai CTEs existentes em uma cláusula WITH.
+         *
+         * @param {string} source - SQL iniciado por WITH.
+         * @returns {{
+         *     ctes: Array<{
+         *         name: string,
+         *         alias: string|null,
+         *         query: Object
+         *     }>,
+         *     query: string
+         * }} CTEs e restante da consulta.
+         */
+        const parseCTEs = source => {
+            const ctes = [];
+            let index = 4;
+
+            /*
+             * WITH RECURSIVE.
+             */
+            const recursiveMatch = source
+                .slice(index)
+                .match(/^\s+RECURSIVE\b/i);
+
+            if (recursiveMatch) {
+                index += recursiveMatch[0].length;
+            }
+
+            while (index < source.length) {
+                /*
+                 * Ignora espaços e vírgulas entre CTEs.
+                 */
+                while (
+                    index < source.length &&
+                    /[\s,]/.test(source[index])
+                ) {
+                    index++;
+                }
+
+                const nameMatch = source
+                    .slice(index)
+                    .match(
+                        /^((?:"[^"]+"|`[^`]+`|\[[^\]]+\]|[a-zA-Z_][\w$]*))/
+                    );
+
+                if (!nameMatch) {
+                    break;
+                }
+
+                const name = cleanIdentifier(nameMatch[1]);
+
+                index += nameMatch[0].length;
+
+                /*
+                 * Uma CTE pode declarar nomes de colunas:
+                 *
+                 * WITH minha_cte(id, name) AS (...)
+                 *
+                 * Esses nomes não são aliases de tabela e, portanto,
+                 * não fazem parte do resultado.
+                 */
+                while (/\s/.test(source[index] || '')) {
+                    index++;
+                }
+
+                if (source[index] === '(') {
+                    const closingColumns = findMatchingParenthesis(
+                        source,
+                        index
+                    );
+
+                    if (closingColumns === -1) {
+                        break;
+                    }
+
+                    index = closingColumns + 1;
+                }
+
+                const asMatch = source
+                    .slice(index)
+                    .match(/^\s+AS\s*/i);
+
+                if (!asMatch) {
+                    break;
+                }
+
+                index += asMatch[0].length;
+
+                while (/\s/.test(source[index] || '')) {
+                    index++;
+                }
+
+                if (source[index] !== '(') {
+                    break;
+                }
+
+                const closingIndex = findMatchingParenthesis(
+                    source,
+                    index
+                );
+
+                if (closingIndex === -1) {
+                    break;
+                }
+
+                const cteQuery = source.slice(
+                    index + 1,
+                    closingIndex
+                );
+
+                ctes.push({
+                    name,
+                    alias: null,
+                    query: analyze(cteQuery)
+                });
+
+                index = closingIndex + 1;
+
+                while (/\s/.test(source[index] || '')) {
+                    index++;
+                }
+
+                /*
+                 * Se não houver vírgula, o WITH terminou e o restante
+                 * corresponde à consulta principal.
+                 */
+                if (source[index] !== ',') {
+                    break;
+                }
+
+                index++;
+            }
+
+            return {
+                ctes,
+                query: source.slice(index).trim()
+            };
+        };
+
+        /**
+         * Localiza subqueries presentes diretamente no FROM.
+         *
+         * @param {string} source - SQL.
+         * @returns {Array<{
+         *     alias: string|null,
+         *     query: Object
+         * }>} Subqueries encontradas.
+         */
+        const parseFromSubqueries = source => {
+            const subqueries = [];
+
+            const fromRegex = /\bFROM\s+/gi;
+            const joinRegex = /\bJOIN\s+/gi;
+
+            const positions = [
+                ...source.matchAll(fromRegex),
+                ...source.matchAll(joinRegex)
+            ].sort((a, b) => a.index - b.index);
+
+            for (const position of positions) {
+                let index = position.index + position[0].length;
+
+                while (/\s/.test(source[index] || '')) {
+                    index++;
+                }
+
+                if (source[index] !== '(') {
+                    continue;
+                }
+
+                const closingIndex = findMatchingParenthesis(
+                    source,
+                    index
+                );
+
+                if (closingIndex === -1) {
+                    continue;
+                }
+
+                const inner = source.slice(
+                    index + 1,
+                    closingIndex
+                ).trim();
+
+                if (!/^(?:WITH\b|SELECT\b)/i.test(inner)) {
+                    continue;
+                }
+
+                let aliasIndex = closingIndex + 1;
+
+                while (/\s/.test(source[aliasIndex] || '')) {
+                    aliasIndex++;
+                }
+
+                const aliasMatch = source
+                    .slice(aliasIndex)
+                    .match(
+                        /^(?:AS\s+)?([a-zA-Z_][\w$]*)/i
+                    );
+
+                subqueries.push({
+                    alias: aliasMatch
+                        ? cleanIdentifier(aliasMatch[1])
+                        : null,
+                    query: analyze(inner)
+                });
+            }
+
+            return subqueries;
+        };
+
+        /**
+         * Obtém os intervalos ocupados pelas subqueries do FROM.
+         *
+         * @param {string} source - SQL.
+         * @returns {Array<{start: number, end: number}>} Intervalos.
+         */
+        const getFromSubqueryRanges = source => {
+            const ranges = [];
+
+            const regex = /\b(?:FROM|JOIN)\s+/gi;
+
+            for (const match of source.matchAll(regex)) {
+                let index = match.index + match[0].length;
+
+                while (/\s/.test(source[index] || '')) {
+                    index++;
+                }
+
+                if (source[index] !== '(') {
+                    continue;
+                }
+
+                const closingIndex = findMatchingParenthesis(
+                    source,
+                    index
+                );
+
+                if (closingIndex === -1) {
+                    continue;
+                }
+
+                const inner = source.slice(
+                    index + 1,
+                    closingIndex
+                );
+
+                if (/^(?:WITH\b|SELECT\b)/i.test(inner.trim())) {
+                    ranges.push({
+                        start: index,
+                        end: closingIndex
+                    });
+                }
+            }
+
+            return ranges;
+        };
+
+        /**
+         * Extrai subqueries que não estão no FROM.
+         *
+         * @param {string} source - SQL.
+         * @param {Array<{start: number, end: number}>} ignoredRanges - Regiões já processadas.
+         * @returns {Array<{
+         *     alias: string|null,
+         *     query: Object
+         * }>} Subqueries encontradas.
+         */
+        const parseOtherSubqueries = (source, ignoredRanges) => {
+            const subqueries = [];
+
+            for (let index = 0; index < source.length; index++) {
+                if (source[index] !== '(') {
+                    continue;
+                }
+
+                const ignored = ignoredRanges.some(
+                    range =>
+                        index >= range.start &&
+                        index <= range.end
+                );
+
+                if (ignored) {
+                    continue;
+                }
+
+                const closingIndex = findMatchingParenthesis(
+                    source,
+                    index
+                );
+
+                if (closingIndex === -1) {
+                    continue;
+                }
+
+                const inner = source.slice(
+                    index + 1,
+                    closingIndex
+                ).trim();
+
+                if (!/^(?:WITH\b|SELECT\b)/i.test(inner)) {
+                    continue;
+                }
+
+                subqueries.push({
+                    alias: null,
+                    query: analyze(inner)
+                });
+
+                index = closingIndex;
+            }
+
+            return subqueries;
+        };
+
+        return analyze(query);
+    }
+
+    /**
     * Recria o conjunto de dados (Set) baseado nos dados atuais do banco de dados.
     * 
     * @async
     * @returns {Promise<void>}
     */
     async rebuildDocs() {
-        console.log('UniForge | Recriando base de dados....');
-        const data = await DBDocuments.UniForgeData();
-        uniforge.doc = new DBDocuments(data);
+        await uniforge.rebuildDocs();
     }
 }

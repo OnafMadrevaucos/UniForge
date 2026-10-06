@@ -19,307 +19,27 @@ document.documentElement.setAttribute('data-theme', localStorage.getItem('unifor
 
 // Realiza as configurações iniciais da aplicação ao carregar o conteúdo do DOM.
 document.addEventListener('DOMContentLoaded', async () => {
-    window.addEventListener('themechange', (event) => {
-        const themeLink = document.getElementById("themeLink");
-        const themePath = event.detail.path || 'css/themes.css';
-        themeLink.href = themePath;
+    await main();
+});
+// Limpa o armazenamento local ao fechar a janela.
+window.addEventListener("beforeunload", onCloseApp);
+window.addEventListener('themechange', onThemeChange);
 
-        console.log(`Novo tema: ${event.detail.theme}`);
-    });
+/**
+ * Função principal que inicializa a aplicação UniForge, configurando os elementos globais, reconstruindo os documentos, 
+ * configurando URLs, analisando o corpo do HTML, configurando as barras de ferramentas, configurando o espaço de trabalho, 
+ * registrando hooks, verificando o estado da aplicação e configurando o Leaflet.
+ * 
+ * @async
+ * @returns {Promise<void>}
+ */
+async function main() {
+    // Inicia o gerenciador de tooltips.
+    uniforge.tooltip.init();
 
-    const cssname = await uniforge.path.join('css/styles.css');
-    const csstheme = await uniforge.path.join('css/themes.css');
+    await configureGlobals();
 
-    const localFonts = await uniforge.utils.getSystemFonts();
-
-    // Adiciona as propriedades restantes ao objeto uniforge.
-    uniforge.utils.mergeObjects(uniforge, {
-        /**
-         * Constantes usadas pela aplicação.
-         * @type {Object}
-         * @property {string} APP_NAME - O nome da aplicação.
-         * @property {string} APP_VERSION - A versão atual da aplicação.
-         * @property {string} CSS_NAME - O nome do arquivo CSS usado pela aplicação.
-         * @property {Object} leaflet - Constantes relacionadas ao controle de mapas Leaflet.     
-        */
-        constants: Object.freeze({
-            APP_NAME: 'UniForge',
-            APP_VERSION: '0.8.9',
-            CSS_NAME: cssname,
-            CSS_THEME: csstheme,
-            leaflet: lControl.constants,
-            fonts: new FontManager(localFonts),
-        }),
-
-        /**
-         * Strings usadas pela aplicação.
-         * @type {Object}
-         * @property {string} emptyString - String vazia padrão, usada para evitar várias definições de string vazias.
-        */
-        defaults: Object.freeze({
-            emptyString: ''
-        }),
-
-        /**
-         * Instância do gerenciador de banco de dados.
-         * @type {DBManager}
-         */
-        db: new DBManager(),
-
-        /**
-         * Opções para editores Tiny MCE. 
-         * Qualquer função customizada ou callbacks deve ser mesclado a essas opções.
-         * 
-         * @type {Object}
-         * @property {Object|null} default  - Opção padrão.
-         * @property {Object|null} readonly - Opção de somente leitura.
-         * @property {Object|null} simple   - Opção simplificada.
-         * @property {Object|null} lite     - Opção sem botões do TinyMCE.
-         */
-        tinymceOptions: Object.freeze({
-            default: {
-                editable_class: 'editable',
-                body_class: 'main-editor',
-                license_key: 'gpl',
-                plugins: ['anchor', 'autolink', 'codesample', 'link', 'lists', 'searchreplace', 'table', 'visualblocks', 'image'],
-                toolbar: 'undo redo | blocks | bold italic backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | entryLink blockquote sendImage | addLoremIpsum',
-                toolbar_mode: 'wrap',
-                placeholder: 'Descrição do registro...',
-                block_formats: 'Heading 1=h1; Heading 2=h2; Heading 3=h3; Paragraph=p;',
-                images_file_types: 'jpg,jpeg,png,svg,webp',
-                image_caption: true,
-                block_unsupported_drop: false,
-                height: '100%',
-                browser_spellcheck: true,
-                menubar: false,
-                resize: false,
-                statusbar: false,
-                skin: 'oxide-dark',
-                content_css: [csstheme, cssname],
-            },
-            readonly: {
-                editable_class: 'editable',
-                noneditable_class: 'non-editable',
-                body_class: 'non-editable',
-                license_key: 'gpl',
-                plugins: ['anchor', 'autolink', 'codesample', 'link', 'lists', 'searchreplace', 'table', 'visualblocks', 'image'],
-                toolbar: false,
-                block_formats: 'Heading 1=h1; Heading 2=h2; Heading 3=h3; Paragraph=p;',
-                images_file_types: 'jpg,jpeg,png,svg,webp',
-                image_caption: true,
-                block_unsupported_drop: false,
-                height: '100%',
-                menubar: false,
-                resize: false,
-                statusbar: false,
-                skin: 'oxide-dark',
-                content_css: [csstheme, cssname],
-                readonly: true,
-                disable_focus: true
-            },
-            simple: {
-                body_class: 'simple-editor',
-                license_key: 'gpl',
-                plugins: 'quickbars',
-                quickbars_selection_toolbar: 'undo redo | bold italic',
-                quickbars_insert_toolbar: false,
-                browser_spellcheck: true,
-                menubar: false,
-                inline: true,
-                skin: 'oxide-dark',
-                content_css: [csstheme, cssname],
-            },
-            lite: {
-                body_class: 'lite-editor',
-                license_key: 'gpl',
-                browser_spellcheck: true,
-                menubar: false,
-                inline: true,
-                skin: 'oxide-dark',
-                content_css: [csstheme, cssname],
-            }
-        }),
-
-        /**
-         * Instância do gerenciador de PDFs.
-         * 
-         * @type {PDFManager}
-        */
-        pdf: new PDFManager(),
-
-        /**
-         * Controles relacionados à interface do usuário.
-         * 
-         * @type {Object}
-         * @property {Object|null} main - Controle principal.
-         * @property {Object|null} draw - Controle de desenho no mapa.
-         * @property {Object|null} grid - Controle de grid.
-         * @property {MsgBox} msgBox - Instância do gerenciador de caixas de mensagem.
-         * @property {LinkTooltip} tooltip - Instância do gerenciador de tooltips.
-         */
-        ctrls: {
-            leaflet: null,
-            msgBox: new MsgBox(6),
-            tooltip: new LinkTooltip(),
-            progressDialog: null,
-            marker: null,
-            sliders: {
-                shapeSizeSlider: null
-            },
-            colorPickers: {
-                fillColor: null,
-                borderColor: null
-            }
-        },
-
-        /**
-         * Controles relacionados à interface do usuário.
-         * 
-         * @type {Object|null}
-         * @property {string} fillColor - Cor de Preenchimento principal.
-         * @property {number} fillOpacity - A opacidade da Cor de Preenchimento.
-         * @property {string} color - Cor da Borda do Elemento, se houver.
-         * @property {number} opacity - A opacidade da Borda, se houver.
-         * @property {number} weight - A largura (em px) da Borda do Elemento, se houver.
-         * @property {string} dashArray - O espaçamento do estilo da Borda do Elemento, se hoouver.
-         * @property {string} line - O estilo da Borda do Elemento, se houver.
-         * @property {boolean} hasBorder - Flag que infica se há ou não Borda do Elemento.
-        */
-        style: null,
-
-        lineageEditor: Object.freeze({
-            props: {
-                nameProperty: 'name',
-                genderProperty: 'gender',
-                statusProperty: 'status',
-                countProperty: 'count'
-            },
-            theme: {
-                colors: {
-                    femaleBadgeBackground: '#FFCBEA',
-                    maleBadgeBackground: '#A2DAFF',
-                    femaleBadgeText: '#7A005E',
-                    maleBadgeText: '#001C76',
-                    kingQueenBorder: '#FEBA00',
-                    princePrincessBorder: '#679DDA',
-                    civilianBorder: '#58ADA7',
-                    personText: '#383838',
-                    personNodeBackground: '#FFFFFF',
-                    selectionStroke: '#485670',
-                    counterBackground: '#485670',
-                    counterBorder: '#FFFFFF',
-                    counterText: '#FFFFFF',
-                    link: '#686E76'
-                },
-                fonts: {
-                    badgeFont: 'bold 12px Poppins',
-                    birthDeathFont: '14px Poppins',
-                    nameFont: '500 18px Poppins',
-                    counterFont: '14px Poppins'
-                }
-            },
-            constants: {
-                STROKE_WIDTH: 3,
-                CORNER_ROUNDNESS: 12,
-                IMAGE_TOP_MARGIN: 20,
-                IMAGE_DIAMETER: 40
-            }
-        }),
-        markerToolBar: Object.freeze({
-            constants: {
-                colors: {
-                    red: {
-                        label: 'Vermelho',
-                        value: [255, 0, 0]
-                    },
-                    blue: {
-                        label: 'Azul',
-                        value: [0, 0, 255]
-                    },
-                    green: {
-                        label: 'Verde',
-                        value: [0, 255, 0]
-                    },
-                    yellow: {
-                        label: 'Amarelo',
-                        value: [255, 255, 0]
-                    },
-                    purple: {
-                        label: 'Roxo',
-                        value: [128, 0, 128]
-                    },
-                    orange: {
-                        label: 'Laranja',
-                        value: [255, 165, 0]
-                    },
-                    black: {
-                        label: 'Preto',
-                        value: [0, 0, 0]
-                    },
-                    white: {
-                        label: 'Branco',
-                        value: [255, 255, 255]
-                    }
-                }
-            }
-        }),
-        shapesToolBar: Object.freeze({
-            constants: {
-                lineTypes: {
-                    solid: {
-                        _id: 'solid',
-                        _label: 'Sólida',
-                        style: {
-                            line: 'solid',
-                            dashArray: '0, 0'
-                        }
-                    },
-                    short_dashed: {
-                        _id: 'short_dashed',
-                        _label: 'Traçado Curto',
-                        style: {
-                            line: 'dashed',
-                            dashArray: '5, 5'
-                        }
-                    },
-                    dashed: {
-                        _id: 'dashed',
-                        _label: 'Traçado',
-                        style: {
-                            line: 'dashed',
-                            dashArray: '5, 10'
-                        }
-                    },
-                    long_dashed: {
-                        _id: 'long_dashed',
-                        _label: 'Traçado Longo',
-                        style: {
-                            line: 'dashed',
-                            dashArray: '15, 20'
-                        }
-                    },
-                }
-            }
-        })
-    });
-
-    // Inicia o gerenciador de temas.
-    uniforge.theme.refresh();
-
-    // Configura o estado inicial da aplicação, se ele ainda não foi criado.
-    uniforge.state.init();
-
-    // Inicia o gerenciador de banco de dados.
-    uniforge.db.init();
-
-    // Atalho para o Controle de Mensagens para o Usuário
-    uniforge.msgBox = uniforge.ctrls.msgBox;
-    // Atalho para o Controle de Tooltips de Entradas
-    uniforge.tooltip = uniforge.ctrls.tooltip;
-
-    uniforge.html.classList.add('uniforge');
-
-    await refreshDocuments();
+    await rebuildDocs();
 
     // Atalho para o gerenciador de configurações do sistema.
     uniforge.settings = uniforge.doc.settings;
@@ -330,7 +50,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     await configureToolsBars();
 
-    configureForms();
+    configureWorkspace();
 
     configureHooks();
 
@@ -339,38 +59,928 @@ document.addEventListener('DOMContentLoaded', async () => {
     await configureLeaflet();
 
     configureMapTiler();
-});
 
-// Inicia o gerenciador de tooltips.
-uniforge.tooltip.init();
+    activateMainListeners();
 
-// Limpa o armazenamento local ao fechar a janela.
-window.addEventListener("beforeunload", () => {
-    const json = localStorage.getItem('uniforge');
-    const state = JSON.parse(json);
-    if (!state.keep) uniforge.state.clear();
-});
+    // ------------------------------------------------------------------
+    // FUNÇÕES DE CONFIGURAÇÃO
+    // ------------------------------------------------------------------
 
-/** 
- * ------------------------------------------------------------------
- * FUNÇÕES DE CHECAGEM
- * ------------------------------------------------------------------
- * */
+    /** 
+     * Adiciona as propriedades restantes ao objeto uniforge. 
+     * 
+     * @async
+     * @returns {Promise<void>}
+    */
+    async function configureGlobals() {
+        const cssname = await uniforge.path.join('css/styles.css');
+        const csstheme = await uniforge.path.join('css/themes.css');
+
+        const localFonts = await uniforge.utils.getSystemFonts();
+
+        uniforge.utils.mergeObjects(uniforge, {
+            /**
+             * Constantes usadas pela aplicação.
+             * @type {Object}
+             * @property {string} APP_NAME - O nome da aplicação.
+             * @property {string} APP_VERSION - A versão atual da aplicação.
+             * @property {string} CSS_NAME - O nome do arquivo CSS usado pela aplicação.
+             * @property {Object} leaflet - Constantes relacionadas ao controle de mapas Leaflet.     
+            */
+            constants: Object.freeze({
+                APP_NAME: 'UniForge',
+                APP_VERSION: '0.8.9',
+                CSS_NAME: cssname,
+                CSS_THEME: csstheme,
+                leaflet: lControl.constants,
+                fonts: new FontManager(localFonts),
+            }),
+
+            /**
+             * Strings usadas pela aplicação.
+             * @type {Object}
+             * @property {string} emptyString - String vazia padrão, usada para evitar várias definições de string vazias.
+            */
+            defaults: Object.freeze({
+                emptyString: ''
+            }),
+
+            /**
+             * Instância do gerenciador de banco de dados.
+             * @type {DBManager}
+             */
+            db: new DBManager(),
+
+            /**
+             * Opções para editores Tiny MCE. 
+             * Qualquer função customizada ou callbacks deve ser mesclado a essas opções.
+             * 
+             * @type {Object}
+             * @property {Object|null} default  - Opção padrão.
+             * @property {Object|null} readonly - Opção de somente leitura.
+             * @property {Object|null} simple   - Opção simplificada.
+             * @property {Object|null} lite     - Opção sem botões do TinyMCE.
+             */
+            tinymceOptions: Object.freeze({
+                default: {
+                    editable_class: 'editable',
+                    body_class: 'main-editor',
+                    license_key: 'gpl',
+                    plugins: ['anchor', 'autolink', 'codesample', 'link', 'lists', 'searchreplace', 'table', 'visualblocks', 'image'],
+                    toolbar: 'undo redo | blocks | bold italic backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | entryLink blockquote sendImage | addLoremIpsum',
+                    toolbar_mode: 'wrap',
+                    placeholder: 'Descrição do registro...',
+                    block_formats: 'Heading 1=h1; Heading 2=h2; Heading 3=h3; Paragraph=p;',
+                    images_file_types: 'jpg,jpeg,png,svg,webp',
+                    image_caption: true,
+                    block_unsupported_drop: false,
+                    height: '100%',
+                    browser_spellcheck: true,
+                    menubar: false,
+                    resize: false,
+                    statusbar: false,
+                    skin: 'oxide-dark',
+                    content_css: [csstheme, cssname],
+                },
+                readonly: {
+                    editable_class: 'editable',
+                    noneditable_class: 'non-editable',
+                    body_class: 'non-editable',
+                    license_key: 'gpl',
+                    plugins: ['anchor', 'autolink', 'codesample', 'link', 'lists', 'searchreplace', 'table', 'visualblocks', 'image'],
+                    toolbar: false,
+                    block_formats: 'Heading 1=h1; Heading 2=h2; Heading 3=h3; Paragraph=p;',
+                    images_file_types: 'jpg,jpeg,png,svg,webp',
+                    image_caption: true,
+                    block_unsupported_drop: false,
+                    height: '100%',
+                    menubar: false,
+                    resize: false,
+                    statusbar: false,
+                    skin: 'oxide-dark',
+                    content_css: [csstheme, cssname],
+                    readonly: true,
+                    disable_focus: true
+                },
+                simple: {
+                    body_class: 'simple-editor',
+                    license_key: 'gpl',
+                    plugins: 'quickbars',
+                    quickbars_selection_toolbar: 'undo redo | bold italic',
+                    quickbars_insert_toolbar: false,
+                    browser_spellcheck: true,
+                    menubar: false,
+                    inline: true,
+                    skin: 'oxide-dark',
+                    content_css: [csstheme, cssname],
+                },
+                lite: {
+                    body_class: 'lite-editor',
+                    license_key: 'gpl',
+                    browser_spellcheck: true,
+                    menubar: false,
+                    inline: true,
+                    skin: 'oxide-dark',
+                    content_css: [csstheme, cssname],
+                }
+            }),
+
+            /**
+             * Instância do gerenciador de PDFs.
+             * 
+             * @type {PDFManager}
+            */
+            pdf: new PDFManager(),
+
+            /**
+             * Controles relacionados à interface do usuário.
+             * 
+             * @type {Object}
+             * @property {Object|null} main - Controle principal.
+             * @property {Object|null} draw - Controle de desenho no mapa.
+             * @property {Object|null} grid - Controle de grid.
+             * @property {MsgBox} msgBox - Instância do gerenciador de caixas de mensagem.
+             * @property {LinkTooltip} tooltip - Instância do gerenciador de tooltips.
+             */
+            ctrls: {
+                leaflet: null,
+                msgBox: new MsgBox(6),
+                tooltip: new LinkTooltip(),
+                progressDialog: null,
+                marker: null,
+                sliders: {
+                    shapeSizeSlider: null
+                },
+                colorPickers: {
+                    fillColor: null,
+                    borderColor: null
+                }
+            },
+
+            /**
+             * Controles relacionados à interface do usuário.
+             * 
+             * @type {Object|null}
+             * @property {string} fillColor - Cor de Preenchimento principal.
+             * @property {number} fillOpacity - A opacidade da Cor de Preenchimento.
+             * @property {string} color - Cor da Borda do Elemento, se houver.
+             * @property {number} opacity - A opacidade da Borda, se houver.
+             * @property {number} weight - A largura (em px) da Borda do Elemento, se houver.
+             * @property {string} dashArray - O espaçamento do estilo da Borda do Elemento, se hoouver.
+             * @property {string} line - O estilo da Borda do Elemento, se houver.
+             * @property {boolean} stroke - Flag que infica se há ou não Borda do Elemento.
+            */
+            style: null,
+
+            lineageEditor: Object.freeze({
+                props: {
+                    nameProperty: 'name',
+                    genderProperty: 'gender',
+                    statusProperty: 'status',
+                    countProperty: 'count'
+                },
+                theme: {
+                    colors: {
+                        femaleBadgeBackground: '#FFCBEA',
+                        maleBadgeBackground: '#A2DAFF',
+                        femaleBadgeText: '#7A005E',
+                        maleBadgeText: '#001C76',
+                        kingQueenBorder: '#FEBA00',
+                        princePrincessBorder: '#679DDA',
+                        civilianBorder: '#58ADA7',
+                        personText: '#383838',
+                        personNodeBackground: '#FFFFFF',
+                        selectionStroke: '#485670',
+                        counterBackground: '#485670',
+                        counterBorder: '#FFFFFF',
+                        counterText: '#FFFFFF',
+                        link: '#686E76'
+                    },
+                    fonts: {
+                        badgeFont: 'bold 12px Poppins',
+                        birthDeathFont: '14px Poppins',
+                        nameFont: '500 18px Poppins',
+                        counterFont: '14px Poppins'
+                    }
+                },
+                constants: {
+                    STROKE_WIDTH: 3,
+                    CORNER_ROUNDNESS: 12,
+                    IMAGE_TOP_MARGIN: 20,
+                    IMAGE_DIAMETER: 40
+                }
+            }),
+            markerToolBar: Object.freeze({
+                constants: {
+                    colors: {
+                        red: {
+                            label: 'Vermelho',
+                            value: [255, 0, 0]
+                        },
+                        blue: {
+                            label: 'Azul',
+                            value: [0, 0, 255]
+                        },
+                        green: {
+                            label: 'Verde',
+                            value: [0, 255, 0]
+                        },
+                        yellow: {
+                            label: 'Amarelo',
+                            value: [255, 255, 0]
+                        },
+                        purple: {
+                            label: 'Roxo',
+                            value: [128, 0, 128]
+                        },
+                        orange: {
+                            label: 'Laranja',
+                            value: [255, 165, 0]
+                        },
+                        black: {
+                            label: 'Preto',
+                            value: [0, 0, 0]
+                        },
+                        white: {
+                            label: 'Branco',
+                            value: [255, 255, 255]
+                        }
+                    }
+                }
+            }),
+            shapesToolBar: Object.freeze({
+                constants: {
+                    lineTypes: {
+                        solid: {
+                            _id: 'solid',
+                            _label: 'Sólida',
+                            style: {
+                                line: 'solid',
+                                dashArray: '0, 0'
+                            }
+                        },
+                        short_dashed: {
+                            _id: 'short_dashed',
+                            _label: 'Traçado Curto',
+                            style: {
+                                line: 'dashed',
+                                dashArray: '5, 5'
+                            }
+                        },
+                        dashed: {
+                            _id: 'dashed',
+                            _label: 'Traçado',
+                            style: {
+                                line: 'dashed',
+                                dashArray: '5, 10'
+                            }
+                        },
+                        long_dashed: {
+                            _id: 'long_dashed',
+                            _label: 'Traçado Longo',
+                            style: {
+                                line: 'dashed',
+                                dashArray: '15, 20'
+                            }
+                        },
+                    }
+                }
+            }),
+
+            /**
+             * Recria o conjunto de dados (Set) baseado nos dados atuais do banco de dados.
+             * 
+             * @async
+             * @returns {Promise<void>}
+            */
+            rebuildDocs: rebuildDocs
+        });
+
+        // Inicializa as propriedades globais do objeto uniforge.
+        _initializeGlobals();
+
+        // Atalho para o Controle de Mensagens para o Usuário
+        uniforge.msgBox = uniforge.ctrls.msgBox;
+        // Atalho para o Controle de Tooltips de Entradas
+        uniforge.tooltip = uniforge.ctrls.tooltip;
+
+        // Adiciona a classe 'uniforge' ao elemento HTML principal.
+        uniforge.html.classList.add('uniforge');
+    }
+
+    /**
+     * Função de configuração da tela principal da aplicação.
+     * 
+     * @returns {void}
+    */
+    function configureWorkspace() {
+        // Configura o corpo da aplicação.
+        _configureBody();
+        // Configura os sliders da aplicação.
+        _configureSliders();
+    }
+
+    function configureHooks() {
+        registerHook('beforeRender', async () => { await rebuildDocs(); });
+        registerHook('simpleEntryFormClosed', async () => { await rebuildDocs(); });
+        registerHook('documentsChanged', async (document) => { await rebuildDocs(document); });
+
+        registerHook('styleLoaded', async () => { await _loadStyle(); });
+        registerHook('styleChanged', async () => { await _refreshStyle(); });
+        registerHook('layerElementsUpdated', async () => { await _updateLayerControl(); });
+
+        registerHook('layerPopupOpened', async (layer) => {
+            // Impede que o Estilo do Elemento seja de um tipo não suportado.
+            if(layer && (layer instanceof L.Marker)) return;
+
+            uniforge.style = layer.options;
+            await _loadStyle();
+        });
+    }
+
+    /**
+     * Função de configuração das URLs usadas pelo sistema, definindo os caminhos relativos e absolutos para recursos como imagens, diretórios de modelos, scripts e ícones.
+     * 
+     * @async
+     * @returns {Promise<void>}
+     */
+    async function configureURLs() {
+        const worldMap = uniforge.settings.get('leaflet.mainMap');
+
+        /**
+        * @description Urls padrões usadas pelo sistema.
+        * 
+        * @type {Object}
+        * @property {string} background - Imagem utilizada como fundo das entradas da Biblioteca e das Timelines.
+        * @property {string} blankImg   - Imagem padrão usada para campos de imagem vazios.
+        * 
+        * @property {string} models - Diretório dos Forms e Dialogs usados pelo sistema.
+        * @property {string} templates - Diretório dos modelos HTML usados pelo sistema.
+        * @property {string} scripts - Diretório de scripts usados pelo sistema.
+        * @property {string} ui - Diretório de Imagens utilizadas pelo ui do sistema.
+        * @property {string} icons - Diretório de Ícones utilizadas pelo ui do sistema.
+        */
+        uniforge.urls = {
+            relativePath: {
+                background: '/ui/lib-background.png',
+                backgroundScifi: '/ui/scifi-background.png',
+                backgroundNeutral: '/ui/blank-image.svg',
+                blankImg: '/ui/blank-image.svg',
+                worldMap: worldMap ? `/${worldMap}/tiles` : null,
+                mapOverlays: worldMap ? `/${worldMap}/overlays` : null,
+                common: '/common/',
+                models: '/models/',
+                controls: '/models/controls/',
+                templates: '/templates/',
+                scripts: '/scripts/',
+                data: '/data/',
+                customCSS: '/css/custom/',
+                ui: '/ui/',
+                icons: '/ui/icons/',
+                signs: '/ui/icons/markers/signs/',
+                markers: '/ui/icons/markers/',
+            },
+        };
+
+        uniforge.urls = uniforge.utils.mergeObjects(uniforge.urls, {
+
+            // Urls de Imagens padrão usadas pelo sistema.
+            background: await uniforge.path.join(uniforge.urls.relativePath.background),
+            backgroundScifi: await uniforge.path.join(uniforge.urls.relativePath.backgroundScifi),
+            backgroundNeutral: await uniforge.path.join(uniforge.urls.relativePath.backgroundNeutral),
+            blankImg: await uniforge.path.join(uniforge.urls.relativePath.blankImg),
+
+            worldMap: await uniforge.path.join(uniforge.urls.relativePath.worldMap),
+            mapOverlays: await uniforge.path.join(uniforge.urls.relativePath.mapOverlays),
+
+            // Urls de Diretórios usados pelo sistema.
+            common: await uniforge.path.join(uniforge.urls.relativePath.common),
+            models: await uniforge.path.join(uniforge.urls.relativePath.models),
+            controls: await uniforge.path.join(uniforge.urls.relativePath.controls),
+            templates: await uniforge.path.join(uniforge.urls.relativePath.templates),
+            scripts: await uniforge.path.join(uniforge.urls.relativePath.scripts),
+            data: await uniforge.path.join(uniforge.urls.relativePath.data),
+            customCSS: await uniforge.path.join(uniforge.urls.relativePath.customCSS),
+            ui: await uniforge.path.join(uniforge.urls.relativePath.ui),
+            icons: await uniforge.path.join(uniforge.urls.relativePath.icons),
+            signs: await uniforge.path.join(uniforge.urls.relativePath.signs),
+            markers: await uniforge.path.join(uniforge.urls.relativePath.markers),
+        });
+
+        Object.freeze(uniforge.urls);
+    }
+
+    /**
+     * Função de configuração do controle de mapas Leaflet, inicializando o controle e aplicando o estilo salvo nas configurações do sistema.
+     * 
+     * @async
+     * @returns {Promise<void>}
+     */
+    async function configureLeaflet() {
+        // Inicializa o controle de mapas Leaflet.
+        uniforge.ctrls.leaflet = lControl.init(uniforge.urls.worldMap);
+
+        var style = JSON.parse(uniforge.settings.get('leafletStyle.pathOptions')) ?? uniforge.leaflet.core.defaultStyle;
+        // Impede que o Estilo do Elemento seja de um tipo não suportado.
+        if (typeof style === 'string') style = JSON.parse(style);
+
+        // Se o estilo tiver um ícone, ele é de um Marker e o estilo padrão será carregado.
+        if(style.icon) style = uniforge.leaflet.core.defaultStyle;
+
+        style.line = uniforge.shapesToolBar.constants.lineTypes[style.line].style.line;
+        style.dashArray = uniforge.shapesToolBar.constants.lineTypes[style.line].style.dashArray;
+
+        style.stroke = style.stroke;
+        uniforge.style = style;
+
+        await _loadStyle();
+    }
+
+    /**
+     * Função de configuração do gerador de tiles do MapTiler, registrando um listener para atualizar o diálogo de progresso conforme os eventos emitidos pelo gerador.
+     * 
+     * @returns {void}
+     */
+    function configureMapTiler() {
+        uniforge.tiler.emitProgress(async (data) => await updateProgressDialog(data));
+
+        /**
+         * Atualiza o dialog conforme eventos.
+         * 
+         * @async
+         * @param {Object} data             - Informações sobre o progresso do gerador de tiles.
+         * @param {string} data.type        - O tipo de evento emitido pelo gerador de tiles.
+         * @param {string} data.zoom        - O nível de zoom atual.
+         * @param {number} data.processed   - O número de tiles processados até o momento.
+         * @param {number} data.total       - O número total de tiles a serem processados.
+         * @returns 
+        */
+        async function updateProgressDialog(data) {
+            /** @type {ProgressDialog} */
+            const progressDialog = uniforge.ctrls.progressDialog;
+
+            if (!progressDialog) return;
+
+            if (data.type === "start") {
+                progressDialog.updateMessage("Iniciando...");
+                return;
+            }
+
+            if (data.type === "tile-progress") {
+                progressDialog.indeterminate = false;
+                progressDialog.updateProgress(data, `Gerando tiles do zoom ${data.zoom}... (${data.processed}/${data.total})`);
+                return;
+            }
+
+            if (data.type === "zoom-done") {
+                progressDialog.updateMessage(`Nível de zoom ${data.zoom} concluído.`);
+                return;
+            }
+
+            if (data.type === "complete") {
+                progressDialog.close();
+                uniforge.msgBox.showInfo("Map tiles gerados com sucesso.");
+                return;
+            }
+        }
+    }
+
+    /**
+     * Configura os elementos da Topbar de Ferramentas, incluindo o input de ano atual, o span de era temporal, os ícones de marcadores e as opções de cores.
+     * 
+     * @async
+     * @returns {Promise<void>}
+     */
+    async function configureToolsBars() {
+        const currentYearInput = document.getElementById('currentYear');
+        const timeEraSpan = document.getElementById('timeEra');
+        currentYearInput.value = uniforge.time.y.label;
+        timeEraSpan.textContent = uniforge.time.era;
+
+        const signsPath = uniforge.urls.relativePath.signs;
+        const signs = await uniforge.fs.listFiles(signsPath);
+
+        uniforge.ctrls.currentMarkerIcon = 'blue_battle.svg';
+
+        const hasBorderSwitch = document.querySelector("#hasBorderSwitch");
+        hasBorderSwitch.dataset.tooltip = "Ativar contorno.";
+
+        const mapMarkersContainer = document.querySelector('.map-objects-container.marker div');
+
+        const markersOptions = mapMarkersContainer.querySelector('.options.marker');
+        signs.forEach(s => {
+            const name = s.name.split('.')[0];
+            const img = document.createElement('img');
+            img.src = '.' + s.path;
+
+            const option = createElement('a', { 'data-marker': name, 'class': 'marker-option' }, [img]);
+            markersOptions.appendChild(option);
+        });
+
+        const colorOptions = mapMarkersContainer.querySelector('.options.color');
+        const colors = uniforge.markerToolBar.constants.colors;
+        Object.entries(colors).forEach(([key, color]) => {
+            const option = createElement('a', { 'data-color': key, 'class': 'color-option' });
+            option.style.backgroundColor = `rgb(${color.value.join(',')})`;
+
+            colorOptions.appendChild(option);
+        });
+    }
+
+    /**
+     * Configura o listeners que tratam os eventos dos tabs do Menu Lateral e as rotinas de fechamento do Form.
+     * 
+     * @returns {void}
+    */
+    function activateMainListeners() {
+        // Lógica de UI para o Menu Lateral
+        const tabs = document.querySelectorAll('.tab');
+
+        // Lógica de UI para o Menu de Ferramentas Superior.
+        const topBar = document.getElementById('topBarContainer');
+        const toggleTab = document.getElementById('toggleTab');
+        // Lógica de UI para os botões do Menu de Ferramentas Superior.
+        const codexBtn = document.getElementById('codexBtn');
+        const timelineBtn = document.getElementById('timelineBtn');
+        const tenYrsBack = document.getElementById('tenYearsBack');
+        const oneYearBack = document.getElementById('yearBack');
+        const oneYearFwr = document.getElementById('yearForward');
+        const tenYrsFwr = document.getElementById('tenYearForward');
+
+        const currentYearInput = document.getElementById('currentYear');
+
+        toggleTab.addEventListener('click', (event) => { onToggleTopBarClick(event); });
+
+        codexBtn.addEventListener('click', (event) => { onTopbarButtonClick(event); });
+        timelineBtn.addEventListener('click', (event) => { onTopbarButtonClick(event); });
+
+        tenYrsBack.addEventListener('click', (event) => { onChangeTime(event, -10); });
+        oneYearBack.addEventListener('click', (event) => { onChangeTime(event, -1); });
+        oneYearFwr.addEventListener('click', (event) => { onChangeTime(event, 1); });
+        tenYrsFwr.addEventListener('click', (event) => { onChangeTime(event, 10); });
+
+        currentYearInput.addEventListener('change', function (event) { onChangeTimeInput(event); });
+
+        // Adiciona o Listener para chamar o Form correto ao clicar nos itens do menu.
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                tab.classList.add('disabled');
+                _renderForm(tab.getAttribute('data-target'), tab);
+            });
+        });
+
+        const searchLayerObjectsInput = document.querySelector("#searchLayerObjectsInput");
+        searchLayerObjectsInput.addEventListener('input', (event) => { onObjectsSearchChange(event); });
+
+        const clearLayerObjectsSearchButton = document.querySelector("#clearLayerObjectsSearchButton");
+        clearLayerObjectsSearchButton.addEventListener('click', (event) => { onClearObjectsSearchClick(event); });
+
+        const searchMarkerInput = document.querySelector("#searchMarkerInput");
+        searchMarkerInput.addEventListener('input', (event) => { onMarkerSearchChange(event); });
+
+        const clearMarkerSearchButton = document.querySelector("#clearMarkerSearchButton");
+        clearMarkerSearchButton.addEventListener('click', (event) => { onClearMarkerSearchClick(event); });
+
+        const baseOptions = document.querySelectorAll('.map-objects-panel .config-group .options a');
+        baseOptions.forEach(option => {
+            option.addEventListener('click', (event) => { onMarkerIconClick(event); });
+        });
+
+        const toggleTabs = document.querySelectorAll('.map-objects-container .toggle-tab');
+        toggleTabs.forEach(tab => {
+            tab.addEventListener('click', (event) => {
+                const targetClass = tab.getAttribute('data-target');
+                const targetContainer = document.querySelector(`.map-objects-container.${targetClass}`);
+                if (!targetContainer) return;
+
+                onToggleMapObjectPanelClick(event, targetContainer);
+            });
+        });
+
+        const hasBorderSwitch = document.querySelector('#hasBorderSwitch');
+        const hasBorderCheckbox = hasBorderSwitch.querySelector('#checkbox');
+
+        hasBorderCheckbox.addEventListener('change', (event) => { onHasBorderSwitchChange(event); });
+
+        const shapeSizeSliderContainer = document.querySelector('.size');
+        const shapeSizeSlider = uniforge.ctrls.sliders.shapeSizeSlider = new Slider('shapeSizeSlider', shapeSizeSliderContainer, { min: 1, max: 10, value: 5, linkedLabel: 'shapeSizeSpan', labelMask: '{value}px', width: '80px' });
+        shapeSizeSlider.config();
+        shapeSizeSlider.addEventListener('change', (event) => { onShapeSizeSliderChange(event); });
+
+        const shapeBorderCombo = document.getElementById('shapeBorderCombo');
+        shapeBorderCombo.addEventListener('change', (event) => { onShapeBorderComboChange(event); });
+
+        const fillColorPicker = document.getElementById('fillColorPicker');
+        fillColorPicker.addEventListener('input', (event) => { onFillColorPickerChange(event); });
+
+        const borderColorPicker = document.getElementById('borderColorPicker');
+        borderColorPicker.addEventListener('input', (event) => { onBorderColorPickerChange(event); });
+
+        // ------------------------------------------------------------------
+        // FUNÇÕES DE LISTENERS
+        // ------------------------------------------------------------------
+
+        function onTopbarButtonClick(event) {
+            // Impedir que o clique no item desencadeie o clique fora do sidebar
+            event.stopPropagation();
+            const button = event.target.closest('.topbarBtn');
+            button.classList.add('disabled');
+
+            _renderForm(button.getAttribute('data-target'), button);
+        }
+        function onToggleTopBarClick(event) {
+            event.stopPropagation();
+
+            const toggleTab = event.target.closest('.toggle-tab');
+            const topBar = document.getElementById('topBarContainer');
+
+            topBar.classList.toggle('visible');
+            toggleTab.classList.toggle('visible');
+        }
+        function onChangeTime(event, amount) {
+            // Impedir que o clique no item desencadeie o clique fora do sidebar
+            event.stopPropagation();
+
+            _setTime(uniforge.time.y.value + amount);
+        }
+        function onChangeTimeInput(event) {
+            var value = event.target.value;
+
+            // Remove qualquer caractere que não tenha valor numérico
+            value = value.replace(/(?!^-)[^0-9]/g, '').replace(/(?!^)-/g, '');
+
+            // Se for um número atualize o Timer
+            if (value) {
+                _setTime(value);
+            } else {
+                event.target.value = uniforge.time.y.label;
+            }
+        }
+        function onObjectsSearchChange(event) {
+            event.stopPropagation();
+            const input = event.currentTarget;
+            // Padroniza e remove espaços em branco do filtro para melhorar a busca.
+            const filter = input.value.trim().toLowerCase();
+
+            // Obtém todas os items de Objetos do Mapa.
+            const objectsItems = document.querySelectorAll('#mapElementsList li');
+            let objectsFound = 0;
+
+            objectsItems.forEach(item => {
+                const h3 = item.querySelector('.layer-item-content .layer-item-content-body h3');
+                if (h3) {
+                    const title = h3.textContent.toLowerCase();
+                    const titleMatch = title.toLowerCase().includes(filter);
+
+                    // Se o filtro estiver vazio ou a opção contém o filtro, mostra a opção.
+                    if (filter.isEmpty() || titleMatch) {
+                        item.classList.remove('hidden');
+                        objectsFound++;
+                    }
+                    // Senão, esconde a opção. 
+                    else {
+                        item.classList.add('hidden');
+                    }
+
+                    // Realce se combinar.
+                    if (titleMatch) {
+                        h3.innerHTML = uniforge.parser.applyHighlight(h3.textContent, filter);
+                    } else {
+                        uniforge.parser.removeHighlight(h3);
+                    }
+                }
+            });
+
+            const noObjectsFoundMessage = document.getElementById('noObjectsFoundMessage');
+
+            if (objectsFound === 0)
+                noObjectsFoundMessage.classList.remove('hidden');
+            else
+                noObjectsFoundMessage.classList.add('hidden');
+        }
+        function onMarkerSearchChange(event) {
+            event.stopPropagation();
+            const input = event.currentTarget;
+            // Padroniza e remove espaços em branco do filtro para melhorar a busca.
+            const filter = input.value.trim().toLowerCase();
+
+            // Obtém todas as opções de marcadores.
+            const markersOptions = mapMarkersContainer.querySelectorAll('.options.marker a');
+            markersOptions.forEach(option => {
+                // Se o filtro estiver vazio ou a opção contém o filtro, mostra a opção.
+                if (filter.isEmpty() || option.dataset.marker.includes(filter)) {
+                    option.classList.remove('hidden');
+                }
+                // Senão, esconde a opção. 
+                else {
+                    option.classList.add('hidden');
+                }
+            });
+        }
+        function onClearObjectsSearchClick(event) {
+            event.stopPropagation();
+            const input = document.querySelector('#searchLayerObjectsInput');
+
+            // Limpa o input de busca.
+            input.value = uniforge.defaults.emptyString;
+
+            // Obtém todas os items de Objetos do Mapa.
+            const objectsItems = document.querySelectorAll('#mapElementsList li');
+            // Mostra todas as opções de Objetos.
+            objectsItems.forEach(item => {
+                item.classList.remove('hidden');
+            });
+        }
+        function onClearMarkerSearchClick(event) {
+            event.stopPropagation();
+            const input = toolsSearchBar.querySelector('#searchMarkerInput');
+
+            // Limpa o input de busca.
+            input.value = uniforge.defaults.emptyString;
+
+            // Obtém todas as opções de marcadores.
+            const markersOptions = mapMarkersContainer.querySelectorAll('.options.marker a');
+            // Mostra todas as opções de marcadores.
+            markersOptions.forEach(option => {
+                option.classList.remove('hidden');
+            });
+        }
+        async function onMarkerIconClick(event) {
+            event.stopPropagation();
+            const option = event.currentTarget;
+
+            option.classList.toggle('active');
+
+            const options = option.parentElement.querySelectorAll('a');
+            options.forEach(opt => {
+                if (opt !== option) {
+                    opt.classList.remove('active');
+                }
+            });
+
+            const signMarker = document.querySelector('.map-objects-panel .config-group .options.marker .active');
+            const colorMarker = document.querySelector('.map-objects-panel .config-group .options.color .active');
+
+            const editCache = uniforge.leaflet.core.editCache;
+
+            if (signMarker && colorMarker) {
+                const marker = `${colorMarker.getAttribute('data-color')}_${signMarker.getAttribute('data-marker')}`;
+
+                if (editCache && editCache.layer instanceof L.Marker) await _refreshMarkerDrawing(marker);
+                else await _startMarkerDrawing(marker);
+            }
+            else if (uniforge.ctrls.marker) uniforge.ctrls.marker.disable();
+        }
+        function onToggleMapObjectPanelClick(event, container) {
+            if (event && event.stopPropagation) event.stopPropagation();
+
+            const isOpening = !container.classList.contains('active');
+
+            // Desativa todos os painéis de objetos do mapa
+            const mapObjContainers = document.querySelectorAll('.map-objects-container');
+            mapObjContainers.forEach(moc => {
+                moc.classList.remove('active');
+            });
+
+            if (isOpening) {
+                container.classList.add('active');
+            }
+        }
+        async function onHasBorderSwitchChange(event) {
+            const stroke = event.target.checked;
+
+            const borderSizeGroup = document.querySelector('#borderSizeGroup');
+
+            if (uniforge.style) {
+                uniforge.style.stroke = stroke;
+
+                const borderColorPicker = document.getElementById('borderColorPicker');
+                if (stroke) {
+                    if (uniforge.style.color.includes('var(')) {
+                        const borderColor = uniforge.style.color.replace('var(', '').replace(')', '');
+                        borderColorPicker.value = computedStyle.getPropertyValue(borderColor).trim();
+                    }
+                    else borderColorPicker.value = uniforge.style.color;
+
+                    borderSizeGroup.classList.remove('hidden');
+                }
+                else {
+                    borderSizeGroup.classList.add('hidden');
+                    borderColorPicker.value = '#000000';
+                }
+
+                await _refreshStyle();
+            }
+        }
+        async function onShapeSizeSliderChange(event) {
+
+            if (uniforge.style) {
+                const size = uniforge.ctrls.sliders.shapeSizeSlider.getValueNumber();
+                uniforge.style.weight = size;
+
+                await _refreshStyle();
+            }
+        }
+        async function onShapeBorderComboChange(event) {
+            if (uniforge.style) {
+                const lineTypes = uniforge.shapesToolBar.constants.lineTypes;
+                const style = lineTypes[event.target.value].style;
+
+                uniforge.style = {
+                    ...uniforge.style,
+                    ...style,
+                }
+
+                await _refreshStyle();
+            }
+        }
+        async function onFillColorPickerChange(event) {
+            const picker = event.target;
+
+            if (uniforge.style) {
+                uniforge.style.fillColor = picker.value;
+
+                await _refreshStyle();
+            }
+        }
+        async function onBorderColorPickerChange(event) {
+            const picker = event.target;
+            if (uniforge.style) {
+                uniforge.style.color = picker.value;
+
+                await _refreshStyle();
+            }
+        }
+    }
+}
+
+
+// ------------------------------------------------------------------
+// FUNÇÕES DE CHECAGEM
+// ------------------------------------------------------------------
+
+/**
+ * Verifica o estado atual da aplicação e realiza as ações necessárias para restaurar o estado salvo, caso exista.
+ * 
+ * @returns {void}
+*/
 function checkState() {
     const currentState = uniforge.state.current();
 }
-/** 
- * ------------------------------------------------------------------
- * FUNÇÕES DE CONFIGURAÇÕES 
- * ------------------------------------------------------------------
- * */
+
+
+// ------------------------------------------------------------------
+// FUNÇÕES DE LISTENERS DA APLICAÇÃO
+// ------------------------------------------------------------------
+
+/**
+ * Função chamada ao fechar a aplicação, que limpa o estado salvo no localStorage caso a flag 'keep' não esteja ativa.
+ * 
+ * @returns {void}
+*/
+function onCloseApp() {
+    const json = localStorage.getItem('uniforge');
+    const state = JSON.parse(json);
+    if (!state.keep) uniforge.state.clear();
+}
+
+/**
+ * Função chamada quando o tema da aplicação é alterado, atualizando o link do arquivo CSS do tema e registrando a alteração no console.
+ * 
+ * @param {Event} event 
+ * @returns {void}
+*/
+function onThemeChange(event) {
+    const themeLink = document.getElementById("themeLink");
+    const themePath = event.detail.path || 'css/themes.css';
+    themeLink.href = themePath;
+
+    console.log(`UniForge | Novo tema: ${event.detail.theme}`);
+}
+
+//------------------------------------------------------------------
+// FUNÇÕES UTILITÁRIAS 
+// ------------------------------------------------------------------
+
+/**
+ * Recria o conteúdo do corpo da aplicação, aplicando o parser de HTML para processar os elementos e atributos customizados.
+ * 
+ * @returns {void}
+*/
 function parseBody() {
     uniforge.html.innerHTML = uniforge.parser.parseHTML(uniforge.html.innerHTML, { lineTypes: uniforge.shapesToolBar.constants.lineTypes });
 }
 
-
-// Recarrega os documentos do banco de dados.
-async function refreshDocuments() {
+/**
+ * Recria o conjunto de dados (Set) baseado nos dados atuais do banco de dados.
+ * 
+ * @param {string} [document=null] - Nome do documento que foi alterado, caso aplicável. Se não for fornecido, o conjunto de dados será reconstruído com base em todos os documentos.
+ * 
+ * @async
+ * @returns {Promise<void>}
+*/
+async function rebuildDocs(document=null) {
+    console.log(`UniForge | Recriando${document ? ` conjunto de dados (${document})` : ' TODO o conjunto de dados'}.`);
     const data = await DBDocuments.UniForgeData();
     uniforge.doc = new DBDocuments(data);
 
@@ -379,158 +989,36 @@ async function refreshDocuments() {
     return uniforge.doc;
 }
 
-async function configureURLs() {
-    const worldMap = uniforge.settings.get('leaflet.mainMap');
+/**
+ * Função para criar um elemento com classes e atributos.
+ * 
+ * @param {string} tag 
+ * @param {Object|null} attributes 
+ * @param {Array|null} children 
+ * @returns 
+ */
+function createElement(tag, attributes = {}, children = []) {
+    const element = document.createElement(tag);
 
-    /**
-    * @description Urls padrões usadas pelo sistema.
-    * 
-    * @type {Object}
-    * @property {string} background - Imagem utilizada como fundo das entradas da Biblioteca e das Timelines.
-    * @property {string} blankImg   - Imagem padrão usada para campos de imagem vazios.
-    * 
-    * @property {string} models - Diretório dos Forms e Dialogs usados pelo sistema.
-    * @property {string} templates - Diretório dos modelos HTML usados pelo sistema.
-    * @property {string} scripts - Diretório de scripts usados pelo sistema.
-    * @property {string} ui - Diretório de Imagens utilizadas pelo ui do sistema.
-    * @property {string} icons - Diretório de Ícones utilizadas pelo ui do sistema.
-    */
-    uniforge.urls = {
-        relativePath: {
-            background: '/ui/lib-background.png',
-            backgroundScifi: '/ui/scifi-background.png',
-            backgroundNeutral: '/ui/blank-image.svg',
-            blankImg: '/ui/blank-image.svg',
-            worldMap: worldMap ? `/${worldMap}/tiles` : null,
-            mapOverlays: worldMap ? `/${worldMap}/overlays` : null,
-            common: '/common/',
-            models: '/models/',
-            controls: '/models/controls/',
-            templates: '/templates/',
-            scripts: '/scripts/',
-            data: '/data/',
-            customCSS: '/css/custom/',
-            ui: '/ui/',
-            icons: '/ui/icons/',
-            signs: '/ui/icons/markers/signs/',
-            markers: '/ui/icons/markers/',
-        },
-    };
+    // Adiciona os atributos ao elemento.
+    for (const [key, value] of Object.entries(attributes)) {
+        if (key === 'class') {
+            element.className = value;
+        } else {
+            element.setAttribute(key, value);
+        }
+    }
 
-    uniforge.urls = uniforge.utils.mergeObjects(uniforge.urls, {
-
-        // Urls de Imagens padrão usadas pelo sistema.
-        background: await uniforge.path.join(uniforge.urls.relativePath.background),
-        backgroundScifi: await uniforge.path.join(uniforge.urls.relativePath.backgroundScifi),
-        backgroundNeutral: await uniforge.path.join(uniforge.urls.relativePath.backgroundNeutral),
-        blankImg: await uniforge.path.join(uniforge.urls.relativePath.blankImg),
-
-        worldMap: await uniforge.path.join(uniforge.urls.relativePath.worldMap),
-        mapOverlays: await uniforge.path.join(uniforge.urls.relativePath.mapOverlays),
-
-        // Urls de Diretórios usados pelo sistema.
-        common: await uniforge.path.join(uniforge.urls.relativePath.common),
-        models: await uniforge.path.join(uniforge.urls.relativePath.models),
-        controls: await uniforge.path.join(uniforge.urls.relativePath.controls),
-        templates: await uniforge.path.join(uniforge.urls.relativePath.templates),
-        scripts: await uniforge.path.join(uniforge.urls.relativePath.scripts),
-        data: await uniforge.path.join(uniforge.urls.relativePath.data),
-        customCSS: await uniforge.path.join(uniforge.urls.relativePath.customCSS),
-        ui: await uniforge.path.join(uniforge.urls.relativePath.ui),
-        icons: await uniforge.path.join(uniforge.urls.relativePath.icons),
-        signs: await uniforge.path.join(uniforge.urls.relativePath.signs),
-        markers: await uniforge.path.join(uniforge.urls.relativePath.markers),
+    // Adiciona os filhos ao elemento.
+    children.forEach(child => {
+        if (typeof child === 'string') {
+            element.appendChild(document.createTextNode(child));
+        } else {
+            element.appendChild(child);
+        }
     });
 
-    Object.freeze(uniforge.urls);
-}
-
-// Configura a ferramenta de mapas Leaflet.
-async function configureLeaflet() {
-    // Inicializa o controle de mapas Leaflet.
-    uniforge.ctrls.leaflet = lControl.init(uniforge.urls.worldMap);
-
-    var style = JSON.parse(uniforge.settings.get('leafletStyle.pathOptions')) ?? uniforge.leaflet.core.defaultStyle;
-    // Impede que o Estilo do Elemento seja de um tipo não suportado.
-    if (typeof style === 'string') style = JSON.parse(style);
-
-    style.line = uniforge.shapesToolBar.constants.lineTypes[style.line].style.line;
-    style.dashArray = uniforge.shapesToolBar.constants.lineTypes[style.line].style.dashArray;
-
-    style.hasBorder = style.hasBorder || style.opacity === 1;
-    uniforge.style = style;
-
-    uniforge.leaflet.drawStyle.update(uniforge.leaflet.core.map, style);
-
-    await _refreshStyle();
-}
-// Configura a ferramenta de geração de map tiles.
-function configureMapTiler() {
-    uniforge.tiler.emitProgress(async (data) => await updateProgressDialog(data));
-}
-// Atualiza o dialog conforme eventos.
-async function updateProgressDialog(data) {
-    const progressDialog = uniforge.ctrls.progressDialog;
-
-    if (!progressDialog) return;
-
-    if (data.type === "start") {
-        progressDialog.updateMessage("Iniciando...");
-        return;
-    }
-
-    if (data.type === "tile-progress") {
-        progressDialog.indeterminate = false;
-        progressDialog.updateProgress(data, `Gerando tiles do zoom ${data.zoom}... (${data.processed}/${data.total})`);
-        return;
-    }
-
-    if (data.type === "zoom-done") {
-        progressDialog.updateMessage(`Nível de zoom ${data.zoom} concluído.`);
-        return;
-    }
-
-    if (data.type === "complete") {
-        progressDialog.close();
-        uniforge.msgBox.showInfo("Map tiles gerados com sucesso.");
-        return;
-    }
-}
-// Configura os elementos da Topbar de Ferramentas
-async function configureToolsBars() {
-    const currentYearInput = document.getElementById('currentYear');
-    const timeEraSpan = document.getElementById('timeEra');
-    currentYearInput.value = uniforge.time.y.label;
-    timeEraSpan.textContent = uniforge.time.era;
-
-    const signsPath = uniforge.urls.relativePath.signs;
-    const signs = await uniforge.fs.listFiles(signsPath);
-
-    uniforge.ctrls.currentMarkerIcon = 'blue_battle.svg';
-
-    const hasBorderSwitch = document.querySelector("#hasBorderSwitch");
-    hasBorderSwitch.dataset.tooltip = "Ativar contorno.";
-
-    const mapMarkersContainer = document.querySelector('.map-objects-container.marker div');
-
-    const markersOptions = mapMarkersContainer.querySelector('.options.marker');
-    signs.forEach(s => {
-        const name = s.name.split('.')[0];
-        const img = document.createElement('img');
-        img.src = '.' + s.path;
-
-        const option = createElement('a', { 'data-marker': name, 'class': 'marker-option' }, [img]);
-        markersOptions.appendChild(option);
-    });
-
-    const colorOptions = mapMarkersContainer.querySelector('.options.color');
-    const colors = uniforge.markerToolBar.constants.colors;
-    Object.entries(colors).forEach(([key, color]) => {
-        const option = createElement('a', { 'data-color': key, 'class': 'color-option' });
-        option.style.backgroundColor = `rgb(${color.value.join(',')})`;
-
-        colorOptions.appendChild(option);
-    });
+    return element;
 }
 
 function calculateZoomForTileScaleSimple(desiredTileScale) {
@@ -541,418 +1029,8 @@ function calculateZoomForTileScaleSimple(desiredTileScale) {
     return Math.round(zoomLevel); // Return the nearest zoom level
 }
 
-// Função que configura os diversos forms da aplicação.
-function configureForms() {
-    configureBody();
-
-    activateMainListeners();
-}
-function configureBody() {
-    const body = uniforge.html;
-    const preparedBody = uniforge.parser.parseHTML(body.innerHTML, {});
-    body.innerHTML = preparedBody;
-}
-
-function configureHooks() {
-    registerHook('beforeRender', async () => { await refreshDocuments(); });
-    registerHook('simpleEntryFormClosed', async () => { await refreshDocuments(); });
-    registerHook('styleChanged', async () => { await _refreshStyle(); });
-    registerHook('layerElementsUpdated', async () => { await _updateLayerControl(); });
-    registerHook('documentsChanged', async () => { await refreshDocuments(); });
-
-    registerHook('layerPopupOpened', async (layer) => {
-        uniforge.style = layer.options;
-        await _refreshStyle();
-    });
-}
-// Configura o listeners que tratam os eventos dos tabs do Menu Lateral e as rotinas de fechamento do Form
-function activateMainListeners() {
-    // Lógica de UI para o Menu Lateral
-    const tabs = document.querySelectorAll('.tab');
-
-    // Lógica de UI para o Menu de Ferramentas Superior.
-    const topBar = document.getElementById('topBarContainer');
-    const toggleTab = document.getElementById('toggleTab');
-    // Lógica de UI para os botões do Menu de Ferramentas Superior.
-    const codexBtn = document.getElementById('codexBtn');
-    const timelineBtn = document.getElementById('timelineBtn');
-    const tenYrsBack = document.getElementById('tenYearsBack');
-    const oneYearBack = document.getElementById('yearBack');
-    const oneYearFwr = document.getElementById('yearForward');
-    const tenYrsFwr = document.getElementById('tenYearForward');
-
-    const currentYearInput = document.getElementById('currentYear');
-
-    toggleTab.addEventListener('click', (event) => { onToggleTopBarClick(event); });
-
-    codexBtn.addEventListener('click', (event) => { onTopbarButtonClick(event); });
-    timelineBtn.addEventListener('click', (event) => { onTopbarButtonClick(event); });
-
-    tenYrsBack.addEventListener('click', (event) => { onChangeTime(event, -10); });
-    oneYearBack.addEventListener('click', (event) => { onChangeTime(event, -1); });
-    oneYearFwr.addEventListener('click', (event) => { onChangeTime(event, 1); });
-    tenYrsFwr.addEventListener('click', (event) => { onChangeTime(event, 10); });
-
-    currentYearInput.addEventListener('change', function (event) { onChangeTimeInput(event); });
-
-    // Adiciona o Listener para chamar o Form correto ao clicar nos itens do menu.
-    tabs.forEach(tab => {
-        tab.addEventListener('click', () => {
-            tab.classList.add('disabled');
-            _renderForm(tab.getAttribute('data-target'), tab);
-        });
-    });
-
-    const searchLayerObjectsInput = document.querySelector("#searchLayerObjectsInput");
-    searchLayerObjectsInput.addEventListener('input', (event) => { onObjectsSearchChange(event); });
-
-    const clearLayerObjectsSearchButton = document.querySelector("#clearLayerObjectsSearchButton");
-    clearLayerObjectsSearchButton.addEventListener('click', (event) => { onClearObjectsSearchClick(event); });
-
-    const searchMarkerInput = document.querySelector("#searchMarkerInput");
-    searchMarkerInput.addEventListener('input', (event) => { onMarkerSearchChange(event); });
-
-    const clearMarkerSearchButton = document.querySelector("#clearMarkerSearchButton");
-    clearMarkerSearchButton.addEventListener('click', (event) => { onClearMarkerSearchClick(event); });
-
-    const baseOptions = document.querySelectorAll('.map-objects-panel .config-group .options a');
-    baseOptions.forEach(option => {
-        option.addEventListener('click', (event) => { onMarkerIconClick(event); });
-    });
-
-    const toggleTabs = document.querySelectorAll('.map-objects-container .toggle-tab');
-    toggleTabs.forEach(tab => {
-        tab.addEventListener('click', (event) => {
-            const targetClass = tab.getAttribute('data-target');
-            const targetContainer = document.querySelector(`.map-objects-container.${targetClass}`);
-            if (!targetContainer) return;
-
-            onToggleMapObjectPanelClick(event, targetContainer);
-        });
-    });
-
-    const hasBorderSwitch = document.querySelector('#hasBorderSwitch');
-    const hasBorderCheckbox = hasBorderSwitch.querySelector('#checkbox');
-
-    hasBorderCheckbox.addEventListener('change', (event) => { onHasBorderSwitchChange(event); });
-
-    const shapeSizeSliderContainer = document.querySelector('.size');
-    const shapeSizeSlider = uniforge.ctrls.sliders.shapeSizeSlider = new Slider('shapeSizeSlider', shapeSizeSliderContainer, { min: 1, max: 10, value: 5, linkedLabel: 'shapeSizeSpan', labelMask: '{value}px', width: '80px' });
-    shapeSizeSlider.config();
-    shapeSizeSlider.addEventListener('change', (event) => { onShapeSizeSliderChange(event); });
-
-    const shapeBorderCombo = document.getElementById('shapeBorderCombo');
-    shapeBorderCombo.addEventListener('change', (event) => { onShapeBorderComboChange(event); });
-
-    const fillColorPicker = document.getElementById('fillColorPicker');
-    fillColorPicker.addEventListener('input', (event) => { onFillColorPickerChange(event); });
-
-    const borderColorPicker = document.getElementById('borderColorPicker');
-    borderColorPicker.addEventListener('input', (event) => { onBorderColorPickerChange(event); });
-}
-/** 
- * ------------------------------------------------------------------
- * FUNÇÕES DE LISTENERS DOS FORMS
- * ------------------------------------------------------------------
- * */
-function onTopbarButtonClick(event) {
-    // Impedir que o clique no item desencadeie o clique fora do sidebar
-    event.stopPropagation();
-    const button = event.target.closest('.topbarBtn');
-    button.classList.add('disabled');
-
-    _renderForm(button.getAttribute('data-target'), button);
-}
-
-function onToggleTopBarClick(event) {
-    event.stopPropagation();
-
-    const toggleTab = event.target.closest('.toggle-tab');
-    const topBar = document.getElementById('topBarContainer');
-
-    topBar.classList.toggle('visible');
-    toggleTab.classList.toggle('visible');
-}
-
-function onChangeTime(event, amount) {
-    // Impedir que o clique no item desencadeie o clique fora do sidebar
-    event.stopPropagation();
-
-    _setTime(uniforge.time.y.value + amount);
-}
-function onChangeTimeInput(event) {
-    var value = event.target.value;
-
-    // Remove qualquer caractere que não tenha valor numérico
-    value = value.replace(/(?!^-)[^0-9]/g, '').replace(/(?!^)-/g, '');
-
-    // Se for um número atualize o Timer
-    if (value) {
-        _setTime(value);
-    } else {
-        event.target.value = uniforge.time.y.label;
-    }
-}
-
-function onObjectsSearchChange(event) {
-    event.stopPropagation();
-    const input = event.currentTarget;
-    // Padroniza e remove espaços em branco do filtro para melhorar a busca.
-    const filter = input.value.trim().toLowerCase();
-
-    // Obtém todas os items de Objetos do Mapa.
-    const objectsItems = document.querySelectorAll('#mapElementsList li');
-    let objectsFound = 0;
-
-    objectsItems.forEach(item => {
-        const h3 = item.querySelector('.layer-item-content .layer-item-content-body h3');
-        if (h3) {
-            const title = h3.textContent.toLowerCase();
-            const titleMatch = title.toLowerCase().includes(filter);
-
-            // Se o filtro estiver vazio ou a opção contém o filtro, mostra a opção.
-            if (filter.isEmpty() || titleMatch) {
-                item.classList.remove('hidden');
-                objectsFound++;
-            }
-            // Senão, esconde a opção. 
-            else {
-                item.classList.add('hidden');
-            }
-
-            // Realce se combinar.
-            if (titleMatch) {
-                h3.innerHTML = uniforge.parser.applyHighlight(h3.textContent, filter);
-            } else {
-                uniforge.parser.removeHighlight(h3);
-            }
-        }
-    });
-
-    const noObjectsFoundMessage = document.getElementById('noObjectsFoundMessage');
-
-    if (objectsFound === 0)
-        noObjectsFoundMessage.classList.remove('hidden');
-    else
-        noObjectsFoundMessage.classList.add('hidden');
-}
-
-function onMarkerSearchChange(event) {
-    event.stopPropagation();
-    const input = event.currentTarget;
-    // Padroniza e remove espaços em branco do filtro para melhorar a busca.
-    const filter = input.value.trim().toLowerCase();
-
-    // Obtém todas as opções de marcadores.
-    const markersOptions = mapMarkersContainer.querySelectorAll('.options.marker a');
-    markersOptions.forEach(option => {
-        // Se o filtro estiver vazio ou a opção contém o filtro, mostra a opção.
-        if (filter.isEmpty() || option.dataset.marker.includes(filter)) {
-            option.classList.remove('hidden');
-        }
-        // Senão, esconde a opção. 
-        else {
-            option.classList.add('hidden');
-        }
-    });
-}
-
-function onClearObjectsSearchClick(event) {
-    event.stopPropagation();
-    const input = document.querySelector('#searchLayerObjectsInput');
-
-    // Limpa o input de busca.
-    input.value = uniforge.defaults.emptyString;
-
-    // Obtém todas os items de Objetos do Mapa.
-    const objectsItems = document.querySelectorAll('#mapElementsList li');
-    // Mostra todas as opções de Objetos.
-    objectsItems.forEach(item => {
-        item.classList.remove('hidden');
-    });
-}
-function onClearMarkerSearchClick(event) {
-    event.stopPropagation();
-    const input = toolsSearchBar.querySelector('#searchMarkerInput');
-
-    // Limpa o input de busca.
-    input.value = uniforge.defaults.emptyString;
-
-    // Obtém todas as opções de marcadores.
-    const markersOptions = mapMarkersContainer.querySelectorAll('.options.marker a');
-    // Mostra todas as opções de marcadores.
-    markersOptions.forEach(option => {
-        option.classList.remove('hidden');
-    });
-}
-
-async function onMarkerIconClick(event) {
-    event.stopPropagation();
-    const option = event.currentTarget;
-
-    option.classList.toggle('active');
-
-    const options = option.parentElement.querySelectorAll('a');
-    options.forEach(opt => {
-        if (opt !== option) {
-            opt.classList.remove('active');
-        }
-    });
-
-    const signMarker = document.querySelector('.map-objects-panel .config-group .options.marker .active');
-    const colorMarker = document.querySelector('.map-objects-panel .config-group .options.color .active');
-
-    const editCache = uniforge.leaflet.core.editCache;
-
-    if (signMarker && colorMarker) {
-        const marker = `${colorMarker.getAttribute('data-color')}_${signMarker.getAttribute('data-marker')}`;
-
-        if (editCache && editCache.layer instanceof L.Marker) await _refreshMarkerDrawing(marker);
-        else await _startMarkerDrawing(marker);
-    }
-    else if (uniforge.ctrls.marker) uniforge.ctrls.marker.disable();
-}
-
-function onToggleMapObjectPanelClick(event, container) {
-    if (event && event.stopPropagation) event.stopPropagation();
-
-    const isOpening = !container.classList.contains('active');
-
-    // Desativa todos os painéis de objetos do mapa
-    const mapObjContainers = document.querySelectorAll('.map-objects-container');
-    mapObjContainers.forEach(moc => {
-        moc.classList.remove('active');
-    });
-
-    if (isOpening) {
-        container.classList.add('active');
-    }
-}
-
-async function onHasBorderSwitchChange(event) {
-    const map = uniforge.leaflet.core.map;
-    const hasBorder = event.target.checked;
-
-    const hasBorderSwitch = document.querySelector('#hasBorderSwitch');
-    const borderSizeGroup = document.querySelector('#borderSizeGroup');
-
-    if (uniforge.style) {
-        uniforge.style.hasBorder = hasBorder;
-
-        if (hasBorder) {
-            borderSizeGroup.classList.remove('hidden');
-        }
-        else {
-            borderSizeGroup.classList.add('hidden');
-        }
-
-        const shape = map.pm.Draw.getActiveShape();
-        if (shape) {
-            const layer = map.pm.Draw[shape]._layer;
-            if (layer) {
-                layer.setStyle(uniforge.style);
-            }
-        }
-
-        uniforge.leaflet.drawStyle.update(uniforge.leaflet.core.map, uniforge.style);
-
-        await _refreshPreviewStyle();
-    }
-}
-
-async function onShapeSizeSliderChange(event) {
-    const preview = uniforge.shapesToolBar.preview;
-    const map = uniforge.leaflet.core.map;
-
-    if (uniforge.style) {
-        const size = uniforge.ctrls.sliders.shapeSizeSlider.getValueNumber();
-        uniforge.style.weight = size;
-
-        const shape = map.pm.Draw.getActiveShape();
-        if (shape) {
-            const layer = map.pm.Draw[shape]._layer;
-            if (layer) {
-                layer.setStyle(uniforge.style);
-            }
-        }
-
-        uniforge.leaflet.drawStyle.update(uniforge.leaflet.core.map, uniforge.style);
-
-        await _refreshPreviewStyle();
-    }
-}
-
-async function onShapeBorderComboChange(event) {
-    const preview = uniforge.shapesToolBar.preview;
-    const map = uniforge.leaflet.core.map;
-
-    if (uniforge.style) {
-        const lineTypes = uniforge.shapesToolBar.constants.lineTypes;
-        const style = lineTypes[event.target.value].style;
-
-        uniforge.style = {
-            ...uniforge.style,
-            ...style,
-        }
-
-        const shape = map.pm.Draw.getActiveShape();
-        if (shape) {
-            const layer = map.pm.Draw[shape]._layer;
-            if (layer) {
-                layer.setStyle(uniforge.style);
-            }
-        }
-
-        uniforge.leaflet.drawStyle.update(uniforge.leaflet.core.map, uniforge.style);
-
-        await _refreshPreviewStyle();
-    }
-}
-
-async function onFillColorPickerChange(event) {
-    const picker = event.target;
-    const map = uniforge.leaflet.core.map;
-
-    if (uniforge.style) {
-        uniforge.style.fillColor = picker.value;
-
-        const shape = map.pm.Draw.getActiveShape();
-        if (shape) {
-            const layer = map.pm.Draw[shape]._layer;
-            if (layer) {
-                layer.setStyle(uniforge.style);
-            }
-        }
-
-        uniforge.leaflet.drawStyle.update(uniforge.leaflet.core.map, uniforge.style);
-
-        await _refreshPreviewStyle();
-    }
-}
-
-async function onBorderColorPickerChange(event) {
-    const picker = event.target;
-    const map = uniforge.leaflet.core.map;
-    if (uniforge.style) {
-        uniforge.style.color = picker.value;
-
-        const shape = map.pm.Draw.getActiveShape();
-        if (shape) {
-            const layer = map.pm.Draw[shape]._layer;
-            if (layer) {
-                layer.setStyle(uniforge.style);
-            }
-        }
-
-        uniforge.leaflet.drawStyle.update(uniforge.leaflet.core.map, uniforge.style);
-
-        await _refreshPreviewStyle();
-    }
-}
-
-
 //------------------------------------------------------------------
-// FUNÇÕES DE CONTROLE INTERNO DA PÁGINA 
+// FUNÇÕES DE CONTROLE INTERNO DA APLICAÇÃO
 //------------------------------------------------------------------
 
 /**
@@ -996,6 +1074,44 @@ async function _recoverForm(form) {
     }
 }
 
+/**
+ * Inicializa as propriedades globais do sistema UniForge.
+ */
+function _initializeGlobals() {
+    // Inicia o gerenciador de temas.
+    uniforge.theme.refresh();
+
+    // Configura o estado inicial da aplicação, se ele ainda não foi criado.
+    uniforge.state.init();
+
+    // Inicia o gerenciador de banco de dados.
+    uniforge.db.init();
+}
+
+/**
+ * Configura o corpo do documento HTML principal da aplicação.
+ * Esta função processa o conteúdo HTML do corpo, aplicando o parser de HTML
+ * para preparar o conteúdo antes de ser exibido na tela.
+ *
+ * @returns {void}
+ */
+function _configureBody() {
+    const body = uniforge.html;
+    const preparedBody = uniforge.parser.parseHTML(body.innerHTML, {});
+    body.innerHTML = preparedBody;
+}
+
+/**
+ * Configura os sliders da aplicação, definindo seus valores iniciais e vinculando-os aos elementos correspondentes na interface do usuário.
+ * Esta função é responsável por inicializar os sliders de tamanho de forma, cor e outros elementos interativos que utilizam sliders.
+ *
+ * @returns {void}
+ */
+function _configureSliders() {
+    const shapeSizeSliderContainer = document.querySelector('.size');
+    const shapeSizeSlider = uniforge.ctrls.sliders.shapeSizeSlider = new Slider('shapeSizeSlider', shapeSizeSliderContainer, { min: 1, max: 10, value: 5, linkedLabel: 'shapeSizeSpan', labelMask: '{value}px', width: '80px' });
+}
+
 async function _startMarkerDrawing(marker) {
     const map = uniforge.leaflet.core.map;
     const markerURL = uniforge.urls.markers.join(`${marker}.png`);
@@ -1015,16 +1131,22 @@ async function _refreshMarkerDrawing(marker) {
     uniforge.leaflet.core.editCache.layer.setIcon(newIcon);
 };
 
-async function _refreshStyle() {
+async function _loadStyle() {
     const style = uniforge.style;
 
-    const hasBorderCheckbox = hasBorderSwitch.querySelector('#checkbox');
     const shapeSizeSlider = uniforge.ctrls.sliders.shapeSizeSlider;
+
+    // Nenhum estilo definido, não há nada a atualizar.
+    if (!style) return;
+    // Nenhum slider de tamanho de forma definido, o sistema ainda não foi inicializado.
+    if (!shapeSizeSlider) return;
+
+    const hasBorderCheckbox = hasBorderSwitch.querySelector('#checkbox');
     const shapeBorderCombo = document.getElementById('shapeBorderCombo');
     const fillColorPicker = document.getElementById('fillColorPicker');
     const borderColorPicker = document.getElementById('borderColorPicker');
 
-    hasBorderCheckbox.checked = uniforge.style.hasBorder;
+    hasBorderCheckbox.checked = uniforge.style.stroke;
     shapeSizeSlider.setValue(uniforge.style.weight, true);
 
     shapeBorderCombo.value = uniforge.style.line;
@@ -1040,24 +1162,42 @@ async function _refreshStyle() {
 
     uniforge.ctrls.colorPickers.fillColor = fillColorPicker;
 
-    if (style.fillColor.includes('var(')) {
-        const borderColor = style.color.replace('var(', '').replace(')', '');
-        borderColorPicker.value = computedStyle.getPropertyValue(borderColor).trim();
+    if (style.stroke === true) {
+        if (style.color.includes('var(')) {
+            const borderColor = style.color.replace('var(', '').replace(')', '');
+            borderColorPicker.value = computedStyle.getPropertyValue(borderColor).trim();
+        }
+        else borderColorPicker.value = style.color;
     }
-    else borderColorPicker.value = style.color;
+    else borderColorPicker.value = '#000000';
 
 
     uniforge.ctrls.colorPickers.borderColor = borderColorPicker;
 
-    uniforge.leaflet.drawStyle.updateTemplineStyle(uniforge.leaflet.core.map, style);
+    await _refreshStyle();
+}
+
+async function _refreshStyle() {
+    const map = uniforge.leaflet.core.map;
+    const style = uniforge.style;
+
+    const shape = map.pm.Draw.getActiveShape();
+    if (shape) {
+        const layer = map.pm.Draw[shape]._layer;
+        if (layer) {
+            layer.setStyle(uniforge.style);
+        }
+    }
+
+    uniforge.leaflet.drawStyle.update(map, style);
+    uniforge.leaflet.drawStyle.updateTemplineStyle(map, style);
+
     await _refreshPreviewStyle();
 }
 
 async function _refreshPreviewStyle() {
     const preview = document.querySelector('.regular-shapes .config-group.preview .shape-canvas .shape-preview');
     if (!preview) return;
-
-    const hasBorderCheck = document.querySelector('#hasBorderSwitch #checkbox');
 
     const style = uniforge.style;
     const lineTypes = uniforge.shapesToolBar.constants.lineTypes;
@@ -1070,14 +1210,33 @@ async function _refreshPreviewStyle() {
     const shapeBorderCombo = document.getElementById('shapeBorderCombo');
     const borderColorPicker = document.getElementById('borderColorPicker');
 
-    if (hasBorderCheck.checked)
+    if (style.stroke) {
         preview.style.border = `${style.weight}px ${lineStyle} ${style.color}`;
-    else
+    }
+    else {
         preview.style.border = 'none';
+    }
 
-    shapeBorderCombo.disabled = !hasBorderCheck.checked;
-    borderColorPicker.disabled = !hasBorderCheck.checked;
-    uniforge.ctrls.sliders.shapeSizeSlider.setVisible(hasBorderCheck.checked, true);
+    _toggleStyleSizeGroup(style.stroke);
+    _toggleStyleShapeGroup(style.stroke);
+
+    shapeBorderCombo.disabled = !style.stroke;
+    borderColorPicker.disabled = !style.stroke;
+}
+
+function _toggleStyleSizeGroup(visible) {
+    const borderSizeGroup = document.getElementById('borderSizeGroup');
+
+    if (visible) borderSizeGroup.classList.remove('hidden');
+    else borderSizeGroup.classList.add('hidden');
+
+    uniforge.ctrls.sliders.shapeSizeSlider.setVisible(visible, true);
+}
+function _toggleStyleShapeGroup(visible) {
+    const borderShapeGroup = document.getElementById('borderShapeGroup');
+
+    if (visible) borderShapeGroup.classList.remove('hidden');
+    else borderShapeGroup.classList.add('hidden');
 }
 
 function _updateLayerControl() {
@@ -1235,29 +1394,3 @@ function _setTime(year) {
 
     uniforge.ctrls.leaflet.loadElements(mid, uniforge.time.y.value);
 }
-
-// Função para criar um elemento com classes e atributos.
-function createElement(tag, attributes = {}, children = []) {
-    const element = document.createElement(tag);
-
-    // Adiciona os atributos ao elemento.
-    for (const [key, value] of Object.entries(attributes)) {
-        if (key === 'class') {
-            element.className = value;
-        } else {
-            element.setAttribute(key, value);
-        }
-    }
-
-    // Adiciona os filhos ao elemento.
-    children.forEach(child => {
-        if (typeof child === 'string') {
-            element.appendChild(document.createTextNode(child));
-        } else {
-            element.appendChild(child);
-        }
-    });
-
-    return element;
-}
-

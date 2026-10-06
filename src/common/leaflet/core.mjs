@@ -57,7 +57,7 @@ const lControl = {
             weight: 5,
             dashArray: '0, 0',
             line: 'solid',
-            hasBorder: true
+            stroke: true
         }
     },
 
@@ -574,11 +574,17 @@ const lControl = {
                         // Confirma a transação.
                         await uniforge.db.commitTransaction();
 
-                        // Atualiza o estilo padrão das camadas do Leaflet.
-                        uniforge.style = layer.options;
-
                         // Encerra a edição.
                         lControl.endEditMode(event.originalEvent, { hasRollback: false, saveStyle: true });
+
+                        // A camada não pode ser do tipo de Marker.
+                        if (!(layer instanceof L.Marker)) {
+                            // Atualiza o estilo padrão das camadas do Leaflet.
+                            uniforge.style = {
+                                shape: layer.type,
+                                ...layer.options
+                            };
+                        }
                     }
                     catch (err) {
                         console.error(err);
@@ -594,7 +600,7 @@ const lControl = {
 
             if (e.shape !== 'Marker')
                 // Atualiza o estilo da camada desenhada.
-                layer.setStyle(uniforge.leaflet.drawStyle.style);
+                layer.setStyle(uniforge.style ?? utils.defaultStyle);
 
             const removeLayer = () => {
                 if (layer && lControl.map.hasLayer(layer)) {
@@ -647,8 +653,11 @@ const lControl = {
                         // Comita a transação.
                         await uniforge.db.commitTransaction();
 
-                        // Salva o Estilo da Camada como padrão.
-                        await uniforge.settings.set('leafletStyle.pathOptions', JSON.stringify(data.style));
+                        // Salva o estilo da camada, somente se ela não for do tipo Marker.
+                        if (!(layer instanceof L.Marker)) {
+                            // Salva o Estilo da Camada como padrão.
+                            await uniforge.settings.set('leafletStyle.pathOptions', JSON.stringify(data.style));
+                        }
                     }
                 }
                 // Se o link foi cancelado, remove a camada desenhada.
@@ -676,9 +685,7 @@ const lControl = {
 
             if (e.shape !== 'Marker') {
                 // Obtém o estilo salvo, se não houver obtém o valor padrão.
-                uniforge.style = uniforge.style ?? utils.defaultStyle;
-                // Atualiza o estilo da camada desenhada.
-                utils.drawStyle.update(map, uniforge.style);
+                uniforge.style = uniforge.style ?? utils.defaultStyle;               
 
                 // Abre o Painel de Edição para o Elemento.
                 lControl.toggleMapObjectPanel(e, { forceState: PANEL_STATE.OPEN });
@@ -686,26 +693,6 @@ const lControl = {
                 const layer = map.pm.Draw[e.shape]._layer;
 
                 if (layer) {
-                    const style = layer.options;
-
-                    const fillColorPicker = uniforge.ctrls.colorPickers.fillColor;
-                    if (style.fillColor.includes('var')) {
-                        const root = getComputedStyle(document.documentElement);
-                        const fillColor = style.fillColor.replace('var(', '').replace(')', '');
-                        fillColorPicker.value = root.getPropertyValue(fillColor).trim();;
-                    } else {
-                        fillColorPicker.value = style.fillColor;
-                    }
-
-                    const borderColorPicker = uniforge.ctrls.colorPickers.borderColor;
-                    if (style.color.includes('var')) {
-                        const root = getComputedStyle(document.documentElement);
-                        const borderColor = style.color.replace('var(', '').replace(')', '');
-                        borderColorPicker.value = root.getPropertyValue(borderColor).trim();;
-                    } else {
-                        borderColorPicker.value = style.color;
-                    }
-
                     triggerHook('styleChanged');
                 };
             }
@@ -1194,7 +1181,7 @@ const lControl = {
             uniforge.db.deleteMapElement(meid);
             lControl.mapElements.removeLayer(layerId);
 
-            await uniforge.db.rebuildDocs();
+            await uniforge.rebuildDocs();
             triggerHook('layerElementsUpdated');
         }
 
@@ -1264,43 +1251,7 @@ const lControl = {
         if (!(layer instanceof L.Marker)) {
             // Abre o Painel de Edição para o Elemento.
             lControl.toggleMapObjectPanel(event, { forceState: PANEL_STATE.OPEN });
-
-            style.line = style.line;
-            style.dashArray = style.dashArray;
-
-            const hasBorder = style.hasBorder || true;
-
-            const hasBorderCheck = document.querySelector('#hasBorderSwitch #checkbox');
-            hasBorderCheck.checked = hasBorder;
-
-            const shapeSizeSlider = uniforge.ctrls.sliders.shapeSizeSlider;
-            shapeSizeSlider.setValue(style.weight, true);
-
-            const shapeBorderCombo = document.getElementById('shapeBorderCombo');
-            shapeBorderCombo.value = style.line;
-
-            shapeBorderCombo.dispatchEvent(new Event('change'));
-
-            const fillColorPicker = uniforge.ctrls.colorPickers.fillColor;
-            if (style.fillColor.includes('var')) {
-                const root = getComputedStyle(document.documentElement);
-                const fillColor = style.fillColor.replace('var(', '').replace(')', '');
-                fillColorPicker.value = root.getPropertyValue(fillColor).trim();;
-            } else {
-                fillColorPicker.value = style.fillColor;
-            }
-
-            const borderColorPicker = uniforge.ctrls.colorPickers.borderColor;
-            if (style.color.includes('var')) {
-                const root = getComputedStyle(document.documentElement);
-                const borderColor = style.color.replace('var(', '').replace(')', '');
-                borderColorPicker.value = root.getPropertyValue(borderColor).trim();;
-            } else {
-                borderColorPicker.value = style.color;
-            }
-
-            uniforge.leaflet.drawStyle.update(uniforge.leaflet.core.map, style);
-            triggerHook('styleChanged');
+            //triggerHook('styleLoaded');
         }
         else {
             // Destaca o Elemento durante a edição.
@@ -1321,7 +1272,6 @@ const lControl = {
         if (options.hasRollback) {
             // Restaura o estado do Elemento para o caso de cancelamento da edição.
             lControl.restoreLayerState(layer);
-            utils.drawStyle.update(lControl.map, lControl.editCache?.style ?? uniforge.style ?? utils.defaultStyle);
         }
 
         // Há algum Elemento atualmente ativo, cancela a edição.
@@ -1341,7 +1291,7 @@ const lControl = {
             const layerEditTip = document.querySelector('.map-objects-edit-tip');
             layerEditTip.classList.remove('active');
 
-            if (uniforge.style && options.saveStyle) {
+            if (uniforge.style && options.saveStyle && !(layer instanceof L.Marker)) {
                 await uniforge.settings.set('leafletStyle.pathOptions', JSON.stringify(uniforge.style));
                 await triggerHook('styleChanged');
             }
@@ -1352,7 +1302,7 @@ const lControl = {
 
     saveLayerState: function (layer) {
         const state = {
-            layer: layer
+            layer: layer,
         };
 
         if (layer instanceof L.Marker) {
@@ -1363,6 +1313,7 @@ const lControl = {
         else if (layer instanceof L.Circle) {
             state.latlng = layer.getLatLng();
             state.radius = layer.getRadius();
+            state.style = uniforge.utils.deepClone(layer.options);
         }
 
         else if (
@@ -1371,6 +1322,7 @@ const lControl = {
             layer instanceof L.Rectangle
         ) {
             state.latlngs = L.LatLngUtil.cloneLatLngs(layer.getLatLngs());
+            state.style = uniforge.utils.deepClone(layer.options);
         }
 
         _editCache.set(lControl.map, state);
@@ -1385,6 +1337,7 @@ const lControl = {
             const originalIcon = L.icon(state.icon);
             layer.setIcon(originalIcon);
         }
+        else layer.setStyle(state.style);
 
         if (state.latlngs) {
             layer.setLatLngs(state.latlngs);
