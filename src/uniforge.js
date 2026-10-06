@@ -447,14 +447,13 @@ async function configureURLs() {
 
 // Configura a ferramenta de mapas Leaflet.
 async function configureLeaflet() {
-    /* 
-        TODO: Verificar se o usuário informou um mapa padrão alternativo no painel de configuração.
-    */
-
     // Inicializa o controle de mapas Leaflet.
     uniforge.ctrls.leaflet = lControl.init(uniforge.urls.worldMap);
 
-    const style = JSON.parse(uniforge.settings.get('leafletStyle.pathOptions'));
+    var style = JSON.parse(uniforge.settings.get('leafletStyle.pathOptions')) ?? uniforge.leaflet.core.defaultStyle;
+    // Impede que o Estilo do Elemento seja de um tipo não suportado.
+    if (typeof style === 'string') style = JSON.parse(style);
+
     style.line = uniforge.shapesToolBar.constants.lineTypes[style.line].style.line;
     style.dashArray = uniforge.shapesToolBar.constants.lineTypes[style.line].style.dashArray;
 
@@ -831,13 +830,13 @@ function onToggleMapObjectPanelClick(event, container) {
 }
 
 async function onHasBorderSwitchChange(event) {
+    const map = uniforge.leaflet.core.map;
     const hasBorder = event.target.checked;
 
     const hasBorderSwitch = document.querySelector('#hasBorderSwitch');
     const borderSizeGroup = document.querySelector('#borderSizeGroup');
 
     if (uniforge.style) {
-
         uniforge.style.hasBorder = hasBorder;
 
         if (hasBorder) {
@@ -845,6 +844,14 @@ async function onHasBorderSwitchChange(event) {
         }
         else {
             borderSizeGroup.classList.add('hidden');
+        }
+
+        const shape = map.pm.Draw.getActiveShape();
+        if (shape) {
+            const layer = map.pm.Draw[shape]._layer;
+            if (layer) {
+                layer.setStyle(uniforge.style);
+            }
         }
 
         uniforge.leaflet.drawStyle.update(uniforge.leaflet.core.map, uniforge.style);
@@ -855,10 +862,19 @@ async function onHasBorderSwitchChange(event) {
 
 async function onShapeSizeSliderChange(event) {
     const preview = uniforge.shapesToolBar.preview;
+    const map = uniforge.leaflet.core.map;
 
     if (uniforge.style) {
         const size = uniforge.ctrls.sliders.shapeSizeSlider.getValueNumber();
         uniforge.style.weight = size;
+
+        const shape = map.pm.Draw.getActiveShape();
+        if (shape) {
+            const layer = map.pm.Draw[shape]._layer;
+            if (layer) {
+                layer.setStyle(uniforge.style);
+            }
+        }
 
         uniforge.leaflet.drawStyle.update(uniforge.leaflet.core.map, uniforge.style);
 
@@ -868,6 +884,7 @@ async function onShapeSizeSliderChange(event) {
 
 async function onShapeBorderComboChange(event) {
     const preview = uniforge.shapesToolBar.preview;
+    const map = uniforge.leaflet.core.map;
 
     if (uniforge.style) {
         const lineTypes = uniforge.shapesToolBar.constants.lineTypes;
@@ -878,6 +895,14 @@ async function onShapeBorderComboChange(event) {
             ...style,
         }
 
+        const shape = map.pm.Draw.getActiveShape();
+        if (shape) {
+            const layer = map.pm.Draw[shape]._layer;
+            if (layer) {
+                layer.setStyle(uniforge.style);
+            }
+        }
+
         uniforge.leaflet.drawStyle.update(uniforge.leaflet.core.map, uniforge.style);
 
         await _refreshPreviewStyle();
@@ -886,9 +911,19 @@ async function onShapeBorderComboChange(event) {
 
 async function onFillColorPickerChange(event) {
     const picker = event.target;
+    const map = uniforge.leaflet.core.map;
 
     if (uniforge.style) {
         uniforge.style.fillColor = picker.value;
+
+        const shape = map.pm.Draw.getActiveShape();
+        if (shape) {
+            const layer = map.pm.Draw[shape]._layer;
+            if (layer) {
+                layer.setStyle(uniforge.style);
+            }
+        }
+
         uniforge.leaflet.drawStyle.update(uniforge.leaflet.core.map, uniforge.style);
 
         await _refreshPreviewStyle();
@@ -897,8 +932,18 @@ async function onFillColorPickerChange(event) {
 
 async function onBorderColorPickerChange(event) {
     const picker = event.target;
+    const map = uniforge.leaflet.core.map;
     if (uniforge.style) {
         uniforge.style.color = picker.value;
+
+        const shape = map.pm.Draw.getActiveShape();
+        if (shape) {
+            const layer = map.pm.Draw[shape]._layer;
+            if (layer) {
+                layer.setStyle(uniforge.style);
+            }
+        }
+
         uniforge.leaflet.drawStyle.update(uniforge.leaflet.core.map, uniforge.style);
 
         await _refreshPreviewStyle();
@@ -991,16 +1036,16 @@ async function _refreshStyle() {
         const fillColor = style.fillColor.replace('var(', '').replace(')', '');
         fillColorPicker.value = computedStyle.getPropertyValue(fillColor).trim();
     }
-    else fillColorPicker.value = style.fillColor;    
+    else fillColorPicker.value = style.fillColor;
 
     uniforge.ctrls.colorPickers.fillColor = fillColorPicker;
 
     if (style.fillColor.includes('var(')) {
         const borderColor = style.color.replace('var(', '').replace(')', '');
-        borderColorPicker.value = computedStyle.getPropertyValue(borderColor).trim();        
-    } 
+        borderColorPicker.value = computedStyle.getPropertyValue(borderColor).trim();
+    }
     else borderColorPicker.value = style.color;
-    
+
 
     uniforge.ctrls.colorPickers.borderColor = borderColorPicker;
 

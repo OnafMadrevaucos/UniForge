@@ -70,6 +70,10 @@ const lControl = {
         return (this.editCache && this.editCache.layer) ? true : false;
     },
 
+    get defaultStyle() {
+        return utils.defaultStyle;
+    },
+
     /**
     * Limpa a cache de edição do Leaflet.
     */
@@ -365,7 +369,7 @@ const lControl = {
         }
 
         function _loadElementsStyles() {
-            utils.drawStyle.update(map, uniforge.style);
+            utils.drawStyle.update(map, uniforge.style ?? utils.defaultStyle);
         }
 
         function _configureOverlayControl() {
@@ -626,7 +630,7 @@ const lControl = {
                             icon: (layer instanceof L.Marker) ? layer.options.icon.options.iconUrl : layer.type,
                             source: `${layer.source.type}{${layer.source._id}}`,
                             points: points,
-                            style: JSON.stringify(uniforge.leaflet.drawStyle.style)
+                            style: JSON.stringify(uniforge.style ?? utils.defaultStyle)
                         }
 
                         // Adiciona o elemento ao banco de dados.
@@ -638,7 +642,7 @@ const lControl = {
 
                         lControl.mapElements.addLayer(layer);
                         // Adiciona a camada desenhada ao grupo de elementos do mapa.
-                        triggerHook('layerElementsUpdated');
+                        await triggerHook('layerElementsUpdated');
 
                         // Comita a transação.
                         await uniforge.db.commitTransaction();
@@ -672,7 +676,7 @@ const lControl = {
 
             if (e.shape !== 'Marker') {
                 // Obtém o estilo salvo, se não houver obtém o valor padrão.
-                uniforge.style = JSON.parse(uniforge.settings.get('leafletStyle.pathOptions')) ?? utils.defaultStyle;
+                uniforge.style = uniforge.style ?? utils.defaultStyle;
                 // Atualiza o estilo da camada desenhada.
                 utils.drawStyle.update(map, uniforge.style);
 
