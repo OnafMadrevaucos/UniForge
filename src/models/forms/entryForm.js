@@ -804,7 +804,7 @@ export default class EntryForm extends SidebarForm {
 
     const options = uniforge.utils.mergeObjects(uniforge.tinymce.options.default, {
       content_css: [uniforge.constants.CSS_THEME, uniforge.constants.CSS_NAME],
-      selector: `textarea#${this.query.main_editor}`,      
+      selector: `textarea#${this.query.main_editor}`,
       setup: (editor) => { uniforge.tinymce.setupTinyMCE(editor); }
     });
 
@@ -834,7 +834,7 @@ export default class EntryForm extends SidebarForm {
     const options = uniforge.utils.mergeObjects(uniforge.tinymce.options.simple, {
       content_css: [uniforge.constants.CSS_THEME, uniforge.constants.CSS_NAME],
       selector: `div#${this.query.flavor_editor}`,
-      placeholder: "Texto de floreio...",      
+      placeholder: "Texto de floreio...",
       setup: (editor) => { uniforge.tinymce.setupInlineTinyMCE(editor); }
     });
 
@@ -1375,6 +1375,16 @@ export default class EntryForm extends SidebarForm {
   }
 
   /**
+   * Trata o evento de cancelamento de um novo item.
+   * @param {Event} event - Evento de clique no botão de Cancelar.
+   */
+  async onCancelClick(event) {
+    event.stopPropagation();
+
+    this.cancel();
+  }
+
+  /**
    * Remove uma entrada de uma categoria da lista.
    * @param {Event} event - Evento de clique no botão para excluir a entrada.
    */
@@ -1493,16 +1503,6 @@ export default class EntryForm extends SidebarForm {
     this.controlStates(this.states.default);
   }
 
-  /**
-    * Trata o evento de cancelamento de um novo item.
-    * @param {Event} event - Evento de clique no botão de Cancelar.
-    */
-  async onCancelClick(event) {
-    event.stopPropagation();
-
-    this.cancel();
-  }  
-
   /* ---------------------------------------------------------------------------------------------------------------- */
   // UTILITÁRIOS
 
@@ -1560,7 +1560,7 @@ export default class EntryForm extends SidebarForm {
     return newOption;
   }
 
-  
+
 
   async _initializeImagesInText(editor) {
     const content = editor.getContent(); // Obtém o conteúdo atual do editor

@@ -397,7 +397,7 @@ export default class ChapterForm extends SidebarForm {
 
         const options = uniforge.utils.mergeObjects(uniforge.tinymce.options.chapter, {
             content_css: [uniforge.constants.CSS_THEME, uniforge.constants.CSS_NAME],
-            selector: `textarea#${this.query.main_editor}`,                     
+            selector: `textarea#${this.query.main_editor}`,
             setup: (editor) => { uniforge.tinymce.setupChapterTinyMCE(editor); }
         });
 
@@ -607,7 +607,7 @@ export default class ChapterForm extends SidebarForm {
                 }
 
                 // Verifica se o item já existe no banco de dados.
-                if (this.isUpdate) { 
+                if (this.isUpdate) {
                     await uniforge.db.updateSection(data);
 
                     this.msgBox.showInfo('Seção atualizada com sucesso.');
@@ -628,6 +628,16 @@ export default class ChapterForm extends SidebarForm {
             // Faz rollback em caso de erro no processo de salvamento.
             await uniforge.db.rollbackTransaction(error);
         }
+    }
+
+    /**
+    * Trata o evento de cancelamento de um novo item.
+    * @param {Event} event - Evento de clique no botão de Cancelar.
+    */
+    async onCancelClick(event) {
+        event.stopPropagation();
+
+        this.cancel();
     }
 
     /**
