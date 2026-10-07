@@ -78,6 +78,8 @@ async function main() {
         const cssname = await uniforge.path.join('css/styles.css');
         const csstheme = await uniforge.path.join('css/themes.css');
 
+        const currentVersion = await uniforge.versions.app();
+
         const localFonts = await uniforge.utils.getSystemFonts();
 
         uniforge.utils.mergeObjects(uniforge, {
@@ -91,7 +93,7 @@ async function main() {
             */
             constants: Object.freeze({
                 APP_NAME: 'UniForge',
-                APP_VERSION: '0.8.9',
+                APP_VERSION: currentVersion,
                 CSS_NAME: cssname,
                 CSS_THEME: csstheme,
                 leaflet: lControl.constants,
