@@ -157,7 +157,7 @@ export default class EntrySearchDialog extends BaseDialog {
       tinymce.remove('#sourceMainEditor');
     }
 
-    const options = uniforge.utils.mergeObjects(uniforge.tinymceOptions.readonly, {
+    const options = uniforge.utils.mergeObjects(uniforge.tinymce.options.readonly, {
       selector: 'textarea#sourceMainEditor',
       init_instance_callback: (editor) => {
         editor.setContent(""); // Garante que o editor seja iniciado vazio.
@@ -181,7 +181,7 @@ export default class EntrySearchDialog extends BaseDialog {
       tinymce.remove('#sourceFlavorEditor');
     }
 
-    const options = uniforge.utils.mergeObjects(uniforge.tinymceOptions.simple, {
+    const options = uniforge.utils.mergeObjects(uniforge.tinymce.options.simple, {
       editable_class: 'editable',
       selector: 'div#sourceFlavorEditor',
       placeholder: "Texto de floreio...",

@@ -395,17 +395,10 @@ export default class ChapterForm extends SidebarForm {
             textarea.id = this.query.main_editor;
         }
 
-        const options = uniforge.utils.mergeObjects(uniforge.tinymceOptions.default, {
-            selector: `textarea#${this.query.main_editor}`,
-            init_instance_callback: (editor) => {
-                editor.setContent(""); // Garante que o editor seja iniciado vazio.
-            },
-            text_patterns: [
-                { start: '@[', end: ']', format: 'bold' },
-                { start: '@{', end: '}', format: 'italic' }
-                //{ start: '##', format: 'blockquote', trigger: 'space' }
-            ],
-            setup: (editor) => { this._setupTinyMCE(editor); }
+        const options = uniforge.utils.mergeObjects(uniforge.tinymce.options.chapter, {
+            content_css: [uniforge.constants.CSS_THEME, uniforge.constants.CSS_NAME],
+            selector: `textarea#${this.query.main_editor}`,                     
+            setup: (editor) => { uniforge.tinymce.setupChapterTinyMCE(editor); }
         });
 
         await tinymce.init(options);

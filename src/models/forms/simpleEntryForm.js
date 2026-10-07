@@ -532,17 +532,9 @@ export default class SimpleEntryForm extends BaseForm {
       textarea.id = this.query.main_editor;
     }
 
-    const options = uniforge.utils.mergeObjects(uniforge.tinymceOptions.default, {
-      selector: `textarea#${this.query.main_editor}`,
-      init_instance_callback: (editor) => {
-        editor.setContent(""); // Garante que o editor seja iniciado vazio.
-      },
-      text_patterns: [
-        { start: '@[', end: ']', format: 'bold' },
-        { start: '@{', end: '}', format: 'italic' }
-        //{ start: '##', format: 'blockquote', trigger: 'space' }
-      ],
-      setup: (editor) => { this._setupTinyMCE(editor); }
+    const options = uniforge.utils.mergeObjects(uniforge.tinymce.options.default, {
+      selector: `textarea#${this.query.main_editor}`,      
+      setup: (editor) => { uniforge.tinymce.setupTinyMCE(editor); }
     });
 
     await tinymce.init(options);
@@ -560,13 +552,10 @@ export default class SimpleEntryForm extends BaseForm {
       div.id = this.query.flavor_editor;
     }
 
-    const options = uniforge.utils.mergeObjects(uniforge.tinymceOptions.simple, {
-      selector: `div#${this.query.flavor_editor}`,
-      placeholder: "Texto de floreio...",
-      init_instance_callback: (editor) => {
-        editor.setContent(""); // Garante que o editor seja iniciado vazio.
-      },
-      setup: (editor) => { this._setupInlineTinyMCE(editor); }
+    const options = uniforge.utils.mergeObjects(uniforge.tinymce.options.simple, {
+      content_css: [uniforge.constants.CSS_THEME, uniforge.constants.CSS_NAME],
+      selector: `div#${this.query.flavor_editor}`,      placeholder: "Texto de floreio...",      
+      setup: (editor) => { uniforge.tinymce.setupInlineTinyMCE(editor); }
     });
 
     await tinymce.init(options);
@@ -584,13 +573,11 @@ export default class SimpleEntryForm extends BaseForm {
       div.id = this.query.event_editor;
     }
 
-    const options = uniforge.utils.mergeObjects(uniforge.tinymceOptions.simple, {
+    const options = uniforge.utils.mergeObjects(uniforge.tinymce.options.simple, {
+      content_css: [uniforge.constants.CSS_THEME, uniforge.constants.CSS_NAME],
       selector: `div#${this.query.event_editor}`,
       placeholder: "Descrição do evento...",
-      init_instance_callback: (editor) => {
-        editor.setContent(""); // Garante que o editor seja iniciado vazio.
-      },
-      setup: (editor) => { this._setupInlineTinyMCE(editor); }
+      setup: (editor) => { uniforge.tinymce.setupInlineTinyMCE(editor); }
     });
 
     await tinymce.init(options);

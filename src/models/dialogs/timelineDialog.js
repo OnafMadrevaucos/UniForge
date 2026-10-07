@@ -24,7 +24,7 @@ export default class TimelineDialog extends BaseDialog {
             tinymce.remove('#flavorText');
         }
 
-        const options = uniforge.utils.mergeObjects(uniforge.tinymceOptions.lite, {
+        const options = uniforge.utils.mergeObjects(uniforge.tinymce.options.lite, {
             selector: 'div#flavorText',
             readonly: true,
             init_instance_callback: (editor) => {

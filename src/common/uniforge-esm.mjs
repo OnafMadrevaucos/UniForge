@@ -74,14 +74,21 @@ const parser = {
     removeHighlight: utilsEsm.html.removeHighlight
 }
 
+const tinymce = {
+    setupTinyMCE: utilsEsm.tmce.setupTinyMCE,
+    setupChapterTinyMCE: utilsEsm.tmce.setupChapterTinyMCE,
+    setupInlineTinyMCE: utilsEsm.tmce.setupInlineTinyMCE,
+    options: Object.freeze({ ...utilsEsm.tmce.options })
+}
+
 const leaflet = {
-    core: leafletEsm.core,    
-    drawer: leafletEsm.utils.default.drawer,   
+    core: leafletEsm.core,
+    drawer: leafletEsm.utils.default.drawer,
     drawStyle: {
-        factories: leafletEsm.utils.default.options, 
+        factories: leafletEsm.utils.default.options,
         ...leafletEsm.utils.default.drawStyle
     },
-    iconMap: leafletEsm.utils.iconMap, 
+    iconMap: leafletEsm.utils.iconMap,
 }
 
 const state = {
@@ -208,12 +215,19 @@ globalThis.uniforge = {
     parser: Object.freeze(parser),
 
     /**
+    * Instância de funções auxiliares de manipulação de editores TinyMCE.
+    * 
+    * @type {Object}
+    */
+    tinymce: Object.freeze({ ...tinymce }),
+
+    /**
     * Instância de funções auxiliares de manipulação de mapas da ferramenta Leaflet.
     * 
     * @type {Leaflet}
     */
     leaflet: Object.freeze({
-        drawer: leaflet.drawer, 
+        drawer: leaflet.drawer,
         drawStyle: leaflet.drawStyle
     }),
 
@@ -278,7 +292,7 @@ globalThis.uniforge = {
                             rule.selectorText.includes(selector)
                         ) {
                             for (const property of rule.style) {
-                                if(!property.includes('--')) continue;
+                                if (!property.includes('--')) continue;
 
                                 rules[property] = rule.style
                                     .getPropertyValue(property)

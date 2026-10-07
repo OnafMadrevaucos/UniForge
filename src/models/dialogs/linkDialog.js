@@ -7,11 +7,7 @@ export default class LinkDialog extends BaseDialog {
         super(dialogData, uniforge.utils.mergeObjects(options, {
             height: '500px',
             width: '350px'
-        }));
-
-        this.sourceId = options?.id ?? null;
-
-        this.sourceType = options?.type ?? null;
+        }));        
 
         this.template = 'linkDialog'; // Define o template do diálogo.
 
@@ -431,7 +427,7 @@ export default class LinkDialog extends BaseDialog {
 
     static async configDialog(source, options = {}) {
         return new Promise((resolve, reject) => {
-            options = uniforge.utils.mergeObjects(options, { source: source, alwaysClose: false });
+            options = uniforge.utils.mergeObjects(options, { alwaysClose: false });
             const dialog = new this({
                 title: 'Novo Vínculo',
                 buttons: {

@@ -107,13 +107,13 @@ export default class EntityForm extends EntryForm {
       tinymce.remove('#lineageFlavorEditor');
     }
 
-    const options = uniforge.utils.mergeObjects(uniforge.tinymceOptions.simple, {
+    const options = uniforge.utils.mergeObjects(uniforge.tinymce.options.simple, {
       selector: 'div#lineageFlavorEditor',
       placeholder: "Descrição da Linhagem...",
       init_instance_callback: (editor) => {
         editor.setContent(""); // Garante que o editor seja iniciado vazio.
       },
-      setup: (editor) => { this._setupInlineTinyMCE(editor); }
+      setup: (editor) => { uniforge.tinymce.setupInlineTinyMCE(editor); }
     });
 
     await tinymce.init(options);

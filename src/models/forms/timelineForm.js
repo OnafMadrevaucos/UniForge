@@ -276,13 +276,11 @@ export default class TimelineForm extends SidebarForm {
             div.id = this.query.flavor_editor;
         }
 
-        const options = uniforge.utils.mergeObjects(uniforge.tinymceOptions.simple, {
+        const options = uniforge.utils.mergeObjects(uniforge.tinymce.options.simple, {
+            content_css: [uniforge.constants.CSS_THEME, uniforge.constants.CSS_NAME],
             selector: `div#${this.query.flavor_editor}`,
-            placeholder: "Texto de floreio...",
-            init_instance_callback: (editor) => {
-                editor.setContent(""); // Garante que o editor seja iniciado vazio.
-            },
-            setup: (editor) => { this._setupInlineTinyMCE(editor); }
+            placeholder: "Texto de floreio...",            
+            setup: (editor) => { uniforge.tinymce.setupInlineTinyMCE(editor); }
         });
 
         await tinymce.init(options);
@@ -300,13 +298,11 @@ export default class TimelineForm extends SidebarForm {
             div.id = this.query.event_editor;
         }
 
-        const options = uniforge.utils.mergeObjects(uniforge.tinymceOptions.simple, {
+        const options = uniforge.utils.mergeObjects(uniforge.tinymce.options.simple, {
+            content_css: [uniforge.constants.CSS_THEME, uniforge.constants.CSS_NAME],
             selector: `div#${this.query.event_editor}`,
-            placeholder: "Descrição do evento...",
-            init_instance_callback: (editor) => {
-                editor.setContent(""); // Garante que o editor seja iniciado vazio.
-            },
-            setup: (editor) => { this._setupInlineTinyMCE(editor); }
+            placeholder: "Descrição do evento...",           
+            setup: (editor) => {  uniforge.tinymce.setupInlineTinyMCE(editor); }
         });
 
         await tinymce.init(options);

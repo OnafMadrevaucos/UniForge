@@ -45,13 +45,11 @@ export default class AtlasForm extends EntryForm {
             tinymce.remove('#captionEditor');
         }
 
-        const options = uniforge.utils.mergeObjects(uniforge.tinymceOptions.simple, {
+        const options = uniforge.utils.mergeObjects(uniforge.tinymce.options.simple, {
+            content_css: [uniforge.constants.CSS_THEME, uniforge.constants.CSS_NAME],
             selector: 'div#captionEditor',
-            placeholder: "Descrição da imagem...",
-            init_instance_callback: (editor) => {
-                editor.setContent(""); // Garante que o editor seja iniciado vazio.
-            },
-            setup: (editor) => { this._setupInlineTinyMCE(editor); }
+            placeholder: "Descrição da imagem...",            
+            setup: (editor) => { uniforge.tinymce.setupInlineTinyMCE(editor); }
         });
 
         tinymce.init(options);
