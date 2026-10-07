@@ -26,7 +26,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 // Limpa o armazenamento local ao fechar a janela.
 window.addEventListener("beforeunload", onCloseApp);
 window.addEventListener('themechange', onThemeChange);
-window.addEventListener('keydown', onKeyDown);
 
 /**
  * Função principal que inicializa a aplicação UniForge, configurando os elementos globais, reconstruindo os documentos, 
