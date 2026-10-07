@@ -19,6 +19,11 @@ export function getAsociatedData(element) {
 export function associateData(element, data) {
     console.log(`UniForge | Associando um dado ao element '${element.name}'...`);
 
+    if(!element) {
+        console.warn('Elemento HTML não foi informado.');
+        return;
+    }
+
     const store = globalThis.store;
 
     // Inicializa o WeakMap se ainda não foi criado.
@@ -39,6 +44,11 @@ export function associateData(element, data) {
 export async function blobToImage(blob, ext) {
     console.log(`UniForge | Transformando um dado BLOB em Imagem...`);
     const imageType = `image/${ext}`;
+
+    if(!blob) {
+        console.warn('Não há dados a serem decodificados.');
+        return;
+    }
 
     const binaryString = atob(blob); // Decodifica Base64 para binário
     const binaryData = new Uint8Array(binaryString.length);

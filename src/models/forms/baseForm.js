@@ -259,6 +259,49 @@ export default class BaseForm extends Application {
   hideForm() {
     this.close();
   }
+
+  /* ---------------------------------------------------------------------------------------------------------------- */
+  // CONFIGURAÇÃO
+  /**
+   * Inicia a construção do formulário.
+   */
+  async initialize() {
+    try {
+      // Configura os conteúdos específicos do formulário.
+      if (this.configureContent) {
+
+        await this.configureContent();
+
+        if (this.activateListeners) {
+          // Ativa os demais ouvintes.
+          this.activateListeners();
+
+          return true;
+        } else {
+          this.msgBox.showError('Não é possível iniciar a construção do formulário. Método \'activateListeners\' não foi implementado.');
+          return false;
+        }
+      }
+      else {
+        this.msgBox.showError('Não é possível iniciar a construção do formulário. Método \'configureContent\' não foi implementado.');
+        return false;
+      }
+    } catch (error) {
+      this.msgBox.showError(error.message, error);
+      return false;
+    }
+  }
+
+  /**
+   * Adiciona um listener de eventos ao aplicativo de interface do usuário.
+   * @param {string} event - O nome do evento a ser adicionado.
+   * @param {Function} callback - A função a ser executada quando o evento for disparado.
+   */
+  addEventListener(event, callback) {
+    if (!this.rendered) throw new Error('O formulário ainda não foi renderizado e não pode receber ouvintes.');
+    this.ui.app.addEventListener(event, callback);
+  }
+
   /* ---------------------------------------------------------------------------------------------------------------- */
   // LISTENERS
   /**
@@ -323,48 +366,6 @@ export default class BaseForm extends Application {
     } else {
       input.style.backgroundColor = ''; // Volta ao padrão
     }
-  }
-
-  /* ---------------------------------------------------------------------------------------------------------------- */
-  // CONFIGURAÇÃO
-  /**
-   * Inicia a construção do formulário.
-   */
-  async initialize() {
-    try {
-      // Configura os conteúdos específicos do formulário.
-      if (this.configureContent) {
-
-        await this.configureContent();
-
-        if (this.activateListeners) {
-          // Ativa os demais ouvintes.
-          this.activateListeners();
-
-          return true;
-        } else {
-          this.msgBox.showError('Não é possível iniciar a construção do formulário. Método \'activateListeners\' não foi implementado.');
-          return false;
-        }
-      }
-      else {
-        this.msgBox.showError('Não é possível iniciar a construção do formulário. Método \'configureContent\' não foi implementado.');
-        return false;
-      }
-    } catch (error) {
-      this.msgBox.showError(error.message, error);
-      return false;
-    }
-  }
-
-  /**
-   * Adiciona um listener de eventos ao aplicativo de interface do usuário.
-   * @param {string} event - O nome do evento a ser adicionado.
-   * @param {Function} callback - A função a ser executada quando o evento for disparado.
-   */
-  addEventListener(event, callback) {
-    if (!this.rendered) throw new Error('O formulário ainda não foi renderizado e não pode receber ouvintes.');
-    this.ui.app.addEventListener(event, callback);
   }
 
   /* ---------------------------------------------------------------------------------------------------------------- */
