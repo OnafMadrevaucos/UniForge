@@ -239,7 +239,7 @@ export default class Dialogs extends BaseDialog {
       const dialog = new this(dialogData, {
         hasTemplate: false,
         imageUrl,
-        width: '75%',
+        //width: '75%',
         type: Dialogs.Type.IMAGE,
         alwaysClose: true
       });

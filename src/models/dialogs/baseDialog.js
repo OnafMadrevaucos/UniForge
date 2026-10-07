@@ -171,11 +171,14 @@ export default class BaseDialog extends Application {
         const html = await this._prepareBody();
         main.innerHTML = html;
 
-        const buttons = this._prepareButtons();
-
         dialog.appendChild(header);
         dialog.appendChild(main);
-        dialog.appendChild(buttons);
+
+        // Botões foram informados pelo usuário, crie-os.
+        if (this.buttons && Object.keys(this.buttons).length > 0) {
+            const buttons = this._prepareButtons();
+            dialog.appendChild(buttons);
+        }
     }
 
     /**
@@ -207,7 +210,7 @@ export default class BaseDialog extends Application {
     */
     async initialize() {
         // Se o diálogo implementa 'configureContent', chama o método.
-        if (this.configureContent) await this.configureContent();        
+        if (this.configureContent) await this.configureContent();
 
         // Centralizar o diálogo no parentElement
         this._centerDialog();
@@ -236,7 +239,7 @@ export default class BaseDialog extends Application {
 
     close() {
         // Se o diálogo ja foi fechado, ignora.
-        if (this._closed) return; 
+        if (this._closed) return;
 
         // Remove o diálogo do DOM, caso ele ainda exista.
         if (this.element) {
@@ -321,7 +324,7 @@ export default class BaseDialog extends Application {
         const id = buttonElement.id; // Pega o ID do elemento <button>
         const button = this.buttons[id];
         this.submit(button, event);
-    }    
+    }
 
     /**
      * Limita a posição X do diálogo dentro dos limites do contêiner pai.

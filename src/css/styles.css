@@ -2471,7 +2471,7 @@ button.disabled:hover {
     gap: var(--default-gap-size);
 }
 
-.data-group>a:not(.hidden) {
+.data-group>a:not(.hidden):not(.flyer-button) {
     flex: 0.05;
     text-align: end;
 }

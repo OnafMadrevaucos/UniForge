@@ -1099,8 +1099,8 @@ export default class EntryForm extends SidebarForm {
   async onImageRightClick(event, displayedImage) {
     event.preventDefault();
 
-    if (this.selectedImg.raw && !displayedImage.classList.contains('empty')) {
-      const imageUrl = await uniforge.utils.blobToImage(this.selectedImg.raw, this.selectedImg.ext);
+    if (this.selectedImg.rawData && !displayedImage.classList.contains('empty')) {
+      const imageUrl = await uniforge.utils.blobToImage(this.selectedImg.rawData, this.selectedImg.ext);
       await Dialogs.showImagem('Exibir Imagem', imageUrl);
     }
   }
