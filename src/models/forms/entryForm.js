@@ -123,10 +123,10 @@ export default class EntryForm extends SidebarForm {
     /**
      * @type {Section} - A classe de documento utilizada pelo formulário.
      */
-    this.documentClass = Entry;    
+    this.documentClass = Entry;
 
     // Verifica se o formulário possui um callback de fechamento e configura-o.
-    if (this.options.closeCallback) this.onCloseCallback = this.options.closeCallback;    
+    if (this.options.closeCallback) this.onCloseCallback = this.options.closeCallback;
   }
 
   /* ---------------------------------------------------------------------------------------------------------------- */
@@ -578,7 +578,7 @@ export default class EntryForm extends SidebarForm {
     // Atualiza o estado atual do formulário.
     this.currentState = state;
   }
-  
+
   /**
    * Recarrega os controles do formulário.
    * @protected
@@ -808,9 +808,19 @@ export default class EntryForm extends SidebarForm {
         editor.setContent(""); // Garante que o editor seja iniciado vazio.
       },
       text_patterns: [
-        { start: '@[', end: ']', format: 'bold' },
-        { start: '@{', end: '}', format: 'italic' }
-        //{ start: '##', format: 'blockquote', trigger: 'space' }
+        { start: '*', end: '*', format: 'italic' },
+        { start: '**', end: '**', format: 'bold' },
+        { start: '#', format: 'h1', trigger: 'space' },
+        { start: '##', format: 'h2', trigger: 'space' },
+        { start: '###', format: 'h3', trigger: 'space' },
+        { start: '####', format: 'h4', trigger: 'space' },
+        { start: '#####', format: 'h5', trigger: 'space' },
+        { start: '######', format: 'h6', trigger: 'space' },
+        { start: '1.', cmd: 'InsertOrderedList', trigger: 'space' },
+        { start: '*', cmd: 'InsertUnorderedList', trigger: 'space' },
+        { start: '-', cmd: 'InsertUnorderedList', trigger: 'space' },
+        { start: '>', cmd: 'mceBlockQuote', trigger: 'space' },
+        { start: '---', cmd: 'InsertHorizontalRule', trigger: 'space' },
       ],
       setup: (editor) => { this._setupTinyMCE(editor); }
     });
@@ -1515,9 +1525,10 @@ export default class EntryForm extends SidebarForm {
   }
   /**
     * Ação personalizada no editor TinyMCE para criar ou modificar links.
-    * @param {Object} editor - Instância do editor TinyMCE.
+    * @param {Object} editor        - Instância do editor TinyMCE.
+    * @param {string|null} keyword  - Palavra-chave enviada pelo usuário.
     */
-  async onEntryLinkCreation(editor) {
+  async onEntryLinkCreation(editor, keyword = null) {
     const tooltip = this.ui.tooltip;
     const selectedHtml = editor.selection.getContent();
 
@@ -1531,19 +1542,75 @@ export default class EntryForm extends SidebarForm {
         const unwrappedText = selectedHtml.replace(spanRegex, '$1').trim();
         editor.selection.setContent(unwrappedText);
       } else {
-        const selectedText = editor.selection.getContent({ format: 'text' });
-        if (selectedText) {
-          const leadingSpaces = selectedText.match(/^\s+/);
-          const trailingSpaces = selectedText.match(/\s+$/);
+        if (!keyword) {
+          const selectedText = editor.selection.getContent({ format: 'text' });
+          if (selectedText) {
+            const leadingSpaces = selectedText.match(/^\s+/);
+            const trailingSpaces = selectedText.match(/\s+$/);
 
-          const trimmedText = selectedText.trim();
-          const wrappedContent = `${leadingSpaces ? leadingSpaces[0] : ''}@[${link.id}, ${link.type}]{${trimmedText}}${trailingSpaces ? trailingSpaces[0] : ''}`;
-          editor.selection.setContent(wrappedContent);
-        } else {
-          editor.notificationManager.open({
-            text: 'Favor selecionar um texto antes de criar um link.',
-            type: 'warning'
-          });
+            const trimmedText = selectedText.trim();
+            const wrappedContent = `${leadingSpaces ? leadingSpaces[0] : ''}@[${link.id}, ${link.type}]{${trimmedText}}${trailingSpaces ? trailingSpaces[0] : ''}`;
+            editor.selection.setContent(wrappedContent);
+          } else {
+            editor.notificationManager.open({
+              text: 'Favor selecionar um texto antes de criar um link.',
+              type: 'warning'
+            });
+          }
+        }
+        else {
+          // Limpa os espaços vazios no inicio e fim da palavra-chave.
+          const trimmedText = keyword.trim();
+          // Gere o link no texto da Entrada.
+          const wrappedContent = ` @[${link.id}, ${link.type}]{${trimmedText}} `;
+
+          // Obtém a posição atual da seleção/cursor do editor.
+          const range = editor.selection.getRng();
+
+          // Verifica se a posição atual é do tipo Texto (a única válida para um link).
+          // Se não, aborte.
+          if (range.startContainer.nodeType !== Node.TEXT_NODE)
+            return;
+
+          // Guarda o nó DOM da posição atual do editor.
+          const textNode = range.startContainer;
+          // Obtém a posição atual do cursor em específico dentro da seleção.
+          const cursorPosition = range.startOffset;
+          // Obtenha todo o texto do início até a posição atual do nó.
+          const textBeforeCursor = textNode.nodeValue.substring(0, cursorPosition);
+
+          // Expressão para encontrar o padrão '@{keyword}' dentro do nó.
+          const keywordRegex = new RegExp(
+            `@\\{${trimmedText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\}$`
+          );
+
+          // Realiza a busca do padrão.
+          const match = keywordRegex.exec(textBeforeCursor);
+
+          // Encontrou o padrão, então substitua-o pelo 'wrappedContent'.
+          if (match) {
+            // Posicão inicial do padrão dentro da seleção atual.
+            const startOffset = cursorPosition - match[0].length;
+            // Cria uma nova seleção dentro do editor.
+            const replacementRange = editor.dom.createRng();
+
+            // Definindo a posição inicial da nova seleção.
+            replacementRange.setStart(
+              textNode,
+              startOffset
+            );
+
+            // Definindo a posição final da nova seleção.
+            replacementRange.setEnd(
+              textNode,
+              cursorPosition
+            );
+
+            // Insere a nova seleção ao editor.
+            editor.selection.setRng(replacementRange);
+            // Subistitui o texto no editor.
+            editor.selection.setContent(wrappedContent);
+          }
         }
       }
     }
@@ -1763,15 +1830,28 @@ export default class EntryForm extends SidebarForm {
     });
 
     // Update the image count whenever the content changes
-    editor.on('input', () => this._updateImageCount(editor));
+    editor.on('input', () => {
+      checkEntryLinkShortcut(editor);
+      this._updateImageCount(editor)
+    });
     editor.on('change', () => this._updateImageCount(editor));
     editor.on('NodeChange', () => this._updateImageCount(editor));
+
+    /**
+     * Registra o comando utilizado para criação de links de entradas.
+     *
+     * @param {tinymce.Editor} editor - Instância do editor TinyMCE.
+     * @returns {void}
+    */
+    editor.addCommand('entryLink', (ui, keyword) => {
+      this.onEntryLinkCreation(editor, keyword);
+    });
 
     // Adiciona um botão para criar link no corpo do editor.
     editor.ui.registry.addButton('entryLink', {
       tooltip: 'Criar link',
       icon: 'bookmark',
-      onAction: () => { this.onEntryLinkCreation(editor); }
+      onAction: () => { editor.execCommand('entryLink'); }
     });
 
     // Adiciona um botão para enviar ao corpo do editor.
@@ -1787,6 +1867,39 @@ export default class EntryForm extends SidebarForm {
       icon: 'format-code',
       onAction: () => { this.onAddLoremIpsum(editor); }
     });
+
+    /**
+      * Verifica se o texto recém-inserido corresponde ao fechamento
+      * de um atalho de entrada no formato "@{palavra-chave}".
+      *
+      * @param {tinymce.Editor} editor - Instância do editor TinyMCE.
+      * @returns {void}
+    */
+    const checkEntryLinkShortcut = (editor) => {
+      const selection = editor.selection;
+      const range = selection.getRng();
+
+      if (!selection.isCollapsed())
+        return;
+
+      const container = range.startContainer;
+
+      if (container.nodeType !== Node.TEXT_NODE)
+        return;
+
+      const text = container.nodeValue;
+      const cursorPosition = range.startOffset;
+      const textBeforeCursor = text.substring(0, cursorPosition);
+
+      const match = textBeforeCursor.match(/@\{([^{}]+)\}$/);
+
+      if (!match)
+        return;
+
+      const keyword = match[1];
+
+      editor.execCommand('entryLink', false, keyword);
+    };
   }
   /**
    * Configura o editor TinyMCE com funcionalidades inline.

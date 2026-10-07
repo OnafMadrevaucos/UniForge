@@ -3148,6 +3148,12 @@ ul.list li,
     color: var(--dark-color-b)
 }
 
+#tinymce hr,
+.article .text-content hr {
+    width: var(--fill-width);
+    border: 2px groove var(--dark-color-b);
+}
+
 /* ------ Timeline Form ------ */
 .timeline .content {
     position: relative;
@@ -4801,7 +4807,6 @@ hr.divider {
     margin: 0 0 10px 0;
     outline: none;
 }
-
 
 #tinymce .text-content blockquote {
     border-left: var(--blockquote-border);

@@ -34,7 +34,7 @@ window.addEventListener('themechange', onThemeChange);
  * 
  * @async
  * @returns {Promise<void>}
- */
+*/
 async function main() {
     // Inicia o gerenciador de tooltips.
     uniforge.tooltip.init();
@@ -142,7 +142,7 @@ async function main() {
                     resize: false,
                     statusbar: false,
                     skin: 'oxide-dark',
-                    content_css: [csstheme, cssname],
+                    content_css: [csstheme, cssname],                    
                 },
                 readonly: {
                     editable_class: 'editable',
