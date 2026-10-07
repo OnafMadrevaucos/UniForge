@@ -1012,14 +1012,10 @@ const lControl = {
 
             switch (elementData.mType) {
                 case 'circle': {
-                    const points = elementData.points.split(';').map(point => {
-                        const coords = point.split(',').map(Number);
-                        return L.latLng(coords[0], coords[1]);
-                    });
-
+                    const point = L.latLng(elementData.points.split(',').map(Number));   
                     const elementStyle = JSON.parse(elementData.style) ?? utils.options.regularShape(false, false);
 
-                    element = L.circle(points, elementStyle);
+                    element = L.circle(point, elementStyle);
                     element.setStyle(elementStyle);
                 } break;
                 case 'marker': {
