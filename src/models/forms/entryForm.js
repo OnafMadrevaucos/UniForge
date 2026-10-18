@@ -173,6 +173,16 @@ export default class EntryForm extends SidebarForm {
     */
   #events = {};
 
+  /** Tipos de Informação.
+   * @returns {Object} 
+  */
+  get infoTypes() {
+    return [
+      { _id: 'text', _label: 'Texto' },
+      { _id: 'list', _label: 'Lista' },
+    ];
+  }
+
   /** Identificador da Entrada atual.
    * @returns {Object} 
    * */
@@ -330,13 +340,15 @@ export default class EntryForm extends SidebarForm {
     // Informa ao formulário atual o seu tipo.
     this.data.type = this.type;
 
+    // O formulário é do tipo com Eventos.
     if (this.isEventForm) {
       this.data.entryTypes = uniforge.doc.entryTypes.toArray();
       this.data.relevances = uniforge.doc.relevances.toArray();
       this.data.calendars = uniforge.doc.calendars.toArray();
     }
 
-    this.selection.event = uniforge.defaults.emptyString; // Limpa a seleção de evento.
+    // Limpa a seleção de evento.
+    this.selection.event = uniforge.defaults.emptyString;
 
     return await super.prepareData();
   }
@@ -923,6 +935,8 @@ export default class EntryForm extends SidebarForm {
     const yesBtn = this.querySelector('#confirm-yes');
     const noBtn = this.querySelector('#confirm-no');
 
+    const newFieldButton = this.querySelector('#newFieldButton');
+
     deleteCheckbox.addEventListener('change', (event) => { this.onDeleteSwitchChange(event); });
 
     // Há um contêiner de imagem?
@@ -938,6 +952,8 @@ export default class EntryForm extends SidebarForm {
     cancelButton.addEventListener('click', (event) => { this.onCancelClick(event); });
     newEntryButton.addEventListener('click', (event) => { this.onNewClick(event); });
     saveButton.addEventListener('click', (event) => { this.onSaveClick(event); });
+
+    newFieldButton.addEventListener('click', (event) => { this.onNewFieldClick(event); });
 
     entriesList.forEach(item => {
       const deleteIcon = item.querySelector('.remove-button');
@@ -1247,7 +1263,7 @@ export default class EntryForm extends SidebarForm {
     }
 
     this.#events[newEvent.evid] = newEvent;
-    this._generateEventListItems();
+    this._buildEventListItems();
 
     this.controlEventStates(this._eventStates.default);
   }
@@ -1263,7 +1279,7 @@ export default class EntryForm extends SidebarForm {
       const itemId = deletedItem.dataset.value;
 
       this.#events[itemId].dbAction = 'd';
-      this._generateEventListItems();
+      this._buildEventListItems();
     }
   }
 
@@ -1375,6 +1391,33 @@ export default class EntryForm extends SidebarForm {
   }
 
   /**
+   * Trata o evento de clique no botão de Novo Campo para o Infográfico.
+   * @param {Event} event - Evento de clique no botão de Nova Entrada.
+  */
+  onNewFieldClick(event) {
+    event.stopPropagation();
+
+    const li = this._buildInfoviewItem();
+    const idx = li.dataset.id;
+
+    const infoviewList = this.querySelector('#infoviewList');
+    infoviewList.appendChild(li);
+
+    const input = li.querySelector('.infoview-name');
+    input.focus();
+
+    const typeSelect = li.querySelector(`#infoviewTypes-${idx}`);
+    typeSelect.addEventListener('change', this.onInfoviewTypeChange.bind(this));
+
+    const removeButton = li.querySelector('.remove-button');
+    removeButton.addEventListener('click', this.onRemoveFieldClick.bind(this));
+
+    const divList = li.querySelector('.infoview-item-bottom.info-list');
+    const newItemButton = divList.querySelector('a.flyer-button');
+    newItemButton.addEventListener('click', this.onAddFieldItemClick.bind(this));
+  }
+
+  /**
    * Trata o evento de cancelamento de um novo item.
    * @param {Event} event - Evento de clique no botão de Cancelar.
    */
@@ -1463,7 +1506,7 @@ export default class EntryForm extends SidebarForm {
 
         this.#events[event.evid] = event;
       });
-      this._generateEventListItems();
+      this._buildEventListItems();
 
       // Armazena os dados da entrada atual.
       this.document = entry;
@@ -1501,6 +1544,61 @@ export default class EntryForm extends SidebarForm {
 
     this._hideDialog();
     this.controlStates(this.states.default);
+  }
+
+  onInfoviewTypeChange(event) {
+    event.stopPropagation();
+    const type = event.target.value;
+    const li = event.target.closest('li');
+
+    const divTop = li.querySelector('.infoview-item-top');
+    const nameInput = divTop.querySelector('.infoview-name');
+
+    const textDiv = li.querySelector('.infoview-item-bottom.text');
+    const listDiv = li.querySelector('.infoview-item-bottom.info-list');
+
+    switch (type) {
+      case 'text': {
+        textDiv.classList.remove('hidden');
+        listDiv.classList.add('hidden');
+
+        nameInput.disabled = false;
+      } break;
+      case 'list': {
+        textDiv.classList.add('hidden');
+        listDiv.classList.remove('hidden');
+
+        nameInput.disabled = false;
+      } break;
+      default: {
+        textDiv.classList.add('hidden');
+        listDiv.classList.add('hidden');
+
+        nameInput.disabled = true;
+      };
+    }
+  }
+
+  onRemoveFieldClick(event) {
+    event.stopPropagation();
+    const li = event.target.closest('li');
+    li.remove();
+  }
+
+  onAddFieldItemClick(event) {
+    event.stopPropagation();
+    const infodataList = document.querySelector('.infoview-item-bottom ul.infodata-list');
+    const li = this._buildFieldItem();
+    infodataList.appendChild(li);
+
+    const removeButton = li.querySelector('a');
+    removeButton.addEventListener('click', this.onRemoveFieldItemClick.bind(this));
+  }
+
+  onRemoveFieldItemClick(event) {
+    event.stopPropagation();
+    const li = event.target.closest('li');
+    li.remove();
   }
 
   /* ---------------------------------------------------------------------------------------------------------------- */
@@ -1618,8 +1716,8 @@ export default class EntryForm extends SidebarForm {
   /**
     * Gera os itens da lista de eventos associados a uma Entrada.
     * @protected
-    */
-  _generateEventListItems() {
+  */
+  _buildEventListItems() {
     const entryEvents = this.querySelector('#entryEvents');
     // Limpa a lista de Eventos.
     entryEvents.innerHTML = '';
@@ -1645,6 +1743,100 @@ export default class EntryForm extends SidebarForm {
 
     // Limpa a aba de Eventos, após qualquer alteração da Lista de Eventos.
     this.clearEventTab();
+  }
+
+  /**
+    * Gera os itens da lista de dados do Infográfico da Entrada.
+    * @protected
+  */
+  _buildInfoviewItem() {
+    const infoviewItems = document.querySelectorAll('#infoviewList li.infoview-item');
+    const idx = infoviewItems.length;
+
+    const li = document.createElement('li');
+    li.classList.add('infoview-item', 'item', 'flexcol');
+    li.dataset.id = idx;
+
+    const divTop = document.createElement('div');
+    divTop.classList.add('infoview-item-top', 'flexrow');
+
+    const nameInput = document.createElement('input');
+    nameInput.type = 'text';
+    nameInput.classList.add('infoview-name');
+    nameInput.placeholder = 'Nome do Campo';
+    nameInput.disabled = true;
+
+    const typeSelect = document.createElement('select');
+    typeSelect.id = `infoviewTypes-${idx}`;
+
+    const blankOption = '<option value="0" label="&#8212"/>';
+    typeSelect.innerHTML = blankOption;
+
+    this.infoTypes.forEach(type => {
+      const option = document.createElement('option');
+      option.value = type._id;
+      option.textContent = type._label;
+      typeSelect.appendChild(option);
+    });
+
+    const removeButton = document.createElement('a');
+    removeButton.classList.add('remove-button');
+    removeButton.innerHTML = '<i class="fa-solid fa-trash"></i>';
+    removeButton.dataset.tooltip = "Remover Campo";
+
+    divTop.appendChild(nameInput);
+    divTop.appendChild(typeSelect);
+    divTop.appendChild(removeButton);
+
+    const divText = document.createElement('div');
+    divText.classList.add('infoview-item-bottom', 'text', 'flexrow', 'hidden');
+
+    const textarea = document.createElement('textarea');
+    textarea.classList.add('infoview-value');
+    textarea.id = `infoviewDescription-${idx}`;
+    textarea.placeholder = 'Descreva o Campo...';
+    divText.appendChild(textarea);
+
+    const divList = document.createElement('div');
+    divList.classList.add('infoview-item-bottom', 'info-list', 'flexcol', 'hidden');
+
+    const ul = document.createElement('ul');
+    ul.classList.add('infodata-list', 'list');
+
+    const newItemButton = document.createElement('a');
+    newItemButton.classList.add('flyer-button');
+    newItemButton.innerHTML = `<i class="fas fa-plus"></i>Adicionar Item`;
+
+    divList.appendChild(ul);
+    divList.appendChild(newItemButton);
+
+    li.appendChild(divTop);
+    li.appendChild(divText);
+    li.appendChild(divList);
+
+    return li;
+  }
+
+  _buildFieldItem() {
+    const infodataItems = document.querySelectorAll('.infoview-item-bottom ul.infodata-list li.infodata-item');
+    const idx = infodataItems.length;
+
+    const li = document.createElement('li');
+    li.classList.add('infodata-item', 'flexrow');
+    li.dataset.id = `infodataItem-${idx}`;
+
+    const infodataText = document.createElement('textarea');
+    infodataText.id = `infodataText-${idx}`;
+    infodataText.placeholder = 'Nome item...';
+
+    const removeButton = document.createElement('a');
+    removeButton.innerHTML = '<i class="fas fa-xmark"></i>';
+    removeButton.dataset.tooltip = "Remover Item";
+
+    li.appendChild(infodataText);
+    li.appendChild(removeButton);
+
+    return li;
   }
 
   /**

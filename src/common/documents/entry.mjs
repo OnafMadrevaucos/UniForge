@@ -31,11 +31,24 @@ export default class Entry extends BaseDocument {
     get entryType() { return this.data.entryType; }
     get isEntity() { return this.entryType.isEntity; }
 
+    /** 
+     * Objeto contendo os dados dos Campos Extras da Entrada.
+     * @type {Object}
+     * 
+     * @property {string} title             - Título do Campo Extra.
+     * @property {string} description       - Descrição adicional do Campo.
+     * @property {Object|null} list         - (Opicional) Lista de Items do Campo Extra.
+     * @property {string} list.title        - Título do item da Lista.
+     * @property {string} list.description  - Descrição adicional do Item da Lista.
+     */
+    get infoData() { return this.data.infoData; }
+
     set title(value) { this.data.title = value; }
     set img(value) { this.data.img = value; }
     set isDraft(value) { this.#isDraft = value; }
     set flavor(value) { this.data.flavor = value; }
     set htmlString(value) { this.data.htmlString = value; }
+    set infoData(value) { this.data.infoData = value; }
 
     initialize(data) {
         super.initialize(data);
@@ -43,6 +56,10 @@ export default class Entry extends BaseDocument {
         Object.entries(data).forEach(([key, value]) => {
             if (key !== 'eid') {
                 this.data[key] = value;
+            }            
+
+            if(key === 'infoData' && (typeof value === 'string')) {
+                this.data[key] = JSON.parse(value);
             }
         });
     }
