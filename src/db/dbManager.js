@@ -3264,6 +3264,29 @@ export default class DBManager {
             return 'É necessário selecionar um Tipo de Entrada.';
         if (entry.title?.isEmpty())
             return 'É necessário informar um título válido para a Entrada.';
+        if (entry.infoData) {
+            for (let data of Object.values(entry.infoData)) {
+                if(data.name.isEmpty()) {
+                    return 'O nome do campo não pode ser vazio.';
+                }
+
+                if((typeof(data.value) === 'string') && data.value.isEmpty())
+                    return 'O valor do campo não pode ser vazio.';
+                
+                if((data.value instanceof Object)) {
+                    const items = Object.values(data.value);
+
+                    if(items.length == 0)
+                        return 'A lista do campo não pode estar vazia.';
+
+                    for(let item of items) {                        
+                        if(item.isEmpty()) 
+                            return 'O item da lista do campo não pode ser vazia.';
+                    }
+                }
+            }
+        }
+
         return '';
     }
 

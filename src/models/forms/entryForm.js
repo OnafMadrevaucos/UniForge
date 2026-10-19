@@ -1401,13 +1401,15 @@ export default class EntryForm extends SidebarForm {
           etid: entryType.value,
           sid: headerInfo.dataset.sid ?? null,
           flavor: this.flavorEditor.getContent() ?? '',
-          htmlString: this.mainEditor.getContent() ?? ''
+          htmlString: this.mainEditor.getContent() ?? '',
+          infoData: this.document.infoData
         });
 
         const validation = uniforge.db.validateEntry(data);
 
         if (validation !== '') {
           this.msgBox.showWarning(validation);
+          await uniforge.db.rollbackTransaction();
           return;
         }
 
@@ -1509,6 +1511,38 @@ export default class EntryForm extends SidebarForm {
       this.configureDatePickers(null);
 
       this.flavorEditor = entryData.flavor;
+
+      if (entry.infoData) {
+        const infoData = Object.entries(entry.infoData);
+        infoData.forEach(field => {
+          const fieldId = field[0];
+          const fieldData = field[1];
+
+          const li = this._buildInfoviewItem(fieldId);
+
+          const infoviewList = this.querySelector('#infoviewList');
+          infoviewList.appendChild(li);
+
+          const titleInput = li.querySelector('.infoview-item-top .infoview-name');
+          titleInput.value = fieldData.name;
+
+          if(typeof(fieldData.value) === 'string') {
+            const textarea = li.querySelector('.infoview-item-bottom.text textarea');          
+            textarea.value = fieldData.value;
+          }
+          else if(fieldData.value instanceof Object) {
+            Object.entries(fieldData.value).forEach(item => {
+              const itemId = item[0];
+              const itemData = item[1];
+
+              const liItem = this._buildFieldItem(fieldId, itemId);
+              const itemTextarea = liItem.querySelector(`infodataText-${itemId}`);
+
+              itemTextarea.value = itemData;
+            });
+          }
+        });
+      }
 
       this.#events = {};
       const events = entryData.events.toArray();
@@ -1645,7 +1679,7 @@ export default class EntryForm extends SidebarForm {
     removeButton.addEventListener('click', this.onRemoveFieldItemClick.bind(this));
 
     this.document.infoData[id].value[itemId] = '';
-  }  
+  }
 
   onFieldItemTextareaChange(event) {
     const textarea = event.target;
@@ -1661,7 +1695,7 @@ export default class EntryForm extends SidebarForm {
     const fieldId = li.dataset.fieldId;
     const itemId = li.dataset.itemId;
 
-    delete this.document.infoData[fieldId].value[itemId];    
+    delete this.document.infoData[fieldId].value[itemId];
     li.remove();
   }
 
@@ -1813,10 +1847,11 @@ export default class EntryForm extends SidebarForm {
     * Gera os itens da lista de dados do Infográfico da Entrada.
     * @protected
   */
-  _buildInfoviewItem() {
-    const id = uniforge.db.generateID();
+  _buildInfoviewItem(fieldId = null) {
+    const id = fieldId || uniforge.db.generateID();
 
     const li = document.createElement('li');
+    li.id = `infoviewItem-${id}`;
     li.classList.add('infoview-item', 'item', 'flexcol');
     li.dataset.id = id;
 
@@ -1882,7 +1917,7 @@ export default class EntryForm extends SidebarForm {
     return li;
   }
 
-  _buildFieldItem(fieldId) {
+  _buildFieldItem(fieldId, itemId = null) {
     const id = uniforge.db.generateID();
 
     const li = document.createElement('li');
