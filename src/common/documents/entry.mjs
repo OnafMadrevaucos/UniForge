@@ -41,7 +41,11 @@ export default class Entry extends BaseDocument {
      * @property {string} list.title        - Título do item da Lista.
      * @property {string} list.description  - Descrição adicional do Item da Lista.
      */
-    get infoData() { return this.data.infoData; }
+    get infoData() { 
+        if(!this.data.infoData) this.data.infoData = {};
+
+        return this.data.infoData; 
+    }
 
     set title(value) { this.data.title = value; }
     set img(value) { this.data.img = value; }
@@ -59,7 +63,8 @@ export default class Entry extends BaseDocument {
             }            
 
             if(key === 'infoData' && (typeof value === 'string')) {
-                this.data[key] = JSON.parse(value);
+                if(value.isEmpty()) this.data[key] = {};
+                else this.data[key] = JSON.parse(value);
             }
         });
     }

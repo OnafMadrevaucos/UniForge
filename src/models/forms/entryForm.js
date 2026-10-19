@@ -1185,42 +1185,6 @@ export default class EntryForm extends SidebarForm {
     this.controlEventStates(this._eventStates.default);
   }
 
-  onEventItemClick(clkEvent) {
-    clkEvent.stopPropagation();
-    const clickedEvent = clkEvent.target.closest('.item');
-    const evid = clickedEvent.dataset.value;
-    const event = this.#events[evid];
-
-    const eventTitle = this.querySelector('#eventTitle');
-    const eventEntryType = this.querySelector('#eventEntryType');
-    const relevance = this.querySelector('#relevance');
-    const calendarType = this.querySelector('#calendarType');
-
-    this.querySelectorAll('#entryEvents .item').forEach(item => item.classList.remove('selected'));
-    clickedEvent.classList.add('selected');
-
-    eventTitle.value = event.title;
-    eventTitle.focus();
-
-    eventEntryType.value = event.etid;
-    relevance.value = event.relevance;
-    calendarType.value = event.clid;
-
-    this.configureDatePickers(event);
-
-    this.eventEditor = event.flavor;
-
-    this.selection.event = clickedEvent;
-    this.controlEventStates(this._eventStates.editing);
-  }
-
-  onNewEventClick(event) {
-    event.stopPropagation();
-
-    this.clearEventTab();
-    this.controlEventStates(this._eventStates.adding);
-  }
-
   /**
    * Trata o evento de clique no botão de adicionar um novo Evento.
    * @param {Event} event - O evento de clique no botão de adicionar um novo Evento.
@@ -1325,6 +1289,79 @@ export default class EntryForm extends SidebarForm {
     this.controlStates(this.states.adding);
   }
 
+  onEventItemClick(clkEvent) {
+    clkEvent.stopPropagation();
+    const clickedEvent = clkEvent.target.closest('.item');
+    const evid = clickedEvent.dataset.value;
+    const event = this.#events[evid];
+
+    const eventTitle = this.querySelector('#eventTitle');
+    const eventEntryType = this.querySelector('#eventEntryType');
+    const relevance = this.querySelector('#relevance');
+    const calendarType = this.querySelector('#calendarType');
+
+    this.querySelectorAll('#entryEvents .item').forEach(item => item.classList.remove('selected'));
+    clickedEvent.classList.add('selected');
+
+    eventTitle.value = event.title;
+    eventTitle.focus();
+
+    eventEntryType.value = event.etid;
+    relevance.value = event.relevance;
+    calendarType.value = event.clid;
+
+    this.configureDatePickers(event);
+
+    this.eventEditor = event.flavor;
+
+    this.selection.event = clickedEvent;
+    this.controlEventStates(this._eventStates.editing);
+  }
+
+  onNewEventClick(event) {
+    event.stopPropagation();
+
+    this.clearEventTab();
+    this.controlEventStates(this._eventStates.adding);
+  }
+
+  /**
+   * Trata o evento de clique no botão de Novo Campo para o Infográfico.
+   * @param {Event} event - Evento de clique no botão de Nova Entrada.
+  */
+  onNewFieldClick(event) {
+    event.stopPropagation();
+
+    const li = this._buildInfoviewItem();
+    const id = li.dataset.id;
+
+    this.document.infoData[id] = {
+      name: '',
+      value: null
+    }
+
+    const infoviewList = this.querySelector('#infoviewList');
+    infoviewList.appendChild(li);
+
+    const input = li.querySelector('.infoview-name');
+    input.dataset.fieldId = id;
+    input.addEventListener('input', this.onFiledTitleChange.bind(this));
+    input.focus();
+
+    const typeSelect = li.querySelector(`#infoviewTypes-${id}`);
+    typeSelect.addEventListener('change', this.onInfoviewTypeChange.bind(this));
+
+    const removeButton = li.querySelector('.remove-button');
+    removeButton.addEventListener('click', this.onRemoveFieldClick.bind(this));
+
+    const textarea = li.querySelector(`#infoviewDescription-${id}`);
+    textarea.addEventListener('input', this.onFieldTextareaChange.bind(this));
+
+    const divList = li.querySelector('.infoview-item-bottom.info-list');
+    const newItemButton = divList.querySelector('a.flyer-button');
+    newItemButton.addEventListener('click', this.onAddFieldItemClick.bind(this));
+  }
+
   /**
     * Trata o evento de registro de uma nova entrada.
     * @param {Event} event - Evento de clique no botão de Salvar.
@@ -1390,32 +1427,7 @@ export default class EntryForm extends SidebarForm {
     }
   }
 
-  /**
-   * Trata o evento de clique no botão de Novo Campo para o Infográfico.
-   * @param {Event} event - Evento de clique no botão de Nova Entrada.
-  */
-  onNewFieldClick(event) {
-    event.stopPropagation();
 
-    const li = this._buildInfoviewItem();
-    const idx = li.dataset.id;
-
-    const infoviewList = this.querySelector('#infoviewList');
-    infoviewList.appendChild(li);
-
-    const input = li.querySelector('.infoview-name');
-    input.focus();
-
-    const typeSelect = li.querySelector(`#infoviewTypes-${idx}`);
-    typeSelect.addEventListener('change', this.onInfoviewTypeChange.bind(this));
-
-    const removeButton = li.querySelector('.remove-button');
-    removeButton.addEventListener('click', this.onRemoveFieldClick.bind(this));
-
-    const divList = li.querySelector('.infoview-item-bottom.info-list');
-    const newItemButton = divList.querySelector('a.flyer-button');
-    newItemButton.addEventListener('click', this.onAddFieldItemClick.bind(this));
-  }
 
   /**
    * Trata o evento de cancelamento de um novo item.
@@ -1546,10 +1558,18 @@ export default class EntryForm extends SidebarForm {
     this.controlStates(this.states.default);
   }
 
+  onFiledTitleChange(event) {
+    const input = event.target;
+    const id = input.dataset.fieldId;
+
+    this.document.infoData[id].name = input.value;
+  }
+
   onInfoviewTypeChange(event) {
     event.stopPropagation();
     const type = event.target.value;
     const li = event.target.closest('li');
+    const id = li.dataset.id;
 
     const divTop = li.querySelector('.infoview-item-top');
     const nameInput = divTop.querySelector('.infoview-name');
@@ -1557,18 +1577,30 @@ export default class EntryForm extends SidebarForm {
     const textDiv = li.querySelector('.infoview-item-bottom.text');
     const listDiv = li.querySelector('.infoview-item-bottom.info-list');
 
+    // Limpa os dados de texto.
+    const textarea = textDiv.querySelector('textarea');
+    textarea.value = '';
+
+    // Limpa os dados da lista de campos.
+    const list = listDiv.querySelector('.infodata-list.list');
+    list.innerHTML = '';
+
     switch (type) {
       case 'text': {
         textDiv.classList.remove('hidden');
         listDiv.classList.add('hidden');
 
         nameInput.disabled = false;
+
+        this.document.infoData[id].value = textarea.value;
       } break;
       case 'list': {
         textDiv.classList.add('hidden');
         listDiv.classList.remove('hidden');
 
         nameInput.disabled = false;
+
+        this.document.infoData[id].value = {};
       } break;
       default: {
         textDiv.classList.add('hidden');
@@ -1579,25 +1611,57 @@ export default class EntryForm extends SidebarForm {
     }
   }
 
+  onFieldTextareaChange(event) {
+    const textarea = event.target;
+    const id = textarea.dataset.fieldId;
+
+    this.document.infoData[id].value = textarea.value;
+  }
+
   onRemoveFieldClick(event) {
     event.stopPropagation();
     const li = event.target.closest('li');
+    const id = li.dataset.id;
+
+    delete this.document.infoData[id];
     li.remove();
   }
 
   onAddFieldItemClick(event) {
     event.stopPropagation();
     const infodataList = document.querySelector('.infoview-item-bottom ul.infodata-list');
-    const li = this._buildFieldItem();
+    const id = infodataList.dataset.fieldId;
+    const li = this._buildFieldItem(id);
+    const itemId = li.dataset.itemId;
+
     infodataList.appendChild(li);
+
+    const textarea = li.querySelector(`#infodataText-${itemId}`);
+    textarea.dataset.fieldId = id;
+    textarea.dataset.itemId = itemId;
+    textarea.addEventListener('input', this.onFieldItemTextareaChange.bind(this));
 
     const removeButton = li.querySelector('a');
     removeButton.addEventListener('click', this.onRemoveFieldItemClick.bind(this));
+
+    this.document.infoData[id].value[itemId] = '';
+  }  
+
+  onFieldItemTextareaChange(event) {
+    const textarea = event.target;
+    const fieldId = textarea.dataset.fieldId;
+    const itemId = textarea.dataset.itemId;
+
+    this.document.infoData[fieldId].value[itemId] = textarea.value;
   }
 
   onRemoveFieldItemClick(event) {
     event.stopPropagation();
     const li = event.target.closest('li');
+    const fieldId = li.dataset.fieldId;
+    const itemId = li.dataset.itemId;
+
+    delete this.document.infoData[fieldId].value[itemId];    
     li.remove();
   }
 
@@ -1750,12 +1814,11 @@ export default class EntryForm extends SidebarForm {
     * @protected
   */
   _buildInfoviewItem() {
-    const infoviewItems = document.querySelectorAll('#infoviewList li.infoview-item');
-    const idx = infoviewItems.length;
+    const id = uniforge.db.generateID();
 
     const li = document.createElement('li');
     li.classList.add('infoview-item', 'item', 'flexcol');
-    li.dataset.id = idx;
+    li.dataset.id = id;
 
     const divTop = document.createElement('div');
     divTop.classList.add('infoview-item-top', 'flexrow');
@@ -1767,7 +1830,7 @@ export default class EntryForm extends SidebarForm {
     nameInput.disabled = true;
 
     const typeSelect = document.createElement('select');
-    typeSelect.id = `infoviewTypes-${idx}`;
+    typeSelect.id = `infoviewTypes-${id}`;
 
     const blankOption = '<option value="0" label="&#8212"/>';
     typeSelect.innerHTML = blankOption;
@@ -1793,7 +1856,8 @@ export default class EntryForm extends SidebarForm {
 
     const textarea = document.createElement('textarea');
     textarea.classList.add('infoview-value');
-    textarea.id = `infoviewDescription-${idx}`;
+    textarea.id = `infoviewDescription-${id}`;
+    textarea.dataset.fieldId = id;
     textarea.placeholder = 'Descreva o Campo...';
     divText.appendChild(textarea);
 
@@ -1801,6 +1865,7 @@ export default class EntryForm extends SidebarForm {
     divList.classList.add('infoview-item-bottom', 'info-list', 'flexcol', 'hidden');
 
     const ul = document.createElement('ul');
+    ul.dataset.fieldId = id;
     ul.classList.add('infodata-list', 'list');
 
     const newItemButton = document.createElement('a');
@@ -1817,20 +1882,22 @@ export default class EntryForm extends SidebarForm {
     return li;
   }
 
-  _buildFieldItem() {
-    const infodataItems = document.querySelectorAll('.infoview-item-bottom ul.infodata-list li.infodata-item');
-    const idx = infodataItems.length;
+  _buildFieldItem(fieldId) {
+    const id = uniforge.db.generateID();
 
     const li = document.createElement('li');
+    li.dataset.itemId = id;
     li.classList.add('infodata-item', 'flexrow');
-    li.dataset.id = `infodataItem-${idx}`;
+    li.dataset.id = `infodataItem-${id}`;
 
     const infodataText = document.createElement('textarea');
-    infodataText.id = `infodataText-${idx}`;
+    infodataText.id = `infodataText-${id}`;
     infodataText.placeholder = 'Nome item...';
 
     const removeButton = document.createElement('a');
     removeButton.innerHTML = '<i class="fas fa-xmark"></i>';
+    removeButton.dataset.fieldId = fieldId;
+    removeButton.dataset.itemId = id;
     removeButton.dataset.tooltip = "Remover Item";
 
     li.appendChild(infodataText);
