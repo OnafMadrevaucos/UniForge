@@ -508,6 +508,14 @@ input:checked+.slider::before {
     mask-image: linear-gradient(90deg, rgba(0, 0, 0, 0.5) 0%, black 50%, rgba(0, 0, 0, 0.5) 100%);
 }
 
+.dot {
+    color: var(--background-color);
+    font-size: var(--tiny-size);
+    align-content: center;
+    line-height: 0em;
+    margin-inline: 5px;
+}
+
 .tiny.separator {
     height: 0px;
     margin: 5px 0;
@@ -3052,13 +3060,16 @@ ul.list li,
 }
 
 .article .content .title-header {
+    margin-bottom: 0.5em;
+}
+
+.article .content .title-header .title-main {
     font-size: var(--title-size);
     text-align: center;
     background-color: var(--dark-color-b);
     color: var(--text-color);
     margin: 0;
     margin-left: -15px;
-    margin-bottom: 0.5em;
     border-radius: var(--title-header-radius);
     border-top-left-radius: 0;
     border-bottom-left-radius: 0;
@@ -3105,7 +3116,48 @@ ul.list li,
 .article .content .title-header .type-icon:hover {
     cursor: default;
     text-shadow: none;
+}
 
+.article .content .title-header .separator {
+    background-color: var(--color-c-T85);
+    margin-block: 0px;
+}
+
+.article .content .title-header .infoview-box {
+    align-items: center;
+    align-self: center;
+    background-color: var(--color-b-T50);
+    border: 2px solid var(--color-c);
+    border-top: none;
+    border-bottom-left-radius: var(--default-border-radius);
+    border-bottom-right-radius: var(--default-border-radius);
+    box-shadow: var(--small-shadow);
+    margin-left: -15px;
+    margin-right: 10px;
+    padding: var(--default-gap-size);
+    width: 500px;
+}
+
+.article .content .title-header .infoview-box img {
+    width: 60%;
+    height: auto;
+    border-radius: var(--default-border-radius);
+    box-shadow: var(--small-shadow);
+    margin-bottom: 15px;
+}
+
+.article .content .title-header .infoview-box .field-data {
+    color: var(--dark-text-color);
+    margin-bottom: var(--default-gap-size);
+}
+.article .content .title-header .infoview-box .field-data:last-child {
+    margin-bottom: 0;
+}
+
+.article .content .title-header .infoview-box .field-data ul {
+    margin: 0;
+    text-align: center;
+    padding: 0;
 }
 
 .article .content h1,
@@ -3121,7 +3173,11 @@ ul.list li,
 }
 
 .article .content h1 {
-    border-bottom: 2px solid var(--color-c);
+    border-bottom: none;
+    text-decoration: underline;
+    text-decoration-color: var(--color-c);
+    text-decoration-thickness: 2px;
+    text-underline-offset: 6px;
     line-height: normal;
 }
 

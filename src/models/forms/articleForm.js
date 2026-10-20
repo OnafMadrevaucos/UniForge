@@ -106,7 +106,13 @@ export default class ArticleForm extends BaseForm {
             content.classList.add('main-viewer');
 
             const titleHeader = document.createElement('div');
-            titleHeader.classList.add('title-header', 'flexrow');
+            titleHeader.classList.add('title-header', 'flexcol');
+
+            const divInfoView = await this._buildInfoview(this.entry);
+
+
+            const divTitleBody = document.createElement('div');
+            divTitleBody.classList.add('title-main', 'flexrow');
 
             const title = document.createElement('p');
             title.classList.add('title');
@@ -116,12 +122,15 @@ export default class ArticleForm extends BaseForm {
             typeIcon.classList.add('type-icon');
             typeIcon.innerHTML = `<i class="fas ${this.entry.icon}"></i>`;
 
-            titleHeader.appendChild(title);
-            titleHeader.appendChild(typeIcon);
+            divTitleBody.appendChild(title);
+            divTitleBody.appendChild(typeIcon);
+
+            titleHeader.appendChild(divTitleBody);
+            titleHeader.appendChild(divInfoView);
 
             const textContent = document.createElement('div');
-            textContent.classList.add('text-content', 'flexcol');
-            textContent.innerHTML = this.entry.text;
+            textContent.classList.add('text-content');
+            textContent.innerHTML += this.entry.text;
 
             content.appendChild(titleHeader);
             content.appendChild(textContent);
@@ -182,6 +191,69 @@ export default class ArticleForm extends BaseForm {
             default:
                 break;
         }
+    }
+
+    async _buildInfoview(entry) {
+        const div = document.createElement('div');
+        div.classList.add('infoview-box', 'flexcol');
+
+        const separator = document.createElement('div');
+        separator.className = 'separator';
+
+        if (entry.img) {
+            const imgURL = await uniforge.utils.blobToImage(entry.img, entry.data.ext);
+
+            const img = document.createElement('img');
+            img.src = imgURL;
+
+            div.appendChild(img);
+            div.appendChild(separator);
+        }
+
+        if (entry.infoData) {
+            Object.values(entry.infoData).forEach(field => {
+                const divFieldData = document.createElement('div');
+                divFieldData.classList.add('field-data', 'flexrow');
+
+                const nameSpan = document.createElement('span');
+                nameSpan.textContent = field.name;
+
+                const dot = document.createElement('span');
+                dot.classList.add('dot');
+                dot.innerHTML = '<i class="fas fa-circle-dot"></i>';
+
+                divFieldData.appendChild(nameSpan);
+
+                if (typeof (field.value) === 'string') {
+                    divFieldData.appendChild(dot);
+
+                    const valueSpan = document.createElement('span');
+                    valueSpan.textContent = field.value;
+                    divFieldData.appendChild(valueSpan);
+                }
+                else if (field.value instanceof Object) {
+                    nameSpan.classList.add('list-name');
+
+                    const valueUl = document.createElement('ul');
+                    Object.values(field.value).forEach(item => {
+                        const li = document.createElement('li');
+                        li.classList.add('list-item');
+                        li.textContent = item;
+
+                        valueUl.appendChild(li);
+                    });
+
+                    divFieldData.appendChild(valueUl);
+
+                    divFieldData.classList.remove('flexrow');
+                    divFieldData.classList.remove('flexcol');
+                }
+
+                div.appendChild(divFieldData);
+            });
+        }
+
+        return div;
     }
 
     async _showArticle(entry) {
