@@ -1332,34 +1332,15 @@ export default class EntryForm extends SidebarForm {
   onNewFieldClick(event) {
     event.stopPropagation();
 
-    const li = this._buildInfoviewItem();
+    const infoviewList = this.querySelector('#infoviewList');
+
+    const li = this._buildInfoviewItem(infoviewList);
     const id = li.dataset.id;
 
     this.document.infoData[id] = {
       name: '',
       value: null
     }
-
-    const infoviewList = this.querySelector('#infoviewList');
-    infoviewList.appendChild(li);
-
-    const input = li.querySelector('.infoview-name');
-    input.dataset.fieldId = id;
-    input.addEventListener('input', this.onFiledTitleChange.bind(this));
-    input.focus();
-
-    const typeSelect = li.querySelector(`#infoviewTypes-${id}`);
-    typeSelect.addEventListener('change', this.onInfoviewTypeChange.bind(this));
-
-    const removeButton = li.querySelector('.remove-button');
-    removeButton.addEventListener('click', this.onRemoveFieldClick.bind(this));
-
-    const textarea = li.querySelector(`#infoviewDescription-${id}`);
-    textarea.addEventListener('input', this.onFieldTextareaChange.bind(this));
-
-    const divList = li.querySelector('.infoview-item-bottom.info-list');
-    const newItemButton = divList.querySelector('a.flyer-button');
-    newItemButton.addEventListener('click', this.onAddFieldItemClick.bind(this));
   }
 
   /**
@@ -1512,38 +1493,6 @@ export default class EntryForm extends SidebarForm {
 
       this.flavorEditor = entryData.flavor;
 
-      if (entry.infoData) {
-        const infoData = Object.entries(entry.infoData);
-        infoData.forEach(field => {
-          const fieldId = field[0];
-          const fieldData = field[1];
-
-          const li = this._buildInfoviewItem(fieldId);
-
-          const infoviewList = this.querySelector('#infoviewList');
-          infoviewList.appendChild(li);
-
-          const titleInput = li.querySelector('.infoview-item-top .infoview-name');
-          titleInput.value = fieldData.name;
-
-          if(typeof(fieldData.value) === 'string') {
-            const textarea = li.querySelector('.infoview-item-bottom.text textarea');          
-            textarea.value = fieldData.value;
-          }
-          else if(fieldData.value instanceof Object) {
-            Object.entries(fieldData.value).forEach(item => {
-              const itemId = item[0];
-              const itemData = item[1];
-
-              const liItem = this._buildFieldItem(fieldId, itemId);
-              const itemTextarea = liItem.querySelector(`infodataText-${itemId}`);
-
-              itemTextarea.value = itemData;
-            });
-          }
-        });
-      }
-
       this.#events = {};
       const events = entryData.events.toArray();
 
@@ -1556,6 +1505,55 @@ export default class EntryForm extends SidebarForm {
 
       // Armazena os dados da entrada atual.
       this.document = entry;
+
+      if (entry.infoData) {
+        const infoData = Object.entries(entry.infoData);
+
+        const infoviewList = this.querySelector('#infoviewList');
+        infoviewList.innerHTML = '';
+
+        infoData.forEach(field => {
+          const fieldId = field[0];
+          const fieldData = field[1];
+
+          const li = this._buildInfoviewItem(infoviewList, fieldId);
+
+          const textDiv = li.querySelector('.infoview-item-bottom.text');
+          const listDiv = li.querySelector('.infoview-item-bottom.info-list');
+
+          const typeSelect = li.querySelector(`#infoviewTypes-${fieldId}`);
+
+          const titleInput = li.querySelector('.infoview-item-top .infoview-name');
+          titleInput.value = fieldData.name;
+          titleInput.disabled = false;
+
+          if (typeof (fieldData.value) === 'string') {
+            typeSelect.value = 'text';           
+
+            const textarea = li.querySelector('.infoview-item-bottom.text textarea');
+            textarea.value = fieldData.value;
+
+            textDiv.classList.remove('hidden');
+          }
+          else if (fieldData.value instanceof Object) {
+            const infodataList = infoviewList.querySelector(`.infoview-item-bottom ul.infodata-list[data-field-id=${fieldId}]`);
+
+            typeSelect.value = 'list';  
+
+            Object.entries(fieldData.value).forEach(item => {
+              const itemId = item[0];
+              const itemData = item[1];
+
+              const liItem = this._buildFieldItem(infodataList, fieldId, itemId);
+              const itemTextarea = liItem.querySelector(`#infodataText-${itemId}`);
+
+              itemTextarea.value = itemData;
+            });
+
+            listDiv.classList.remove('hidden');
+          }
+        });
+      }
 
       // Atualiza o estado dos elements do formulário.
       this.controlStates(this.states.editing);
@@ -1663,20 +1661,11 @@ export default class EntryForm extends SidebarForm {
 
   onAddFieldItemClick(event) {
     event.stopPropagation();
-    const infodataList = document.querySelector('.infoview-item-bottom ul.infodata-list');
-    const id = infodataList.dataset.fieldId;
-    const li = this._buildFieldItem(id);
+    const liField = event.target.closest('li.infoview-item');
+    const infodataList = liField.querySelector(`.infoview-item-bottom ul.infodata-list`);
+    const id = liField.dataset.id;
+    const li = this._buildFieldItem(infodataList, id);
     const itemId = li.dataset.itemId;
-
-    infodataList.appendChild(li);
-
-    const textarea = li.querySelector(`#infodataText-${itemId}`);
-    textarea.dataset.fieldId = id;
-    textarea.dataset.itemId = itemId;
-    textarea.addEventListener('input', this.onFieldItemTextareaChange.bind(this));
-
-    const removeButton = li.querySelector('a');
-    removeButton.addEventListener('click', this.onRemoveFieldItemClick.bind(this));
 
     this.document.infoData[id].value[itemId] = '';
   }
@@ -1692,7 +1681,7 @@ export default class EntryForm extends SidebarForm {
   onRemoveFieldItemClick(event) {
     event.stopPropagation();
     const li = event.target.closest('li');
-    const fieldId = li.dataset.fieldId;
+    const fieldId = li.dataset.id;
     const itemId = li.dataset.itemId;
 
     delete this.document.infoData[fieldId].value[itemId];
@@ -1847,7 +1836,7 @@ export default class EntryForm extends SidebarForm {
     * Gera os itens da lista de dados do Infográfico da Entrada.
     * @protected
   */
-  _buildInfoviewItem(fieldId = null) {
+  _buildInfoviewItem(parent, fieldId = null) {
     const id = fieldId || uniforge.db.generateID();
 
     const li = document.createElement('li');
@@ -1914,19 +1903,34 @@ export default class EntryForm extends SidebarForm {
     li.appendChild(divText);
     li.appendChild(divList);
 
+    parent.appendChild(li);
+
+    const input = li.querySelector('.infoview-name');
+    input.dataset.fieldId = id;
+    input.addEventListener('input', this.onFiledTitleChange.bind(this));
+    input.focus();
+
+    typeSelect.addEventListener('change', this.onInfoviewTypeChange.bind(this));
+    removeButton.addEventListener('click', this.onRemoveFieldClick.bind(this));
+    textarea.addEventListener('input', this.onFieldTextareaChange.bind(this));
+    newItemButton.addEventListener('click', this.onAddFieldItemClick.bind(this));
+
     return li;
   }
 
-  _buildFieldItem(fieldId, itemId = null) {
-    const id = uniforge.db.generateID();
+  _buildFieldItem(parent, fieldId, itemId = null) {
+    const id = itemId || uniforge.db.generateID();
 
     const li = document.createElement('li');
+    li.dataset.id = fieldId;
     li.dataset.itemId = id;
     li.classList.add('infodata-item', 'flexrow');
-    li.dataset.id = `infodataItem-${id}`;
+    li.id = `infodataItem-${id}`;
 
     const infodataText = document.createElement('textarea');
     infodataText.id = `infodataText-${id}`;
+    infodataText.dataset.fieldId = fieldId;
+    infodataText.dataset.itemId = id;
     infodataText.placeholder = 'Nome item...';
 
     const removeButton = document.createElement('a');
@@ -1937,6 +1941,11 @@ export default class EntryForm extends SidebarForm {
 
     li.appendChild(infodataText);
     li.appendChild(removeButton);
+
+    parent.appendChild(li);
+
+    infodataText.addEventListener('input', this.onFieldItemTextareaChange.bind(this));
+    removeButton.addEventListener('click', this.onRemoveFieldItemClick.bind(this));
 
     return li;
   }
