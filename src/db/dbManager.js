@@ -362,6 +362,7 @@ export default class DBManager {
         params.push(data.htmlString);
         params.push(data.rawData ?? null);
         params.push(data.ext ?? 'jpeg');
+        params.push(JSON.stringify(data.infoData) ?? null);
         params.push(Number(data.isDraft));
 
         const result = await this.#execQuery(query, params);
@@ -721,6 +722,7 @@ export default class DBManager {
             ['htmlString', data.htmlString],
             ['img', data.rawData],
             ['ext', data.ext],
+            ['infoData', JSON.stringify(data.infoData)],
             ['isDraft', Number(data.isDraft)]
         ], { withNulls: true });
 
@@ -2112,6 +2114,7 @@ export default class DBManager {
             '`htmlString` TEXT NULL,' +                 // Corpo do texto de descrição da Entrada.
             '`img` BLOB NULL,' +                        // BLOB da imagem da Entrada.
             '`ext` VARCHAR(5) NULL,' +                  // Extensão original do arquivo da imagem da Entrada.
+            '`infoData` TEXT NULL,' +                   // Informações adicionais da Entrada.
             '`isDraft` BOOLEAN NOT NULL DEFAULT 0,' +   // A Entrada é um rascunho (falso por padrão).
             'PRIMARY KEY (`eid`,`sid`))';
 
@@ -3261,6 +3264,29 @@ export default class DBManager {
             return 'É necessário selecionar um Tipo de Entrada.';
         if (entry.title?.isEmpty())
             return 'É necessário informar um título válido para a Entrada.';
+        if (entry.infoData) {
+            for (let data of Object.values(entry.infoData)) {
+                if(data.name.isEmpty()) {
+                    return 'O nome do campo não pode ser vazio.';
+                }
+
+                if((typeof(data.value) === 'string') && data.value.isEmpty())
+                    return 'O valor do campo não pode ser vazio.';
+                
+                if((data.value instanceof Object)) {
+                    const items = Object.values(data.value);
+
+                    if(items.length == 0)
+                        return 'A lista do campo não pode estar vazia.';
+
+                    for(let item of items) {                        
+                        if(item.isEmpty()) 
+                            return 'O item da lista do campo não pode ser vazia.';
+                    }
+                }
+            }
+        }
+
         return '';
     }
 
