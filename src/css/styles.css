@@ -498,14 +498,41 @@ input:checked+.slider::before {
 
 /* ------ Separators ------ */
 .separator {
-    height: 2px;
-    background-color: var(--dark-color-b);
-    margin: 10px 0;
-    border-radius: var(--default-border-radius);
-    width: 95%;
-    align-self: center;
-    padding: 1px 0;
-    mask-image: linear-gradient(90deg, rgba(0, 0, 0, 0.5) 0%, black 50%, rgba(0, 0, 0, 0.5) 100%);
+    width: var(--fill-width);
+    height: 8px;
+    border: none;
+    background: var(--color-b);
+    margin-block: 2px;
+    -webkit-mask-image: linear-gradient(
+        to right,
+        transparent 0%,
+        black 20%,
+        black 80%,
+        transparent 100%
+    );
+
+    mask-image: linear-gradient(
+        to right,
+        transparent 0%,
+        black 20%,
+        black 80%,
+        transparent 100%
+    );
+
+    clip-path: polygon(
+        0 50%,
+        15% 35%,
+        35% 10%,
+        50% 0,
+        65% 10%,
+        85% 35%,
+        100% 50%,
+        85% 65%,
+        65% 90%,
+        50% 100%,
+        35% 90%,
+        15% 65%
+    );
 }
 
 .dot {
@@ -3146,12 +3173,12 @@ ul.list li,
 .article .content .text-content .infoview-box {
     align-items: center;
     background-color: var(--dark-color-a);
-    backdrop-filter: blur(16px);    
+    backdrop-filter: blur(16px);
     border: 2px solid var(--color-c);
     border-top: none;
     border-bottom-left-radius: var(--default-border-radius);
     border-bottom-right-radius: var(--default-border-radius);
-    box-shadow: var(--small-shadow);    
+    box-shadow: var(--small-shadow);
     float: right;
     margin-left: 15px;
     margin-right: 10px;
@@ -3161,13 +3188,15 @@ ul.list li,
 }
 
 .article .content .text-content .infoview-box+* {
-    margin-top: 0;    
+    margin-top: 0;
 }
+
 .article .content .text-content .infoview-box+p {
     padding-top: 0.5em;
 }
 
 .article .content .text-content .separator {
+    height: 5px;
     background-color: var(--color-c-T85);
     margin-block: 0px;
 }
@@ -3183,28 +3212,37 @@ ul.list li,
 .article .content .text-content .infoview-box .flavor-field {
     padding-block: 5px;
 }
-.article .content .text-content .infoview-box .flavor-field *{
+
+.article .content .text-content .infoview-box .flavor-field * {
     color: var(--light-color-d);
     font-size: var(--small-size);
     font-style: italic;
 }
 
 .article .content .text-content .infoview-box .fields {
-    width: 100%;
+    width: var(--fill-width);
 }
+
 .article .content .text-content .infoview-box .fields .field-data {
     color: var(--light-color-d);
+    font-size: var(--default-size);
     margin-bottom: var(--default-gap-size);
     gap: var(--large-gap-size);
     justify-content: left;
-    width: 100%;
+    width: var(--fill-width);
     padding-inline: var(--big-size);
 }
+
 .article .content .text-content .infoview-box .fields .field-data:first-child {
     margin-top: var(--default-gap-size);
 }
-.article .content .text-content .infoview-box .fields .field-data.text span {
-    width: 80%;
+
+.article .content .text-content .infoview-box .fields .field-data .name {
+    flex: 1;
+}
+
+.article .content .text-content .infoview-box .fields .field-data .value {
+    flex: 2;
 }
 
 .article .content .text-content .infoview-box .fields .field-data ul {
@@ -3214,8 +3252,9 @@ ul.list li,
     list-style-type: none;
     padding: 0;
 }
+
 .article .content .text-content .infoview-box .fields .field-data ul li {
-    text-align: left;    
+    text-align: left;
 }
 
 #tinymce .text-content figure,
@@ -3892,6 +3931,7 @@ hr.divider {
     padding: 5px 10px;
     border-radius: var(--default-border-radius);
     font-weight: bold;
+    font-size: var(--big-size);
     transition: background 0.3s ease;
 }
 

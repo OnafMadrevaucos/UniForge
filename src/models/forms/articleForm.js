@@ -230,6 +230,7 @@ export default class ArticleForm extends BaseForm {
                     divFieldData.classList.add('field-data', 'flexrow');
 
                     const nameSpan = document.createElement('span');
+                    nameSpan.classList.add('name');
                     nameSpan.textContent = field.name;
 
                     divFieldData.appendChild(nameSpan);
@@ -238,17 +239,19 @@ export default class ArticleForm extends BaseForm {
                         divFieldData.classList.add('text');
 
                         const valueSpan = document.createElement('span');
+                        valueSpan.classList.add('value');
                         valueSpan.textContent = field.value;
                         divFieldData.appendChild(valueSpan);
                     }
                     else if (field.value instanceof Object) {
-                        nameSpan.classList.add('list-name');
+                        nameSpan.classList.add('name', 'list-name');
 
                         const dot = document.createElement('span');
                         dot.classList.add('dot');
                         dot.innerHTML = '<i class="fas fa-circle-dot"></i>';
 
                         const valueUl = document.createElement('ul');
+                        valueUl.classList.add('value');
                         Object.values(field.value).forEach(item => {
                             const li = document.createElement('li');
                             li.classList.add('list-item', 'flexrow');
