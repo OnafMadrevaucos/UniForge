@@ -108,9 +108,6 @@ export default class ArticleForm extends BaseForm {
             const titleHeader = document.createElement('div');
             titleHeader.classList.add('title-header', 'flexcol');
 
-            const divInfoView = await this._buildInfoview(this.entry);
-
-
             const divTitleBody = document.createElement('div');
             divTitleBody.classList.add('title-main', 'flexrow');
 
@@ -126,10 +123,12 @@ export default class ArticleForm extends BaseForm {
             divTitleBody.appendChild(typeIcon);
 
             titleHeader.appendChild(divTitleBody);
-            titleHeader.appendChild(divInfoView);
+
+            const divInfoView = await this._buildInfoview(this.entry);
 
             const textContent = document.createElement('div');
             textContent.classList.add('text-content');
+            if (divInfoView) textContent.appendChild(divInfoView);
             textContent.innerHTML += this.entry.text;
 
             content.appendChild(titleHeader);
@@ -200,6 +199,8 @@ export default class ArticleForm extends BaseForm {
         const separator = document.createElement('div');
         separator.className = 'separator';
 
+        if (!entry.img && !entry.img) return null;
+
         if (entry.img) {
             const imgURL = await uniforge.utils.blobToImage(entry.img, entry.data.ext);
 
@@ -207,50 +208,64 @@ export default class ArticleForm extends BaseForm {
             img.src = imgURL;
 
             div.appendChild(img);
-            div.appendChild(separator);
         }
 
+        const flavorSpan = document.createElement('div');
+        flavorSpan.classList.add('flavor-field');
+        flavorSpan.innerHTML = entry.flavor;
+
+        div.appendChild(flavorSpan);
+
         if (entry.infoData) {
-            Object.values(entry.infoData).forEach(field => {
-                const divFieldData = document.createElement('div');
-                divFieldData.classList.add('field-data', 'flexrow');
+            const fields = Object.values(entry.infoData);
 
-                const nameSpan = document.createElement('span');
-                nameSpan.textContent = field.name;
+            if (fields.length > 0) {
+                if (entry.img) div.appendChild(separator);
 
-                const dot = document.createElement('span');
-                dot.classList.add('dot');
-                dot.innerHTML = '<i class="fas fa-circle-dot"></i>';
+                const divFields = document.createElement('div');
+                divFields.classList.add('fields', 'flexcol');
 
-                divFieldData.appendChild(nameSpan);
+                fields.forEach(field => {
+                    const divFieldData = document.createElement('div');
+                    divFieldData.classList.add('field-data', 'flexrow');
 
-                if (typeof (field.value) === 'string') {
-                    divFieldData.appendChild(dot);
+                    const nameSpan = document.createElement('span');
+                    nameSpan.textContent = field.name;
 
-                    const valueSpan = document.createElement('span');
-                    valueSpan.textContent = field.value;
-                    divFieldData.appendChild(valueSpan);
-                }
-                else if (field.value instanceof Object) {
-                    nameSpan.classList.add('list-name');
+                    divFieldData.appendChild(nameSpan);
 
-                    const valueUl = document.createElement('ul');
-                    Object.values(field.value).forEach(item => {
-                        const li = document.createElement('li');
-                        li.classList.add('list-item');
-                        li.textContent = item;
+                    if (typeof (field.value) === 'string') {
+                        divFieldData.classList.add('text');
 
-                        valueUl.appendChild(li);
-                    });
+                        const valueSpan = document.createElement('span');
+                        valueSpan.textContent = field.value;
+                        divFieldData.appendChild(valueSpan);
+                    }
+                    else if (field.value instanceof Object) {
+                        nameSpan.classList.add('list-name');
 
-                    divFieldData.appendChild(valueUl);
+                        const dot = document.createElement('span');
+                        dot.classList.add('dot');
+                        dot.innerHTML = '<i class="fas fa-circle-dot"></i>';
 
-                    divFieldData.classList.remove('flexrow');
-                    divFieldData.classList.remove('flexcol');
-                }
+                        const valueUl = document.createElement('ul');
+                        Object.values(field.value).forEach(item => {
+                            const li = document.createElement('li');
+                            li.classList.add('list-item', 'flexrow');
+                            li.appendChild(dot);
+                            li.innerHTML += item;
 
-                div.appendChild(divFieldData);
-            });
+                            valueUl.appendChild(li);
+                        });
+
+                        divFieldData.appendChild(valueUl);
+                    }
+
+                    divFields.appendChild(divFieldData);
+                });
+
+                div.appendChild(divFields);
+            }
         }
 
         return div;

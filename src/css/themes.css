@@ -84,7 +84,7 @@
     background-size: cover;
 }
 
-:root[data-theme="theme-medieval"] .article:not(.timeline) .content .text-content p:first-of-type::first-letter {
+:root[data-theme="theme-medieval"] .article:not(.timeline) .content .text-content:not(:has(.infoview-box .flavor-field)) p:first-of-type::first-letter {
     float: left;
 
     /* Tipografia gótica com fontes alternativas. */
@@ -220,7 +220,7 @@
     background-size: cover;    
 }
 
-:root[data-theme="theme-scifi"] .article:not(.timeline) .content .text-content p:first-of-type::first-letter {
+:root[data-theme="theme-scifi"] .article:not(.timeline) .content .text-content:not(:has(.infoview-box .flavor-field)) p:first-of-type::first-letter {
     float: left;
 
     font-family: "Orbitron", sans-serif;
@@ -361,7 +361,7 @@
     background-color: var(--color-a);
 }
 
-:root[data-theme="theme-neutral"] .article:not(.timeline) .content .text-content p:first-of-type::first-letter {
+:root[data-theme="theme-neutral"] .article:not(.timeline) .content .text-content:not(:has(.infoview-box .flavor-field)) p:first-of-type::first-letter {
     float: left;
 
     font-family: Georgia, "Times New Roman", serif;
