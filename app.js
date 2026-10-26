@@ -16,7 +16,6 @@ const APP_VERSION = packageConfig.version;
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const __srcname = path.join(__dirname, 'src');
-const __userdata = app.getPath('userData');
 
 let mainWindow;
 
@@ -24,24 +23,11 @@ let activeTiler = null;
 
 console.log(__filename);
 
-let dbPath = null;
-
-if (app.isPackaged) {
-  dbPath = path.join(__userdata, '/UniForge/');
-  if (!fs.existsSync(dbPath)) {
-    fs.mkdirSync(dbPath);
-  }
-} else {
-  dbPath = path.join(__dirname, '/common/backend/');
-}
-
 /**
  * Instância do banco de dados SQLite.
  * @type {Database}
  */
-const db = new Database(dbPath + 'database.db');
-
-
+const db = new Database(path.join(__dirname, '/common/backend/database.db'));
 
 const tiler = null;
 
@@ -235,9 +221,9 @@ app.whenReady().then(() => {
     if (activeTiler) activeTiler.cancel();
   });
 
-  /**
-  * Manipulador para forçar o fechamento da aplicação.
-  */
+   /**
+   * Manipulador para forçar o fechamento da aplicação.
+   */
   ipcMain.on('app-quit', () => {
     app.quit();
   });

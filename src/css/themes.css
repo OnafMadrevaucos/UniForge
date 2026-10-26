@@ -84,39 +84,6 @@
     background-size: cover;
 }
 
-:root[data-theme="theme-medieval"] .article:not(.timeline) .content .text-content:not(:has(.infoview-box .flavor-field)) p:first-of-type::first-letter {
-    float: left;
-
-    /* Tipografia gótica com fontes alternativas. */
-    font-family:
-        "Old English Text MT",
-        "UnifrakturCook",
-        "UnifrakturMaguntia",
-        "Palatino Linotype",
-        serif;
-
-    font-size: 4.5em;
-    font-weight: bold;
-    line-height: 0.78;
-
-    /* Cores de tinta e iluminuras antigas. */
-    color: #8b1e24;
-    text-shadow: 1px 1px 0 #d4af67;
-
-    /* Espaçamento e ornamentação. */
-    margin: 0.04em 0.12em 0 0;
-    padding: 0.06em 0.10em 0.08em;
-
-    border: 1px solid #b08a46;
-    background: linear-gradient(
-        135deg,
-        #f5e6bd,
-        #e5cf96
-    );
-
-    box-shadow: inset 0 0 0 2px #f5e6bd;
-}
-
 /* 2. TEMA SCI-FI (Cyberpunk / Neon)
    Focado em tons escuros profundos com contrastes neon em Ciano, Magenta e Amarelo.
 */
@@ -218,42 +185,6 @@
     background-image: url(../ui/world-background-sci-fi.png);
     background-repeat: no-repeat;
     background-size: cover;    
-}
-
-:root[data-theme="theme-scifi"] .article:not(.timeline) .content .text-content:not(:has(.infoview-box .flavor-field)) p:first-of-type::first-letter {
-    float: left;
-
-    font-family: "Orbitron", sans-serif;
-    font-size: 4.2em;
-    font-weight: 900;
-    line-height: 0.8;
-
-    margin: 0.08em 0.14em 0 0;
-
-    color: #7df9ff;
-
-    /* Brilho holográfico */
-    text-shadow:
-        0 0 4px rgba(125, 249, 255, 0.9),
-        0 0 10px rgba(0, 225, 255, 0.7),
-        0 0 22px rgba(0, 140, 255, 0.5);
-
-    /* Contorno tecnológico */
-    -webkit-text-stroke: 1px #bafaff;
-
-    /* Realce sutil */
-    background: linear-gradient(
-        180deg,
-        #ffffff 0%,
-        #7df9ff 35%,
-        #00aaff 100%
-    );
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
-
-    /* Separação visual */
-    padding-right: 0.04em;
 }
 
 /* 3. TEMA NEUTRO (Sóbrio)
@@ -359,19 +290,6 @@
 :root[data-theme="theme-neutral"] #map {
     background-image: url('../ui/denim065.png');
     background-color: var(--color-a);
-}
-
-:root[data-theme="theme-neutral"] .article:not(.timeline) .content .text-content:not(:has(.infoview-box .flavor-field)) p:first-of-type::first-letter {
-    float: left;
-
-    font-family: Georgia, "Times New Roman", serif;
-    font-size: 3.5em;
-    font-weight: 700;
-    line-height: 0.85;
-
-    margin: 0.05em 0.12em 0 0;
-
-    color: inherit;    
 }
 
 /* Altera a seta nos outros temas para combinar com a paleta de cores correspondente */

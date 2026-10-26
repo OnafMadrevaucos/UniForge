@@ -5,11 +5,10 @@
   <div id="sideBar" class="sidebar">
     <h3>{{title}}</h3>
     <foldertree id="sections" item="entries"></foldertree>
-    <div class="footer">
+    <div class="footer">      
       <div id="searchEntry" class="input-container search-bar flexrow">
         <input type="text" id="searchInput" class="search-data" placeholder="Pesquisar entrada...">
-        <a id="clearSearch" data-tooltip="Limpar busca" data-tooltip-side="left" data-tooltip-block="top"><i
-            class="fa-solid fa-xmark"></i></a>
+        <a id="clearSearch" data-tooltip="Limpar busca" data-tooltip-side="left" data-tooltip-block="top"><i class="fa-solid fa-xmark"></i></a>
       </div>
     </div>
   </div>
@@ -42,8 +41,6 @@
       <div class="tabs-options flex-0 flexrow">
         <button id="descriptionTabButton" class="flexcol selected" data-tab="descriptionTab" disabled><i
             class="fas fa-align-left"></i> Descrição</button>
-        <button id="infoviewTabButton" class="flexcol" data-tab="infoviewTab" disabled><i
-            class="fa-brands fa-readme"></i> Infográfico</button>
         <button id="eventTabButton" class="flexcol" data-tab="eventTab" disabled><i class="fas fa-calendar"></i>
           Eventos</button>
       </div>
@@ -54,16 +51,6 @@
         <textarea id="mainEditor">
           <div class="text-content editable"></div>
         </textarea>
-      </div>
-      <div id="infoviewTab" class="tab-content infoview flex-1 flexcol">
-        <div class="infoview-header flexrow">
-          <h3>Campos Extras</h3>
-          <a id="newFieldButton" class="flyer-button"><i class="fas fa-folder-plus"></i> Novo Campo</a>
-        </div>
-        <div class="infoview-content">
-          <ul id="infoviewList" class="infoview-list list">            
-          </ul>
-        </div>
       </div>
       <div id="eventTab" class="tab-content flex-1 flexrow">
         <div class="data-group list flexcol">
