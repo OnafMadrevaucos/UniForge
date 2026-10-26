@@ -2917,6 +2917,26 @@ ul.list li,
     height: auto;
 }
 
+#settings .content .info-set .hotkey-list .hotkey-item {
+    width: var(--fill-width);
+    align-items: center;
+}
+#settings .content .info-set .hotkey-list .hotkey-item span {
+    flex: 2;
+    font-size: var(--default-size);
+}
+#settings .content .info-set .hotkey-list .hotkey-item span:last-child {
+    flex: 0;
+    border: 1px solid var(--text-color);
+    border-radius: var(--default-border-radius);
+    padding-inline-end: 5px;
+    text-align: end;
+    text-wrap: nowrap;
+    border: 1px solid;
+    padding: 5px;
+    user-select: none;
+}
+
 #settings .content .data-complex select#themeSelector {
     flex: 0 0 65.4%;
 }
