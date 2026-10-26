@@ -203,8 +203,6 @@ export default class SettingsForm extends BaseForm {
         this.configureDatabasePanel();
 
         await this.configureLeafletPanel();
-
-        this.configureHotkeyList();
     }
 
     /**
@@ -266,29 +264,6 @@ export default class SettingsForm extends BaseForm {
             // Atribuir os arquivos ao input
             defaultMapInput.files = dataTransfer.files;
         }
-    }
-
-    async configureHotkeyList() {
-        const hotkeyList = this.querySelector('#hotkeyList');
-        const hk = JSON.parse(await uniforge.settings.get('misc.hotkeys'));
-
-        const hotkeys =Object.values(hk).sort((a, b) => a.label.localeCompare(b.label, 'pt-BR'));
-
-        hotkeys.forEach(hotkey => {
-            const li = document.createElement('li');
-            li.classList.add('hotkey-item', 'flexrow');
-            
-            const labelSpan = document.createElement('span');
-            labelSpan.textContent = hotkey.label;
-
-            const keySpan = document.createElement('span');
-            keySpan.textContent = hotkey.key;
-
-            li.appendChild(labelSpan);
-            li.appendChild(keySpan);
-
-            hotkeyList.appendChild(li);
-        }); 
     }
 
     /* ---------------------------------------------------------------------------------------------------------------- */

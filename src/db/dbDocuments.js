@@ -70,8 +70,6 @@ export default class DBDocuments {
         this.event = this.events;
         this.lineage = this.lineages;
         this.timeline = this.timelines;
-
-        this.#verifyData();
     }
 
     static async UniForgeData() {
@@ -443,9 +441,9 @@ export default class DBDocuments {
     createSettingsSet(settings) {
         const settingsSet = new SettingsSet();
 
-        if (!settings) return settingsSet;        
+        if (!settings) return settingsSet;
 
-        settings.forEach((setting) => { 
+        settings.forEach((setting) => {
             settingsSet.add(`${setting.group}.${setting.tag}`, setting.value);
         });
 
@@ -462,18 +460,5 @@ export default class DBDocuments {
     createGenericSet(data, documentClass = BaseDocument) {
         if (!data) return new Set();
         return new Set(data.map((d) => new documentClass(d)));
-    }
-
-    /**
-     * Verifica se os dados essenciais ao Sistema estão presente na lista de documentos.
-     * 
-     * @async
-     * @returns {boolean} Se os dados estão íntegros (true) ou não (false).
-     */
-    async #verifyData() {
-        // As hotkeys não estão presentes no Banco de Dados.
-        if(!this.settings.get('misc.hotkeys')) {
-
-        }
     }
 }

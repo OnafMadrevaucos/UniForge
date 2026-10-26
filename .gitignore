@@ -5,3 +5,4 @@
 /src/css/custom
 /common
 *.db
+/dist
