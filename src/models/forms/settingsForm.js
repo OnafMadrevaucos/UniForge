@@ -9,6 +9,12 @@ import Slider from "../controls/slider.js";
 
 import CalendarMonths from "../../common/documents/calendarMonths.mjs";
 
+const hotkeyType = {
+    action: 'Ação',
+    time: 'Tempo',
+    map: 'Mapa'
+}
+
 /**
   * Formulário de configurações do sistema.
   * @class
@@ -151,11 +157,11 @@ export default class SettingsForm extends BaseForm {
         const procedures = Object.entries(this.db.storedProcedures);
         this.data.procedures = Object.fromEntries(
             procedures.map(([key, procedures]) => [
-                key, 
+                key,
                 Object.keys(procedures).map(p => {
                     return {
                         _id: p,
-                        _label: p,                        
+                        _label: p,
                     }
                 })
             ])
@@ -270,25 +276,45 @@ export default class SettingsForm extends BaseForm {
 
     async configureHotkeyList() {
         const hotkeyList = this.querySelector('#hotkeyList');
-        const hk = JSON.parse(await uniforge.settings.get('misc.hotkeys'));
+        let hk = JSON.parse(await uniforge.settings.get('misc.hotkeys'));
 
-        const hotkeys =Object.values(hk).sort((a, b) => a.label.localeCompare(b.label, 'pt-BR'));
+        hk = Object.values(hk).sort((a, b) => a.label.localeCompare(b.label, 'pt-BR'));
 
-        hotkeys.forEach(hotkey => {
-            const li = document.createElement('li');
-            li.classList.add('hotkey-item', 'flexrow');
-            
-            const labelSpan = document.createElement('span');
-            labelSpan.textContent = hotkey.label;
+        const hotkeys = hk.reduce((groups, hotkey) => {
+            const { type } = hotkey;
 
-            const keySpan = document.createElement('span');
-            keySpan.textContent = hotkey.key;
+            // Inicializa o array caso o tipo ainda não exista.
+            (groups[type] ??= []).push(hotkey);
 
-            li.appendChild(labelSpan);
-            li.appendChild(keySpan);
+            return groups;
+        }, {});
 
-            hotkeyList.appendChild(li);
-        }); 
+        Object.entries(hotkeys).forEach(([type, hotkey]) => {
+            const ul = document.createElement('ul');
+            ul.classList.add('hotkey-list', 'list', type);
+
+            const h4 = document.createElement('h4');
+            h4.textContent = hotkeyType[type];
+            ul.appendChild(h4);
+
+            Object.values(hotkey).forEach(value => {
+                const li = document.createElement('li');
+                li.classList.add('hotkey-item', 'flexrow');
+
+                const labelSpan = document.createElement('span');
+                labelSpan.textContent = value.label;
+
+                const keySpan = document.createElement('span');
+                keySpan.textContent = value.key;
+
+                li.appendChild(labelSpan);
+                li.appendChild(keySpan);
+
+                ul.appendChild(li);
+            });
+
+            hotkeyList.appendChild(ul);
+        });
     }
 
     /* ---------------------------------------------------------------------------------------------------------------- */
@@ -342,7 +368,7 @@ export default class SettingsForm extends BaseForm {
         createConnectionButton.addEventListener('click', (event) => { this.onCreateConnectionClick(event); });
 
         const executeProcButton = this.querySelector('#procedureButton');
-        executeProcButton.addEventListener('click', (event) => { this.onExecuteProcClick(event); });        
+        executeProcButton.addEventListener('click', (event) => { this.onExecuteProcClick(event); });
 
         const queryButton = this.querySelector('#queryButton');
         queryButton.addEventListener('click', (event) => { this.onExecuteQuery(event); });
@@ -746,9 +772,9 @@ export default class SettingsForm extends BaseForm {
             const result = await this.db.storedProcedures[procedureType][procedure]();
             procedureNameSelect.selectedIndex = -1;
 
-            this.msgBox.showInfo(`Procedure '${procedure}' executada com sucesso. (${result.changes}) linhas alteradas.`);            
+            this.msgBox.showInfo(`Procedure '${procedure}' executada com sucesso. (${result.changes}) linhas alteradas.`);
         }
-        else if(!procedureType || !procedure) {
+        else if (!procedureType || !procedure) {
             this.msgBox.showWarning('Selecione um Stored Procedure para executar.');
         }
     }

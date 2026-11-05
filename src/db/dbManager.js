@@ -2836,77 +2836,77 @@ export default class DBManager {
 
         const hotkeys = [
             {
-                icon: '',
+                type: 'action',
                 key: 'Escape',
                 label: 'Fechar/cancelar operação'
             },
             {
-                icon: '',
+                type: 'action',
                 key: 'Enter',
                 label: 'Confirma operação'
             },
             {
-                icon: '',
+                type: 'map',
                 key: 'Ctrl + P',
                 label: 'Desenha Polígono'
             },
             {
-                icon: '',
+                type: 'map',
                 key: 'Ctrl + C',
                 label: 'Desenha Círculo'
             },
             {
-                icon: '',
+                type: 'map',
                 key: 'Ctrl + R',
                 label: 'Desenha Retângulo'
             },
             {
-                icon: '',
+                type: 'map',
                 key: 'Ctrl + M',
                 label: 'Insere Marcador'
             },
             {
-                icon: '',
+                type: 'action',
                 key: 'F1',
                 label: 'Abrir Códex'
             },
             {
-                icon: '',
+                type: 'action',
                 key: 'F2',
                 label: 'Abrir Linhas do Tempo'
             },
             {
-                icon: '',
+                type: 'action',
                 key: 'F9',
                 label: 'Abre Gerenciador de Formas do Leaflet'
             },
             {
-                icon: '',
+                type: 'action',
                 key: 'F10',
                 label: 'Abre Lista de Objetos do Leaflet'
             },
             {
-                icon: '',
+                type: 'action',
                 key: 'F12',
                 label: 'Sobre o Uniforge'
             },
             {
-                icon: '',
+                type: 'time',
                 key: '<',
                 label: 'Retrocede 1 Ano'
             },
             {
-                icon: '',
+                type: 'time',
                 key: 'Ctrl + <',
                 label: 'Retrocede 10 Anos'
             },
             {
-                icon: '',
+                type: 'time',
                 key: '>',
                 label: 'Avança 1 Ano'
             },
             {
-                icon: '',
+                type: 'time',
                 key: 'Ctrl + >',
                 label: 'Avança 10 Ano'
             }
