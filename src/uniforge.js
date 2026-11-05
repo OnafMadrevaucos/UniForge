@@ -37,7 +37,7 @@ window.addEventListener('themechange', onThemeChange);
 */
 async function main() {
     // Inicia o gerenciador de tooltips.
-    uniforge.tooltip.init();
+    uniforge.tooltip.init();    
 
     await configureGlobals();
 
@@ -113,7 +113,7 @@ async function main() {
              * Instância do gerenciador de banco de dados.
              * @type {DBManager}
              */
-            db: new DBManager(),            
+            db: new DBManager(),
 
             /**
              * Instância do gerenciador de PDFs.

@@ -2834,6 +2834,84 @@ export default class DBManager {
     async populateSettingsTable() {
         console.log('Populando tabela \'settings\'....');
 
+        const hotkeys = [
+            {
+                icon: '',
+                key: 'Escape',
+                label: 'Fechar/cancelar operação'
+            },
+            {
+                icon: '',
+                key: 'Enter',
+                label: 'Confirma operação'
+            },
+            {
+                icon: '',
+                key: 'Ctrl + P',
+                label: 'Desenha Polígono'
+            },
+            {
+                icon: '',
+                key: 'Ctrl + C',
+                label: 'Desenha Círculo'
+            },
+            {
+                icon: '',
+                key: 'Ctrl + R',
+                label: 'Desenha Retângulo'
+            },
+            {
+                icon: '',
+                key: 'Ctrl + M',
+                label: 'Insere Marcador'
+            },
+            {
+                icon: '',
+                key: 'F1',
+                label: 'Abrir Códex'
+            },
+            {
+                icon: '',
+                key: 'F2',
+                label: 'Abrir Linhas do Tempo'
+            },
+            {
+                icon: '',
+                key: 'F9',
+                label: 'Abre Gerenciador de Formas do Leaflet'
+            },
+            {
+                icon: '',
+                key: 'F10',
+                label: 'Abre Lista de Objetos do Leaflet'
+            },
+            {
+                icon: '',
+                key: 'F12',
+                label: 'Sobre o Uniforge'
+            },
+            {
+                icon: '',
+                key: '<',
+                label: 'Retrocede 1 Ano'
+            },
+            {
+                icon: '',
+                key: 'Ctrl + <',
+                label: 'Retrocede 10 Anos'
+            },
+            {
+                icon: '',
+                key: '>',
+                label: 'Avança 1 Ano'
+            },
+            {
+                icon: '',
+                key: 'Ctrl + >',
+                label: 'Avança 10 Ano'
+            }
+        ];
+
         const styles = [
             {
                 tag: 'pathOptions',
@@ -2845,8 +2923,15 @@ export default class DBManager {
         let query = 'INSERT INTO settings (tag, group, value) ';
         query += 'VALUES (?,?,?);';
 
+        let params = [];
+        params.push('hotkeys');
+        params.push('misc');
+        params.push(JSON.stringify({...hotkeys}));
+
+        this.results = await this.#execQuery(query, params);
+
         for (let style of styles) {
-            let params = [];
+            params = [];
 
             params.push(style.tag);
             params.push(style.group);
@@ -3266,21 +3351,21 @@ export default class DBManager {
             return 'É necessário informar um título válido para a Entrada.';
         if (entry.infoData) {
             for (let data of Object.values(entry.infoData)) {
-                if(data.name.isEmpty()) {
+                if (data.name.isEmpty()) {
                     return 'O nome do campo não pode ser vazio.';
                 }
 
-                if((typeof(data.value) === 'string') && data.value.isEmpty())
+                if ((typeof (data.value) === 'string') && data.value.isEmpty())
                     return 'O valor do campo não pode ser vazio.';
-                
-                if((data.value instanceof Object)) {
+
+                if ((data.value instanceof Object)) {
                     const items = Object.values(data.value);
 
-                    if(items.length == 0)
+                    if (items.length == 0)
                         return 'A lista do campo não pode estar vazia.';
 
-                    for(let item of items) {                        
-                        if(item.isEmpty()) 
+                    for (let item of items) {
+                        if (item.isEmpty())
                             return 'O item da lista do campo não pode ser vazia.';
                     }
                 }
