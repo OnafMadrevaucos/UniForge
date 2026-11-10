@@ -16,6 +16,10 @@ import ColorPicker from "./models/controls/colorPicker.js";
 import Dialogs from "./models/dialogs/dialog.js";
 import AboutForm from "./models/forms/aboutForm.js";
 
+const ERROR_TYPE = {
+    NO_DATABASE: 0
+};
+
 // Configura o tema salvo no localStorage antes de inicializar o app para evitar flash de estilo.
 document.documentElement.setAttribute('data-theme', localStorage.getItem('uniforge_theme') || 'theme-neutral');
 
@@ -36,16 +40,25 @@ window.addEventListener('themechange', onThemeChange);
  * @returns {Promise<void>}
 */
 async function main() {
+    localStorage.setItem('uniforge_builded', false);
+    
     // Inicia o gerenciador de tooltips.
-    uniforge.tooltip.init();    
+    uniforge.tooltip.init();
 
+    // Configura os valores globais do Sistema.
     await configureGlobals();
 
+    // Verifica a integridade dos dados essenciais para o sistema.
+    try { await verifyData() }
+    catch (error) {
+        // Não foi possível verificar a integridade dos dados, aborte.
+        // uniforge.app.quit();
+    }
+
+    // Construa o espelho local dos documentos do Banco de Dados.
     await rebuildDocs();
 
-    // Atalho para o gerenciador de configurações do sistema.
-    uniforge.settings = uniforge.doc.settings;
-
+    // Injete as URLs padrões do sistema na variável global do UniForge.
     await configureURLs();
 
     parseBody();
@@ -67,6 +80,30 @@ async function main() {
     // ------------------------------------------------------------------
     // FUNÇÕES DE CONFIGURAÇÃO
     // ------------------------------------------------------------------
+
+    async function verifyData() {
+        try {
+            const builded = localStorage.getItem('uniforge_builded');
+            if (builded === 'false') {
+                await uniforge.db.buildDatabase();
+                localStorage.setItem('uniforge_builded', true);
+            }
+        } catch (error) {
+            localStorage.setItem('uniforge_builded', false);
+            throw error;
+        }
+
+        try {
+            const verified = localStorage.getItem('uniforge_data_verified');
+            if (verified === 'false') {
+                await uniforge.db.buildDatabase();
+                localStorage.setItem('uniforge_data_verified', true);
+            }
+        } catch (error) {
+            localStorage.setItem('uniforge_data_verified', false);
+            throw error;
+        }
+    }
 
     /** 
      * Adiciona as propriedades restantes ao objeto uniforge. 
@@ -356,8 +393,9 @@ async function main() {
                 backgroundScifi: '/ui/scifi-background.png',
                 backgroundNeutral: '/ui/blank-image.svg',
                 blankImg: '/ui/blank-image.svg',
-                worldMap: worldMap ? `/${worldMap}/tiles` : null,
-                mapOverlays: worldMap ? `/${worldMap}/overlays` : null,
+                worldMap: worldMap ? `/${worldMap}/tiles` : '',
+                mapOverlays: worldMap ? `/${worldMap}/overlays` : '',
+                maps: '/data/maps/',
                 common: '/common/',
                 models: '/models/',
                 controls: '/models/controls/',
@@ -380,7 +418,7 @@ async function main() {
             backgroundNeutral: await uniforge.path.join(uniforge.urls.relativePath.backgroundNeutral),
             blankImg: await uniforge.path.join(uniforge.urls.relativePath.blankImg),
 
-            worldMap: await uniforge.path.join(uniforge.urls.relativePath.worldMap),
+            worldMap: uniforge.urls.relativePath.worldMap ? await uniforge.path.join(uniforge.urls.relativePath.worldMap) : await uniforge.path.join(uniforge.urls.relativePath.maps),
             mapOverlays: await uniforge.path.join(uniforge.urls.relativePath.mapOverlays),
 
             // Urls de Diretórios usados pelo sistema.
@@ -410,7 +448,7 @@ async function main() {
         // Inicializa o controle de mapas Leaflet.
         uniforge.ctrls.leaflet = lControl.init(uniforge.urls.worldMap);
 
-        var style = JSON.parse(uniforge.settings.get('leafletStyle.pathOptions')) ?? uniforge.leaflet.core.defaultStyle;
+        var style = JSON.parse(uniforge.settings.get('leafletStyle.pathOptions')) ?? uniforge.ctrls.leaflet.defaultStyle;
         // Impede que o Estilo do Elemento seja de um tipo não suportado.
         if (typeof style === 'string') style = JSON.parse(style);
 
@@ -1018,13 +1056,20 @@ function parseBody() {
  * @returns {Promise<void>}
 */
 async function rebuildDocs(document = null) {
-    console.log(`UniForge | Recriando${document ? ` conjunto de dados (${document})` : ' TODO o conjunto de dados'}.`);
-    const data = await DBDocuments.UniForgeData();
-    uniforge.doc = new DBDocuments(data);
+    const dataVerified = localStorage.getItem('uniforge_data_verified');
 
-    uniforge.settings = uniforge.doc.settings;
+    if (dataVerified === 'true') {
+        console.log(`UniForge | Recriando${document ? ` conjunto de dados (${document})` : ' TODO o conjunto de dados'}.`);
+        const data = await DBDocuments.UniForgeData();
+        uniforge.doc = new DBDocuments(data);
 
-    return uniforge.doc;
+        // Atalho para o gerenciador de configurações do sistema.
+        uniforge.settings = uniforge.doc.settings;
+
+        return uniforge.doc;
+    }
+
+    return null;
 }
 
 /**

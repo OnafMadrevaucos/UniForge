@@ -26,7 +26,6 @@ export default class DBManager {
                 createSettingsTable: () => this.createSettingsTable()
             },
             populate: {
-                populateMapTable: () => this.populateMapTable(),
                 populateTomeTable: () => this.populateTomeTable(),
                 populateEntryTypeTable: () => this.populateEntryTypeTable(),
                 populateRelevanceTable: () => this.populateRelevanceTable(),
@@ -165,7 +164,7 @@ export default class DBManager {
 
     async rollbackTransaction(motive = '') {
         if (this.transactionStarted) {
-            console.log(`UniForge | A transação teve de ser revertida.${motive ? ` Motivo: ${motive}` : ''}.`);
+            console.warn(`UniForge | A transação teve de ser revertida.${motive ? ` Motivo: ${motive}` : ''}.`);
             // Reverte a transação.
             await uniforge.sql.exec('ROLLBACK');
             // Reverte o estado do gerenciador do banco de dados para o padrão.
@@ -183,6 +182,54 @@ export default class DBManager {
     async deleteTable(tableName) {
         const query = `DROP TABLE IF EXISTS ${tableName}`;
         return await this.#execQuery(query);
+    }
+
+    async buildDatabase(commit = true) {
+        try {
+            if (commit) this.beginTransaction(); // Abre transação.
+
+            await this.createEntryTypeTable();
+            await this.createRelevanceTable();
+            await this.createTextImagesTable();
+            await this.createTomeTable();
+            await this.createChapterTable();
+            await this.createChapterTypeTable();
+            await this.createSectionTable();
+            await this.createEntryTable();
+            await this.createEventTable();
+            await this.createLineageTreeTable();
+            await this.createLineageTypeTable();
+            await this.createLineageTreeEntriesTable();
+            await this.createMapTable();
+            await this.createMapElementsTable();
+            await this.createTimelineTable();
+            await this.createTimelineEventsTable();
+            await this.createSettingsTable();
+
+            await this.createCalendarTable();
+            await this.createDaysTable();
+            await this.createMonthsTable();
+
+            await this.populateTomeTable();
+            await this.populateChapterType();
+            await this.populateEntryTypeTable();
+            await this.populateRelevanceTable();
+            await this.populateSettingsTable();
+
+            await this.populateCalendarsTable();
+            await this.populateDaysTable();
+            await this.populateMonthsTable();
+
+            if(commit) await this.commitTransaction(); // Comita a transação.
+            return true;
+        } catch (error) {
+            if (commit) {
+                // Faz rollback em caso de erro ao popular as tabelas.
+                await this.rollbackTransaction(error);
+            }
+
+            throw error;
+        }
     }
 
     /**
@@ -230,36 +277,7 @@ export default class DBManager {
                 console.log(`Tabela ${count} de ${totalQueries} deletada.`);
             }
 
-            await this.createEntryTypeTable();
-            await this.createRelevanceTable();
-            await this.createTextImagesTable();
-            await this.createTomeTable();
-            await this.createChapterTable();
-            await this.createSectionTable();
-            await this.createEntryTable();
-            await this.createEventTable();
-            await this.createLineageTreeTable();
-            await this.createLineageTypeTable();
-            await this.createLineageTreeEntriesTable();
-            await this.createMapTable();
-            await this.createMapElementsTable();
-            await this.createTimelineTable();
-            await this.createTimelineEventsTable();
-            await this.createSettingsTable();
-
-            await this.createCalendarTable();
-            await this.createDaysTable();
-            await this.createMonthsTable();
-
-            await this.populateTomeTable();
-            await this.populateEntryTypeTable();
-            await this.populateRelevanceTable();
-            await this.populateMapTable();
-            await this.populateSettingsTable();
-
-            await this.populateCalendarsTable();
-            await this.populateDaysTable();
-            await this.populateMonthsTable();
+            await this.buildDatabase(false);
 
             // Comita a transação.
             await this.commitTransaction();
@@ -2076,6 +2094,25 @@ export default class DBManager {
     }
 
     /**
+     * Cria a tabela 'chapter' no banco de dados.
+     * 
+     * Essa tabela é usada para armazenar informações sobre os Capítulos.
+     * 
+     * @returns {Promise<void>} Uma promessa que informa se a tabela foi criada com sucesso.
+     */
+    async createChapterTypeTable() {
+        const query = 'CREATE TABLE IF NOT EXISTS `chapterType` (' +
+            '`ctid` VARCHAR(16) NOT NULL,' +                // Identificador do Tipo de Capítulo.            
+            '`title` VARCHAR(255) NOT NULL,' +              // Título do Tipo de Capítulo.
+            'PRIMARY KEY (`ctid`))';
+
+        this.results = await this.#execQuery(query);
+        console.log('Tabela \'chapterType\' criada....OK.');
+
+        return this.result;
+    }
+
+    /**
      * Cria a tabela 'section' no banco de dados.
      * 
      * Essa tabela é usada para armazenar informações sobre as Seções.
@@ -2210,11 +2247,11 @@ export default class DBManager {
      */
     async createLineageTreeEntriesTable() {
         const query = 'CREATE TABLE IF NOT EXISTS `_lineageTreeEntries` (' +
-            '`ltid` VARCHAR(16) NOT NULL,' +            // Identificador da Linhagem.
-            '`eid` VARCHAR(16) NOT NULL,' +             // Identificador da Entrada Fundadora da Linhagem.
-            '`code` VARCHAR(5) NOT NULL,' +             // Identificador da Entrada dentro da Árvore.
-            '`isRoot` BOOLEAN NOT NULL DEFAULT 0,'      // É a Entrada Fundadora da Linhagem.
-        '`isVirtual` BOOLEAN NOT NULL DEFAULT 0,'      // A Entrada é virtual? (Existe apenas para dar sentido à Linhagem).
+            '`ltid` VARCHAR(16) NOT NULL,' +             // Identificador da Linhagem.
+            '`eid` VARCHAR(16) NOT NULL,' +              // Identificador da Entrada Fundadora da Linhagem.
+            '`code` VARCHAR(5) NOT NULL,' +              // Identificador da Entrada dentro da Árvore.
+            '`isRoot` BOOLEAN NOT NULL DEFAULT 0,' +     // É a Entrada Fundadora da Linhagem.
+        '`isVirtual` BOOLEAN NOT NULL DEFAULT 0,' +      // A Entrada é virtual? (Existe apenas para dar sentido à Linhagem).
         'PRIMARY KEY (`ltid`,`eid`))';
 
         this.results = await this.#execQuery(query);
@@ -2617,50 +2654,6 @@ export default class DBManager {
         return this.result;
     }
 
-    /**
-     * Popula a tabela 'map' com um mapa padrão.
-     * 
-     * O mapa padrão é lido do arquivo 'defaultMap' na pasta raiz do projeto, e seus dados
-     * são inseridos na tabela 'map' com o título 'Mapa Global' e o sabor 'Mapa Padrão.'.
-     * 
-     * @returns {Promise<Object>} Uma promessa que informa as alterações realizadas no banco de dados.
-     */
-    async populateMapTable() {
-        console.log('Populando tabela \'map\'....');
-
-        const imageBuffer = await uniforge.fs.readFile(uniforge.urls.defaultMap);
-        const imageExt = await uniforge.path.extname(uniforge.urls.defaultMap);
-        const imageData = await uniforge.utils.bufferToBlob(imageBuffer, imageExt);
-
-        const map = {
-            mid: 'De#m@Pgl0ba1Unfg',
-            sid: '-',
-            title: 'Mapa Global',
-            flavor: 'Mapa Padrão.',
-            img: imageData.raw,
-            ext: imageData.ext,
-            isDraft: false
-        }
-
-        let query = 'INSERT INTO map (mid, sid, title, flavor, img, ext, isDraft) ';
-        query += 'VALUES (?,?,?,?,?,?,?);';
-
-        const params = [
-            map.mid,
-            map.sid,
-            map.title,
-            map.flavor,
-            map.img,
-            map.ext,
-            Number(map.isDraft)
-        ];
-
-        this.results = await this.#execQuery(query, params);
-
-        console.log('Tabela \'map\' populada....OK.');
-
-        return this.result;
-    }
 
     /**
      * Popula a tabela 'entryType' com registros de Tipos de Entradas.
@@ -2724,6 +2717,34 @@ export default class DBManager {
 
         return this.result;
     }
+
+    async populateChapterType() {
+        console.log('Populando tabela \'chapterType\'....');
+
+        const chapterTypes = [
+            'Temporal',
+            'Atemporal',
+            'Material'
+        ];
+
+        let query = 'INSERT INTO chapterType (ctid, title) ';
+        query += 'VALUES (?,?);';
+
+        let idx = 0;
+        for (let chapterType of chapterTypes) {
+            let params = [];
+
+            params.push(idx);
+            params.push(chapterType);
+
+            this.results = await this.#execQuery(query, params);
+            idx++;
+        }
+
+        console.log('Tabela \'chapterType\' populada....OK.');
+        return this.result;
+    }
+
     /**
      * Popula a tabela 'entryType' com registros de Tipos de Entradas.
      * 
@@ -2912,21 +2933,23 @@ export default class DBManager {
             }
         ];
 
+        const hotkeysStr = JSON.stringify({ ...hotkeys });
+
         const styles = [
             {
                 tag: 'pathOptions',
                 group: 'leafletStyle',
-                value: "fillColor: 'var(--red)',fillOpacity: 0.5, color: 'var(--red)',opacity: 1,weight: 5,dashArray: '0, 0'",
+                value: "{\"fillColor\": \"var(--color-b)\",\"fillOpacity\": 0.5, \"color\": \"var(--dark-color-b)\",\"opacity\": 1,\"weight\": 5,\"dashArray\": \"0, 0\", \"line\":\"solid\", \"stroke\": true}",
             }
         ];
 
-        let query = 'INSERT INTO settings (tag, group, value) ';
+        let query = 'INSERT INTO settings (tag, \"group\", value) ';
         query += 'VALUES (?,?,?);';
 
         let params = [];
         params.push('hotkeys');
         params.push('misc');
-        params.push(JSON.stringify({...hotkeys}));
+        params.push(hotkeysStr);
 
         this.results = await this.#execQuery(query, params);
 

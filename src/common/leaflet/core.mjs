@@ -1005,7 +1005,7 @@ const lControl = {
 
     loadElements: function (mid, epoch = 1) {
         lControl.mapElements.clearLayers();
-        const elements = uniforge.doc.maps.get(mid).elements || [];
+        const elements = uniforge.doc.maps.get(mid)?.elements || [];
         const elementsOfEpoch = elements.filter(element => element.epoch === epoch);
         elementsOfEpoch.forEach((elementData) => {
             let element;
