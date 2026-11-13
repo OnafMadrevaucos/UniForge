@@ -13,12 +13,10 @@ import LineageTree from "../common/documents/lineageTree.mjs";
 import Relevance from "../common/documents/relevance.mjs";
 import BaseDocument from "../common/documents/base.mjs";
 import Tome from "../common/documents/tome.mjs";
-import Setting from "../common/documents/setting.mjs";
 import TextImage from "../common/documents/textImage.mjs";
 import MapAtlas from "../common/documents/map.mjs";
 import MapElement from "../common/documents/mapElement.mjs";
 import Timeline from "../common/documents/timeline.mjs";
-import SettingsSet from "../common/primitives/settingsSet.mjs";
 
 /**
  * Classe para criar e gerenciar conjuntos (Sets) baseados em dados de um banco de dados.
@@ -62,7 +60,6 @@ export default class DBDocuments {
         this.events = this.createEventSet(data.events);
         this.timelines = this.createTimelineSet(data.timelines, data.timelineEvents);
         this.maps = this.createMapSet(data.maps, data.mapElements);
-        this.settings = this.createSettingsSet(data.settings);
 
         // Adiciona umas propriedades utilitárias para facilitar o acesso.
         this.entry = this.entries;
@@ -70,8 +67,6 @@ export default class DBDocuments {
         this.event = this.events;
         this.lineage = this.lineages;
         this.timeline = this.timelines;
-
-        this.#verifyData();
     }
 
     static async UniForgeData() {
@@ -94,7 +89,6 @@ export default class DBDocuments {
         data.calendarsMonths = await uniforge.db.getAllCalendarsMonths();
         data.calendarsDays = await uniforge.db.getAllCalendarsDays();
         data.textImages = await uniforge.db.getAllTextImages();
-        data.settings = await uniforge.db.getAllSettings();
         data.relevances = await uniforge.db.getAllRelevances();
         data.chapterTypes = await uniforge.db.getAllChapterTypes();
         data.entryTypes = await uniforge.db.getAllEntryTypes();
@@ -435,24 +429,6 @@ export default class DBDocuments {
     }
 
     /**
-     * Cria um conjunto de COnfigurações, ordenados por grupos.
-     *
-     * @param {Array<Setting>} settings      - Dados da tabela Settings.
-     * @returns {Set} Conjunto de Maps.
-     */
-    createSettingsSet(settings) {
-        const settingsSet = new SettingsSet();
-
-        if (!settings) return settingsSet;        
-
-        settings.forEach((setting) => { 
-            settingsSet.add(`${setting.group}.${setting.tag}`, setting.value);
-        });
-
-        return settingsSet;
-    }
-
-    /**
      * Cria um conjunto simples com os dados fornecidos.
      *
      * @param {Array<Object>} data - Dados de uma tabela qualquer.
@@ -462,18 +438,5 @@ export default class DBDocuments {
     createGenericSet(data, documentClass = BaseDocument) {
         if (!data) return new Set();
         return new Set(data.map((d) => new documentClass(d)));
-    }
-
-    /**
-     * Verifica se os dados essenciais ao Sistema estão presente na lista de documentos.
-     * 
-     * @async
-     * @returns {boolean} Se os dados estão íntegros (true) ou não (false).
-     */
-    async #verifyData() {
-        // As hotkeys não estão presentes no Banco de Dados.
-        if(!this.settings.get('misc.hotkeys')) {
-
-        }
     }
 }

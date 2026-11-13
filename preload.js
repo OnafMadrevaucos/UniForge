@@ -11,7 +11,8 @@ console.log('UniForge | Configurando pré-carregamentos de Versão.');
 
 contextBridge.exposeInMainWorld('sql', {
   query: async (sql, params = []) => ipcRenderer.invoke('db-query', sql, params),
-  exec: async (sql, params = []) => ipcRenderer.invoke('db-exec', sql, params)
+  exec: async (sql, params = []) => ipcRenderer.invoke('db-exec', sql, params),
+  check: async () => ipcRenderer.invoke('db-check'),
 });
 console.log('UniForge | Configurando pré-carregamentos de SQL.');
 
@@ -33,7 +34,8 @@ contextBridge.exposeInMainWorld('path', {
     return result;
   },
   resolve: async (protoPath) => await ipcRenderer.invoke('path-resolve', protoPath),
-  extname: async (filePath) => await ipcRenderer.invoke('path-extname', filePath)
+  extname: async (filePath) => await ipcRenderer.invoke('path-extname', filePath),
+  normalize: async (filePath) => await ipcRenderer.invoke('path-normalize', filePath),
 });
 console.log('UniForge | Configurando pré-carregamentos de Diretórios.');
 

@@ -41,13 +41,8 @@ if (app.isPackaged) {
  */
 const db = new Database(dbPath + 'database.db');
 
-
-
-const tiler = null;
-
 // Remove o menu padrão
 Menu.setApplicationMenu(null);
-
 
 app.whenReady().then(() => {
   console.log('============================= UNIFORGE ============================');
@@ -104,6 +99,13 @@ app.whenReady().then(() => {
   ipcMain.handle('db-exec', (event, query, params = []) => dbExec(query, params));
 
   /**
+   * Manipulador para verificar as tabelas do banco de dados.
+   * @param {Electron.IpcMainEvent} event - O evento IPC recebido.
+   * @returns {Array<Object>} - Lista das tabelas existentes.
+   */
+  ipcMain.handle('db-check', (event) => checkAllTables());
+
+  /**
   * Manipulador para recarregar a Janela Principal.
   * @param {Electron.IpcMainEvent} event - O evento IPC recebido.
   * @param {string} query - O comando SQL.
@@ -150,6 +152,14 @@ app.whenReady().then(() => {
    * @returns {string} - Extensão do arquivo informado.
    */
   ipcMain.handle('path-extname', (event, filePath) => pathExtname(filePath));
+
+  /**
+   * Manipulador para obter a extensão do arquivo a partir do caminho fornecido.
+   * @param {Electron.IpcMainEvent} event - O evento IPC recebido.
+   * @param {string} filePath - O caminho do arquivo.
+   * @returns {string} - Extensão do arquivo informado.
+   */
+  ipcMain.handle('path-normalize', (event, filePath) => pathNormalize(filePath));
 
   /**
    * Manipulador para ler o conteúdo de um arquivo.
@@ -363,6 +373,80 @@ function dbExec(query, params = []) {
   }
 }
 
+/**
+ * Verifica a integridade do esquema do banco de dados em relação a um conjunto
+ * de tabelas obrigatórias.
+ *
+ * A função consulta o `sqlite_master` para obter todas as tabelas existentes e,
+ * em seguida:
+ *  1. Considera que o banco de dados "existe" se **pelo menos uma** das tabelas
+ *     obrigatórias estiver presente.
+ *  2. Caso o banco exista, compara a lista de tabelas obrigatórias com as
+ *     existentes e identifica quais estão faltando.
+ *
+ * @async
+ * @function checkAllTables
+ *
+ * @returns {Promise<{status: boolean, error: (string|null)}>} Um objeto contendo:
+ *   - `status`: `true` se o banco de dados existir (ao menos uma tabela
+ *     obrigatória presente), `false` caso contrário.
+ *   - `error`: `null` se nenhuma tabela obrigatória estiver faltando ou se o
+ *     banco não existir; caso contrário, uma string com os nomes das tabelas
+ *     faltantes separados por vírgula (ex.: `"tome, chapter, section"`).
+ *
+ * @example
+ * const result = await checkAllTables();
+ * if (result.status && result.error) {
+ *   console.error(`Tabelas faltando: ${result.error}`);
+ * } else if (!result.status) {
+ *   console.warn('Banco de dados não encontrado ou vazio.');
+ * } else {
+ *   console.log('Banco de dados íntegro.');
+ * }
+ *
+ * @throws {Error} Caso a execução da consulta SQL (`dbQuery`) falhe.
+ */
+function checkAllTables() {
+  // Busca todas as tabelas existentes no banco de dados.
+  const query = 'SELECT name FROM sqlite_master WHERE type=\'table\' ORDER BY name';
+  const tables = dbQuery(query);
+
+  // Lista das tabelas obrigatórias que devem existir no banco de dados.
+  const requiredTables = [
+    'entryType', 'relevance', '_textImages', 'tome', 'chapter',
+    'chapterType', 'section', 'entry', 'event', 'lineageTree',
+    'lineageType', '_lineageTreeEntries', 'map', 'mapElements',
+    'timeline', '_timelineEvent', 'calendars', 'calendarsDays',
+    'calendarsMonths'
+  ];
+
+  // Mapeia as tabelas existentes em um Set para facilitar a verificação.
+  const existingTables = new Set(
+    tables.map(table => table.name)
+  );
+
+  // Verifica se pelo menos alguma das tabelas obrigatórias existe no banco de dados.
+  const hasDatabase = requiredTables.some(
+    table => existingTables.has(table)
+  );
+
+  // Se o banco de dados existe, verifica se todas as tabelas obrigatórias estão presentes.
+  if (hasDatabase) {
+    // Filtra as tabelas obrigatórias que estão faltando no banco de dados.
+    const missingTables = requiredTables.filter(
+      table => !existingTables.has(table)
+    );
+
+    // Se houver tabelas obrigatórias faltando, retorna o status e a lista de tabelas faltantes.
+    if (missingTables.length > 0) {
+      return { status: true, error: missingTables.join(', ') };
+    }
+  }
+
+  // Retorna o status do banco de dados e nenhuma tabela faltante.
+  return { status: hasDatabase, error: null };
+}
+
 function refreshWindow() {
   if (mainWindow) {
     log('Recarregando a Janela Principal.');
@@ -413,6 +497,17 @@ function pathResolve(protoPath) {
 function pathExtname(filePath) {
   var result = path.extname(filePath);
   result = result.replace('.', ''); // Remove o ponto inicial da extensão.
+  return result;
+}
+
+/**
+ * Obtém a extensão do arquivo a partir do caminho fornecido.
+ * 
+ * @param {string} filePath - O caminho completo do arquivo.
+ * @returns {string} - A extensão do arquivo.
+ */
+function pathNormalize(filePath) {
+  var result = path.normalize(filePath);
   return result;
 }
 

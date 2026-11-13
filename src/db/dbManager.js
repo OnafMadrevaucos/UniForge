@@ -82,7 +82,12 @@ export default class DBManager {
     }
 
     get execQuery() {
-        return this.#execQuery;
+        try {
+            return this.#execQuery.bind(this);
+        }
+        catch (error) {
+            throw error;
+        }
     }
 
     set transactionStarted(value) {
@@ -146,6 +151,7 @@ export default class DBManager {
             } else throw new Error('Há outra transação ainda aberta.');
         } catch (error) {
             console.error('UniForge | Não foi possível abrir a transação. ', error);
+            throw error;
         }
     }
 
@@ -159,6 +165,7 @@ export default class DBManager {
             } else throw new Error('Nenhuma transação aberta encontrada.');
         } catch (error) {
             console.error('UniForge | Não foi possível confirmar a transação. ', error);
+            throw error;
         }
     }
 
@@ -181,53 +188,148 @@ export default class DBManager {
 
     async deleteTable(tableName) {
         const query = `DROP TABLE IF EXISTS ${tableName}`;
-        return await this.#execQuery(query);
+        return await this.execQuery(query);
     }
 
-    async buildDatabase(commit = true) {
+    /**
+     * Constrói o banco de dados executando sequencialmente
+     * as operações de criação e população das tabelas.
+     *
+     * @param {Object} options - Opções da construção.
+     * @param {boolean} options.commit - Indica se a transação deve ser confirmada ao final da construção.
+     * @param {Function} options.onProgress - Callback de progresso.
+     * @returns {Promise<boolean}} Resultado da construção.
+    */
+    async buildDatabase({ commit = true, onProgress = null } = {}) {
+        const steps = [
+            {
+                label: 'Criando tabela de tipos de Entrada.',
+                execute: () => this.createEntryTypeTable()
+            },
+            {
+                label: 'Criando tabela de Relevâncias.',
+                execute: () => this.createRelevanceTable()
+            },
+            {
+                label: 'Criando tabela de imagens.',
+                execute: () => this.createTextImagesTable()
+            },
+            {
+                label: 'Criando tabela de Tomos.',
+                execute: () => this.createTomeTable()
+            },
+            {
+                label: 'Criando tabela de Capítulos.',
+                execute: () => this.createChapterTable()
+            },
+            {
+                label: 'Criando tabela de tipos de Capítulos.',
+                execute: () => this.createChapterTypeTable()
+            },
+            {
+                label: 'Criando tabela de Seções.',
+                execute: () => this.createSectionTable()
+            },
+            {
+                label: 'Criando tabela de Entradas.',
+                execute: () => this.createEntryTable()
+            },
+            {
+                label: 'Criando tabela de Eventos.',
+                execute: () => this.createEventTable()
+            },
+            {
+                label: 'Criando tabela de Linhagens.',
+                execute: () => this.createLineageTreeTable()
+            },
+            {
+                label: 'Criando tabela de tipos de Linhagens.',
+                execute: () => this.createLineageTypeTable()
+            },
+            {
+                label: 'Criando tabela de entradas de Linhagens.',
+                execute: () => this.createLineageTreeEntriesTable()
+            },
+            {
+                label: 'Criando tabela de Mapas.',
+                execute: () => this.createMapTable()
+            },
+            {
+                label: 'Criando tabela de Elementos de Mapas.',
+                execute: () => this.createMapElementsTable()
+            },
+            {
+                label: 'Criando tabela de Linhas do Tempo.',
+                execute: () => this.createTimelineTable()
+            },
+            {
+                label: 'Criando tabela de Eventos da Linha do Tempo.',
+                execute: () => this.createTimelineEventsTable()
+            },
+
+
+            {
+                label: 'Criando tabela de Calendários.',
+                execute: () => this.createCalendarTable()
+            },
+            {
+                label: 'Criando tabela de Dias dos Calendários.',
+                execute: () => this.createDaysTable()
+            },
+            {
+                label: 'Criando tabela de Meses dos Calendários.',
+                execute: () => this.createMonthsTable()
+            },
+
+
+            {
+                label: 'Populando tabela de Tomos.',
+                execute: () => this.populateTomeTable()
+            },
+            {
+                label: 'Populando tabela de tipos de Capítulos.',
+                execute: () => this.populateChapterType()
+            },
+            {
+                label: 'Populando tabela de tipos de Entradas.',
+                execute: () => this.populateEntryTypeTable()
+            },
+            {
+                label: 'Populando tabela de Relevâncias.',
+                execute: () => this.populateRelevanceTable()
+            }
+        ];
+
+        const total = steps.length;
+
         try {
-            if (commit) this.beginTransaction(); // Abre transação.
+            if (commit) await this.beginTransaction(); // Abre transação.
 
-            await this.createEntryTypeTable();
-            await this.createRelevanceTable();
-            await this.createTextImagesTable();
-            await this.createTomeTable();
-            await this.createChapterTable();
-            await this.createChapterTypeTable();
-            await this.createSectionTable();
-            await this.createEntryTable();
-            await this.createEventTable();
-            await this.createLineageTreeTable();
-            await this.createLineageTypeTable();
-            await this.createLineageTreeEntriesTable();
-            await this.createMapTable();
-            await this.createMapElementsTable();
-            await this.createTimelineTable();
-            await this.createTimelineEventsTable();
-            await this.createSettingsTable();
+            for (let index = 0; index < total; index++) {
+                const step = steps[index];
 
-            await this.createCalendarTable();
-            await this.createDaysTable();
-            await this.createMonthsTable();
+                onProgress?.({
+                    value: Math.round((index / total) * 100),
+                    message: step.label,
+                    current: index + 1,
+                    total
+                });
 
-            await this.populateTomeTable();
-            await this.populateChapterType();
-            await this.populateEntryTypeTable();
-            await this.populateRelevanceTable();
-            await this.populateSettingsTable();
-
-            await this.populateCalendarsTable();
-            await this.populateDaysTable();
-            await this.populateMonthsTable();
-
-            if(commit) await this.commitTransaction(); // Comita a transação.
-            return true;
-        } catch (error) {
-            if (commit) {
-                // Faz rollback em caso de erro ao popular as tabelas.
-                await this.rollbackTransaction(error);
+                await step.execute();
             }
 
+            if (commit) await this.commitTransaction(); // Comita a transação.
+
+            await onProgress?.({
+                value: 100,
+                message: 'Banco de dados configurado com sucesso.',
+                current: total,
+                total
+            });
+
+            return true;
+        } catch (error) {
+            await this.rollbackTransaction(error);
             throw error;
         }
     }
@@ -271,13 +373,13 @@ export default class DBManager {
             let count = 0;
 
             for (let query of queires) {
-                await this.#execQuery(query);
+                await this.execQuery(query);
                 count++;
 
                 console.log(`Tabela ${count} de ${totalQueries} deletada.`);
             }
 
-            await this.buildDatabase(false);
+            await this.buildDatabase({ commit: false });
 
             // Comita a transação.
             await this.commitTransaction();
@@ -314,7 +416,7 @@ export default class DBManager {
         params.push(Number(data.type) ?? 0);
         params.push(Number(data.hasLineage) ?? 0);
 
-        const result = await this.#execQuery(query, params);
+        const result = await this.execQuery(query, params);
         result.lastInsertRowid = cid;
         this.results = result;
 
@@ -344,7 +446,7 @@ export default class DBManager {
         params.push(data.htmlString);
         params.push(Number(data.isDraft));
 
-        const result = await this.#execQuery(query, params);
+        const result = await this.execQuery(query, params);
         result.lastInsertRowid = sid;
         this.results = result;
 
@@ -383,7 +485,7 @@ export default class DBManager {
         params.push(JSON.stringify(data.infoData) ?? null);
         params.push(Number(data.isDraft));
 
-        const result = await this.#execQuery(query, params);
+        const result = await this.execQuery(query, params);
         result.lastInsertRowid = eid;
         this.results = result;
 
@@ -434,7 +536,7 @@ export default class DBManager {
         params.push(data.date.end?.day);
         params.push(Number(data.isDraft ?? false));
 
-        const result = await this.#execQuery(query, params);
+        const result = await this.execQuery(query, params);
         result.lastInsertRowid = evid;
         this.results = result;
 
@@ -460,7 +562,7 @@ export default class DBManager {
         params.push(data.prefix);
         params.push(data.suffix);
 
-        const result = await this.#execQuery(query, params);
+        const result = await this.execQuery(query, params);
         this.results = result;
 
         return this.result;
@@ -485,7 +587,7 @@ export default class DBManager {
         params.push(data.label);
         params.push(data.name);
 
-        const result = await this.#execQuery(query, params);
+        const result = await this.execQuery(query, params);
         this.results = result;
 
         return this.result;
@@ -510,7 +612,7 @@ export default class DBManager {
         params.push(data.label);
         params.push(data.size);
 
-        const result = await this.#execQuery(query, params);
+        const result = await this.execQuery(query, params);
         this.results = result;
 
         return this.result;
@@ -537,7 +639,7 @@ export default class DBManager {
         params.push(data.tree);
         params.push(data.isDraft);
 
-        const result = await this.#execQuery(query, params);
+        const result = await this.execQuery(query, params);
         result.lastInsertRowid = ltid;
         this.results = result;
 
@@ -560,7 +662,7 @@ export default class DBManager {
         params.push(data.tag);
         params.push(data.label);
 
-        const result = await this.#execQuery(query, params);
+        const result = await this.execQuery(query, params);
         this.results = result;
 
         return this.result;
@@ -583,7 +685,7 @@ export default class DBManager {
         params.push(data.code);
         params.push(Number(data.isRoot));
 
-        const result = await this.#execQuery(query, params);
+        const result = await this.execQuery(query, params);
         this.results = result;
 
         return this.result;
@@ -604,7 +706,7 @@ export default class DBManager {
         params.push(data.ext);
         params.push(data.isDraft);
 
-        const result = await this.#execQuery(query, params);
+        const result = await this.execQuery(query, params);
         result.lastInsertRowid = mid;
         this.results = result;
 
@@ -627,7 +729,7 @@ export default class DBManager {
         params.push(data.points);
         params.push(data.style);
 
-        const result = await this.#execQuery(query, params);
+        const result = await this.execQuery(query, params);
         result.lastInsertRowid = meid;
         this.results = result;
 
@@ -644,7 +746,7 @@ export default class DBManager {
         params.push(data.title);
         params.push(data.flavor);
 
-        const result = await this.#execQuery(query, params);
+        const result = await this.execQuery(query, params);
         result.lastInsertRowid = tid;
         this.results = result;
 
@@ -658,7 +760,7 @@ export default class DBManager {
         params.push(data.tid);
         params.push(data.evid);
 
-        this.results = await this.#execQuery(query, params);
+        this.results = await this.execQuery(query, params);
 
         return this.result;
     }
@@ -683,7 +785,7 @@ export default class DBManager {
         params.push(blob.raw);
         params.push(blob.ext);
 
-        this.results = await this.#execQuery(query, params);
+        this.results = await this.execQuery(query, params);
 
         return this.result;
     }
@@ -710,7 +812,7 @@ export default class DBManager {
 
         let query = `UPDATE section SET ${updateSet} WHERE sid = ?`;
         let params = [data.sid];
-        this.results = await this.#execQuery(query, params);
+        this.results = await this.execQuery(query, params);
 
         return this.result;
     }
@@ -746,7 +848,7 @@ export default class DBManager {
 
         let query = `UPDATE entry SET ${updateSet} WHERE eid = ?`;
         let params = [data.eid];
-        this.results = await this.#execQuery(query, params);
+        this.results = await this.execQuery(query, params);
 
         return this.result;
     }
@@ -788,7 +890,7 @@ export default class DBManager {
 
         let query = `UPDATE event SET ${updateSet} WHERE evid = ?`;
         let params = [data.evid];
-        this.results = await this.#execQuery(query, params);
+        this.results = await this.execQuery(query, params);
 
         return this.result;
     }
@@ -811,7 +913,7 @@ export default class DBManager {
 
         let query = `UPDATE calendars SET ${updateSet} WHERE clid = ?`;
         let params = [data.clid];
-        this.results = await this.#execQuery(query, params);
+        this.results = await this.execQuery(query, params);
 
         return this.result;
     }
@@ -837,7 +939,7 @@ export default class DBManager {
         params.push(data.cldid);
         params.push(data.clid);
 
-        this.results = await this.#execQuery(query, params);
+        this.results = await this.execQuery(query, params);
 
         return this.result;
     }
@@ -863,7 +965,7 @@ export default class DBManager {
         params.push(data.clmid);
         params.push(data.clid);
 
-        this.results = await this.#execQuery(query, params);
+        this.results = await this.execQuery(query, params);
 
         return this.result;
     }
@@ -886,7 +988,7 @@ export default class DBManager {
 
         let query = `UPDATE lineageTree SET ${updateSet} WHERE ltid = ?`;
         let params = [data.ltid];
-        this.results = await this.#execQuery(query, params);
+        this.results = await this.execQuery(query, params);
 
         return this.result;
     }
@@ -907,7 +1009,7 @@ export default class DBManager {
 
         let query = `UPDATE lineageType SET ${updateSet} WHERE ltid = ?`;
         let params = [data.ltid];
-        this.results = await this.#execQuery(query, params);
+        this.results = await this.execQuery(query, params);
 
         return this.result;
     }
@@ -935,7 +1037,7 @@ export default class DBManager {
 
         let query = `UPDATE map SET ${updateSet} WHERE mid = ?`;
         let params = [data.mid];
-        this.results = await this.#execQuery(query, params);
+        this.results = await this.execQuery(query, params);
 
         return this.result;
     }
@@ -958,7 +1060,7 @@ export default class DBManager {
 
         let query = `UPDATE mapElements SET ${updateSet} WHERE meid = ?`;
         let params = [data.meid];
-        this.results = await this.#execQuery(query, params);
+        this.results = await this.execQuery(query, params);
 
         return this.result;
     }
@@ -979,7 +1081,7 @@ export default class DBManager {
 
         let query = `UPDATE timeline SET ${updateSet} WHERE tid = ?`;
         let params = [data.tid];
-        this.results = await this.#execQuery(query, params);
+        this.results = await this.execQuery(query, params);
 
         return this.result;
     }
@@ -999,7 +1101,7 @@ export default class DBManager {
 
         let query = `UPDATE settings SET ${updateSet} WHERE \"group\" = ? AND tag = ?`;
         let params = [data.group, data.tag];
-        this.results = await this.#execQuery(query, params);
+        this.results = await this.execQuery(query, params);
 
         return this.result;
     }
@@ -1016,16 +1118,16 @@ export default class DBManager {
         try {
             this.beginTransaction();
 
-            this.results = await this.#execQuery(query, params);
+            this.results = await this.execQuery(query, params);
 
             query = 'DELETE FROM entry WHERE sid = ?;'
-            this.results = await this.#execQuery(query, params);
+            this.results = await this.execQuery(query, params);
 
             query = 'DELETE FROM event WHERE sid = ?;'
-            this.results = await this.#execQuery(query, params);
+            this.results = await this.execQuery(query, params);
 
             query = 'DELETE FROM lineageTree WHERE sid = ?;'
-            this.results = await this.#execQuery(query, params);
+            this.results = await this.execQuery(query, params);
 
             this.commitTransaction();
         } catch (error) {
@@ -1046,10 +1148,10 @@ export default class DBManager {
             let query = 'DELETE FROM entry WHERE eid = ?;';
             let params = [eid];
 
-            this.results = await this.#execQuery(query, params);
+            this.results = await this.execQuery(query, params);
 
             query = 'DELETE FROM event WHERE source = ?;';
-            this.results = await this.#execQuery(query, params);
+            this.results = await this.execQuery(query, params);
 
             this.commitTransaction();
         } catch (error) {
@@ -1067,7 +1169,7 @@ export default class DBManager {
     async deleteEvent(evid) {
         let query = 'DELETE FROM event WHERE evid = ?;';
         const params = [evid];
-        this.results = await this.#execQuery(query, params);
+        this.results = await this.execQuery(query, params);
 
         return this.result;
     }
@@ -1083,13 +1185,13 @@ export default class DBManager {
 
             let query = 'DELETE FROM calendarsMonths WHERE clid = ?;';
             let params = [clid];
-            this.results = await this.#execQuery(query, params);
+            this.results = await this.execQuery(query, params);
 
             query = 'DELETE FROM calendarsDays WHERE clid = ?;';
-            this.results = await this.#execQuery(query, params);
+            this.results = await this.execQuery(query, params);
 
             query = 'DELETE FROM calendars WHERE clid = ?;';
-            this.results = await this.#execQuery(query, params);
+            this.results = await this.execQuery(query, params);
 
             this.commitTransaction();
         } catch (error) {
@@ -1107,7 +1209,7 @@ export default class DBManager {
     async deleteCalendarMonth(clmid) {
         let query = 'DELETE FROM calendarsMonths WHERE clmid = ?;';
         let params = [clmid];
-        this.results = await this.#execQuery(query, params);
+        this.results = await this.execQuery(query, params);
 
         return this.result;
     }
@@ -1120,7 +1222,7 @@ export default class DBManager {
     async deleteLineageTree(ltid) {
         let query = 'DELETE FROM lineageTree WHERE ltid = ?;';
         let params = [ltid];
-        this.results = await this.#execQuery(query, params);
+        this.results = await this.execQuery(query, params);
 
         return this.result;
     }
@@ -1134,7 +1236,7 @@ export default class DBManager {
     async deleteLineageType(ltid, tag) {
         let query = 'DELETE FROM lineageType WHERE ltid = ? AND tag = ?;';
         let params = [ltid, tag];
-        this.results = await this.#execQuery(query, params);
+        this.results = await this.execQuery(query, params);
 
         return this.result;
     }
@@ -1148,7 +1250,7 @@ export default class DBManager {
     async deleteLineageTreeEntry(ltid, eid) {
         let query = 'DELETE FROM _lineageTreeEntries WHERE ltid = ? AND eid = ?;';
         let params = [ltid, eid];
-        this.results = await this.#execQuery(query, params);
+        this.results = await this.execQuery(query, params);
 
         return this.result;
     }
@@ -1164,10 +1266,10 @@ export default class DBManager {
             let query = 'DELETE FROM map WHERE mid = ?;';
             let params = [mid];
 
-            this.results = await this.#execQuery(query, params);
+            this.results = await this.execQuery(query, params);
 
             query = 'DELETE FROM mapElements WHERE mid = ?;';
-            this.results = await this.#execQuery(query, params);
+            this.results = await this.execQuery(query, params);
 
             this.commitTransaction();
         } catch (error) {
@@ -1185,7 +1287,7 @@ export default class DBManager {
     async deleteMapElement(meid) {
         let query = 'DELETE FROM mapElements WHERE meid = ?;';
         let params = [meid];
-        this.results = await this.#execQuery(query, params);
+        this.results = await this.execQuery(query, params);
 
         return this.result;
     }
@@ -1198,7 +1300,7 @@ export default class DBManager {
     async deleteTimeline(tid) {
         let query = 'DELETE FROM timeline WHERE tid = ?;';
         let params = [tid];
-        this.results = await this.#execQuery(query, params);
+        this.results = await this.execQuery(query, params);
 
         return this.result;
     }
@@ -1206,7 +1308,7 @@ export default class DBManager {
     async deleteTimelineEvent(tid, evid) {
         let query = 'DELETE FROM _timelineEvent WHERE tid = ? AND evid = ?;';
         let params = [tid, evid];
-        this.results = await this.#execQuery(query, params);
+        this.results = await this.execQuery(query, params);
 
         return this.result;
     }
@@ -2064,7 +2166,7 @@ export default class DBManager {
             '`icon` VARCHAR(255) NOT NULL,' + // Ícone do Tomo.
             'PRIMARY KEY (`title`))';
 
-        this.results = await this.#execQuery(query);
+        this.results = await this.execQuery(query);
         console.log('Tabela \'tome\' criada....OK.');
 
         return this.result;
@@ -2087,7 +2189,7 @@ export default class DBManager {
             '`hasLineage` BOOLEAN DEFAULT 0 NOT NULL,' +    // Representa uma linhagem (padrão 'false').
             'PRIMARY KEY (`cid`))';
 
-        this.results = await this.#execQuery(query);
+        this.results = await this.execQuery(query);
         console.log('Tabela \'chapter\' criada....OK.');
 
         return this.result;
@@ -2106,7 +2208,7 @@ export default class DBManager {
             '`title` VARCHAR(255) NOT NULL,' +              // Título do Tipo de Capítulo.
             'PRIMARY KEY (`ctid`))';
 
-        this.results = await this.#execQuery(query);
+        this.results = await this.execQuery(query);
         console.log('Tabela \'chapterType\' criada....OK.');
 
         return this.result;
@@ -2128,7 +2230,7 @@ export default class DBManager {
             '`isDraft` BOOLEAN NOT NULL DEFAULT 0,' +   // A Seção é um rascunho (falso por padrão).
             'PRIMARY KEY (`sid`,`cid`))';
 
-        this.results = await this.#execQuery(query);
+        this.results = await this.execQuery(query);
         console.log('Tabela \'section\' criada....OK.');
 
         return this.result;
@@ -2155,7 +2257,7 @@ export default class DBManager {
             '`isDraft` BOOLEAN NOT NULL DEFAULT 0,' +   // A Entrada é um rascunho (falso por padrão).
             'PRIMARY KEY (`eid`,`sid`))';
 
-        this.results = await this.#execQuery(query);
+        this.results = await this.execQuery(query);
         console.log('Tabela \'entry\' criada....OK.');
 
         return this.result;
@@ -2187,7 +2289,7 @@ export default class DBManager {
             '`isDraft` BOOLEAN NOT NULL DEFAULT 0,' +       // O Evento é um rascunho (falso por padrão).
             'PRIMARY KEY (`evid`,`sid`))';
 
-        this.results = await this.#execQuery(query);
+        this.results = await this.execQuery(query);
         console.log('Tabela \'event\' criada....OK.');
 
         return this.result;
@@ -2209,7 +2311,7 @@ export default class DBManager {
             '`isDraft` BOOLEAN NULL DEFAULT 0,' +   // A linhagem é um rascunho (falso por padrão).
             'PRIMARY KEY (`ltid`,`eid`))';
 
-        this.results = await this.#execQuery(query);
+        this.results = await this.execQuery(query);
         console.log('Tabela \'lineageTree\' criada....OK.');
 
         return this.result;
@@ -2232,7 +2334,7 @@ export default class DBManager {
             '`label` VARCHAR(255) NOT NULL,' +          // Fundador da Linhagem (Identificador daprimeira Primeira da linhagem).        
             'PRIMARY KEY (`tag`))';
 
-        this.results = await this.#execQuery(query);
+        this.results = await this.execQuery(query);
         console.log('Tabela \'lineageType\' criada....OK.');
 
         return this.result;
@@ -2251,10 +2353,10 @@ export default class DBManager {
             '`eid` VARCHAR(16) NOT NULL,' +              // Identificador da Entrada Fundadora da Linhagem.
             '`code` VARCHAR(5) NOT NULL,' +              // Identificador da Entrada dentro da Árvore.
             '`isRoot` BOOLEAN NOT NULL DEFAULT 0,' +     // É a Entrada Fundadora da Linhagem.
-        '`isVirtual` BOOLEAN NOT NULL DEFAULT 0,' +      // A Entrada é virtual? (Existe apenas para dar sentido à Linhagem).
-        'PRIMARY KEY (`ltid`,`eid`))';
+            '`isVirtual` BOOLEAN NOT NULL DEFAULT 0,' +      // A Entrada é virtual? (Existe apenas para dar sentido à Linhagem).
+            'PRIMARY KEY (`ltid`,`eid`))';
 
-        this.results = await this.#execQuery(query);
+        this.results = await this.execQuery(query);
         console.log('Tabela \'_lineageTreeEntries\' criada....OK.');
 
         return this.result;
@@ -2271,7 +2373,7 @@ export default class DBManager {
             '`isDraft` BOOLEAN NOT NULL DEFAULT 0,' +   // O mapa é um rascunho (falso por padrão).
             'PRIMARY KEY (`mid`))';
 
-        this.results = await this.#execQuery(query);
+        this.results = await this.execQuery(query);
         console.log('Tabela \'map\' criada....OK.');
 
         return this.result;
@@ -2289,7 +2391,7 @@ export default class DBManager {
             '`style` TEXT NULL,' +                       // Estilo do elemento do mapa.
             'PRIMARY KEY (`meid`))';
 
-        this.results = await this.#execQuery(query);
+        this.results = await this.execQuery(query);
         console.log('Tabela \'mapElements\' criada....OK.');
 
         return this.result;
@@ -2312,7 +2414,7 @@ export default class DBManager {
             '`flavor` TEXT NOT NULL,' +                 // Descrição adicional da Linha do Tempo.          
             'PRIMARY KEY (`tid`))';
 
-        this.results = await this.#execQuery(query);
+        this.results = await this.execQuery(query);
         console.log('Tabela \'timeline\' criada....OK.');
 
         return this.result;
@@ -2331,7 +2433,7 @@ export default class DBManager {
             '`evid` VARCHAR(16) NOT NULL,' +            // Identificador do Evento.
             'PRIMARY KEY (`tid`, `evid`))';
 
-        this.results = await this.#execQuery(query);
+        this.results = await this.execQuery(query);
         console.log('Tabela \'_timelineEvent\' criada....OK.');
 
         return this.result;
@@ -2353,7 +2455,7 @@ export default class DBManager {
             '`ext` VARCHAR(5) NOT NULL DEFAULT `jpeg`,' +   // A linhagem é um rascunho (falso por padrão).
             'PRIMARY KEY (`uuid`))';
 
-        this.results = await this.#execQuery(query);
+        this.results = await this.execQuery(query);
         console.log('Tabela \'_textImages\' criada....OK.');
 
         return this.result;
@@ -2369,7 +2471,7 @@ export default class DBManager {
     */
     async createEntryTypeTable() {
         let query = 'DROP TABLE IF EXISTS entryType';
-        this.results = await this.#execQuery(query);
+        this.results = await this.execQuery(query);
 
         query = 'CREATE TABLE IF NOT EXISTS `entryType` (' +
             '`etid` INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,' +  // Identificador dos Tipos de Entrada.        
@@ -2379,7 +2481,7 @@ export default class DBManager {
             '`isEntity` BOOLEAN NOT NULL DEFAULT 0,' +              // A Seção é entidade (false por padrão).
             'UNIQUE (`etid`))';
 
-        this.results = await this.#execQuery(query);
+        this.results = await this.execQuery(query);
         console.log('Tabela \'entryType\' criada....OK.');
 
         return this.result;
@@ -2396,14 +2498,14 @@ export default class DBManager {
     async createRelevanceTable() {
         let query = 'DROP TABLE IF EXISTS relevance';
         let changes = 0;
-        this.results = await this.#execQuery(query);
+        this.results = await this.execQuery(query);
 
         query = 'CREATE TABLE IF NOT EXISTS `relevance` (' +
             '`rid` INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,' +   // Identificador da Relevância.        
             '`title` VARCHAR(255) NULL,' +                          // Título da Relevância.        
             'UNIQUE (`rid`))';
 
-        this.results = await this.#execQuery(query);
+        this.results = await this.execQuery(query);
         console.log('Tabela \'relevance\' criada....OK.');
 
         return this.result;
@@ -2440,7 +2542,7 @@ export default class DBManager {
             params.push(calendar.prefix);
             params.push(calendar.suffix);
 
-            this.results = await this.#execQuery(query, params);
+            this.results = await this.execQuery(query, params);
         }
 
         console.log('Tabela \'calendars\' populada....OK.');
@@ -2539,7 +2641,7 @@ export default class DBManager {
             params.push(day.label);
             params.push(day.name);
 
-            this.results = await this.#execQuery(query, params);
+            this.results = await this.execQuery(query, params);
         }
         console.log('Tabela \'calendarsDays\' populada....OK.');
 
@@ -2647,7 +2749,7 @@ export default class DBManager {
             params.push(month.label);
             params.push(month.size);
 
-            this.results = await this.#execQuery(query, params);
+            this.results = await this.execQuery(query, params);
         }
         console.log('Tabela \'calendarsMonths\' populada....OK.');
 
@@ -2711,7 +2813,7 @@ export default class DBManager {
             params.push(tome.label);
             params.push(tome.icon);
 
-            this.results = await this.#execQuery(query, params);
+            this.results = await this.execQuery(query, params);
         }
         console.log('Tabela \'tome\' populada....OK.');
 
@@ -2737,7 +2839,7 @@ export default class DBManager {
             params.push(idx);
             params.push(chapterType);
 
-            this.results = await this.#execQuery(query, params);
+            this.results = await this.execQuery(query, params);
             idx++;
         }
 
@@ -2806,7 +2908,7 @@ export default class DBManager {
             params.push(entryType.icon);
             params.push(entryType.isMaterial);
 
-            this.results = await this.#execQuery(query, params);
+            this.results = await this.execQuery(query, params);
         }
 
         console.log('Tabela \'entryType\' populada....OK.');
@@ -2840,7 +2942,7 @@ export default class DBManager {
 
             params.push(relevance.title);
 
-            this.results = await this.#execQuery(query, params);
+            this.results = await this.execQuery(query, params);
         }
 
         console.log('Tabela \'relevance\' populada....OK.');
@@ -2951,7 +3053,7 @@ export default class DBManager {
         params.push('misc');
         params.push(hotkeysStr);
 
-        this.results = await this.#execQuery(query, params);
+        this.results = await this.execQuery(query, params);
 
         for (let style of styles) {
             params = [];
@@ -2960,7 +3062,7 @@ export default class DBManager {
             params.push(style.group);
             params.push(style.value);
 
-            this.results = await this.#execQuery(query, params);
+            this.results = await this.execQuery(query, params);
         }
 
         console.log('Tabela \'settings\' populada....OK.');
@@ -2981,7 +3083,7 @@ export default class DBManager {
             '\"group\" VARCHAR(50) NOT NULL,' +     // Grupo de configuração
             'value TEXT NOT NULL)';             // Valor da configuração
 
-        this.results = await this.#execQuery(query);
+        this.results = await this.execQuery(query);
         console.log('Tabela \'settings\' criada....OK.');
 
         return this.result;
@@ -3002,7 +3104,7 @@ export default class DBManager {
             'prefix VARCHAR(50) NULL,' +    // Prefixo dos Anos do calendário (opcional)
             'suffix VARCHAR(50) NULL)';     // Sufixo dos Anos do calendário (opcional)            
 
-        this.results = await this.#execQuery(query);
+        this.results = await this.execQuery(query);
         console.log('Tabela \'calendar\' criada....OK.');
 
         return this.result;
@@ -3024,7 +3126,7 @@ export default class DBManager {
             'size INTEGER NOT NULL DEFAULT 45)';           // Título do MÊS do calendário
 
 
-        this.results = await this.#execQuery(query);
+        this.results = await this.execQuery(query);
         console.log('Tabela \'calendarsMonths\' criada....OK.');
 
         return this.result;
@@ -3045,7 +3147,7 @@ export default class DBManager {
             'label TEXT,' +         // Abreviação dos Dias da Semana do calendário.
             'name TEXT)';           // Nome completo dos Dias da Semana do calendário.      
 
-        this.results = await this.#execQuery(query);
+        this.results = await this.execQuery(query);
         console.log('Tabela \'calendarsDays\' criada....OK.');
 
         return this.result;
@@ -3060,7 +3162,7 @@ export default class DBManager {
      */
     async deleteCalendarTable() {
         let query = 'DROP TABLE IF EXISTS calendars;';
-        this.results = await this.#execQuery(query);
+        this.results = await this.execQuery(query);
 
         return this.result;
     }
@@ -3074,7 +3176,7 @@ export default class DBManager {
      */
     async deleteMonthsTable() {
         let query = 'DROP TABLE IF EXISTS calendarsMonths;';
-        this.results = await this.#execQuery(query);
+        this.results = await this.execQuery(query);
 
         return this.result;
     }
@@ -3088,7 +3190,7 @@ export default class DBManager {
      */
     async deleteDaysTable() {
         let query = 'DROP TABLE IF EXISTS calendarsDays;';
-        this.results = await this.#execQuery(query);
+        this.results = await this.execQuery(query);
 
         return this.result;
     }
@@ -3102,7 +3204,7 @@ export default class DBManager {
      */
     async deleteEntryTypeTable() {
         let query = 'DROP TABLE IF EXISTS entryTypes;';
-        this.results = await this.#execQuery(query);
+        this.results = await this.execQuery(query);
 
         return this.result;
     }
@@ -3116,7 +3218,7 @@ export default class DBManager {
      */
     async deleteRelevanceTable() {
         let query = 'DROP TABLE IF EXISTS relevance;';
-        this.results = await this.#execQuery(query);
+        this.results = await this.execQuery(query);
 
         return this.result;
     }
@@ -3130,7 +3232,7 @@ export default class DBManager {
      */
     async deleteChapterTable() {
         let query = 'DROP TABLE IF EXISTS chapters;';
-        this.results = await this.#execQuery(query);
+        this.results = await this.execQuery(query);
 
         return this.result;
     }
@@ -3144,7 +3246,7 @@ export default class DBManager {
      */
     async deleteSectionTable() {
         let query = 'DROP TABLE IF EXISTS sections;';
-        this.results = await this.#execQuery(query);
+        this.results = await this.execQuery(query);
 
         return this.result;
     }
@@ -3157,7 +3259,7 @@ export default class DBManager {
      */
     async deleteEntryTable() {
         let query = 'DROP TABLE IF EXISTS entries;';
-        this.results = await this.#execQuery(query);
+        this.results = await this.execQuery(query);
 
         return this.result;
     }
@@ -3170,7 +3272,7 @@ export default class DBManager {
      */
     async deleteEventTable() {
         let query = 'DROP TABLE IF EXISTS events;';
-        this.results = await this.#execQuery(query);
+        this.results = await this.execQuery(query);
 
         return this.result;
     }
@@ -3183,7 +3285,7 @@ export default class DBManager {
      */
     async deleteLineageTreeTable() {
         let query = 'DROP TABLE IF EXISTS lineageTree;';
-        this.results = await this.#execQuery(query);
+        this.results = await this.execQuery(query);
 
         return this.result;
     }
@@ -3196,7 +3298,7 @@ export default class DBManager {
      */
     async deleteLineageTypeTable() {
         let query = 'DROP TABLE IF EXISTS lineageType;';
-        this.results = await this.#execQuery(query);
+        this.results = await this.execQuery(query);
 
         return this.result;
     }
@@ -3209,7 +3311,7 @@ export default class DBManager {
      */
     async deleteLineageTreeEntriesTable() {
         let query = 'DROP TABLE IF EXISTS _lineageTreeEntries;';
-        this.results = await this.#execQuery(query);
+        this.results = await this.execQuery(query);
 
         return this.result;
     }
@@ -3222,7 +3324,7 @@ export default class DBManager {
      */
     async deleteMapTable() {
         let query = 'DROP TABLE IF EXISTS maps;';
-        this.results = await this.#execQuery(query);
+        this.results = await this.execQuery(query);
 
         return this.result;
     }
@@ -3235,7 +3337,7 @@ export default class DBManager {
      */
     async deleteMapElementsTable() {
         let query = 'DROP TABLE IF EXISTS mapElements;';
-        this.results = await this.#execQuery(query);
+        this.results = await this.execQuery(query);
 
         return this.result;
     }
@@ -3248,7 +3350,7 @@ export default class DBManager {
      */
     async deleteTimelineTable() {
         let query = 'DROP TABLE IF EXISTS timeline;';
-        this.results = await this.#execQuery(query);
+        this.results = await this.execQuery(query);
 
         return this.result;
     }
@@ -3261,7 +3363,7 @@ export default class DBManager {
      */
     async deleteTimelineEventsTable() {
         let query = 'DROP TABLE IF EXISTS _timelineEvent;';
-        this.results = await this.#execQuery(query);
+        this.results = await this.execQuery(query);
 
         return this.result;
     }
@@ -3274,7 +3376,7 @@ export default class DBManager {
      */
     async deleteTextImagesTable() {
         let query = 'DROP TABLE IF EXISTS _textImages;';
-        this.results = await this.#execQuery(query);
+        this.results = await this.execQuery(query);
 
         return this.result;
     }
@@ -3287,7 +3389,7 @@ export default class DBManager {
      */
     async deleteSettingsTable() {
         let query = 'DROP TABLE IF EXISTS settings;';
-        this.results = await this.#execQuery(query);
+        this.results = await this.execQuery(query);
 
         return this.result;
     }
@@ -3300,27 +3402,32 @@ export default class DBManager {
      * @throws {Error} - Caso ocorra algum erro no banco de dados.
      */
     async #execQuery(query, params = []) {
-        // Verifica se a transação é única, nesse caso, limpa o estado atual.
-        if (!this.transactionStarted) await this.clear();
+        try {
+            // Verifica se a transação é única, nesse caso, limpa o estado atual.
+            if (!this.transactionStarted) await this.clear();
 
-        if (!query || query.isEmpty()) throw new Error('A consulta SQL não pode ser vazia.');
+            if (!query || query.isEmpty()) throw new Error('A consulta SQL não pode ser vazia.');
 
-        let result = null;
-        // É uma consulta com parâmetros.
-        if (params.length > 0) {
-            result = await uniforge.sql.exec(query, params);
-        } else {
-            result = await uniforge.sql.exec(query);
+            let result = null;
+            // É uma consulta com parâmetros.
+            if (params.length > 0) {
+                result = await uniforge.sql.exec(query, params);
+            } else {
+                result = await uniforge.sql.exec(query);
+            }
+
+            // Obtém os dados da Query recém-executada.
+            result.data = this.getSQLTables(query);
+
+            // Se houver alterações nas tabelas, sinalizar ao sistema que um documento foi alterado.
+            if (result.changes > 0) await triggerHook('documentsChanged', result.data.table.name);
+
+            // Retorna o resultado da consulta.
+            return result;
         }
-
-        // Obtém os dados da Query recém-executada.
-        result.data = this.getSQLTables(query);
-
-        // Se houver alterações nas tabelas, sinalizar ao sistema que um documento foi alterado.
-        if (result.changes > 0) await triggerHook('documentsChanged', result.data.table.name);
-
-        // Retorna o resultado da consulta.
-        return result;
+        catch (error) {
+            throw error;
+        }
     }
 
     /**

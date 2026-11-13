@@ -86,8 +86,8 @@ function _parseSwitchTags(html) {
 
     const regex = /<switch\s*(?:id="([^"]+)")?\s*(?:class="([^"]+)")?\s*\/?>/g;
     html = html.replace(regex, (match, id, classes) => {
-        console.log(`Correspondência encontrada: ${match}`);
-        console.log(`ID: ${id ?? 'none'}, Classes: ${classes ?? 'none'}`);
+        console.log(`UniForge | Correspondência encontrada: ${match}`);
+        console.log(`UniForge | ID: ${id ?? 'none'}, Classes: ${classes ?? 'none'}`);
         return `
         <label ${id ? `id="${id}"` : ''} ${classes ? `class="switch ${classes}"` : 'class="switch"'}>
             <input type="checkbox" id="checkbox">
@@ -107,8 +107,8 @@ function _parseSliderTags(html) {
 
     const regex = /<slider\s*(?:id="([^"]+)")?\s*(?:class="([^"]+)")?\s*\/?>/g;
     html = html.replace(regex, (match, id, classes) => {
-        console.log(`Correspondência encontrada: ${match}`);
-        console.log(`ID: ${id ?? 'none'}, Classes: ${classes ?? 'none'}`);
+        console.log(`UniForge | Correspondência encontrada: ${match}`);
+        console.log(`UniForge | ID: ${id ?? 'none'}, Classes: ${classes ?? 'none'}`);
         return `
         <div ${id ? `id="${id}"` : ''} ${classes ? `class="slider-container ${classes}"` : 'class="slider-container"'}>
             <div class="slider-track" id="slider">
@@ -130,8 +130,8 @@ function _parseColorTags(html) {
 
     const regex = /<color\s*(?:id="([^"]+)")?\s*(?:class="([^"]+)")?\s*\/?>/g;
     html = html.replace(regex, (match, id, classes) => {
-        console.log(`Correspondência encontrada: ${match}`);
-        console.log(`ID: ${id ?? 'none'}, Classes: ${classes ?? 'none'}`);
+        console.log(`UniForge | Correspondência encontrada: ${match}`);
+        console.log(`UniForge | ID: ${id ?? 'none'}, Classes: ${classes ?? 'none'}`);
         return `
         <div ${id ? `id="${id}"` : ''} ${classes ? `class="color-picker ${classes}"` : 'class="color-picker"'}>
             <div class="color-picker-preview"></div>
@@ -170,12 +170,12 @@ function _parseComboTags(html, data) {
     const regex = /<combo\s+id="([^"]+)"\s+value="([^"]+)"(?:\s+blank="([^"]+)")?(?:\s+search="([^"]+)")?(?:\s+grouped="(true|false|1|0)")?(?:\s+(disabled)(?=\s|\/|>))?\s*\/?>/g;
 
     html = html.replace(regex, (match, id, valueKey, blankValue, searchValue, grouped, disabled) => {
-        console.log(`Correspondência encontrada: ${match}`);
-        console.log(`ID: ${id}, ValueKey: ${valueKey}${blankValue ? `, BlankValue: ${blankValue}` : ''}${searchValue ? `, IsSearchable: ${searchValue}` : ''}${grouped ? `, Grouped: ${grouped}` : ''}${disabled ? ', Disabled' : ''}`);
+        console.log(`UniForge | Correspondência encontrada: ${match}`);
+        console.log(`UniForge | ID: ${id}, ValueKey: ${valueKey}${blankValue ? `, BlankValue: ${blankValue}` : ''}${searchValue ? `, IsSearchable: ${searchValue}` : ''}${grouped ? `, Grouped: ${grouped}` : ''}${disabled ? ', Disabled' : ''}`);
 
         let result = `<select id="${id}" class="data" name="${id}"></select>`;
         if (!(valueKey in data)) {
-            console.log(`O identificador '${valueKey}' não foi encontrado no objeto data. Retornando um <select> vazio.`);
+            console.log(`UniForge | O identificador '${valueKey}' não foi encontrado no objeto data. Retornando um <select> vazio.`);
             return result;
         }
 
@@ -244,8 +244,8 @@ function _parseCalendarTags(html) {
 
     const regex = /<calendar\s*(class="([^"]+)")?\s*\/?>/g;
     html = html.replace(regex, (match, classAttr, extraClasses) => {
-        console.log(`Correspondência encontrada: ${match}`);
-        console.log(`${extraClasses ? `Extra Classes: ${extraClasses}` : ''}`);
+        console.log(`UniForge | Correspondência encontrada: ${match}`);
+        console.log(`UniForge | ${extraClasses ? `Extra Classes: ${extraClasses}` : ''}`);
         return `
         <div class="date-input data ${extraClasses || ''}" id="dateInput" data-type="" data-date="">
             <div class="date-display" id="dateDisplay">Selecione uma data</div>
@@ -273,8 +273,8 @@ function _parseFoldertreeTags(html, data) {
 
         const type = typeAttr ? typeValue : 'default';
 
-        console.log(`Correspondência encontrada: ${match}`);
-        console.log(`ID: ${id}, Tipo: ${type}, Item: ${itemKey}, ${dataset ? `Dados: ${dataset}` : ''}, isFixed: ${isFixed}`);
+        console.log(`UniForge | Correspondência encontrada: ${match}`);
+        console.log(`UniForge | ID: ${id}, Tipo: ${type}, Item: ${itemKey}, ${dataset ? `Dados: ${dataset}` : ''}, isFixed: ${isFixed}`);
 
         const datasetObj = {};
         if (dataset) {
@@ -286,12 +286,12 @@ function _parseFoldertreeTags(html, data) {
         }
 
         if (!('folders' in data)) {
-            console.log(`O identificador 'folders' não foi encontrado no objeto data. Retornando um <ul> vazio.`);
+            console.log(`UniForge | O identificador 'folders' não foi encontrado no objeto data. Retornando um <ul> vazio.`);
             return `<ul id="folderList" type="${type}" class="folder-list" type="${type}">${utils.html.generateEmptyListHTML(true)}</ul>`;
         }
 
         if (data.folders.size === 0) {
-            console.log(`A lista 'folders' está vazia. Retornando um <ul> vazio.`);
+            console.log(`UniForge | A lista 'folders' está vazia. Retornando um <ul> vazio.`);
             return `<ul id="folderList" type="${type}" class="folder-list" type="${type}">${utils.html.generateEmptyListHTML(true)}</ul>`;
         }
 
@@ -310,12 +310,12 @@ function _parseSidetabsTags(html) {
         const isSimpleRegex = /\s+simple/;
         const isSimple = isSimpleRegex.test(match);
 
-        console.log(`Correspondência encontrada: ${match}`);
-        console.log(`ID: ${id}, Source: ${source}${classExtra ? `, Extra Classes: ${classExtra}` : ''}${isSimple ? `, Tipo: Simples` : ', Tipo: Completo'}`);
+        console.log(`UniForge | Correspondência encontrada: ${match}`);
+        console.log(`UniForge | ID: ${id}, Source: ${source}${classExtra ? `, Extra Classes: ${classExtra}` : ''}${isSimple ? `, Tipo: Simples` : ', Tipo: Completo'}`);
 
         // Verifica se o source é um dbDocument válido.
         if (!data[source]) {
-            console.log(`O identificador '${source}' não é um dbDocument válido. Retornando um <div> vazio.`);
+            console.log(`UniForge | O identificador '${source}' não é um dbDocument válido. Retornando um <div> vazio.`);
             return `<div id="${id}"${classAttr ? ` class="${classExtra ? ` ${classExtra}` : ''}` : ''}">
                 <div class="menu-title">
                     <span class="tab-title">UniForge</span>
@@ -379,11 +379,11 @@ function _replaceListTags(html, data) {
 
     const regex = /<list id="([^"]+)" value="([^"]+)"( class="([^"]+)")?( item-class="([^"]+)")?( fixed="(true|false|1|0)")?><\/list>/g;
     html = html.replace(regex, (match, id, valueKey, classAttr, extraClasses, itemClassAttr, itemClass, fixed) => {
-        console.log(`Correspondência encontrada: ${match}`);
-        console.log(`ID: ${id}, Item: ${valueKey}${extraClasses ? `, Extra Classes: ${extraClasses}` : ''}${itemClass ? `, Classes dos Itens: ${itemClass}` : ''}${fixed ? `, Fixed: ${fixed}` : ''}`);
+        console.log(`UniForge | Correspondência encontrada: ${match}`);
+        console.log(`UniForge | ID: ${id}, Item: ${valueKey}${extraClasses ? `, Extra Classes: ${extraClasses}` : ''}${itemClass ? `, Classes dos Itens: ${itemClass}` : ''}${fixed ? `, Fixed: ${fixed}` : ''}`);
 
         if (!(valueKey in data)) {
-            console.log(`O identificador da lista não foi encontrado no objeto data. Retornando um <ul> vazio.`);
+            console.log(`UniForge | O identificador da lista não foi encontrado no objeto data. Retornando um <ul> vazio.`);
             return `<ul id="${id}" class="list${extraClasses ? ` ${extraClasses}` : ''}"></ul>`;
         }
 

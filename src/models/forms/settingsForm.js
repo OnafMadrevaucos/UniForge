@@ -106,17 +106,17 @@ export default class SettingsForm extends BaseForm {
 
     prepareGroups() {
         this.data.misc = {};
-        for (const setting of uniforge.doc.settings.toArray('misc')) {
+        for (const setting of uniforge.settings.toArray('misc')) {
             this.data.misc[setting.tag] = setting.value;
         }
 
         this.data.database = {};
-        for (const setting of uniforge.doc.settings.toArray('database')) {
+        for (const setting of uniforge.settings.toArray('database')) {
             this.data.database[setting.tag] = setting.value;
         }
 
         this.data.leaflet = {};
-        for (const setting of uniforge.doc.settings.toArray('leaflet')) {
+        for (const setting of uniforge.settings.toArray('leaflet')) {
             this.data.leaflet[setting.tag] = setting.value;
         }
 
@@ -147,7 +147,7 @@ export default class SettingsForm extends BaseForm {
     }
 
     async prepareMetadata() {
-        const filePath = await uniforge.path.join(uniforge.doc.settings.get('leaflet.mainMap'), 'metadata.json');
+        const filePath = await uniforge.path.join(uniforge.settings.get('leaflet.mainMap'), 'metadata.json');
 
         const data = await fetch(filePath);
         this.data.metadata = await data.json();
@@ -218,7 +218,7 @@ export default class SettingsForm extends BaseForm {
     */
     async configureMiscPanel() {
         const themeSelector = this.querySelector('#themeSelector');
-        const selectedTheme = this.data.misc.currentTheme ?? 'theme-neutral';
+        const selectedTheme = this.data.misc.theme ?? 'theme-neutral';
 
         const editThemeButton = this.querySelector("#editThemeButton");
 
@@ -463,10 +463,7 @@ export default class SettingsForm extends BaseForm {
         themeLink.href = themePath;
 
         document.documentElement.setAttribute('data-theme', theme);
-        localStorage.setItem('uniforge_theme', theme);
-        localStorage.setItem('uniforge_theme_path', themePath);
-
-        await uniforge.settings.set('misc.currentTheme', selectedTheme);
+        uniforge.settings.set('misc.theme', selectedTheme);
     }
 
     async onNewThemeClick(event) {

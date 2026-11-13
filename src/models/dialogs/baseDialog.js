@@ -223,7 +223,7 @@ export default class BaseDialog extends Application {
         const target = this.dialog;
         try {
             if (button?.callback) {
-                const closing = button.callback.call(this, target, event);
+                const closing = await button.callback.call(this, target, event);
                 if (closing || this.alwaysClose) {
                     this.state.secureClose = true;
                     this.close();

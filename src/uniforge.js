@@ -10,18 +10,20 @@ import * as esm from "./common/uniforge-esm.mjs";
 import lControl from "./common/leaflet/core.mjs";
 import PDFManager from "./scripts/managers/pdfManager.js";
 import FontManager from "./scripts/managers/fontManager.js";
+import SettingsManager from "./scripts/managers/settingsManager.js";
 import { set } from "./common/primitives/set.mjs";
 import Slider from "./models/controls/slider.js";
-import ColorPicker from "./models/controls/colorPicker.js";
+import ProgressDialog from "./models/dialogs/progressDialog.js";
 import Dialogs from "./models/dialogs/dialog.js";
 import AboutForm from "./models/forms/aboutForm.js";
+import FilePickerDialog from "./models/dialogs/filePickerDialog.js";
 
 const ERROR_TYPE = {
     NO_DATABASE: 0
 };
 
 // Configura o tema salvo no localStorage antes de inicializar o app para evitar flash de estilo.
-document.documentElement.setAttribute('data-theme', localStorage.getItem('uniforge_theme') || 'theme-neutral');
+document.documentElement.setAttribute('data-theme', localStorage.getItem('misc.theme') || 'theme-neutral');
 
 // Realiza as configurações iniciais da aplicação ao carregar o conteúdo do DOM.
 document.addEventListener('DOMContentLoaded', async () => {
@@ -40,8 +42,6 @@ window.addEventListener('themechange', onThemeChange);
  * @returns {Promise<void>}
 */
 async function main() {
-    localStorage.setItem('uniforge_builded', false);
-    
     // Inicia o gerenciador de tooltips.
     uniforge.tooltip.init();
 
@@ -49,10 +49,18 @@ async function main() {
     await configureGlobals();
 
     // Verifica a integridade dos dados essenciais para o sistema.
-    try { await verifyData() }
-    catch (error) {
-        // Não foi possível verificar a integridade dos dados, aborte.
-        // uniforge.app.quit();
+    try {
+        await verifySystem();
+        uniforge.settings.set('app.initialized', true);
+    } catch (error) {
+        // Registra que a verificação não foi concluída com sucesso.
+        uniforge.settings.set('db.builded', false);
+
+        // Houve um erro fatal na verificação do Sistema, aborte.
+        await Dialogs.info('Erro Fatal', `Ocorreu um erro fatal na verificação do sistema: ${error.message}. O UniForge será encerrado.`);
+
+        uniforge.app.quit();
+        return;
     }
 
     // Construa o espelho local dos documentos do Banco de Dados.
@@ -78,32 +86,127 @@ async function main() {
     activateMainListeners();
 
     // ------------------------------------------------------------------
-    // FUNÇÕES DE CONFIGURAÇÃO
+    // FUNÇÃO DE VERIFICAÇÃO
     // ------------------------------------------------------------------
 
-    async function verifyData() {
+    /**
+     * Verifica a integridade dos dados necessários para inicializar
+     * o UniForge e executa as configurações necessárias.
+     *
+     * @async
+     * @returns {Promise<boolean>} Indica se a verificação foi concluída.
+     * @throws {Error} Caso alguma etapa de preparação falhe.
+    */
+    async function verifySystem() {
         try {
-            const builded = localStorage.getItem('uniforge_builded');
-            if (builded === 'false') {
-                await uniforge.db.buildDatabase();
-                localStorage.setItem('uniforge_builded', true);
+            if (!uniforge.settings.get('db.builded')) {
+                // Verifica a integridade do banco de dados.
+                await _verifyDatabase();
+                uniforge.settings.set('db.builded', true);
             }
-        } catch (error) {
-            localStorage.setItem('uniforge_builded', false);
-            throw error;
-        }
 
-        try {
-            const verified = localStorage.getItem('uniforge_data_verified');
-            if (verified === 'false') {
-                await uniforge.db.buildDatabase();
-                localStorage.setItem('uniforge_data_verified', true);
+            if (true) {
+                //if (!uniforge.settings.get('leaflet.mainMap')) {
+                // Verifica a integridade do mapa principal.
+                await _verifyWorldMap();
             }
         } catch (error) {
-            localStorage.setItem('uniforge_data_verified', false);
+            throw new Error(`${error.message}`);
+        }
+    }
+
+    async function _verifyDatabase() {
+        try {
+            // Verifica se o banco de dados já possui parte da estrutura necessária.
+            const result = await uniforge.sql.check();
+
+            // O banco já possui parte da estrutura.
+            // Não devemos reconstruí-lo indiscriminadamente.
+            if (result.status) {
+                // Verifica se há erros na estrutura do banco de dados.
+                if (!uniforge.utils.isEmpty(result.error)) {
+                    console.error(`UniForge| Estrutura incompleta: ${result.error}.`);
+                    throw new Error(
+                        `Estrutura incompleta: ${result.error}.`
+                    );
+                }
+            }
+
+            // Primeira inicialização.
+            const progressDialog = new ProgressDialog({
+                title: 'Preparando o UniForge',
+                message: 'Configurando o banco de dados pela primeira vez...',
+                cancelable: false
+            });
+            
+            uniforge.ctrls.progressDialog = progressDialog;
+
+            try {
+                await progressDialog.show(true);
+
+                await uniforge.db.buildDatabase({
+                    onProgress: async ({ value, message }) => {
+                        await progressDialog.updateProgress(
+                            { value },
+                            message
+                        );
+                    }
+                });
+
+                return true;
+
+            } catch (error) {
+                uniforge.settings.set('db.builded', false);
+                throw error;
+
+            } finally {
+                progressDialog.close();
+                uniforge.ctrls.progressDialog = null;
+            }
+        } catch (error) {
+            console.error(`UniForge| Não foi possível verificar o banco de dados.`);
             throw error;
         }
     }
+
+    async function _verifyWorldMap() {
+        await Dialogs.info('Configuração Mapa', 'Não foi encontrado um mapa principal configurado.\n Será necessário selecionar um diretório para continuar.');
+
+        try {
+            let folderData = {};
+            let baseFile, metadataFile;
+
+            do {
+                folderData = await FilePickerDialog.configDialog(uniforge.urls.relativePath.data, { type: 'any' });
+                if (!folderData) throw new Error('Nenhum diretório selecionado para o mapa principal. O UniForge não pode continuar.');
+
+                /*
+                const files = await uniforge.fs.listFiles(folderData.path);
+                baseFile = files.find(file => file.name.includes('base.'));
+                metadataFile = files.find(file => file.name === 'metadata.json');
+
+                if (!baseFile) {
+                    uniforge.msgBox.showWarning('Diretório inválido! Nenhum arquivo base de mapa encontrado no diretório selecionado.');
+                }
+                if (!metadataFile) {
+                    uniforge.msgBox.showWarning('Diretório inválido! Nenhum arquivo de metadados encontrado no diretório selecionado.');
+                }
+                */
+            } while (!baseFile || !metadataFile);
+
+            uniforge.urls.relativePath.worldMap = await uniforge.path.normalize(`/${folderData.path}/tiles`);
+            uniforge.urls.relativePath.mapOverlays = await uniforge.path.normalize(`/${folderData.path}/overlays`);
+
+            uniforge.settings.set('leaflet.mainMap', folderData.path);
+        }
+        catch (error) {
+            throw error;
+        }
+    }
+
+    // ------------------------------------------------------------------
+    // FUNÇÕES DE CONFIGURAÇÃO
+    // ------------------------------------------------------------------    
 
     /** 
      * Adiciona as propriedades restantes ao objeto uniforge. 
@@ -183,6 +286,12 @@ async function main() {
                     borderColor: null
                 }
             },
+
+            /**
+             * Gerenciador de configurações persistentes.
+             * @type {SettingsManager}
+            */
+            settings: new SettingsManager(),
 
             /**
              * Controles relacionados à interface do usuário.
@@ -324,7 +433,10 @@ async function main() {
         });
 
         // Inicializa as propriedades globais do objeto uniforge.
-        _initializeGlobals();
+        await _initializeGlobals();
+
+        // Configura os caminhos relativos usados pelo sistema.
+        configurePaths();
 
         // Atalho para o Controle de Mensagens para o Usuário
         uniforge.msgBox = uniforge.ctrls.msgBox;
@@ -367,12 +479,11 @@ async function main() {
 
     /**
      * Função de configuração das URLs usadas pelo sistema, definindo os caminhos relativos e absolutos para recursos como imagens, diretórios de modelos, scripts e ícones.
-     * 
-     * @async
+     *     
      * @returns {Promise<void>}
-     */
-    async function configureURLs() {
-        const worldMap = uniforge.settings.get('leaflet.mainMap');
+    */
+    async function configurePaths() {
+        const worldMap = uniforge.settings.get('leaflet.mainMap') ?? null;
 
         /**
         * @description Urls padrões usadas pelo sistema.
@@ -389,27 +500,29 @@ async function main() {
         */
         uniforge.urls = {
             relativePath: {
-                background: '/ui/lib-background.png',
-                backgroundScifi: '/ui/scifi-background.png',
-                backgroundNeutral: '/ui/blank-image.svg',
-                blankImg: '/ui/blank-image.svg',
-                worldMap: worldMap ? `/${worldMap}/tiles` : '',
-                mapOverlays: worldMap ? `/${worldMap}/overlays` : '',
-                maps: '/data/maps/',
-                common: '/common/',
-                models: '/models/',
-                controls: '/models/controls/',
-                templates: '/templates/',
-                scripts: '/scripts/',
-                data: '/data/',
-                customCSS: '/css/custom/',
-                ui: '/ui/',
-                icons: '/ui/icons/',
-                signs: '/ui/icons/markers/signs/',
-                markers: '/ui/icons/markers/',
+                background: await uniforge.path.normalize('/ui/lib-background.png'),
+                backgroundScifi: await uniforge.path.normalize('/ui/scifi-background.png'),
+                backgroundNeutral: await uniforge.path.normalize('/ui/blank-image.svg'),
+                blankImg: await uniforge.path.normalize('/ui/blank-image.svg'),
+                worldMap: worldMap ? await uniforge.path.normalize(`/${worldMap}/tiles`) : '',
+                mapOverlays: worldMap ? await uniforge.path.normalize(`/${worldMap}/overlays`) : '',
+                maps: await uniforge.path.normalize('/data/maps/'),
+                common: await uniforge.path.normalize('/common/'),
+                models: await uniforge.path.normalize('/models/'),
+                controls: await uniforge.path.normalize('/models/controls/'),
+                templates: await uniforge.path.normalize('/templates/'),
+                scripts: await uniforge.path.normalize('/scripts/'),
+                data: await uniforge.path.normalize('/data/'),
+                customCSS: await uniforge.path.normalize('/css/custom/'),
+                ui: await uniforge.path.normalize('/ui/'),
+                icons: await uniforge.path.normalize('/ui/icons/'),
+                signs: await uniforge.path.normalize('/ui/icons/markers/signs/'),
+                markers: await uniforge.path.normalize('/ui/icons/markers/'),
             },
         };
+    }
 
+    async function configureURLs() {
         uniforge.urls = uniforge.utils.mergeObjects(uniforge.urls, {
 
             // Urls de Imagens padrão usadas pelo sistema.
@@ -448,7 +561,7 @@ async function main() {
         // Inicializa o controle de mapas Leaflet.
         uniforge.ctrls.leaflet = lControl.init(uniforge.urls.worldMap);
 
-        var style = JSON.parse(uniforge.settings.get('leafletStyle.pathOptions')) ?? uniforge.ctrls.leaflet.defaultStyle;
+        var style = uniforge.settings.get('leafletStyle.pathOptions') ?? uniforge.ctrls.leaflet.defaultStyle;
         // Impede que o Estilo do Elemento seja de um tipo não suportado.
         if (typeof style === 'string') style = JSON.parse(style);
 
@@ -1056,15 +1169,12 @@ function parseBody() {
  * @returns {Promise<void>}
 */
 async function rebuildDocs(document = null) {
-    const dataVerified = localStorage.getItem('uniforge_data_verified');
+    const builded = uniforge.settings.get('db.builded');
 
-    if (dataVerified === 'true') {
+    if (builded) {
         console.log(`UniForge | Recriando${document ? ` conjunto de dados (${document})` : ' TODO o conjunto de dados'}.`);
         const data = await DBDocuments.UniForgeData();
         uniforge.doc = new DBDocuments(data);
-
-        // Atalho para o gerenciador de configurações do sistema.
-        uniforge.settings = uniforge.doc.settings;
 
         return uniforge.doc;
     }
@@ -1161,7 +1271,7 @@ async function _recoverForm(form) {
 /**
  * Inicializa as propriedades globais do sistema UniForge.
  */
-function _initializeGlobals() {
+async function _initializeGlobals() {
     // Inicia o gerenciador de temas.
     uniforge.theme.refresh();
 

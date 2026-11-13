@@ -25,7 +25,7 @@ export default class FilePickerDialog extends BaseDialog {
         * O tipo de arquivo que controla o conjunto de extensões aceitas.
         * @type {string}
         */
-        this.type = options.type ?? "any";
+        this.type = options.folderSelect ? 'folderSelect' : (options.type ?? "any");
 
         /**
         * O elemento HTML associado ao diálogo.
@@ -38,6 +38,13 @@ export default class FilePickerDialog extends BaseDialog {
         * @type {boolean}
         */
         this.onlyFolders = options.onlyFolders ?? false;
+
+        /**
+        * O tipo de seleção de arquivo aceito.
+        * @type {boolean}
+        */
+        this.folderSelect = options.folderSelect ?? false;
+
 
         /**
         * Uma flag que indica se o diálogo deve exibir o campo de legenda de texto.
@@ -78,7 +85,7 @@ export default class FilePickerDialog extends BaseDialog {
         this.selectedData = {
             absolutePath: null,
             folder: null,
-            path: null,
+            path: options.folderSelect ? options.current : null,
             name: null,
             ext: null,
             src: null
@@ -209,7 +216,7 @@ export default class FilePickerDialog extends BaseDialog {
         else imageCaptionDiv.classList.add("hidden");
 
         // O diálogo tem opção de exibir apenas pastas.
-        if (this.onlyFolders) {
+        if (this.onlyFolders || this.folderSelect) {
             const selectedFileSpan = this.querySelector(".selected-file span");
 
             // Esconde opção de enviar arquivos.
@@ -222,6 +229,12 @@ export default class FilePickerDialog extends BaseDialog {
             fileExtensionSelect.value = null;
 
             selectedFileSpan.textContent = "Nome do Arquivo";
+
+            if (this.folderSelect) {
+                const directoryDiv = this.querySelector(".directory");
+                directoryDiv.classList.add('folder-select');
+            }
+
         } else {
             if (this.canUpload) uploadFileDiv.classList.remove("hidden");
             else uploadFileDiv.classList.add("hidden");
@@ -248,7 +261,7 @@ export default class FilePickerDialog extends BaseDialog {
         }
 
         const filePickerInput = this.querySelector('#filePickerInput');
-        filePickerInput.readOnly = !this.onlyFolders;
+        filePickerInput.readOnly = !this.onlyFolders && this.type !== 'folder';
 
         await this.browse(this.target);
     }
@@ -298,7 +311,9 @@ export default class FilePickerDialog extends BaseDialog {
             dirContent.files.forEach((file) => {
                 this.#appendFileItem(file);
             });
-        } else {
+        }
+
+        if (this.onlyFolders || this.folderSelect) {
             const filePickerInput = this.querySelector('#filePickerInput');
 
             if (this.selectedData.path) {
@@ -327,7 +342,7 @@ export default class FilePickerDialog extends BaseDialog {
         const modesList = this.querySelectorAll('.modes-list button');
         modesList.forEach(button => button.addEventListener('click', (event) => { this._onModeButtonClick(event); }));
 
-        if (this.onlyFolders) {
+        if (this.onlyFolders || this.folderSelect) {
             const fileExtension = this.querySelector('#fileExtension');
             fileExtension.addEventListener('change', (event) => { this._onFileExtensionChange(event); });
 
@@ -470,7 +485,7 @@ export default class FilePickerDialog extends BaseDialog {
         const filePickerInput = this.querySelector('#filePickerInput');
 
         if (!uniforge.utils.isEmpty(this.selectedData.name))
-            filePickerInput.value = `${path}${this.selectedData.name}${this.selectedData.ext}`;
+            filePickerInput.value = `${path}${this.selectedData.name}`;
         else
             filePickerInput.value = path;
     }
@@ -499,7 +514,7 @@ export default class FilePickerDialog extends BaseDialog {
 
         // Foi informado o nome do arquivo.
         if (!uniforge.utils.isEmpty(this.selectedData.name)) {
-            const name = `${this.selectedData.name}${this.selectedData.ext}`;
+            const name = `${this.selectedData.name}`;
             input.value = `${path}${name}`;
             input.dataset.name = name;
         }
@@ -515,15 +530,19 @@ export default class FilePickerDialog extends BaseDialog {
         const clickedFolder = event.target.closest('.dir');
         const filePickerInput = this.querySelector('#filePickerInput');
 
-        if (this.onlyFolders) {
-            this.constructor.LAST_BROWSED_DIRECTORY = this.selectedData.path;
-            this.selectedData.path = clickedFolder.dataset.path;
+        if (this.onlyFolders || this.folderSelect) {
+
         }
 
+        this.constructor.LAST_BROWSED_DIRECTORY = this.selectedData.folder;
+        this.selectedData.folder = clickedFolder.dataset.path;
+
+        filePickerInput.value = '';
+
         if (!this.selectedData.name) {
-            filePickerInput.value = this.selectedData.path + '\\';
+            filePickerInput.value = this.selectedData.folder + '\\';
         } else {
-            filePickerInput.value = `${this.selectedData.path}\\${this.selectedData.name}${this.selectedData.ext}`;
+            filePickerInput.value = `${this.selectedData.folder}\\${this.selectedData.name}`;
         }
 
         this.browse(clickedFolder.dataset.path);
@@ -538,7 +557,7 @@ export default class FilePickerDialog extends BaseDialog {
         if (clickedFile.classList.contains('selected')) {
             clickedFile.classList.remove('selected');
 
-            filePickerInput.value = '';
+            filePickerInput.value = '';            
 
             this.selectedData = {
                 absolutePath: null,
@@ -548,35 +567,34 @@ export default class FilePickerDialog extends BaseDialog {
                 ext: null,
                 src: null
             };
+        } else {
 
-            return;
+            const filesList = this.querySelector('.directory ul.files-list');
+            filesList.querySelectorAll('li.file').forEach((file) => file.classList.remove('selected'));
+
+            clickedFile.classList.toggle('selected');
+
+            const path = clickedFile.dataset.path;
+            const folder = clickedFile.dataset.folder;
+            const name = clickedFile.dataset.name;
+            const ext = clickedFile.dataset.ext;
+
+            const absolutePath = await uniforge.path.join(clickedFile.dataset.path);
+
+            this.selectedData = {
+                absolutePath: absolutePath,
+                folder: folder,
+                path: path,
+                name: name,
+                ext: ext,
+                src: null
+            };
         }
-
-        const filesList = this.querySelector('.directory ul.files-list');
-        filesList.querySelectorAll('li.file').forEach((file) => file.classList.remove('selected'));
-
-        clickedFile.classList.toggle('selected');
-
-        const path = clickedFile.dataset.path;
-        const folder = clickedFile.dataset.folder;
-        const name = clickedFile.dataset.name;
-        const ext = clickedFile.dataset.ext;
-
-        const absolutePath = await uniforge.path.join(clickedFile.dataset.path);
-
-        this.selectedData = {
-            absolutePath: absolutePath,
-            folder: folder,
-            path: path,
-            name: name,
-            ext: ext,
-            src: null
-        };
 
         filePickerInput.value = this.selectedData.path;
         filePickerInput.dataset.name = this.selectedData.name;
         filePickerInput.dataset.ext = this.selectedData.ext;
-        filePickerInput.dataset.type = FilePickerDialog.VALID_FILE_EXTENSIONS[this.selectedData.ext];
+        filePickerInput.dataset.type = this.selectedData.ext ? FilePickerDialog.VALID_FILE_EXTENSIONS[this.selectedData.ext] : null;
         filePickerInput.dataset.absolutePath = this.selectedData.absolutePath;
         filePickerInput.dataset.folder = this.selectedData.folder;
     }
@@ -584,6 +602,7 @@ export default class FilePickerDialog extends BaseDialog {
     /**
      * Abre o diálogo de seleção de arquivo.
      * 
+     * @param {string} path                     - O caminho inicial do diálogo.
      * @param {Object} options                  - Opções adicionais do diálogo.
      * @param {boolean} options.alwaysClose     - Se o diálogo deve se fechar automaticamente após uma ação.
      * 
@@ -596,11 +615,16 @@ export default class FilePickerDialog extends BaseDialog {
                 title: 'Explorador de Arquivos',
                 buttons: {
                     select: {
-                        label: (options.onlyFolders ? "Selecionar Pasta" : "Selecionar Arquivo"),
+                        label: (options.onlyFolders || options.folderSelect ? "Selecionar Pasta" : "Selecionar Arquivo"),
                         icon: "fas fa-check",
                         callback: async () => {
                             const filePickerInput = document.querySelector('#filePickerInput');
                             const captionInput = document.querySelector('#captionInput');
+
+                            if (!options.folderSelect && !filePickerInput.dataset.name) {
+                                uniforge.ctrls.msgBox.showWarning('Nenhum arquivo selecionado ou nome do arquivo vazio.');
+                                return false;
+                            }
 
                             const type = filePickerInput.dataset.type;
                             const absolutePath = filePickerInput.dataset.absolutePath;
@@ -613,7 +637,7 @@ export default class FilePickerDialog extends BaseDialog {
                             if (type !== 'folder') {
                                 name = filePickerInput.dataset.name;
                                 ext = name.split('.').pop();
-                                src = filePickerInput.dataset.src;                                
+                                src = filePickerInput.dataset.src;
 
                                 // Nenhum arquivo selecionado ou nome do arquivo vazio. Impeça o fechamento do diálogo.
                                 if (uniforge.utils.isEmpty(name)) {
@@ -732,9 +756,10 @@ export default class FilePickerDialog extends BaseDialog {
     * @returns {string}
     */
     #getFileDir(target) {
-        const parts = target.split('\\');
+        const parts = target.trim().split('\\');
         if (parts[parts.length - 1].indexOf(".") !== -1) parts.pop();
-        const dir = parts.join('\\');
+        const dir = parts.filter(part => part.trim() !== '')   // remove '', '   ', '\t', etc.
+            .join('\\');
         return dir;
     }
 
@@ -770,6 +795,7 @@ export default class FilePickerDialog extends BaseDialog {
     * @returns {string}
     */
     #appendFileItem(file) {
+        const imgExtensions = FilePickerDialog.IMAGE_FILE_EXTENSIONS;
         const ext = `${file.name.split(".").pop()}`;
 
         const item = document.createElement('li');
@@ -781,7 +807,7 @@ export default class FilePickerDialog extends BaseDialog {
         item.dataset.name = file.name;
         item.dataset.ext = ext;
 
-        if (this.displayMode !== 'list') {
+        if (this.displayMode !== 'list' && imgExtensions.hasOwnProperty(ext)) {
             item.innerHTML = `<img src="${file.path}"> ${file.name}`;
         } else {
             item.innerHTML = `<i class="fas fa-file"></i> ${file.name}`;
@@ -793,9 +819,11 @@ export default class FilePickerDialog extends BaseDialog {
         const ul = this.querySelector('.directory ul.files-list');
         ul.appendChild(item);
 
-        item.addEventListener('click', (event) => {
-            this._onFileClick(event);
-        });
+        if (!this.folderSelect) {
+            item.addEventListener('click', (event) => {
+                this._onFileClick(event);
+            });
+        }
     }
 
     /* -------------------------------------------- */

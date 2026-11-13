@@ -144,8 +144,8 @@
     --light-shadow: 0 1px 3px rgba(255, 255, 255, 0.1);
     --right-shadow: 1px 0px 4px rgba(0, 0, 0, 0.15);
     --text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
-    --button-hover-shadow: var(--dark-text-highlight);
-    --button-text-hover-shadow: var(--text-highlight);
+    --button-hover-shadow: 0 0 8px var(--dark-color-b-T50);
+    --button-text-hover-shadow: 0 0 8px var(--color-b-T50);
     --new-entry-hover-shadow: 0 0 8px rgba(50, 220, 38, 0.3);
     --sidebar-shadow: 4px 0 24px rgba(0, 0, 0, 0.35);
     --dialog-shadow: 8px 0 32px rgba(0, 0, 0, 0.4);
@@ -2310,6 +2310,7 @@ button.disabled:hover {
     flex-direction: column;
     align-items: center;
     border-radius: var(--default-border-radius);
+    margin: 1px;
 }
 
 .dialog .directory ul.files-list.images li {
@@ -2342,8 +2343,12 @@ button.disabled:hover {
     cursor: pointer;
 }
 
-.dialog .directory ul li.file.selected,
-.dialog .directory ul li.file:hover {
+.dialog .directory.folder-select ul li.file:hover {
+    cursor: default;
+}
+
+.dialog .directory:not(.folder-select) ul li.file.selected,
+.dialog .directory:not(.folder-select) ul li.file:hover {
     outline: 1px solid;
 }
 
