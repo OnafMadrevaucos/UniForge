@@ -146,8 +146,9 @@ export default class SettingsForm extends BaseForm {
         };
     }
 
-    async prepareMetadata() {
-        const filePath = await uniforge.path.join(uniforge.settings.get('leaflet.mainMap'), 'metadata.json');
+    async prepareMetadata() {        
+        const filePath = uniforge.settings.get('leaflet.mainMetadata');
+        if(!filePath) return;
 
         const data = await fetch(filePath);
         this.data.metadata = await data.json();
@@ -276,7 +277,7 @@ export default class SettingsForm extends BaseForm {
 
     async configureHotkeyList() {
         const hotkeyList = this.querySelector('#hotkeyList');
-        let hk = JSON.parse(await uniforge.settings.get('misc.hotkeys'));
+        let hk = uniforge.settings.get('misc.hotkeys');
 
         hk = Object.values(hk).sort((a, b) => a.label.localeCompare(b.label, 'pt-BR'));
 

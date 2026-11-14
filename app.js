@@ -211,6 +211,21 @@ app.whenReady().then(() => {
   ipcMain.handle('read-dir', (event, filePath) => readDir(filePath));
 
   /**
+   * Manipulador para criar um diretório.
+   * @param {Electron.IpcMainEvent} event - O evento IPC recebido.
+   * @param {string} filePath - O caminho do diretório a ser criado.
+   */
+  ipcMain.handle('make-dir', (event, filePath) => makeDir(filePath));
+
+  /**
+   * Manipulador para verificar se um diretório existe.
+   * @param {Electron.IpcMainEvent} event - O evento IPC recebido.
+   * @param {string} filePath - O caminho do diretório a ser verificado.
+   * @returns {boolean} - true se o diretório existir, false caso contrário.
+   */
+  ipcMain.handle('exists-dir', (event, filePath) => existsDir(filePath));
+
+  /**
    * Manipulador para listar os arquivos de um diretório.
    * @param {Electron.IpcMainEvent} event - O evento IPC recebido.
    * @param {string} filePath - O caminho do diretório a ser lido.
@@ -496,7 +511,7 @@ function pathResolve(protoPath) {
  */
 function pathExtname(filePath) {
   var result = path.extname(filePath);
-  result = result.replace('.', ''); // Remove o ponto inicial da extensão.
+  result = result.replaceAll('.', ''); // Remove o ponto inicial da extensão.
   return result;
 }
 
@@ -658,6 +673,27 @@ function readDir(dir) {
 }
 
 /**
+ * Cria um diretório caso ele não exista.
+ * @param {string} dir     - O caminho absoluto do diretório a ser criado.
+ */
+function makeDir(dir) {
+  const fullDir = path.join(__srcname, dir);
+  if (!fs.existsSync(fullDir)) {
+    fs.mkdirSync(fullDir);
+  }
+}
+
+/**
+ * Verifica se um diretório existe.
+ * @param {string} dir     - O caminho absoluto do diretório a ser verificado.
+ * @returns {boolean}      - true se o diretório existir, false caso contrário.
+ */
+function existsDir(dir) {
+  const fullDir = path.join(__srcname, dir);
+  return fs.existsSync(fullDir);
+}
+
+/**
  * Lista todos os arquivos de um diretório em sincronia.
  * @param {string} dir    - O caminho absoluto do diretório a ser lido.
  * @returns {Buffer}      - Os arquivos do diretório lido.
@@ -674,6 +710,7 @@ function listFiles(dir) {
     if (!stats.isDirectory()) {
       const file = {
         name: item,
+        ext: pathExtname(filePath),
         path: path.join(dir, item),
       };
 

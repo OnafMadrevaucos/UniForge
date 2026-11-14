@@ -10,8 +10,9 @@ import BaseDialog from "./baseDialog.js";
 export default class Dialogs extends BaseDialog {
   static Type = {
     CONFIRM: 0,
-    SECURE: 1,
-    IMAGE: 2
+    PROMPT: 1,
+    SECURE: 2,
+    IMAGE: 3
   };
 
   /**
@@ -36,6 +37,20 @@ export default class Dialogs extends BaseDialog {
 
   get ConfirmBody() {
     return this.options?.prompt ?? '';
+  }
+
+  get PromptBody() {
+    const body = document.createElement('div');
+    body.className = 'prompt-dialog flexcol';
+
+    const input = document.createElement('input');
+    input.type = this.options?.valueType ?? 'text';
+    input.className = 'dialog-input';
+    input.placeholder = this.options?.placeholder ?? '';
+
+    body.appendChild(input);
+
+    return body.outerHTML;
   }
 
   get ImageBody() {
@@ -104,6 +119,8 @@ export default class Dialogs extends BaseDialog {
           return this.SecureConfirmBody;
         case Dialogs.Type.IMAGE:
           return this.ImageBody;
+        case Dialogs.Type.PROMPT:
+          return this.PromptBody;
         default:
           return this.ConfirmBody;
       }
@@ -124,25 +141,26 @@ export default class Dialogs extends BaseDialog {
   }
 
   /**
-   * Exibe uma caixa de diálogo de confirmação com dois botões (Sim e Não).
+   * Exibe uma caixa de diálogo para a escolha entre opções.
    * 
    * @static
    * @param {string} title - Título do diálogo de confirmação.
    * @param {string} message - Mensagem a ser exibida no corpo do diálogo.
+   * @param {object} buttons - Os botões das opções da caixa de diálogo.
    * @returns {Promise} Retorna uma promessa que é resolvida se o usuário clicar em "Sim" ou rejeitada se clicar em "Não".
    */
-  static async info(title, message) {
+  static async choose(title, message, buttons = {}) {
     return new Promise((resolve, reject) => {
       const dialog = new this({
         title: title,
-        buttons: {
-          ok: {
-            label: "OK",
-            icon: "fas fa-check",
-            callback: () => resolve(true)
+        buttons: Object.values(buttons).map(b => {
+          return {
+            label: b.label,
+            icon: b.icon,
+            callback: () => resolve(b.tag)
           }
-        },
-        abort: () => reject(false)
+        }),
+        abort: () => resolve(null)
       }, { prompt: message, alwaysClose: true });
       dialog.show(true);
     });
@@ -172,7 +190,7 @@ export default class Dialogs extends BaseDialog {
             callback: () => resolve(true)
           }
         },
-        abort: () => reject(false)
+        abort: () => resolve(false)
       }, { prompt: message, alwaysClose: true });
       dialog.show(true);
     });
@@ -236,13 +254,48 @@ export default class Dialogs extends BaseDialog {
         title: title,
         buttons: {
           ok: {
-            label: "OK",
+            label: "Confirma",
             icon: "fas fa-check",
             callback: () => resolve(true)
           }
         },
-        abort: () => reject(true)
-      }, { prompt: message, alwaysClose: true, width: '300px' });
+        abort: () => resolve(null)
+      }, { prompt: message, alwaysClose: true, width: '650px' });
+      dialog.show(true);
+    });
+  }
+
+  /**
+   * Exibe uma caixa de diálogo para fornecer um valor.
+   * 
+   * @static
+   * @param {string} title - Título do diálogo de confirmação.
+   * @param {string} message - Mensagem a ser exibida no corpo do diálogo.
+   * @returns {Promise} Retorna uma promessa que é resolvida se o usuário clicar em "Sim" ou rejeitada se clicar em "Não".
+   */
+  static async prompt(title, placeholder = '', valueType = 'text') {
+    return new Promise((resolve, reject) => {
+      const dialog = new this({
+        title: title,
+        buttons: {
+          ok: {
+            label: "Confirmar",
+            icon: "fas fa-check",
+            callback: () => {
+              const input = document.querySelector('.dialog-input');
+              
+              if (input.value.trim() === '') {
+                uniforge.msgBox.showWarning('O campo não pode estar vazio.');
+                return false;
+              }
+              
+              resolve(input.value);
+              return true;
+            }
+          }
+        },
+        abort: () => resolve(null)
+      }, { placeholder, valueType, width: '300px', type: Dialogs.Type.PROMPT });
       dialog.show(true);
     });
   }
@@ -259,7 +312,7 @@ export default class Dialogs extends BaseDialog {
     return new Promise((resolve, reject) => {
       const dialogData = {
         title: title,
-        abort: () => resolve()
+        abort: () => resolve(null)
       };
       const dialog = new this(dialogData, {
         hasTemplate: false,

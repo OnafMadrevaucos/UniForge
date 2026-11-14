@@ -43,7 +43,7 @@ window.addEventListener('themechange', onThemeChange);
 */
 async function main() {
     // Inicia o gerenciador de tooltips.
-    uniforge.tooltip.init();
+    uniforge.tooltip.init();    
 
     // Configura os valores globais do Sistema.
     await configureGlobals();
@@ -57,7 +57,7 @@ async function main() {
         uniforge.settings.set('db.builded', false);
 
         // Houve um erro fatal na verificação do Sistema, aborte.
-        await Dialogs.info('Erro Fatal', `Ocorreu um erro fatal na verificação do sistema: ${error.message}. O UniForge será encerrado.`);
+        await Dialogs.inform('Erro Fatal', `Ocorreu um erro fatal na verificação do sistema: ${error.message}. O UniForge será encerrado.`);
 
         uniforge.app.quit();
         return;
@@ -130,6 +130,8 @@ async function main() {
                         `Estrutura incompleta: ${result.error}.`
                     );
                 }
+
+                return true;
             }
 
             // Primeira inicialização.
@@ -138,7 +140,7 @@ async function main() {
                 message: 'Configurando o banco de dados pela primeira vez...',
                 cancelable: false
             });
-            
+
             uniforge.ctrls.progressDialog = progressDialog;
 
             try {
@@ -170,34 +172,108 @@ async function main() {
     }
 
     async function _verifyWorldMap() {
-        await Dialogs.info('Configuração Mapa', 'Não foi encontrado um mapa principal configurado.\n Será necessário selecionar um diretório para continuar.');
+        const mapType = await Dialogs.choose('Configuração Mapa', 'Não foi encontrado um mapa principal configurado.\n Escolha qual o tipo de mapa será usado.',
+            {
+                image: {
+                    label: "Imagem Simples",
+                    icon: "fas fa-xmark",
+                    tag: 'simple'
+                },
+                tile: {
+                    label: "Imagem Segmentada",
+                    icon: "fas fa-check",
+                    tag: 'tile'
+                }
+            }
+        );
 
+        switch (mapType) {
+            case 'simple': await _buildSimpleMap(); break;
+            case 'tile': await _buildTileMap(); break;
+            default: throw new Error('Nenhuma opção de mapa selecionada'); break;
+        }
+    }
+
+    async function _buildSimpleMap() {
+        let imgData = {};
+
+        do {
+            imgData = await FilePickerDialog.configDialog(uniforge.urls.relativePath.data, { type: 'image' });
+            if (!imgData) throw new Error('Nenhuma imagem selecionada para o mapa principal.');
+
+            const buffer = await uniforge.fs.readFile(imgData.absolutePath);
+            const blob = await uniforge.utils.bufferToBlob(buffer, imgData.ext);
+
+            const data = {
+                mid: uniforge.constants.leaflet.DEFAULT_OVERLAY,
+                sid: 'none',
+                title: 'Mapa Padrão',
+                flavor: 'Mapa padrão do sistema.',
+                img: blob.rawData,
+                ext: blob.ext,
+                isDraft: 0
+            };
+
+            await uniforge.db.addMap(data);
+        } while (!imgData);
+
+        uniforge.settings.set('leaflet.mapType', 'simple');
+        uniforge.settings.set('leaflet.mainMap', imgData.absolutePath);
+    }
+
+    async function _buildTileMap() {
         try {
-            let folderData = {};
+            let returnedData = {};
             let baseFile, metadataFile;
 
             do {
-                folderData = await FilePickerDialog.configDialog(uniforge.urls.relativePath.data, { type: 'any' });
-                if (!folderData) throw new Error('Nenhum diretório selecionado para o mapa principal. O UniForge não pode continuar.');
+                returnedData = await FilePickerDialog.configDialog(uniforge.urls.relativePath.data, { folderSelect: FilePickerDialog.FOLDER_SELECT.full });
+                if (!returnedData) uniforge.msgBox.showWarning('Nenhum diretório selecionado para o mapa principal.');
 
-                /*
-                const files = await uniforge.fs.listFiles(folderData.path);
-                baseFile = files.find(file => file.name.includes('base.'));
-                metadataFile = files.find(file => file.name === 'metadata.json');
+                if (returnedData.type == 'folder') {
+                    const files = await uniforge.fs.listFiles(returnedData.path);
+                    baseFile = files.find(file => file.name.includes('base.'));
+                    metadataFile = files.find(file => file.name === 'metadata.json');
 
-                if (!baseFile) {
-                    uniforge.msgBox.showWarning('Diretório inválido! Nenhum arquivo base de mapa encontrado no diretório selecionado.');
+                    if (!baseFile) {
+                        uniforge.msgBox.showWarning('Diretório inválido! Nenhum arquivo base de mapa encontrado no diretório selecionado.');
+                    }
+                    if (!metadataFile) {
+                        uniforge.msgBox.showWarning('Diretório inválido! Nenhum arquivo de metadados encontrado no diretório selecionado.');
+                    }
+                } else {
+                    baseFile = true;
+                    metadataFile = true;
                 }
-                if (!metadataFile) {
-                    uniforge.msgBox.showWarning('Diretório inválido! Nenhum arquivo de metadados encontrado no diretório selecionado.');
-                }
-                */
-            } while (!baseFile || !metadataFile);
+            } while (!returnedData || !baseFile || !metadataFile);
 
-            uniforge.urls.relativePath.worldMap = await uniforge.path.normalize(`/${folderData.path}/tiles`);
-            uniforge.urls.relativePath.mapOverlays = await uniforge.path.normalize(`/${folderData.path}/overlays`);
+            uniforge.urls.relativePath.worldMap = await uniforge.path.normalize(`/${returnedData.path}/tiles`);
+            uniforge.urls.relativePath.mapOverlays = await uniforge.path.normalize(`/${returnedData.path}/overlays`);
 
-            uniforge.settings.set('leaflet.mainMap', folderData.path);
+            const metadataPath = await uniforge.path.normalize(returnedData.absolutePath + '/metadata.json');
+
+            uniforge.settings.set('leaflet.mainMap', returnedData.absolutePath);
+            uniforge.settings.set('leaflet.mainMetadata', metadataPath);
+            uniforge.settings.set('leaflet.mapType', 'tile');
+
+            if(!uniforge.settings.get('leaflet.tilerOutputFolder')) {
+                uniforge.settings.set('leaflet.tilerOutputFolder', uniforge.urls.relativePath.data);
+            }
+
+            const buffer = await uniforge.fs.readFile(returnedData.absolutePath + '/' + baseFile.name);
+            const blob = await uniforge.utils.bufferToBlob(buffer, baseFile.ext);
+
+            const data = {
+                mid: uniforge.constants.leaflet.DEFAULT_OVERLAY,
+                sid: 'none',
+                title: 'Mapa Padrão',
+                flavor: 'Mapa padrão do sistema.',
+                img: blob.rawData,
+                ext: blob.ext,
+                isDraft: 0
+            };
+
+            await uniforge.db.addMap(data);
         }
         catch (error) {
             throw error;

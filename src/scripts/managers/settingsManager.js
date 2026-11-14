@@ -171,7 +171,7 @@ export default class SettingsManager {
     */
     toArray(tag) {
         return Object.entries(this.list(tag)).map(([name, value]) => ({
-            tag: name,
+            tag: name.split('.')[1],
             value,
         }));
     }

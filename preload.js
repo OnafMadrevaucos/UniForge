@@ -60,6 +60,14 @@ contextBridge.exposeInMainWorld('fs', {
     const result = ipcRenderer.invoke('read-dir', path);
     return result;
   },
+  makeDir: (path) => {
+    const result = ipcRenderer.invoke('make-dir', path);
+    return result;
+  },
+  existsDir: (path) => {
+    const result = ipcRenderer.invoke('exists-dir', path);
+    return result;
+  },
   listFiles:(path) => {
     const result = ipcRenderer.invoke('list-files', path);
     return result;

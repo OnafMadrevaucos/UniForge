@@ -251,15 +251,23 @@ const lControl = {
 
         map.setView(L.latLng(4054, 6000), mapMinZoom);
 
-        worldMap = L.tileLayer(`file://${worldMapURL}/{z}/{x}/{y}.png`, {
-            crs: L.CRS.Simple,
-            minZoom: mapMinZoom, maxZoom: mapMaxZoom,
-            tileSize: L.point(tileSize, tileSize),
-            noWrap: true,
-            maxZoom: mapMaxZoom,
-            attribution: '&copy; <a href="https://www.maptiler.com/engine/">Rendered with MapTiler Engine</a>',
-            tms: false
-        });
+        const mapType = uniforge.settings.get('leaflet.mapType');       
+
+        if (mapType === 'simple') {
+            const mainMapPath = uniforge.settings.get('leaflet.mainMap');   
+            worldMap = L.imageOverlay(mainMapPath, bounds, { zIndex: 1 });
+        } else if (mapType === 'tile') {
+
+            worldMap = L.tileLayer(`file://${worldMapURL}/{z}/{x}/{y}.png`, {
+                crs: L.CRS.Simple,
+                minZoom: mapMinZoom, maxZoom: mapMaxZoom,
+                tileSize: L.point(tileSize, tileSize),
+                noWrap: true,
+                maxZoom: mapMaxZoom,
+                attribution: '&copy; <a href="https://www.maptiler.com/engine/">Rendered with MapTiler Engine</a>',
+                tms: false
+            });
+        }
 
         // Adiciona a camada do mapa mundi ao mapa.
         map.addLayer(worldMap);
@@ -286,7 +294,6 @@ const lControl = {
 
         // Configura o controle de escala.
         const scaleControl = _configureScaleControl();
-
 
         L.GeometryUtil.geodesicArea = function (latLngs) {
             let area = 0;
@@ -613,7 +620,7 @@ const lControl = {
 
             if (e.shape !== 'Marker') {
                 // Obtém o estilo salvo, se não houver obtém o valor padrão.
-                uniforge.style = uniforge.style ?? utils.defaultStyle;               
+                uniforge.style = uniforge.style ?? utils.defaultStyle;
 
                 // Abre o Painel de Edição para o Elemento.
                 lControl.toggleMapObjectPanel(e, { forceState: PANEL_STATE.OPEN });
@@ -625,10 +632,10 @@ const lControl = {
                 };
             }
 
-                const workingLayer = e.workingLayer;
-                const shape = e.shape;
+            const workingLayer = e.workingLayer;
+            const shape = e.shape;
 
-                uniforge.active = workingLayer;
+            uniforge.active = workingLayer;
 
             map.on('mousemove', (e) => {
                 const shape = map.pm.Draw.getActiveShape();
@@ -1012,7 +1019,7 @@ const lControl = {
 
             switch (elementData.mType) {
                 case 'circle': {
-                    const point = L.latLng(elementData.points.split(',').map(Number));   
+                    const point = L.latLng(elementData.points.split(',').map(Number));
                     const elementStyle = JSON.parse(elementData.style) ?? utils.options.regularShape(false, false);
 
                     element = L.circle(point, elementStyle);
