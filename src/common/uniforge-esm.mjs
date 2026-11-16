@@ -254,11 +254,11 @@ globalThis.uniforge = {
         refresh(theme = null, path = null) {
             // Se não for fornecido um tema, tenta obter-o do armazenamento local.
             if (theme === null && path === null) {
-                theme = localStorage.getItem('uniforge_theme', theme) || 'theme-neutral';
-                path = localStorage.getItem('uniforge_theme_path', path) || 'css/themes.css';
+                theme = localStorage.getItem('misc.theme', theme) || 'theme-neutral';
+                path = localStorage.getItem('misc.themePath', path) || 'css/themes.css';
             } else {
-                localStorage.setItem('uniforge_theme', theme);
-                localStorage.setItem('uniforge_theme_path', path);
+                localStorage.setItem('misc.theme', theme);
+                localStorage.setItem('misc.themePath', path);
             }
 
             if (theme === null || path === null) throw new Error('Nenhum tema foi fornecido.');

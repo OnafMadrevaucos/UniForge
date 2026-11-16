@@ -330,7 +330,7 @@ function _parseSidetabsTags(html) {
             </div>`;
         }
 
-        let result = `<div id="${id}" class="${classAttr ? `${classAttr} ${classExtra}` : classExtra}">`;
+        let result = `<div id="${id}" class="${classAttr ? `${classAttr}${classExtra ? ` ${classExtra}` : ''}` : ''}">`;
 
         let body = '';
         data[source].forEach(tab => {

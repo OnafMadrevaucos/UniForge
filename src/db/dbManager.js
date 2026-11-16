@@ -2164,6 +2164,7 @@ export default class DBManager {
             '`title` VARCHAR(16) NOT NULL,' + // Identificador do Tomo.
             '`label` TEXT NOT NULL,' + // Label do Tomo.
             '`icon` VARCHAR(255) NOT NULL,' + // Ícone do Tomo.
+            '`enabled` BOOLEAN DEFAULT 0 NOT NULL,' + // Tomo está ativo.
             'PRIMARY KEY (`title`))';
 
         this.results = await this.execQuery(query);
@@ -2769,42 +2770,49 @@ export default class DBManager {
             {
                 title: 'atlas',
                 label: 'Atlas',
-                icon: 'fas fa-compass-drafting'
+                icon: 'fas fa-compass-drafting',
+                enabled: 1
             },
             {
                 title: 'history',
                 label: 'História',
-                icon: 'fas fa-book'
+                icon: 'fas fa-book',
+                enabled: 1
             },
             {
                 title: 'politics',
                 label: 'Política',
-                icon: 'fas fa-crown'
+                icon: 'fas fa-crown',
+                enabled: 1
             },
             {
                 title: 'economy',
                 label: 'Economia',
-                icon: 'fas fa-comments-dollar'
+                icon: 'fas fa-comments-dollar',
+                enabled: 1
             },
             {
                 title: 'military',
                 label: 'Militar',
-                icon: 'fas fa-shield'
+                icon: 'fas fa-shield',
+                enabled: 1
             },
             {
                 title: 'entity',
                 label: 'Entidades',
-                icon: 'fas fa-people-group'
+                icon: 'fas fa-people-group',
+                enabled: 0
             },
             {
                 title: 'ideologies',
                 label: 'Ideologias',
-                icon: 'fas fa-landmark'
+                icon: 'fas fa-landmark',
+                enabled: 1
             }
         ];
 
-        let query = 'INSERT INTO tome (title, label, icon) ';
-        query += 'VALUES (?,?,?);';
+        let query = 'INSERT INTO tome (title, label, icon, enabled) ';
+        query += 'VALUES (?,?,?,?);';
 
         for (let tome of tomes) {
             let params = [];
@@ -2812,6 +2820,7 @@ export default class DBManager {
             params.push(tome.title);
             params.push(tome.label);
             params.push(tome.icon);
+            params.push(tome.enabled);
 
             this.results = await this.execQuery(query, params);
         }

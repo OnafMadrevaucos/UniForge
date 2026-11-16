@@ -256,7 +256,7 @@ app.whenReady().then(() => {
   /**
    * Manipulador para cancelar a geração de tiles de mapas.
    */
-  ipcMain.on('tiler-cancel', () => {
+  ipcMain.handle('tiler-cancel', () => {
     if (activeTiler) activeTiler.cancel();
   });
 
@@ -553,6 +553,7 @@ function savePDF(target, name, buffer) {
  * @returns {Buffer} - O conteúdo do arquivo lido.
  */
 function readFile(path) {
+  console.log(path);
   const result = fs.readFileSync(path);
   return result;
 }

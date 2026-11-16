@@ -3894,6 +3894,9 @@ hr.divider {
     align-self: center;
     color: var(--color-b-T50);
     font-style: italic;
+    text-wrap: initial;
+    text-align: center;
+    font-size: var(--default-size);
 }
 
 /* ------ Time Forge ------*/

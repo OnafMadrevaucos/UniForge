@@ -150,7 +150,9 @@ export default class SettingsForm extends BaseForm {
         const filePath = uniforge.settings.get('leaflet.mainMetadata');
         if(!filePath) return;
 
-        const data = await fetch(filePath);
+        const absolutePath = await uniforge.path.resolve(filePath);
+
+        const data = await fetch(absolutePath);
         this.data.metadata = await data.json();
     }
 
@@ -223,7 +225,7 @@ export default class SettingsForm extends BaseForm {
 
         const editThemeButton = this.querySelector("#editThemeButton");
 
-        const themePath = localStorage.getItem('uniforge_theme_path') || 'css/themes.css';
+        const themePath = localStorage.getItem('misc.themePath') || 'css/themes.css';
         if (themePath?.includes('custom')) {
             editThemeButton.innerHTML = '<i class="fas fa-palette"></i';
             editThemeButton.dataset.tooltip = 'Editar Tema';

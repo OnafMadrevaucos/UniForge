@@ -382,7 +382,6 @@ const lControl = {
         }
 
         function _configureOverlayControl() {
-
             /**
             * Instância da camada de armazenagem a imagem que representa os caminhos do Mapa.
             * @type {L.ImageOverlay}        

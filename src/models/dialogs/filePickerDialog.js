@@ -85,6 +85,7 @@ export default class FilePickerDialog extends BaseDialog {
         */
         this.selectedData = {
             absolutePath: null,
+            dir: null,
             folder: null,
             path: options.folderSelect > FilePickerDialog.FOLDER_SELECT.none ? options.current : null,
             name: null,
@@ -337,11 +338,15 @@ export default class FilePickerDialog extends BaseDialog {
 
             if (this.selectedData.path) {
                 const absolutePath = await uniforge.path.join(this.selectedData.path);
+                const folderPath = await uniforge.path.resolve(this.target);
+
                 this.selectedData.absolutePath = absolutePath;
+                this.selectedData.dir = folderPath;
                 this.selectedData.type = 'folder';
                 this.selectedData.folder = this.target;
 
                 filePickerInput.dataset.absolutePath = absolutePath;
+                filePickerInput.dataset.dir = folderPath;
                 filePickerInput.dataset.path = this.selectedData.path;
                 filePickerInput.dataset.type = 'folder';
                 filePickerInput.dataset.folder = this.target;
@@ -444,6 +449,9 @@ export default class FilePickerDialog extends BaseDialog {
         // Os dados binários do arquivo selecionado.
         const binaryData = await uniforge.fs.readFile(filePath);
 
+        // O caminho completo do diretório do arquivo selecionado.
+        const folderPath = await uniforge.path.resolve(this.target);
+
         // O arquivo não existe ou não foi selecionado.
         if (!binaryData) return;
 
@@ -476,6 +484,7 @@ export default class FilePickerDialog extends BaseDialog {
 
         this.selectedData = {
             absolutePath: filePath,
+            dir: folderPath,
             folder: this.target,
             path: localPath,
             name: name,
@@ -506,6 +515,7 @@ export default class FilePickerDialog extends BaseDialog {
         // Limpa os dados selecionados.
         this.selectedData = {
             absolutePath: null,
+            dir: null,
             folder: null,
             path: null,
             name: null,
@@ -573,6 +583,7 @@ export default class FilePickerDialog extends BaseDialog {
 
         this.constructor.LAST_BROWSED_DIRECTORY = this.selectedData.folder;
         this.selectedData.folder = this.selectedData.path = clickedFolder.dataset.path;
+        this.selectedData.dir = await uniforge.path.resolve(this.selectedData.folder);        
 
         filePickerInput.value = '';
 
@@ -598,6 +609,7 @@ export default class FilePickerDialog extends BaseDialog {
 
             this.selectedData = {
                 absolutePath: null,
+                dir: null,
                 folder: null,
                 path: null,
                 name: null,
@@ -616,9 +628,11 @@ export default class FilePickerDialog extends BaseDialog {
             const ext = clickedFile.dataset.ext;
 
             const absolutePath = await uniforge.path.join(clickedFile.dataset.path);
+            const folderPath = await uniforge.path.resolve(folder);
 
             this.selectedData = {
                 absolutePath: absolutePath,
+                dir: folderPath,
                 folder: folder,
                 path: path,
                 name: name,
@@ -632,6 +646,7 @@ export default class FilePickerDialog extends BaseDialog {
         filePickerInput.dataset.ext = this.selectedData.ext;
         filePickerInput.dataset.type = this.selectedData.ext ? FilePickerDialog.VALID_FILE_EXTENSIONS[this.selectedData.ext] : null;
         filePickerInput.dataset.absolutePath = this.selectedData.absolutePath;
+        filePickerInput.dataset.dir = this.selectedData.dir;
         filePickerInput.dataset.folder = this.selectedData.folder;
     }
 
@@ -665,6 +680,7 @@ export default class FilePickerDialog extends BaseDialog {
                             const type = filePickerInput.dataset.type;
                             const absolutePath = filePickerInput.dataset.absolutePath;
                             const folder = filePickerInput.dataset.folder;
+                            const dir = filePickerInput.dataset.dir;
 
                             let name = uniforge.defaults.emptyString;
                             let ext = uniforge.defaults.emptyString;
@@ -695,6 +711,7 @@ export default class FilePickerDialog extends BaseDialog {
                             const data = {
                                 uuid: uniforge.db.generateID(),
                                 absolutePath: absolutePath,
+                                dir: dir,
                                 folder: folder,
                                 path: filePickerInput.value,
                                 name: name,

@@ -22,11 +22,13 @@ const ERROR_TYPE = {
     NO_DATABASE: 0
 };
 
-// Configura o tema salvo no localStorage antes de inicializar o app para evitar flash de estilo.
-document.documentElement.setAttribute('data-theme', localStorage.getItem('misc.theme') || 'theme-neutral');
-
 // Realiza as configurações iniciais da aplicação ao carregar o conteúdo do DOM.
 document.addEventListener('DOMContentLoaded', async () => {
+    const currentTheme = localStorage.getItem('misc.theme');
+
+    // Configura o tema salvo no localStorage antes de inicializar o app para evitar flash de estilo.
+    document.documentElement.setAttribute('data-theme', currentTheme || 'theme-neutral');
+
     await main();
 });
 // Limpa o armazenamento local ao fechar a janela.
@@ -43,7 +45,7 @@ window.addEventListener('themechange', onThemeChange);
 */
 async function main() {
     // Inicia o gerenciador de tooltips.
-    uniforge.tooltip.init();    
+    uniforge.tooltip.init();
 
     // Configura os valores globais do Sistema.
     await configureGlobals();
@@ -81,8 +83,6 @@ async function main() {
 
     await configureLeaflet();
 
-    configureMapTiler();
-
     activateMainListeners();
 
     // ------------------------------------------------------------------
@@ -105,8 +105,7 @@ async function main() {
                 uniforge.settings.set('db.builded', true);
             }
 
-            if (true) {
-                //if (!uniforge.settings.get('leaflet.mainMap')) {
+            if (!uniforge.settings.get('leaflet.mainMap')) {
                 // Verifica a integridade do mapa principal.
                 await _verifyWorldMap();
             }
@@ -227,7 +226,7 @@ async function main() {
             let baseFile, metadataFile;
 
             do {
-                returnedData = await FilePickerDialog.configDialog(uniforge.urls.relativePath.data, { folderSelect: FilePickerDialog.FOLDER_SELECT.full });
+                returnedData = await FilePickerDialog.configDialog(uniforge.urls.relativePath.maps, { folderSelect: FilePickerDialog.FOLDER_SELECT.full });
                 if (!returnedData) uniforge.msgBox.showWarning('Nenhum diretório selecionado para o mapa principal.');
 
                 if (returnedData.type == 'folder') {
@@ -242,25 +241,62 @@ async function main() {
                         uniforge.msgBox.showWarning('Diretório inválido! Nenhum arquivo de metadados encontrado no diretório selecionado.');
                     }
                 } else {
-                    baseFile = true;
-                    metadataFile = true;
+                    const localFolder = await uniforge.path.normalize(`${uniforge.urls.relativePath.maps}\\${returnedData.name.toLowerCase().split('.')[0]}`);
+                    const outputFolder = await uniforge.path.resolve(localFolder);
+
+                    uniforge.ctrls.progressDialog = new ProgressDialog({
+                        title: "Gerando Map Tiles",
+                        message: "Preparando imagem...",
+                        indeterminate: true,
+                        cancelable: true,
+                        onCancel: async () => {
+                            document.body.style.cursor = 'wait';
+                            uniforge.tiler.cancel().then(() => {
+                                document.body.style.cursor = 'default';
+                            });
+                        },
+                        onComplete: () => uniforge.ctrls.progressDialog.resetProgress()
+                    }, { alwaysClose: true });
+
+                    await uniforge.ctrls.progressDialog.show(true);
+
+                    const result = await uniforge.tiler.generateTiles(returnedData.absolutePath, { outputFolder: outputFolder, metadata: true });
+                    if (result instanceof Error) {
+                        throw result;
+                    }
+
+                    uniforge.ctrls.progressDialog.close();
+                    returnedData.absolutePath = outputFolder;
+                    returnedData.folder = localFolder;
+
+                    baseFile = {
+                        name: `base.${returnedData.ext}`,
+                        ext: returnedData.ext,
+                        path: await uniforge.path.normalize(`${returnedData.folder}/base.${returnedData.ext}`)
+                    }
+                    metadataFile = {
+                        name: 'metadata.json',
+                        ext: 'json',
+                        path: await uniforge.path.normalize(`${returnedData.folder}/metadata.json`)
+                    }
                 }
+
             } while (!returnedData || !baseFile || !metadataFile);
 
-            uniforge.urls.relativePath.worldMap = await uniforge.path.normalize(`/${returnedData.path}/tiles`);
-            uniforge.urls.relativePath.mapOverlays = await uniforge.path.normalize(`/${returnedData.path}/overlays`);
+            uniforge.urls.relativePath.worldMap = await uniforge.path.normalize(`${returnedData.folder}/tiles`);
+            uniforge.urls.relativePath.mapOverlays = await uniforge.path.normalize(`${returnedData.folder}/overlays`);
 
-            const metadataPath = await uniforge.path.normalize(returnedData.absolutePath + '/metadata.json');
-
-            uniforge.settings.set('leaflet.mainMap', returnedData.absolutePath);
-            uniforge.settings.set('leaflet.mainMetadata', metadataPath);
+            uniforge.settings.set('leaflet.mainMap', returnedData.folder);
+            uniforge.settings.set('leaflet.mainMetadata', metadataFile.path);
             uniforge.settings.set('leaflet.mapType', 'tile');
 
-            if(!uniforge.settings.get('leaflet.tilerOutputFolder')) {
-                uniforge.settings.set('leaflet.tilerOutputFolder', uniforge.urls.relativePath.data);
+            if (!uniforge.settings.get('leaflet.tilerOutputFolder')) {
+                uniforge.settings.set('leaflet.tilerOutputFolder', uniforge.urls.relativePath.maps);
             }
 
-            const buffer = await uniforge.fs.readFile(returnedData.absolutePath + '/' + baseFile.name);
+            const absoluteBaseFile = await uniforge.path.resolve(baseFile.path);
+
+            const buffer = await uniforge.fs.readFile(absoluteBaseFile);
             const blob = await uniforge.utils.bufferToBlob(buffer, baseFile.ext);
 
             const data = {
@@ -514,6 +550,8 @@ async function main() {
         // Configura os caminhos relativos usados pelo sistema.
         configurePaths();
 
+        configureMapTiler();
+
         // Atalho para o Controle de Mensagens para o Usuário
         uniforge.msgBox = uniforge.ctrls.msgBox;
         // Atalho para o Controle de Tooltips de Entradas
@@ -697,6 +735,11 @@ async function main() {
             if (data.type === "complete") {
                 progressDialog.close();
                 uniforge.msgBox.showInfo("Map tiles gerados com sucesso.");
+                return;
+            }
+
+            if (data.type === "tiler-cancel") {
+                const i = 0;
                 return;
             }
         }
