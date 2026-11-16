@@ -6,3 +6,4 @@
 /common
 *.db
 /dist
+/src/data
