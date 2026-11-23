@@ -5,14 +5,16 @@ export default class BaseDialog extends Application {
      * Cria uma instância do diálogo.
      * 
      * @constructor
-     * @param {DialogData} data                   - Dados do diálogo.
-     * @param {DialogOptions} options             - Opções adicionais do diálogo.
-     * @param {Object} dialogObject               - Configurações iniciais do diálogo.
-     * @param {string} dialogObject.title         - Título do diálogo (padrão: "Dialog").
-     * @param {Object} dialogObject.buttons       - Conjunto de botões a serem exibidos no diálogo.
-     * @param {Function} dialogObject.abort       - Função a ser executada se o dialog fechar inesperadamente.   
-     * @param {Object} options                    - Opções adicionais, como o conteúdo do corpo do diálogo.
-     * @param {Function} options.hasTemplate      - Flag que indica se o diálogo deve possuir um template.
+     * @param {DialogData} data                     - Dados do diálogo.
+     * @param {DialogOptions} options               - Opções adicionais do diálogo.
+     * @param {Object} dialogObject                 - Configurações iniciais do diálogo.
+     * @param {string} dialogObject.title           - Título do diálogo (padrão: "Dialog").
+     * @param {Object} dialogObject.buttons         - Conjunto de botões a serem exibidos no diálogo.
+     * @param {Function} dialogObject.abort         - Função a ser executada se o dialog fechar inesperadamente.   
+     * @param {Object} options                      - Opções adicionais, como o conteúdo do corpo do diálogo.
+     * @param {Boolean} options.alwaysClose         - Flag que indica se o diálogo deve sempre fechar, independente do resultado enviado pelo Usuário.
+     * @param {Boolean} options.alwaysOnTop         - Flag que indica se o diálogo deve sempre ficar acima das demais Applications.
+     * @param {Boolean} options.lockScreen          - Flag que indica se o diálogo deve travar a tela, ignorando cliques no seu Overlay.
      */
     //constructor({ title = "Dialog", buttons = {}, abort = null}, options = { hasTemplate = false }) {
     constructor(data, options = {}) {
@@ -41,9 +43,11 @@ export default class BaseDialog extends Application {
          */
         this.bodyHTML = '';
 
+        this.alwaysClose = options?.alwaysClose ?? false;
+
         this.alwaysOnTop = options?.alwaysOnTop ?? false;
 
-        this.alwaysClose = options?.alwaysClose ?? false;
+        this.lockScreen = options?.lockScreen ?? false;
 
         this._closed = false;
     }
@@ -163,6 +167,8 @@ export default class BaseDialog extends Application {
     async prepareDerivedTemplate(dialog, header, main) {
         dialog.method = 'dialog';
 
+        if(!this.draggable) header.classList.add('fixed');
+
         header.innerHTML = `
             <h2>${this.title}</h2>
             <a id="${this.style}Close-${this.uuid}" class="close-button"><i class="fas fa-circle-xmark"></i></a>
@@ -237,6 +243,7 @@ export default class BaseDialog extends Application {
         }
     }
 
+    /**@inheritdoc */
     close() {
         // Se o diálogo ja foi fechado, ignora.
         if (this._closed) return;
@@ -288,9 +295,6 @@ export default class BaseDialog extends Application {
     activateBaseListeners() {
         super.activateBaseListeners();
 
-        const app = this.ui.app;
-        app.addEventListener('keydown', (event) => { this._onAppKeyDown(event); })
-
         const main = this.ui.main;
         main.addEventListener('submit', (event) => { event.preventDefault(); });
 
@@ -303,14 +307,13 @@ export default class BaseDialog extends Application {
         });
     }
 
-    _onAppKeyDown(event) {
-        if (event.key === 'Escape') {
-            console.log('*Deu Certo!*');
-        }
-    }
-
     _onOverlayClick(event) {
+        // Ignora cliques fora do Overlay.
         if (!event.target.classList.contains('overlay')) return;
+        // Ignora cliques caso o diálogo tenha que travar a tela enquanto espera algum dado do Usuário.
+        if (this.lockScreen) return;
+
+        // Caso contrário, fecha a Caixa de Diálogo.
         this.close();
     }
 

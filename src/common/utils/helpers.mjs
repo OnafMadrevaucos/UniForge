@@ -196,14 +196,14 @@ export async function getFontAwesomeIcons() {
 }
 
 /**
-       * Formata um tamanho de arquivo para uma ordem de magnitude apropriada.
-       * @param {number} size  O tamanho em bytes.
-       * @param {object} [options]
-       * @param {number} [options.decimalPlaces=2]  - O número de casas decimais para arredondar.
-       * @param {2|10} [options.base=10]            - A base a ser usada. Na base 10, um kilobyte é 1000 bytes. Na base 2, é
-       *                                            1024 bytes.
-       * @returns {string}
-    */
+ * Formata um tamanho de arquivo para uma ordem de magnitude apropriada.
+ * @param {number} size  O tamanho em bytes.
+ * @param {object} [options]
+ * @param {number} [options.decimalPlaces=2]  - O número de casas decimais para arredondar.
+ * @param {2|10} [options.base=10]            - A base a ser usada. Na base 10, um kilobyte é 1000 bytes. Na base 2, é
+ *                                            1024 bytes.
+ * @returns {string}
+*/
 export function formatFileSize(size, { decimalPlaces = 2, base = 10 } = {}) {
     const units = ["B", "kB", "MB", "GB", "TB"];
     const divisor = base === 2 ? 1024 : 1000;
@@ -216,10 +216,10 @@ export function formatFileSize(size, { decimalPlaces = 2, base = 10 } = {}) {
 }
 
 /**
-        * Gera uma string aleatória de caracteres.
-        * @param {number} length    - O comprimento da string aleatória.
-        * @returns {string}         - A string aleatória gerada.
-        */
+ * Gera uma string aleatória de caracteres.
+ * @param {number} length    - O comprimento da string aleatória.
+ * @returns {string}         - A string aleatória gerada.
+*/
 export function loremIpsum(numParagraphs) {
     console.log(`UniForge | Gerando ${numParagraphs} parágrafos de Lorem Ipsum...`);
     let paragraphs = '';
@@ -252,3 +252,71 @@ function _detectFontAwesomeType(types, selector) {
     else
         return familyStyles.free[0]?.style.includes('brands') ? 'fab' : 'fas';
 }
+
+
+/**
+ * Executa uma função para cada elemento de um conjunto de dados,
+ * respeitando um limite máximo de execuções simultâneas.
+ *
+ * @param {Iterable<*>} data - Conjunto de dados a ser percorrido.
+ * @param {Function} callback - Função executada para cada elemento.
+ * @param {number} concurrency - Número máximo de execuções simultâneas.
+ * @returns {Promise<Array<*>>} Resultados na mesma ordem dos dados originais.
+ * @throws {TypeError} Caso os argumentos sejam inválidos.
+ * @throws {Error} Caso alguma execução falhe.
+ */
+export async function parallelFor(data, callback, concurrency = 4) {
+    if (typeof callback !== 'function') {
+        throw new TypeError('O callback deve ser uma função.');
+    }
+
+    if (!Number.isInteger(concurrency) || concurrency < 1) {
+        throw new RangeError('A concorrência deve ser um inteiro positivo.');
+    }
+
+    const items = Array.from(data);
+
+    const results = new Array(items.length);
+
+    let nextIndex = 0;
+    let firstError = null;
+
+    /**
+     * Trabalhador responsável por executar as tarefas disponíveis.
+     *
+     * @returns {Promise<void>}
+     */
+    async function worker() {
+        while (true) {
+            // Interrompe o trabalhador caso alguma execução tenha falhado.
+            if (firstError) return;
+
+            // Reserva o próximo índice disponível.
+            const index = nextIndex++;
+
+            if (index >= items.length) return;
+
+            try {
+                results[index] = await callback(items[index], index, items);
+            } catch (error) {
+                // Registra o primeiro erro e impede novas execuções.
+                firstError ??= error;
+                return;
+            }
+        }
+    }
+
+    // Cria apenas a quantidade necessária de trabalhadores.
+    const workers = Array.from(
+        { length: Math.min(concurrency, items.length) },
+        () => worker()
+    );
+
+    // Aguarda todos os trabalhadores, inclusive os que já estavam executando.
+    await Promise.all(workers);
+
+    if (firstError) throw firstError;
+
+    return results;
+}
+

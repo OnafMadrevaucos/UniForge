@@ -17,6 +17,7 @@ import TextImage from "../common/documents/textImage.mjs";
 import MapAtlas from "../common/documents/map.mjs";
 import MapElement from "../common/documents/mapElement.mjs";
 import Timeline from "../common/documents/timeline.mjs";
+import World from "../common/documents/world.mjs";
 
 /**
  * Classe para criar e gerenciar conjuntos (Sets) baseados em dados de um banco de dados.
@@ -47,6 +48,7 @@ export default class DBDocuments {
     constructor(data) {
         this.calendars = this.createCalendarsMergedSet(data.calendars, data.calendarsMonths, data.calendarsDays);
 
+        this.worlds = this.createGenericSet(data.worlds, World);
         this.tomes = this.createGenericSet(data.tomes, Tome);
         this.textImages = this.createGenericSet(data.textImages, TextImage);
         this.chapterTypes = this.createGenericSet(data.chapterTypes, ChapterType);
@@ -73,6 +75,7 @@ export default class DBDocuments {
         // Exemplo de uso com dados simulados
         const data = {};
 
+        data.worlds = await uniforge.db.getAllWorlds();
         data.tomes = await uniforge.db.getAllTomes();
         data.chapters = await uniforge.db.getAllChapters();
         data.sections = await uniforge.db.getAllSections();

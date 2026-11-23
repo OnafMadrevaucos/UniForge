@@ -30,6 +30,13 @@ export default class Application {
         */
         this.title = title;
 
+        /**
+        * A Aplicação pode ser arrastada pelo Usuário.
+        * @type {boolean}
+        * 
+        */
+        this.draggable = this.options?.draggable;
+
         /** 
          * Estado interno para rastrear a posição e deslocamento do diálogo.
          * @type {Object}
@@ -460,6 +467,9 @@ export default class Application {
         }
     }
 
+    /**
+     * Fecha a aplicação.
+     */
     close() {
         this.ui.app.remove();
 
@@ -542,6 +552,8 @@ export default class Application {
 
     _onMouseDown(event) {
         event.stopPropagation();
+        if(!this.draggable) return;
+        
         this.state.isDragging = true;
 
         // Obtém as coordenadas reais do diálogo

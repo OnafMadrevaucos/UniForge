@@ -17,6 +17,7 @@ import ProgressDialog from "./models/dialogs/progressDialog.js";
 import Dialogs from "./models/dialogs/dialog.js";
 import AboutForm from "./models/forms/aboutForm.js";
 import FilePickerDialog from "./models/dialogs/filePickerDialog.js";
+import WorldSelecionDialog from "./models/dialogs/worldSelectionDialog.js";
 
 const ERROR_TYPE = {
     NO_DATABASE: 0
@@ -69,6 +70,8 @@ async function main() {
     // Injete as URLs padrões do sistema na variável global do UniForge.
     await configureURLs();
 
+    const world = await WorldSelecionDialog.configDialog();
+
     parseBody();
 
     await configureToolsBars();
@@ -86,7 +89,7 @@ async function main() {
     activateMainListeners();
 
     // ------------------------------------------------------------------
-    // FUNÇÃO DE VERIFICAÇÃO
+    // FUNÇÕES DE VERIFICAÇÃO
     // ------------------------------------------------------------------
 
     /**
@@ -105,11 +108,13 @@ async function main() {
                 uniforge.settings.set('db.builded', true);
             }
 
+            /*
             if (true) {
                 //if (!uniforge.settings.get('leaflet.mainMap')) {
                 // Verifica a integridade do mapa principal.
                 await _verifyWorldMap();
             }
+            */
         } catch (error) {
             throw new Error(`${error.message}`);
         }
@@ -743,6 +748,10 @@ async function main() {
             colorOptions.appendChild(option);
         });
     }
+
+    // ------------------------------------------------------------------
+    // FUNÇÕES DE MANIPULAÇÃO DE EVENTOS
+    // ------------------------------------------------------------------
 
     /**
      * Configura o listeners que tratam os eventos dos tabs do Menu Lateral e as rotinas de fechamento do Form.

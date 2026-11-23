@@ -1783,7 +1783,7 @@ button.disabled:hover {
 
 }
 
-.container .header-bar:hover {
+.container .header-bar:not(.fixed):hover {
     cursor: grab;
 }
 

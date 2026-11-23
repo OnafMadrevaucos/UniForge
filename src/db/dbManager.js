@@ -392,6 +392,34 @@ export default class DBManager {
     }
 
     /**
+     * Adiciona um novo Mundo na tabela `worlds`.
+     * 
+     * @param {Object} data             - Dados do Mundo a ser adicionado.
+     * @param {string} data.title       - Título do Mundo.
+     * @param {string} data.description - Descrição do Mundo.
+     * @param {boolean} data.hasMap    - Indica se o Mundo usa Mapas ou não.
+     * 
+     * @returns {Promise<Object>} - Resultado da execução do comando, incluindo o ID da Seção adicionada.
+    */
+    async addWorld(data) {
+        let query = 'INSERT INTO worlds (wid, title, description, hasMap) VALUES (?,?,?,?);';
+        const params = [];
+
+        const wid = (!data.wid || data.wid.isEmpty()) ? this.generateID() : data.wid;
+
+        params.push(wid);
+        params.push(data.title);
+        params.push(data.description);
+        params.push(Number(data.hasMap));
+
+        const result = await this.execQuery(query, params);
+        result.lastInsertRowid = sid;
+        this.results = result;
+
+        return this.result;
+    }
+
+    /**
      * Adiciona uma nova capítulo na tabela `chapter`.
      * 
      * @param {Object} data             - Dados do capítulo a ser adicionado.
@@ -791,14 +819,39 @@ export default class DBManager {
     }
 
     /**
-     * Atualiza uma seção no banco de dados com base nos dados fornecidos.
+    * Atualiza um Mundo no banco de dados com base nos dados fornecidos.
+    * 
+    * @param {World} data                  - Dados do Mundo a serem atualizados.
+    * @param {string} data.wid             - Identificador do Mundo.
+    * @param {string} data.title           - Título do Mundo.
+    * @param {string} data.description     - Descrição do Mundo.
+    * @param {boolean} data.hasMap         - Indica se o Mundo utiliza Mapas ou não.
+    * 
+    * @returns {Promise<Object>} - Resultado da execução do comando de atualização.
+   */
+    async updateWorld(data) {
+        const updateSet = this.buildUpdateSet([
+            ['title', data.title],
+            ['description', data.description],
+            ['hasMap', Number(data.hasMap)],
+        ]);
+
+        let query = `UPDATE worlds SET ${updateSet} WHERE wid = ?`;
+        let params = [data.wid];
+        this.results = await this.execQuery(query, params);
+
+        return this.result;
+    }
+
+    /**
+     * Atualiza uma Seção no banco de dados com base nos dados fornecidos.
      * 
-     * @param {Object} data - Dados da seção a serem atualizados.
-     * @param {string} data.sid - ID da seção a ser atualizada.
-     * @param {string} data.cid - ID da categoria associada à seção.
-     * @param {string} data.title - Título da seção.
-     * @param {string} data.htmlString - String HTML a ser associada à seção.
-     * @param {boolean} data.isDraft - Indica se a seção é um rascunho.
+     * @param {Section} data            - Dados da Seção a serem atualizados.     * 
+     * @param {string} data.sid         - ID da Seção a ser atualizada.
+     * @param {string} data.cid         - ID da categoria associada à Seção.
+     * @param {string} data.title       - Título da Seção.
+     * @param {string} data.htmlString  - String HTML a ser associada à Seção.
+     * @param {boolean} data.isDraft    - Indica se a Seção é um rascunho.
      * 
      * @returns {Promise<Object>} - Resultado da execução do comando de atualização.
     */
@@ -818,18 +871,19 @@ export default class DBManager {
     }
 
     /**
-     * Atualiza uma entrada no banco de dados com base nos dados fornecidos.
+     * Atualiza uma Entrada no banco de dados com base nos dados fornecidos.
      * 
-     * @param {Object} data - Dados da entrada a serem atualizados.
-     * @param {string} data.sid - ID da seção associada à entrada.
-     * @param {string} data.etid - ID do tipo de entrada.
-     * @param {string} data.title - Título da entrada.
-     * @param {string} data.flavor - Texto de descrição ou sabor.
-     * @param {string} data.htmlString - String HTML a ser associada à entrada.
-     * @param {string|Buffer} [data.rawData] - Dados binários da imagem associada, opcional.
-     * @param {string} [data.ext='jpeg'] - Extensão da imagem, padrão é 'jpeg'.
-     * @param {boolean} data.isDraft - Indica se a entrada é um rascunho.
-     * @param {string} data.eid - ID da entrada a ser atualizada.
+     * @param {Entry} data                      - Dados da Entrada a serem atualizados.
+     * @param {string} data.eid                 - Identificador da Entrada.
+     * @param {string} data.sid                 - ID da Seção associada à Entrada.
+     * @param {string} data.etid                - ID do tipo de Entrada.
+     * @param {string} data.title               - Título da Entrada.
+     * @param {string} data.flavor              - Texto de descrição ou sabor.
+     * @param {string} data.htmlString          - String HTML a ser associada à Entrada.
+     * @param {string|Buffer} [data.rawData]    - Dados binários da imagem associada, opcional.
+     * @param {string} [data.ext='jpeg']        - Extensão da imagem, padrão é 'jpeg'.
+     * @param {boolean} data.isDraft            - Indica se a Entrada é um rascunho.
+     * @param {string} data.eid                 - ID da Entrada a ser atualizada.
      * 
      * @returns {Promise<Object>} - Resultado da execução do comando de atualização.
     */
@@ -1107,8 +1161,65 @@ export default class DBManager {
     }
 
     /**
+     * Deleta o Mundo com o ID especificado e todos os seus Capítulos.
+     * @param {string} wid - O ID do Mundo a ser deletado.
+     * @returns {Promise<Object>} A resposta do banco de dados, com as queries executadas para deletar a Seção e as Entradas.
+     */
+    async deleteWorld(wid) {
+        let query = 'DELETE FROM worlds WHERE wid = ?;';
+        const params = [wid];
+
+        try {
+            this.beginTransaction();
+
+            this.results = await this.execQuery(query, params);
+
+            const chapters = await this.getAllWorldChapters(wid);
+            for (let chapter of chapters) {
+                await this.deleteChapter(chapter.cid);
+            }
+
+            this.commitTransaction();
+        } catch (error) {
+            this.rollbackTransaction(error);
+        }
+
+        return this.results;
+    }
+
+    /**
+     * Deleta o Capítulo com o ID especificado e todas as suas Seções.
+     * @param {number} cid - O ID da Seção a ser deletada.
+     * @param {boolean} [openTransaction=true] - Indica se é necessário abrir uma transação com o Banco de Dados ou não ('true' por padrão).
+     * @returns {Promise<Object>} A resposta do banco de dados, com as queries executadas para deletar o Capítulo e as Seções.
+     */
+    async deleteChapter(cid, openTransaction = true) {
+        let query = 'DELETE FROM chapter WHERE cid = ?;';
+        const params = [cid];
+
+        try {
+            if (openTransaction) this.beginTransaction();
+
+            this.results = await this.execQuery(query, params);
+
+            const sections = await this.getAllChaptersSections(cid);
+            // Exclui todas as Seções em paralelo para o caso de haver vários registros em um Capítulo, para o caso de um Mundo antigo.
+            uniforge.utils.parallelFor(sections, async (section) => {
+                await this.deleteSection(section.sid);
+            });
+
+            if (openTransaction) this.commitTransaction();
+        } catch (error) {
+            this.rollbackTransaction(error);
+        }
+
+        return this.results;
+    }
+
+    /**
      * Deleta a Seção com o ID especificado e todas as suas Entradas, Eventos e Linhagens.
      * @param {number} sid - O ID da Seção a ser deletada.
+     * @param {boolean} [openTransaction=true] - Indica se é necessário abrir uma transação com o Banco de Dados ou não ('true' por padrão).
      * @returns {Promise<Object>} A resposta do banco de dados, com as queries executadas para deletar a Seção e as Entradas.
      */
     async deleteSection(sid) {
@@ -1116,7 +1227,7 @@ export default class DBManager {
         const params = [sid];
 
         try {
-            this.beginTransaction();
+            if (openTransaction) this.beginTransaction();
 
             this.results = await this.execQuery(query, params);
 
@@ -1129,7 +1240,7 @@ export default class DBManager {
             query = 'DELETE FROM lineageTree WHERE sid = ?;'
             this.results = await this.execQuery(query, params);
 
-            this.commitTransaction();
+            if (openTransaction) this.commitTransaction();
         } catch (error) {
             this.rollbackTransaction(error);
         }
@@ -1314,11 +1425,26 @@ export default class DBManager {
     }
 
     /**
-     * Obtém um Capítulo.
+     * Obtém o Mundo do Identificador informado.
      * 
      * @async
-     * @param {string} cid - Identificador do Capítulo.
-     * @returns {Object} - O Capítulo com suas informações ou null se não encontrado.
+     * @param {string} wid  - Identificador do Mundo.
+     * @returns {Object}    - O Mundo com suas informações ou null se não encontrado.
+     */
+    async getWorld(wid) {
+        let query = 'SELECT * FROM worlds WHERE wid = ?';
+        const params = [wid];
+
+        this.results = await uniforge.sql.query(query, params);
+        return this.result.first();
+    }
+
+    /**
+     * Obtém o Capítulo do Identificador informado.
+     * 
+     * @async
+     * @param {string} cid  - Identificador do Capítulo.
+     * @returns {Object}    - O Capítulo com suas informações ou null se não encontrado.
      */
     async getChapter(cid) {
         let query = 'SELECT * FROM chapter AS C WHERE C.cid = ?';
@@ -1636,6 +1762,53 @@ export default class DBManager {
     }
 
     /**
+     * Recupera todos os Mundos.
+     * @return {Promise<Array<Object>>} Retorna um array de objetos com as informações de cada Mundo.
+     * @property {string} _id           - ID do Mundo.
+     * @property {string} _label        - Título do Mundo.
+     * @property {string} wid           - ID do Mundo.
+     * @property {string} title         - Título do Mundo.
+     * @property {string} description   - Descrição do Mundo.
+     * @property {boolean} hasMap       - Indica se o Mundo utiliza Mapas.
+     */
+    async getAllWorlds() {
+        try {
+            const query = 'SELECT * FROM worlds ORDER BY title';
+
+
+            this.results = await uniforge.sql.query(query);
+            return this.result.map(row => ({
+                _id: row.wid,
+                _label: row.title,
+                ...row
+            }));
+        } catch (error) {
+            console.error(error);
+        }
+    }
+    /**
+     * Recupera todos os Capítulos de um Mundo.
+     * @param {string} wid              - Identificador do Mundo.
+     * @return {Promise<Array<Object>>} - Retorna um array de objetos com as informações de cada Capítulo do Mundo.
+     * @property {string} origin        - ID do Mundo de origem.
+     * @property {string} cid           - ID do Capítulo.
+     */
+    async getAllWorldChapters(wid) {
+        try {
+            const query = 'SELECT * FROM chapter WHERE wid = ? ORDER BY title';
+            const params = [wid];
+
+            this.results = await uniforge.sql.execQuery(query, params);
+            return this.result.map(row => ({
+                origin: row.wid,
+                cid: row.cid
+            }));
+        } catch (error) {
+            console.error(error);
+        }
+    }
+
+    /**
      * Recupera todos os Capítulos.
      * @return {Promise<Array<Object>>} Retorna um array de objetos com as informações de cada Capítulo.
      * @property {string} _id       - ID do Capítulo.
@@ -1654,6 +1827,27 @@ export default class DBManager {
                 _id: row.cid,
                 _label: row.title,
                 ...row
+            }));
+        } catch (error) {
+            console.error(error);
+        }
+    }
+    /**
+     * Recupera todas as Seções de um Capítulo.
+     * @param {string} cid              - Identificador do Capítulo.
+     * @return {Promise<Array<Object>>} - Retorna um array de objetos com as informações de cada Seção do Capítulo.
+     * @property {string} origin        - ID do Capítulo de origem.
+     * @property {string} sid           - ID da Seção.
+     */
+    async getAllChaptersSections(cid) {
+        try {
+            const query = 'SELECT * FROM section WHERE cid = ? ORDER BY title';
+            const params = [cid];
+
+            this.results = await uniforge.sql.execQuery(query, params);
+            return this.result.map(row => ({
+                origin: row.wid,
+                sid: row.sid
             }));
         } catch (error) {
             console.error(error);
@@ -2173,6 +2367,27 @@ export default class DBManager {
     }
 
     /**
+     * Cria a tabela 'worlds' no banco de dados.
+     * 
+     * Essa tabela é usada para armazenar informações sobre os Mundos cadastrados no sistema.
+     * 
+     * @returns {Promise<void>} Uma promessa que informa se a tabela foi criada com sucesso.
+     */
+    async createWorldsTable() {
+        const query = 'CREATE TABLE IF NOT EXISTS `worlds` (' +
+            '`wid` VARCHAR(16) NOT NULL,' +                             // Identificador do Mundo.
+            '`title` VARCHAR(255) NOT NULL DEFAULT "Novo Mundo",' +     // Título do Mundo (Padrão 'Novo Mundo').
+            '`description` TEXT NULL,' +                                // Descrição do Mundo.           
+            '`hasMap` BOOLEAN NULL DEFAULT 1,' +   // A Entrada é um rascunho (verdadeiro por padrão).
+            'PRIMARY KEY (`wid`))';
+
+        this.results = await this.execQuery(query);
+        console.log('Tabela \'worlds\' criada....OK.');
+
+        return this.result;
+    }
+
+    /**
      * Cria a tabela 'chapter' no banco de dados.
      * 
      * Essa tabela é usada para armazenar informações sobre os Capítulos.
@@ -2182,12 +2397,13 @@ export default class DBManager {
     async createChapterTable() {
         const query = 'CREATE TABLE IF NOT EXISTS `chapter` (' +
             '`cid` VARCHAR(16) NOT NULL,' +                 // Identificador do Capítulo.
+            '`wid` VARCHAR(16) NOT NULL,' +                 // Identificador do Mundo ao qual o Capítulo pertence.
             '`tome` VARCHAR(16) NOT NULL,' +                // Identificador do Tomo a que o Capítulo pertence.
             '`title` TEXT NOT NULL,' +                      // Título do Capítulo.
             '`icon` VARCHAR(255) NOT NULL,' +               // Ícone do Capítulo.
             '`type` INTEGER NOT NULL,' +                    // Tipo do Capítulo (material, imaterial, linhagem).
             '`hasLineage` BOOLEAN DEFAULT 0 NOT NULL,' +    // Representa uma linhagem (padrão 'false').
-            'PRIMARY KEY (`cid`))';
+            'PRIMARY KEY (`cid`, `wid`))';
 
         this.results = await this.execQuery(query);
         console.log('Tabela \'chapter\' criada....OK.');
@@ -3218,6 +3434,19 @@ export default class DBManager {
      */
     async deleteRelevanceTable() {
         let query = 'DROP TABLE IF EXISTS relevance;';
+        this.results = await this.execQuery(query);
+
+        return this.result;
+    }
+
+    /**
+     * Apaga a tabela 'worlds'.
+     *
+     * @async
+     * @returns {Promise<Object>} Uma promessa que informa se a tabela foi apagada com sucesso, com o número de alterações.
+     */
+    async deleteWorldsTable() {
+        let query = 'DROP TABLE IF EXISTS worlds;';
         this.results = await this.execQuery(query);
 
         return this.result;

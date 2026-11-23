@@ -17,7 +17,7 @@ import Timeline from "./timeline.mjs";
 import MapAtlas from "./map.mjs";
 import MapElement from "./mapElement.mjs";
 import TextImage from "./textImage.mjs";
-import Setting from "./setting.mjs";
+import World from "./world.mjs";
 import BaseDocument from "./base.mjs";
 
 const DocClasses = Object.freeze({
@@ -39,7 +39,7 @@ const DocClasses = Object.freeze({
     MapElement,
     Relevance,
     TextImage,
-    Setting    
+    World    
 });
 
 export default DocClasses;

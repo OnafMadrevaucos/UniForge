@@ -58,6 +58,7 @@ const utils = {
     getFontAwesomeIcons: utilsEsm.helpers.getFontAwesomeIcons,
     formatFileSize: utilsEsm.helpers.formatFileSize,
     getSystemFonts: utilsEsm.helpers.getSystemFonts,
+    parallelFor: utilsEsm.helpers.parallelFor
 };
 
 const parser = {

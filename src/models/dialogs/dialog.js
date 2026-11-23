@@ -174,7 +174,7 @@ export default class Dialogs extends BaseDialog {
    * @param {string} message - Mensagem a ser exibida no corpo do diálogo.
    * @returns {Promise} Retorna uma promessa que é resolvida se o usuário clicar em "Sim" ou rejeitada se clicar em "Não".
    */
-  static async confirm(title, message) {
+  static async confirm(title, message, options={}) {
     return new Promise((resolve, reject) => {
       const dialog = new this({
         title: title,
@@ -190,7 +190,7 @@ export default class Dialogs extends BaseDialog {
             callback: () => resolve(true)
           }
         },
-        abort: () => resolve(false)
+        abort: () => resolve(options?.abortValue ?? false)
       }, { prompt: message, alwaysClose: true });
       dialog.show(true);
     });
