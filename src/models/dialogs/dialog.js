@@ -82,7 +82,7 @@ export default class Dialogs extends BaseDialog {
     textGroup.className = 'data-group text hinted';
 
     const promptMessage = document.createElement('span');
-    promptMessage.textContent = 'Resetar o banco de dados irá apagar permanentmente todos os dados registrados até o momento.';
+    promptMessage.textContent = this.options?.prompt ?? '';
 
     const inputHint = document.createElement('label');
     inputHint.id = 'inputHint';
@@ -204,7 +204,7 @@ export default class Dialogs extends BaseDialog {
    * @param {string} message - Mensagem a ser exibida no corpo do diálogo.
    * @returns {Promise} Retorna uma promessa que é resolvida se o usuário clicar em "Sim" ou rejeitada se clicar em "Não".
    */
-  static async secureConfirm(title) {
+  static async secureConfirm(title, message) {
     return new Promise((resolve, reject) => {
       const dialog = new this({
         title: title,
@@ -235,7 +235,7 @@ export default class Dialogs extends BaseDialog {
           }
         },
         abort: () => resolve(null)
-      }, { hasTemplate: false, type: Dialogs.Type.SECURE });
+      }, { prompt: message, hasTemplate: false, type: Dialogs.Type.SECURE });
       dialog.show(true);
     });
   }

@@ -44,7 +44,7 @@ window.addEventListener('themechange', onThemeChange);
 */
 async function main() {
     // Inicia o gerenciador de tooltips.
-    uniforge.tooltip.init();    
+    uniforge.tooltip.init();
 
     // Configura os valores globais do Sistema.
     await configureGlobals();
@@ -70,7 +70,18 @@ async function main() {
     // Injete as URLs padrões do sistema na variável global do UniForge.
     await configureURLs();
 
-    const world = await WorldSelecionDialog.configDialog();
+    try {
+        await verifyWorld();
+    } catch (error) {
+        // Registra que a verificação do Mundo não foi concluída com sucesso.
+        uniforge.settings.set('app.defaultWorld', false);
+
+        // Houve um erro fatal na verificação do Sistema, aborte.
+        await Dialogs.inform('Erro Fatal', `Ocorreu um erro fatal na verificação do mundo: ${error.message}. O UniForge será encerrado.`);
+
+        uniforge.app.quit();
+        return;
+    }
 
     parseBody();
 
@@ -107,9 +118,17 @@ async function main() {
                 await _verifyDatabase();
                 uniforge.settings.set('db.builded', true);
             }
-            
+
         } catch (error) {
             throw new Error(`${error.message}`);
+        }
+    }
+
+    async function verifyWorld() {
+        if (!uniforge.settings.get('app.defaultWorld')) {
+            const world = await WorldSelecionDialog.configDialog();
+
+            uniforge.world = Object.freeze(world);
         }
     }
 
@@ -213,7 +232,7 @@ async function main() {
             };
 
             const defaultMap = await uniforge.db.getMap(data.mid);
-            if(!defaultMap) await uniforge.db.addMap(data);
+            if (!defaultMap) await uniforge.db.addMap(data);
         } while (!imgData);
 
         uniforge.settings.set('leaflet.mapType', 'simple');
@@ -255,7 +274,7 @@ async function main() {
             uniforge.settings.set('leaflet.mainMetadata', metadataPath);
             uniforge.settings.set('leaflet.mapType', 'tile');
 
-            if(!uniforge.settings.get('leaflet.tilerOutputFolder')) {
+            if (!uniforge.settings.get('leaflet.tilerOutputFolder')) {
                 uniforge.settings.set('leaflet.tilerOutputFolder', uniforge.urls.relativePath.data);
             }
 
@@ -273,7 +292,7 @@ async function main() {
             };
 
             const defaultMap = await uniforge.db.getMap(data.mid);
-            if(!defaultMap) await uniforge.db.addMap(data);
+            if (!defaultMap) await uniforge.db.addMap(data);
         }
         catch (error) {
             throw error;

@@ -281,12 +281,15 @@ input[type="password"]:focus {
     border: var(--focus-border);
 }
 
+textarea {
+    color: var(--text-color) !important;
+}
+
 input[type="text"]:not(.title)::placeholder,
 input[type="password"]::placeholder,
 textarea::placeholder {
-    color: var(--text-color);
-    font-style: italic;
-    opacity: 0.7;
+    font-style: italic !important;
+    opacity: 0.7 !important;
 }
 
 input.dial::-webkit-inner-spin-button {
@@ -349,6 +352,7 @@ button {
     transition: background-color 0.3s;
     height: fit-content;
     width: 10em;
+    user-select: none;
 }
 
 .list .item.selected,
@@ -358,6 +362,7 @@ button:not(:disabled):hover {
     box-shadow: var(--dark-text-highlight);
 }
 
+.world-dialog .sidebar .worlds-list li.selected,
 .list .item:hover {
     outline: 0.5px solid;
 }
@@ -2449,6 +2454,7 @@ button.disabled:hover {
     background: var(--dark-color-b);
     box-shadow: var(--small-shadow);
     color: var(--text-color);
+    user-select: none;
 }
 
 .dialog .buttons button:hover {
@@ -2464,6 +2470,10 @@ button.disabled:hover {
     height: 100%;
     background: rgba(0, 0, 0, 0.5);
     z-index: 1000;
+}
+
+.secure-dialog .hinted .input-hint p {
+    user-select: none;
 }
 
 .link-dialog.entries {
@@ -2553,14 +2563,25 @@ button.disabled:hover {
     margin-top: 0;
     align-self: center;
 }
+.world-dialog .content .world-info input[type="text"].world-title {
+    width: var(--fill-width);
+    font-size: var(--huge-size);
+}
 
 .world-dialog .content .world-info .world-description {
     flex: 1;
 }
+.world-dialog .content .world-info textarea.world-description {
+    max-height: unset;
+    resize: none;
+}
+
+.world-dialog .world-info fieldset>div {
+    justify-content: center;
+}
 
 .world-dialog .world-info .world-options {
     gap: var(--default-gap-size);
-    align-self: center;
     width: 65%;
 }
 
@@ -3052,7 +3073,6 @@ ul.list li,
     resize: none;
     background-color: var(--light-background-color);
     border-radius: var(--default-border-radius);
-    color: var(--text-color);
     overflow-y: auto;
     height: 200px;
     padding: 5px;
@@ -5036,7 +5056,6 @@ hr.divider {
     font-family: 'Georgia', serif;
     font-size: var(--tmce-size);
     line-height: 1.25em;
-    color: var(--text-color);
     background: none;
     padding: 5px;
     height: 100%;
@@ -5068,6 +5087,7 @@ hr.divider {
     background: var(--light-background-color) !important;
 }
 
+.world-dialog .content textarea,
 .entries .infoview .infoview-content .infoview-list textarea,
 .simple-tmce {
     margin-block: 5px;

@@ -3,7 +3,7 @@ import BaseDocument from "./base.mjs";
 export default class World extends BaseDocument {
     constructor(data = {}) {
         super();
-        this.wid = data?.wid ?? uniforge.db.generateID();
+        this.#wid = data?.wid ?? uniforge.db.generateID();
         this.#hasMap = data?.hasMap ?? true;
 
         this.initialize(data);

@@ -52,6 +52,12 @@ export default class BaseDialog extends Application {
         this._closed = false;
     }
 
+    /**
+     * Resultado produzido pelo diálogo.
+     * @type {*}
+    */
+    result = undefined;
+
     /* ---------------------------------------------------------------------------------------------------------------- */
     // GETTERS E SETTERS
     /**
@@ -65,6 +71,7 @@ export default class BaseDialog extends Application {
             classes: [...config.classes, 'flexcol']
         });
     }
+
     /**
     * Obtém o container principal do diálogo.
     * 
@@ -107,6 +114,9 @@ export default class BaseDialog extends Application {
             ...super.ui
         };
     }
+
+    /* ---------------------------------------------------------------------------------------------------------------- */
+    // PREPARAÇÃO DO HTML
 
     /**
      * Renderiza o corpo do diálogo.
@@ -167,7 +177,7 @@ export default class BaseDialog extends Application {
     async prepareDerivedTemplate(dialog, header, main) {
         dialog.method = 'dialog';
 
-        if(!this.draggable) header.classList.add('fixed');
+        if (!this.draggable) header.classList.add('fixed');
 
         header.innerHTML = `
             <h2>${this.title}</h2>
@@ -188,7 +198,7 @@ export default class BaseDialog extends Application {
     }
 
     /**
-     * Cria a estrutura específica do diálogo, incluindo os seus botões.
+     * Recria a estrutura específica do diálogo, incluindo os seus botões.
      * @interface
      */
     async refreshDerivedTemplate() {

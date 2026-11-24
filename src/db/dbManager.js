@@ -11,6 +11,7 @@ export default class DBManager {
                 createDaysTable: () => this.createDaysTable(),
                 createEntryTypeTable: () => this.createEntryTypeTable(),
                 createRelevanceTable: () => this.createRelevanceTable(),
+                createWorldsTable: () => this.createWorldsTable(),
                 createChapterTable: () => this.createChapterTable(),
                 createSectionTable: () => this.createSectionTable(),
                 createEntryTable: () => this.createEntryTable(),
@@ -40,6 +41,7 @@ export default class DBManager {
                 deleteDaysTable: () => this.deleteDaysTable(),
                 deleteEntryTypeTable: () => this.deleteEntryTypeTable(),
                 deleteRelevanceTable: () => this.deleteRelevanceTable(),
+                deleteWorldsTable: () => this.deleteWorldsTable(),
                 deleteChapterTable: () => this.deleteChapterTable(),
                 deleteSectionTable: () => this.deleteSectionTable(),
                 deleteEntryTable: () => this.deleteEntryTable(),
@@ -413,7 +415,7 @@ export default class DBManager {
         params.push(Number(data.hasMap));
 
         const result = await this.execQuery(query, params);
-        result.lastInsertRowid = sid;
+        result.lastInsertRowid = wid;
         this.results = result;
 
         return this.result;
@@ -1798,7 +1800,7 @@ export default class DBManager {
             const query = 'SELECT * FROM chapter WHERE wid = ? ORDER BY title';
             const params = [wid];
 
-            this.results = await uniforge.sql.execQuery(query, params);
+            this.results = await uniforge.sql.query(query, params);;
             return this.result.map(row => ({
                 origin: row.wid,
                 cid: row.cid
@@ -1844,7 +1846,7 @@ export default class DBManager {
             const query = 'SELECT * FROM section WHERE cid = ? ORDER BY title';
             const params = [cid];
 
-            this.results = await uniforge.sql.execQuery(query, params);
+            this.results = await uniforge.sql.query(query, params);
             return this.result.map(row => ({
                 origin: row.wid,
                 sid: row.sid

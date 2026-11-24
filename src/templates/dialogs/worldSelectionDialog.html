@@ -2,7 +2,7 @@
     <div id="sideBar" class="sidebar">
         <div class="header flexcol">
             <div class="icon-container flexcol">
-                <img src="ui/icons/icone.png"/>
+                <img src="ui/icons/icone.png" />
             </div>
             <span class="title">UniForge</span>
         </div>
@@ -12,28 +12,27 @@
         <list id="worldList" value="worlds" class="worlds-list"></list>
     </div>
     <div class="content flexrow">
-        <div class="world-info flexcol">
-            <h1 id="worldTitle" class="world-title">Teste</h1>
+        <div class="world-info flexcol hidden">
+            <h1 id="worldTitle" class="world-title"></h1>
             <div class="separator"></div>
             <div id="worldDescription" class="world-description">
                 <span>
-                    Lorem ipsum dolor sit amet, consectetur adipiscing elit.Integer nec mi a enim posuere dictum.
-                    Etiam vel augue id leo elementum aliquam id sit amet elit.Nam molestie risus sit amet eros sagittis,
-                    eget congue tortor tempus.Nullam nibh mauris, sagittis ut tempus sed, congue at turpis.Etiam posuere
-                    ligula eu lacus pharetra tincidunt. Integer iaculis est id nibh mollis, vel finibus turpis feugiat.
                 </span>
             </div>
-            <div class="world-options flexrow">
-                <div class="data-group check">
-                    <span class="data-label">Usa Mapas? </span>
-                    <switch id="hasMapSwitch" />
+            <fieldset disabled>
+                <div class="flexrow">
+                    <div class="world-options flexrow">
+                        <div class="data-group check">
+                            <span class="data-label">Usa Mapas? </span>
+                            <switch id="hasMapSwitch" />
+                        </div>
+                        <div class="data-group check">
+                            <span class="data-label">Mundo Padrão? </span>
+                            <switch id="defaultWorldSwitch" />
+                        </div>
+                    </div>
                 </div>
-                <div class="data-group check">
-                    <span class="data-label">Mundo Padrão? </span>
-                    <switch id="defaultWorldSwitch" />
-                </div>
-            </div>
+            </fieldset>
         </div>
-
     </div>
 </div>

@@ -802,7 +802,7 @@ export default class SettingsForm extends BaseForm {
    */
     async onResetDatabaseClick(event) {
         event.stopPropagation();
-        const confirmed = await Dialogs.secureConfirm('Recriar Banco de Dados');
+        const confirmed = await Dialogs.secureConfirm('Recriar Banco de Dados', 'Resetar o banco de dados irá apagar permanentmente todos os dados registrados até o momento.');
         if (confirmed) {
             const commited = await this.db.resetDatabase();
             if (commited) {
