@@ -6,7 +6,7 @@ export default class WorldSelecionDialog extends BaseDialog {
     constructor(dialogData = {}, options = {}) {
         super(dialogData, uniforge.utils.mergeObjects(options, {
             height: '500px',
-            width: '900px'
+            width: '800px'
         }));
 
         this.sourceId = options?.id ?? null;
@@ -32,6 +32,27 @@ export default class WorldSelecionDialog extends BaseDialog {
             // A aplicação precisa ser encerrada por completo.
             uniforge.app.quit();
         }
+    }
+
+    /**
+     * Prepara os dados do diálogo e configura o diálogo com os dados preparados.
+     * @inheritdoc
+    */
+    prepareData() { 
+        this.data.worlds = uniforge.doc.worlds.toArray();
+    }
+
+    /**
+    * Configura ouvintes de eventos básicos para o dialog.
+    * @protected
+    */
+    activateListeners() {
+        const newWorldButton = this.querySelector('#newWorldButton');
+        newWorldButton.addEventListener('click', (event) => { this.onNewWorldClick(event); });
+    }
+
+    onNewWorldClick(event) {
+        event.stopPropagation();
     }
 
     static async configDialog(options = {}) {

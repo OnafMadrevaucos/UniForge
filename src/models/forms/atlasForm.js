@@ -13,9 +13,24 @@ export default class AtlasForm extends EntryForm {
 
         this.template = 'atlasForm'; // Define o template do formulário.
 
-        this.type = 'atlas'; // Define o tipo do formulário.
+        this.type = 'maps'; // Define o tipo do formulário.
 
         this.isEventForm = false; // Indica que o formulário não possui eventos.
+    }
+
+    /**
+    * Obtém os dados unificados necessários para o funcionamento do formulário.
+    * @implements Implemente um método filho para as especificidades de cada formulário.
+    * @async
+    * @returns {object}  - Objeto de dados unificado.
+    */
+    async prepareData() {
+        // Informa ao formulário atual o seu tipo.
+        this.data.type = this.type;  
+        
+        this.data.folders = uniforge.doc[this.type].sort();
+
+        return await super.prepareData();
     }
 
     /* ---------------------------------------------------------------------------------------------------------------- */
@@ -48,7 +63,7 @@ export default class AtlasForm extends EntryForm {
         const options = uniforge.utils.mergeObjects(uniforge.tinymce.options.simple, {
             content_css: [uniforge.constants.CSS_THEME, uniforge.constants.CSS_NAME],
             selector: 'div#captionEditor',
-            placeholder: "Descrição da imagem...",            
+            placeholder: "Descrição da imagem...",
             setup: (editor) => { uniforge.tinymce.setupInlineTinyMCE(editor); }
         });
 
@@ -69,7 +84,7 @@ export default class AtlasForm extends EntryForm {
         const isUpdate = options.isUpdate ?? false;
 
         const headerInfo = this.querySelector('.header-info');
-        
+
         uniforge.utils.mergeObjects(data, {
             cid: headerInfo.dataset.cid,
             etid: 0,

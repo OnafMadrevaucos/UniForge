@@ -953,7 +953,7 @@ export default class EntryForm extends SidebarForm {
     newEntryButton.addEventListener('click', (event) => { this.onNewClick(event); });
     saveButton.addEventListener('click', (event) => { this.onSaveClick(event); });
 
-    newFieldButton.addEventListener('click', (event) => { this.onNewFieldClick(event); });
+    if(newFieldButton) newFieldButton.addEventListener('click', (event) => { this.onNewFieldClick(event); });
 
     entriesList.forEach(item => {
       const deleteIcon = item.querySelector('.remove-button');

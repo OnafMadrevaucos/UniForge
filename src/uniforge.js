@@ -107,14 +107,7 @@ async function main() {
                 await _verifyDatabase();
                 uniforge.settings.set('db.builded', true);
             }
-
-            /*
-            if (true) {
-                //if (!uniforge.settings.get('leaflet.mainMap')) {
-                // Verifica a integridade do mapa principal.
-                await _verifyWorldMap();
-            }
-            */
+            
         } catch (error) {
             throw new Error(`${error.message}`);
         }
@@ -210,7 +203,7 @@ async function main() {
             const blob = await uniforge.utils.bufferToBlob(buffer, imgData.ext);
 
             const data = {
-                mid: uniforge.constants.leaflet.DEFAULT_OVERLAY,
+                mid: uniforge.constants.leaflet.DEFAULT_MID,
                 sid: 'none',
                 title: 'Mapa Padrão',
                 flavor: 'Mapa padrão do sistema.',
@@ -219,11 +212,12 @@ async function main() {
                 isDraft: 0
             };
 
-            await uniforge.db.addMap(data);
+            const defaultMap = await uniforge.db.getMap(data.mid);
+            if(!defaultMap) await uniforge.db.addMap(data);
         } while (!imgData);
 
         uniforge.settings.set('leaflet.mapType', 'simple');
-        uniforge.settings.set('leaflet.mainMap', imgData.absolutePath);
+        uniforge.settings.set('leaflet.mainMap', imgData.path);
     }
 
     async function _buildTileMap() {
@@ -269,7 +263,7 @@ async function main() {
             const blob = await uniforge.utils.bufferToBlob(buffer, baseFile.ext);
 
             const data = {
-                mid: uniforge.constants.leaflet.DEFAULT_OVERLAY,
+                mid: uniforge.constants.leaflet.DEFAULT_MID,
                 sid: 'none',
                 title: 'Mapa Padrão',
                 flavor: 'Mapa padrão do sistema.',
@@ -278,7 +272,8 @@ async function main() {
                 isDraft: 0
             };
 
-            await uniforge.db.addMap(data);
+            const defaultMap = await uniforge.db.getMap(data.mid);
+            if(!defaultMap) await uniforge.db.addMap(data);
         }
         catch (error) {
             throw error;
@@ -702,6 +697,11 @@ async function main() {
             if (data.type === "complete") {
                 progressDialog.close();
                 uniforge.msgBox.showInfo("Map tiles gerados com sucesso.");
+                return;
+            }
+
+            if (data.type === "tiler-cancel") {
+                const i = 0;
                 return;
             }
         }
@@ -1669,7 +1669,7 @@ function _setTime(year) {
     currentYearInput.value = uniforge.time.y.label;
     timeEraSpan.textContent = uniforge.time.era;
 
-    const mid = uniforge.constants.leaflet.DEFAULT_OVERLAY; // Define o ID do mapa como o mapa padrão.
+    const mid = uniforge.constants.leaflet.DEFAULT_MID; // Define o ID do mapa como o mapa padrão.
 
     uniforge.ctrls.leaflet.loadElements(mid, uniforge.time.y.value);
 }

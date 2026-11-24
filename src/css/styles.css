@@ -78,8 +78,11 @@
 /* ------ Variables ------ */
 :root {
     --default-font: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    --uniforge-font: "Georgia", "Times New Roman", serif;
+
 
     /* Cores do Sistema */
+    --uniforge-red: #7f1d1d;
     --sys-info-color: #2b6cb0;
     --sys-warn-color: #ffd900;
     --sys-err-color: #ca1b1b;
@@ -503,36 +506,30 @@ input:checked+.slider::before {
     border: none;
     background: var(--color-b);
     margin-block: 2px;
-    -webkit-mask-image: linear-gradient(
-        to right,
-        transparent 0%,
-        black 20%,
-        black 80%,
-        transparent 100%
-    );
+    -webkit-mask-image: linear-gradient(to right,
+            transparent 0%,
+            black 20%,
+            black 80%,
+            transparent 100%);
 
-    mask-image: linear-gradient(
-        to right,
-        transparent 0%,
-        black 20%,
-        black 80%,
-        transparent 100%
-    );
+    mask-image: linear-gradient(to right,
+            transparent 0%,
+            black 20%,
+            black 80%,
+            transparent 100%);
 
-    clip-path: polygon(
-        0 50%,
-        15% 35%,
-        35% 10%,
-        50% 0,
-        65% 10%,
-        85% 35%,
-        100% 50%,
-        85% 65%,
-        65% 90%,
-        50% 100%,
-        35% 90%,
-        15% 65%
-    );
+    clip-path: polygon(0 50%,
+            15% 35%,
+            35% 10%,
+            50% 0,
+            65% 10%,
+            85% 35%,
+            100% 50%,
+            85% 65%,
+            65% 90%,
+            50% 100%,
+            35% 90%,
+            15% 65%);
 }
 
 .dot {
@@ -1959,6 +1956,7 @@ button.disabled:hover {
     font-size: 18px;
     font-weight: bold;
     text-shadow: none;
+    user-select: none;
 }
 
 .dialog .header-bar a {
@@ -2500,6 +2498,76 @@ button.disabled:hover {
     height: var(--fill-height);
 }
 
+/* ------ Worlds Dialog ------ */
+.world-dialog {
+    gap: var(--big-gap-size);
+    height: var(--fill-height);
+}
+
+.world-dialog .sidebar {
+    border-bottom-right-radius: 0;
+    border-top-right-radius: 0;
+}
+.world-dialog .sidebar .header {
+    align-items: center;
+    width: var(--fill-width);
+}
+.world-dialog .sidebar .header .icon-container {
+    height: 128px;
+    width: 128px;
+}
+.world-dialog .sidebar .header .icon-container img {
+    height: var(--fill-height);
+}
+.world-dialog .sidebar .header .title {
+    color: var(--uniforge-red);
+    font-family: var(--uniforge-font);
+    font-size: var(--huge-size);
+    font-weight: bold;
+}
+.world-dialog .sidebar .separator {
+    height: 5px;
+}
+
+.world-dialog .sidebar .worlds-list {
+    width: var(--fill-width);
+}
+.world-dialog .sidebar .worlds-list li {
+    font-size: var(--default-size);
+}
+
+.world-dialog .sidebar h4 {
+    align-self: center;
+}
+.world-dialog .sidebar .flyer-button {
+    color: var(--light-text-color);
+}
+
+.world-dialog .content .world-info {
+    flex: 1;
+    justify-items: center;
+}
+
+.world-dialog .content .world-info .world-title {
+    flex: 0;
+    margin-top: 0;
+    align-self: center;
+}
+
+.world-dialog .content .world-info .world-description {
+    flex: 1;
+}
+
+.world-dialog .world-info .world-options {
+    gap: var(--default-gap-size);
+    align-self: center;
+    width: 65%;
+}
+
+.world-dialog .world-info .world-options .data-group {
+    flex: 1;
+}
+
 /* ------ Data Controls ------ */
 
 .data-complex {
@@ -2926,10 +2994,12 @@ ul.list li,
     width: var(--fill-width);
     align-items: center;
 }
+
 #settings .content .info-set .hotkey-list .hotkey-item span {
     flex: 2;
     font-size: var(--default-size);
 }
+
 #settings .content .info-set .hotkey-list .hotkey-item span:last-child {
     flex: 0;
     border: 1px solid var(--text-color);

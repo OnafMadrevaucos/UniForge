@@ -146,9 +146,9 @@ export default class SettingsForm extends BaseForm {
         };
     }
 
-    async prepareMetadata() {        
+    async prepareMetadata() {
         const filePath = uniforge.settings.get('leaflet.mainMetadata');
-        if(!filePath) return;
+        if (!filePath) return;
 
         const data = await fetch(filePath);
         this.data.metadata = await data.json();
@@ -257,7 +257,7 @@ export default class SettingsForm extends BaseForm {
     */
     async configureLeafletPanel() {
         const defaultMapInput = this.querySelector('#defaultMapInput');
-        const mid = uniforge.constants.leaflet.DEFAULT_OVERLAY; // Define o ID do mapa como o mapa padrão.
+        const mid = uniforge.constants.leaflet.DEFAULT_MID; // Define o ID do mapa como o mapa padrão.
         const defaultMap = uniforge.doc.maps.get(mid);
 
         if (!defaultMap) {
@@ -816,13 +816,18 @@ export default class SettingsForm extends BaseForm {
 
     async onDefaultMapClick(event) {
         event.stopPropagation();
-        // Abre o diálogo de seleção da pasta.
-        const folderData = await FilePickerDialog.configDialog(null, { canUpload: false, hasCaption: false, onlyFolders: true, type: 'folder' });
 
-        if (folderData) {
-            const defaultMapInput = this.querySelector('#defaultMapInput');
-            defaultMapInput.value = folderData.path;
-            defaultMapInput.dataset.absulutePath = folderData.absolutePath;
+        try {
+            // Abre o diálogo de seleção da pasta.
+            const folderData = await FilePickerDialog.configDialog(null, { canUpload: false, hasCaption: false, onlyFolders: true, type: 'folder' });
+
+            if (folderData) {
+                const defaultMapInput = this.querySelector('#defaultMapInput');
+                defaultMapInput.value = folderData.path;
+                defaultMapInput.dataset.absulutePath = folderData.absolutePath;
+            }
+        } catch (error) {
+            if(error !== null) throw error;
         }
     }
 

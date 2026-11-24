@@ -34,7 +34,16 @@ export default class SidebarForm extends BaseForm {
 
     get isSimpleSidebar() {
         const folderList = this.querySelector('.folder-list');
-        return folderList.type === 'simple';
+        return folderList.type === 'simple' || folderList.type === 'atlas';
+    }
+
+    get itemIcon() {
+        if (this.isSimpleSidebar) {
+            const folderList = this.querySelector('.folder-list');
+            
+            return (folderList.type === 'simple') ? 'fa-file' : 'fa-map';
+        } else
+            return 'fa-folder';
     }
 
     /**
@@ -291,9 +300,9 @@ export default class SidebarForm extends BaseForm {
         event.stopPropagation();
         if (!this.isSimpleSidebar && event.target.classList.contains('entry-item')) return;
         if (this.isSimpleSidebar && event.target.classList.contains('folder')) return;
-        
+
         // Se o clique foi feito na barra de pesquisa, ignora.
-        if(event.target.closest('.search-bar')) return;
+        if (event.target.closest('.search-bar')) return;
 
         this.clearContent();
         if (this.controlStates) this.controlStates(this.states.default);
@@ -310,7 +319,7 @@ export default class SidebarForm extends BaseForm {
     * @param {MouseEvent} event - O evento de clique.
     */
     onFolderClick(event) {
-        event.stopPropagation();  
+        event.stopPropagation();
 
         const clickedFolder = event.target.closest('.folder');
         const isSelected = clickedFolder.classList.contains('selected');

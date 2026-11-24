@@ -19,7 +19,7 @@ const lControl = {
     * Constantes configuráveis, como dimensões de imagem e tamanho do tile.
     * 
     * @type {Object}
-    * @property {String} DEFAULT_OVERLAY        - ID do Mapa utilizado como mapa padrão.
+    * @property {String} DEFAULT_MID        - ID do Mapa utilizado como mapa padrão.
     * 
     * @property {Number} MIN_POINTS             - Número mínimo de pontos para alguma operação.
     * @property {Number} IMG_WIDTH              - Largura da imagem.
@@ -29,7 +29,7 @@ const lControl = {
     * @property {Number} TILE_SIZE              - Tamanho de cada tile do mapa.
     */
     constants: {
-        DEFAULT_OVERLAY: 'De#m@Pgl0ba1Unfg',
+        DEFAULT_MID: 'De#m@Pgl0ba1Unfg',
 
         EXTENT: [0.00000000, -4054.00000000, 6000.00000000, 0.00000000],
 
@@ -276,7 +276,7 @@ const lControl = {
         map.fitBounds(bounds);
 
         // Define o ID do mapa como o mapa padrão.
-        map.mid = lControl.constants.DEFAULT_OVERLAY; // Define o ID do mapa como o mapa padrão.
+        map.mid = lControl.constants.DEFAULT_MID; // Define o ID do mapa como o mapa padrão.
 
         // Configura os elementos do mapa.
         const mapElements = lControl.mapElements = _configureMapElements();
@@ -565,7 +565,7 @@ const lControl = {
 
                         // Cria o objeto de dados a ser adicionado ao banco de dados.
                         const data = {
-                            mid: lControl.constants.DEFAULT_OVERLAY,
+                            mid: lControl.constants.DEFAULT_MID,
                             epoch: uniforge.time.y.value,
                             type: layer.type,
                             icon: (layer instanceof L.Marker) ? layer.options.icon.options.iconUrl : layer.type,

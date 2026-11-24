@@ -15,7 +15,7 @@ export function parseHTML(html, data) {
     html = _parseCalendarTags(html);
 
     // Substitui as tags <list>
-    html = _replaceListTags(html, data);
+    html = _parseListTags(html, data);
 
     // Substitui as tags <foldertree>
     html = _parseFoldertreeTags(html, data);
@@ -374,7 +374,7 @@ function _parseSidetabsTags(html) {
     return html;
 }
 
-function _replaceListTags(html, data) {
+function _parseListTags(html, data) {
     console.log('UniForge | Substituindo tags de List...');
 
     const regex = /<list id="([^"]+)" value="([^"]+)"( class="([^"]+)")?( item-class="([^"]+)")?( fixed="(true|false|1|0)")?><\/list>/g;

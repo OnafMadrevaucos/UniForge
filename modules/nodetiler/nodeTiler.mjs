@@ -16,6 +16,7 @@ import ZoomEngine from "./zoomEngine.mjs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+const __srcname = path.join(__dirname, 'src');
 
 function renderProgressBar(current, total, prefix = "") {
     const width = 30;
@@ -66,6 +67,7 @@ export default class NodeTiler {
         this.subdomains = opt.subdomains;
 
         // --- Options ---
+        this.outputFolder = outputFolder;
         this.imagePath = imagePath;
         this.minSide = opt.minSide;
         this.expand = opt.expand;
@@ -172,7 +174,7 @@ export default class NodeTiler {
             throw error; // Erro real, repasse-o.
         } finally {
             // Se houver erro na limpeza do diretório, repasse-o.
-            if(error) throw error;
+            if (error) throw error;
 
             // Gera o diretório de overlays.
             const overlayDir = path.join(dir, "overlay");
@@ -208,6 +210,15 @@ export default class NodeTiler {
         }
 
         renderProgressBar(this.processedTiles, totalTiles, `Zoom ${z}: `);
+    }
+
+    _purgeDir(dir) {
+        const fullDir = path.join(__srcname, dir);
+        const dirData = fs.readdirSync(fullDir);
+
+        const forceRecursive = dirData.length > 0;
+
+        fs.rmdir(fullDir, {force: forceRecursive, recursive: forceRecursive});
     }
 
     canUseThreads() {
@@ -371,12 +382,16 @@ export default class NodeTiler {
         if (this._emitProgress && !this.cancelRequested) this._emitProgress({ type: "complete" });
     }
 
-    async cancel() {
+    async cancel(preservDir = false) {
         console.info("\nNodeTiler | Processo de geração de tiles cancelado pelo usuário.");
         this.cancelRequested = true;
 
         if (this.pool) {
             await this.pool.cancelAll(); // encerra workers imediatamente
+        }
+
+        if (!preservDir) {
+            this._purgeDir(this.outputFolder);
         }
     }
 }
