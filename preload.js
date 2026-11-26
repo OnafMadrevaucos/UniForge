@@ -19,6 +19,7 @@ console.log('UniForge | Configurando pré-carregamentos de SQL.');
 contextBridge.exposeInMainWorld('app', {
   refresh: () => ipcRenderer.invoke('window-refresh'),
   fileDialog: (type) => ipcRenderer.invoke('select-file', type),
+  log: (message, err) => ipcRenderer.invoke('log', message, err),
   quit: () => ipcRenderer.send('app-quit'),
 });
 console.log('UniForge | Configurando pré-carregamentos de Aplicação.');

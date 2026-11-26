@@ -44,19 +44,20 @@ window.addEventListener('themechange', onThemeChange);
 */
 async function main() {
     // Inicia o gerenciador de tooltips.
-    uniforge.tooltip.init();
+    uniforge.tooltips.misc.init();
 
     // Configura os valores globais do Sistema.
     await configureGlobals();
 
+    //uniforge.settings.clear();
+
+    // Indica que o Sistema está começando a verificação inicial da integridade dos dados e sistemas críticos ao UniForge.
+    uniforge.settings.set('app.verified', false);
+
     // Verifica a integridade dos dados essenciais para o sistema.
     try {
-        await verifySystem();
-        uniforge.settings.set('app.initialized', true);
+        await verifyDatabase();
     } catch (error) {
-        // Registra que a verificação não foi concluída com sucesso.
-        uniforge.settings.set('db.builded', false);
-
         // Houve um erro fatal na verificação do Sistema, aborte.
         await Dialogs.inform('Erro Fatal', `Ocorreu um erro fatal na verificação do sistema: ${error.message}. O UniForge será encerrado.`);
 
@@ -82,6 +83,12 @@ async function main() {
         uniforge.app.quit();
         return;
     }
+
+    // Verifica se a lista de teclas de Atalhos está cadastradas.
+    verifyHotkeys();    
+
+    // Indica que o Sistema foi verificado e todos os sistemas e dados críticos foram verificados corretamente.
+    uniforge.settings.set('app.verified', true);
 
     parseBody();
 
@@ -111,28 +118,147 @@ async function main() {
      * @returns {Promise<boolean>} Indica se a verificação foi concluída.
      * @throws {Error} Caso alguma etapa de preparação falhe.
     */
-    async function verifySystem() {
+    async function verifyDatabase() {
         try {
+            // Verifica se o Banco de Dados já foi criado.
             if (!uniforge.settings.get('db.builded')) {
                 // Verifica a integridade do banco de dados.
-                await _verifyDatabase();
+                await _verifyTables();
+                // Informa que o Banco de Dados está criado corretamente.
                 uniforge.settings.set('db.builded', true);
             }
 
-        } catch (error) {
+        }
+        // Qualquer erro na verificação dos sistemas críticos deve abortar a abertura do UniForge. 
+        catch (error) {
+            // Informa que o Banco de Dados não pode ser criado corretamente.
+            uniforge.settings.set('db.builded', false);
             throw new Error(`${error.message}`);
         }
     }
 
     async function verifyWorld() {
+        // Verifica se já existe um Mundo padrão para o sistema.
         if (!uniforge.settings.get('app.defaultWorld')) {
+            // Se não houver, solicite o usuário que selecione um Mundo.
             const world = await WorldSelecionDialog.configDialog();
 
-            uniforge.world = Object.freeze(world);
+            // Verifica se o Mundo foi selecionado corretamente.
+            if (world) {
+                // Salva o identificador do Mundo padrão no sistema.
+                uniforge.settings.set('app.defaultWorld', world.wid);
+
+                uniforge.settings.set('misc.theme', world.theme);
+
+                // Armazena localmente os dados do Mundo para consulta rápida.
+                uniforge.world = Object.freeze(world);
+
+                // Se o Mundo usa mapa, verifica se o mapa está configurado. 
+                if (world.hasMap && !uniforge.settings.get('leaflet.mainMap')) {
+                    // Verifica a integridade do mapa principal.
+                    await _verifyWorldMap();
+                }
+            }
+            // Aborte se não houver Mundo selecionado ou os dados do Mundo estiver faltando. 
+            else throw new Error('Não foi possível determinar os dados do Mundo selecionado.');
         }
     }
 
-    async function _verifyDatabase() {
+    function verifyHotkeys() {
+        // Obtém a lista de teclas registradas no momento.
+        let hk = uniforge.settings.get('misc.hotkeys');
+
+        // A lista não existe ou está vazia?
+        if (!hk || hk.length == 0) {
+            uniforge.log.info('Teclas de atalho não foram configuradas. Reconstruíndo-as.')
+
+            // Lista padrão de Teclas de Atalhos.
+            hk = [
+                {
+                    icon: '',
+                    key: 'Escape',
+                    label: 'Fechar/cancelar operação'
+                },
+                {
+                    icon: '',
+                    key: 'Enter',
+                    label: 'Confirma operação'
+                },
+                {
+                    icon: '',
+                    key: 'Ctrl + P',
+                    label: 'Desenha Polígono'
+                },
+                {
+                    icon: '',
+                    key: 'Ctrl + C',
+                    label: 'Desenha Círculo'
+                },
+                {
+                    icon: '',
+                    key: 'Ctrl + R',
+                    label: 'Desenha Retângulo'
+                },
+                {
+                    icon: '',
+                    key: 'Ctrl + M',
+                    label: 'Insere Marcador'
+                },
+                {
+                    icon: '',
+                    key: 'F1',
+                    label: 'Abrir Códex'
+                },
+                {
+                    icon: '',
+                    key: 'F2',
+                    label: 'Abrir Linhas do Tempo'
+                },
+                {
+                    icon: '',
+                    key: 'F9',
+                    label: 'Abre Gerenciador de Formas do Leaflet'
+                },
+                {
+                    icon: '',
+                    key: 'F10',
+                    label: 'Abre Lista de Objetos do Leaflet'
+                },
+                {
+                    icon: '',
+                    key: 'F12',
+                    label: 'Sobre o Uniforge'
+                },
+                {
+                    icon: '',
+                    key: '<',
+                    label: 'Retrocede 1 Ano'
+                },
+                {
+                    icon: '',
+                    key: 'Ctrl + <',
+                    label: 'Retrocede 10 Anos'
+                },
+                {
+                    icon: '',
+                    key: '>',
+                    label: 'Avança 1 Ano'
+                },
+                {
+                    icon: '',
+                    key: 'Ctrl + >',
+                    label: 'Avança 10 Ano'
+                }
+            ];
+
+            // Transforma a lista de teclas para o padrão JSON.
+            const hotkeys = JSON.stringify({...hk});
+            // Armazena a lista de telcas.
+            uniforge.settings.set('misc.hotkeys', hotkeys);
+        }
+    }
+
+    async function _verifyTables() {
         try {
             // Verifica se o banco de dados já possui parte da estrutura necessária.
             const result = await uniforge.sql.check();
@@ -142,12 +268,9 @@ async function main() {
             if (result.status) {
                 // Verifica se há erros na estrutura do banco de dados.
                 if (!uniforge.utils.isEmpty(result.error)) {
-                    console.error(`UniForge| Estrutura incompleta: ${result.error}.`);
-                    throw new Error(
-                        `Estrutura incompleta: ${result.error}.`
-                    );
+                    console.error(`UniForge| Estrutura incompleta: ${result.error}. Reparando banco de dados.`);
+                    await uniforge.db.repareDatabase({ commit: true, onProgress: null, missingTables: result.tables })
                 }
-
                 return true;
             }
 
@@ -175,7 +298,6 @@ async function main() {
                 return true;
 
             } catch (error) {
-                uniforge.settings.set('db.builded', false);
                 throw error;
 
             } finally {
@@ -524,7 +646,7 @@ async function main() {
              * @async
              * @returns {Promise<void>}
             */
-            rebuildDocs: rebuildDocs
+            rebuildDocs: rebuildDocs,
         });
 
         // Inicializa as propriedades globais do objeto uniforge.
@@ -533,9 +655,9 @@ async function main() {
         // Configura os caminhos relativos usados pelo sistema.
         configurePaths();
 
-        // Atalho para o Controle de Mensagens para o Usuário
+        // Atalho para o Controle de Mensagens para o Usuário.
         uniforge.msgBox = uniforge.ctrls.msgBox;
-        // Atalho para o Controle de Tooltips de Entradas
+        // Atalho para o Controle de Tooltips de Entradas.
         uniforge.tooltip = uniforge.ctrls.tooltip;
 
         // Adiciona a classe 'uniforge' ao elemento HTML principal.
@@ -1248,7 +1370,7 @@ function onThemeChange(event) {
     const themePath = event.detail.path || 'css/themes.css';
     themeLink.href = themePath;
 
-    console.log(`UniForge | Novo tema: ${event.detail.theme}`);
+    uniforge.log.info(`Novo tema: ${event.detail.theme}`);
 }
 
 //------------------------------------------------------------------
@@ -1276,7 +1398,7 @@ async function rebuildDocs(document = null) {
     const builded = uniforge.settings.get('db.builded');
 
     if (builded) {
-        console.log(`UniForge | Recriando${document ? ` conjunto de dados (${document})` : ' TODO o conjunto de dados'}.`);
+        uniforge.log.info(`Recriando${document ? ` conjunto de dados (${document})` : ' TODO o conjunto de dados'}.`);
         const data = await DBDocuments.UniForgeData();
         uniforge.doc = new DBDocuments(data);
 

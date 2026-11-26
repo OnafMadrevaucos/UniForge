@@ -2553,9 +2553,16 @@ button.disabled:hover {
     color: var(--light-text-color);
 }
 
+.world-dialog .sidebar .version-label {
+    align-self: center;
+    color: var(--title-color);
+    font-weight: bold;
+}
+
 .world-dialog .content .world-info {
     flex: 1;
     justify-items: center;
+    padding-inline: var(--default-gap-size);
 }
 
 .world-dialog .content .world-info .world-title {
@@ -2570,6 +2577,7 @@ button.disabled:hover {
 
 .world-dialog .content .world-info .world-description {
     flex: 1;
+    margin-top: var(--default-gap-size);
 }
 .world-dialog .content .world-info textarea.world-description {
     max-height: unset;

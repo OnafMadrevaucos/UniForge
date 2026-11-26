@@ -74,9 +74,12 @@ app.whenReady().then(() => {
       mainWindow.webContents.openDevTools();
     }
   });
+
   log('Registrando Atalhos.');
 
   ipcMain.handle('app-version', (event) => { return APP_VERSION; });
+
+  ipcMain.handle('log', (event, message, err) => log(message, err));
 
   ipcMain.handle('get-dir', (event) => { return __dirname; });
 
@@ -343,9 +346,9 @@ function log(message, err = null) {
   });
 
   if (err) {
-    console.error(`${dataHora} - Uniforge | ${message}`, err.message);
+    console.error(`${dataHora} - UniForge | ${message}`, err.message);
     return;
-  } else console.log(`${dataHora} - Uniforge | ${message}`);
+  } else console.log(`${dataHora} - UniForge | ${message}`);
 }
 // ------------------ FUNÇÕES RENDERER ------------------
 
@@ -428,7 +431,7 @@ function checkAllTables() {
 
   // Lista das tabelas obrigatórias que devem existir no banco de dados.
   const requiredTables = [
-    'entryType', 'relevance', '_textImages', 'tome', 'chapter',
+    'entryType', 'relevance', '_textImages', 'worlds', 'tome', 'chapter',
     'chapterType', 'section', 'entry', 'event', 'lineageTree',
     'lineageType', '_lineageTreeEntries', 'map', 'mapElements',
     'timeline', '_timelineEvent', 'calendars', 'calendarsDays',
@@ -454,12 +457,12 @@ function checkAllTables() {
 
     // Se houver tabelas obrigatórias faltando, retorna o status e a lista de tabelas faltantes.
     if (missingTables.length > 0) {
-      return { status: true, error: missingTables.join(', ') };
+      return { status: true, error: missingTables.join(', '), tables: missingTables };
     }
   }
 
   // Retorna o status do banco de dados e nenhuma tabela faltante.
-  return { status: hasDatabase, error: null };
+  return { status: hasDatabase, error: null, tables: [] };
 }
 
 function refreshWindow() {

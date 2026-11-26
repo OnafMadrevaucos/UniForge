@@ -46,10 +46,44 @@ export default class WorldSelecionDialog extends BaseDialog {
 
     /**
      * Prepara os dados do diálogo e configura o diálogo com os dados preparados.
+     * 
+     * @async
      * @inheritdoc
     */
-    prepareData() {
+    async prepareData() {
         this.data.worlds = uniforge.doc.worlds.toArray();
+
+        this.data.version = await versions.app();
+
+        this.prepareThemes();
+    }
+
+    /**
+     * Prepara uma lista com cada um dos Temas cadastrados no sistema, semparando-os entre Temas nativos e os customizados.
+     * 
+     * @async
+     */
+    async prepareThemes() {
+        const extraThemesFiles = await uniforge.fs.readDir(uniforge.urls.relativePath.customCSS);
+
+        const extraThemes = [];
+
+        extraThemesFiles.files.forEach(theme => {
+            const themeName = theme.name;
+            extraThemes.push({
+                _id: `custom/theme-${themeName}`,
+                _label: themeName.capitalize().replaceAll('.css', '')
+            });
+        });
+
+        this.data.themes = {
+            nativos: [
+                { _id: 'theme-medieval', _label: 'Medieval' },
+                { _id: 'theme-scifi', _label: 'Sci-fi' },
+                { _id: 'theme-neutral', _label: 'Neutro' },
+            ],
+            extras: extraThemes
+        };
     }
 
     /* ---------------------------------------------------------------------------------------------------------------- */
@@ -60,7 +94,7 @@ export default class WorldSelecionDialog extends BaseDialog {
      * @inheritdoc
      */
     configureContent() {
-        const defaultWID = uniforge.settings.defaultWorld;
+        const defaultWID = uniforge.settings.get('app.defaultWorld');
         if (defaultWID) {
             const item = this.querySelector(`#worldList li.item[data-value="${defaultWID}"]`);
             if (item) item.classList.add('selected');
@@ -69,8 +103,6 @@ export default class WorldSelecionDialog extends BaseDialog {
             const button = this.querySelector('#select.dialog-button');
             button.disabled = true;
         }
-
-
     }
 
     /* ---------------------------------------------------------------------------------------------------------------- */
@@ -177,6 +209,8 @@ export default class WorldSelecionDialog extends BaseDialog {
 
         // Guarde o Mundo selecionado para retorno.
         this.result = world;
+
+        document.documentElement.setAttribute('data-theme', world.theme);
     }
 
     /**

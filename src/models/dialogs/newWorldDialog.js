@@ -11,7 +11,8 @@ export default class NewWorldDialog extends BaseDialog {
             title: 'Novo Mundo',
             description: '',
             hasMap: false,
-            defaultWorld: false
+            defaultWorld: false,
+            theme: 'theme-neutral'
         };
 
         this.sourceId = options?.id ?? null;
@@ -19,6 +20,59 @@ export default class NewWorldDialog extends BaseDialog {
         this.sourceType = options?.type ?? null;
 
         this.template = 'newWorldDialog'; // Define o template do diálog.
+    }
+
+    /* ---------------------------------------------------------------------------------------------------------------- */
+    // PREPARAÇÃO DE DADOS
+
+    /**
+     * Prepara os dados do diálogo e configura o diálogo com os dados preparados.
+     * 
+     * @async
+     * @inheritdoc
+    */
+    async prepareData() {   
+        this.prepareThemes();
+    }
+
+    /**
+     * Prepara uma lista com cada um dos Temas cadastrados no sistema, semparando-os entre Temas nativos e os customizados.
+     * 
+     * @async
+     */
+    async prepareThemes() {
+        const extraThemesFiles = await uniforge.fs.readDir(uniforge.urls.relativePath.customCSS);
+
+        const extraThemes = [];
+
+        extraThemesFiles.files.forEach(theme => {
+            const themeName = theme.name;
+            extraThemes.push({
+                _id: `custom/theme-${themeName}`,
+                _label: themeName.capitalize().replaceAll('.css', '')
+            });
+        });
+
+        this.data.themes = {
+            nativos: [
+                { _id: 'theme-medieval', _label: 'Medieval' },
+                { _id: 'theme-scifi', _label: 'Sci-fi' },
+                { _id: 'theme-neutral', _label: 'Neutro' },
+            ],
+            extras: extraThemes
+        };
+    }
+
+    /* ---------------------------------------------------------------------------------------------------------------- */
+    // CONFIGURAÇÃO DE CORPO DO DIALOG
+
+    /**
+     * Prepara o corpo do Dialog de acordo com os dados e estado atual do sistema.
+     * @inheritdoc
+     */
+    configureContent() {
+        const worldThemeSelect = this.querySelector('#worldTheme');  
+        worldThemeSelect.value = 'theme-neutral';        
     }
 
     /* ---------------------------------------------------------------------------------------------------------------- */
@@ -33,11 +87,16 @@ export default class NewWorldDialog extends BaseDialog {
         const worldDescriptionTextarea = this.querySelector('#worldDescription');
         const hasMapSwitch = this.querySelector('#hasMapSwitch');
         const defaultWorldSwitch = this.querySelector('#defaultWorldSwitch')
+        const worldThemeSelect = this.querySelector('#worldTheme');        
 
         worldTitleInput.addEventListener('input', this.worldTitleChange.bind(this));
         worldDescriptionTextarea.addEventListener('input', this.worldDescriptionChange.bind(this));
         hasMapSwitch.addEventListener('change', this.onHasMapSwitchChange.bind(this));
         defaultWorldSwitch.addEventListener('change', this.onDefaultWorldChange.bind(this));
+        worldThemeSelect.addEventListener('change', this.onWorldThemeChange.bind(this));
+
+        // Garante que o tema exibido seja o que está selecionado pelo Combo.
+        worldThemeSelect.dispatchEvent(new Event('change'));
     }
 
     worldTitleChange(event) {
@@ -64,6 +123,14 @@ export default class NewWorldDialog extends BaseDialog {
         this.result.defaultWorld = checkbox.checked;
     }
 
+    onWorldThemeChange(event) {
+        const select = event.target;
+        const theme = select.value;
+
+        document.documentElement.setAttribute('data-theme', theme);
+        this.result.theme = theme;
+    }
+
     /* ---------------------------------------------------------------------------------------------------------------- */
     // CONFIGURAÇÃO EXTERNA DA CAIXA DE DIÁLOGO
 
@@ -85,7 +152,6 @@ export default class NewWorldDialog extends BaseDialog {
                     icon: "fas fa-xmark",
                     callback: () => {
                         resolveDialog(null);
-                        return true;
                     }
                 },
                 save: {
@@ -94,19 +160,16 @@ export default class NewWorldDialog extends BaseDialog {
                     callback: (event) => {
                         const world = dialog.result;
 
-                        if(world.title?.isEmpty()) {
+                        if (world.title?.isEmpty()) {
                             uniforge.msgBox.showWarning('É necessário informar um título para o Mundo.');
-                            resolveDialog(null);
-                            return false;
+                            return;
                         }
-                        if(world.description?.isEmpty()) {
+                        if (world.description?.isEmpty()) {
                             uniforge.msgBox.showWarning('É necessário informar uma descrição sobre o Mundo.');
-                            resolveDialog(null);
-                            return false;
+                            return;
                         }
 
                         resolveDialog(world);
-                        return true;
                     }
                 }
             },

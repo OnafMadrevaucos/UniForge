@@ -16,6 +16,7 @@ export default class Chapter extends BaseDocument {
     get cid() { return this.#cid; }
     get type() { return 'chapter'; }
     
+    get wid() { return this.data.wid; }
     get tome() { return this.data.tome; }
     get title() { return this.data.title; }
     get icon() { return this.data.icon; }

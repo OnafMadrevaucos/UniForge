@@ -113,7 +113,6 @@ console.log('UniForge | Gerando variável global \'uniforge\'...');
 */
 
 globalThis.uniforge = {
-
     /**
     * Referência às versões do UniForge.
     * 
@@ -235,9 +234,15 @@ globalThis.uniforge = {
     /**
     * Instância de gerenciamento das tooltips usada pela aplicação.
     * 
-    * @type {Utils.Tooltip}
+    * @property {Utils.Tooltip} misc    - Tooltip genérica usada por qualquer HTMLElement indicado.
+    * @property {LinkTooltip} link      - Tooltip específica para os links das Entradas no Códex.    
+    * 
+    * @type {Object}
     */
-    tooltip: utilsEsm.tooltip,
+    tooltips: {
+        misc: utilsEsm.tooltip,
+        link: null
+    },
 
     /**
     * Propriedade de gerenciamento dos temas usados pela aplicação.
@@ -255,11 +260,11 @@ globalThis.uniforge = {
         refresh(theme = null, path = null) {
             // Se não for fornecido um tema, tenta obter-o do armazenamento local.
             if (theme === null && path === null) {
-                theme = localStorage.getItem('uniforge_theme', theme) || 'theme-neutral';
-                path = localStorage.getItem('uniforge_theme_path', path) || 'css/themes.css';
+                theme = localStorage.getItem('misc.theme', theme) || 'theme-neutral';
+                path = localStorage.getItem('misc.themePath', path) || 'css/themes.css';
             } else {
-                localStorage.setItem('uniforge_theme', theme);
-                localStorage.setItem('uniforge_theme_path', path);
+                localStorage.setItem('misc.theme', theme);
+                localStorage.setItem('misc.themePath', path);
             }
 
             if (theme === null || path === null) throw new Error('Nenhum tema foi fornecido.');
@@ -383,5 +388,23 @@ globalThis.uniforge = {
             label: '1'
         },
         era: 'd.T.'
+    },
+
+    /**
+     * Rotinas de registro padronizado de registro de logs do Sistema.
+    */
+    log: {
+        info: (message) => {
+            window.app.log(message);
+            console.log(`UniForge | ${message}`);
+        },
+        warn: (message, err) => {
+            window.app.log(message, err);
+            console.warn(`UniForge | ${message}\n${err.message}`);
+        },
+        error: (message, err) => {
+            window.app.log(message, err);
+            console.error(`UniForge | ${message}\n${err.message}`);
+        },
     }
 };

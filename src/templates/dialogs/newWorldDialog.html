@@ -1,7 +1,7 @@
 <div class="world-dialog flexrow">
     <div class="content flexrow">
         <div class="world-info flexcol">
-            <input id="worldTitle" type="text" class="world-title" placeholder="Novo Mundo"/>
+            <input id="worldTitle" type="text" class="world-title" placeholder="Novo Mundo" />
             <div class="separator"></div>
             <textarea id="worldDescription" class="world-description" placeholder="Descrição do Mundo..."></textarea>
             <div class="world-options flexrow">
@@ -13,6 +13,10 @@
                     <span class="data-label">Mundo Padrão? </span>
                     <switch id="defaultWorldSwitch" />
                 </div>
+            </div>
+            <div id="world-theme" class="data-group combo">
+                <span class="data-label">Tema: </span>
+                <combo id="worldTheme" value="themes" grouped="true" />
             </div>
         </div>
     </div>

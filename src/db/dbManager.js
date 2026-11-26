@@ -221,6 +221,10 @@ export default class DBManager {
                 execute: () => this.createTomeTable()
             },
             {
+                label: 'Criando tabela de Mundos.',
+                execute: () => this.createWorldsTable()
+            },
+            {
                 label: 'Criando tabela de Capítulos.',
                 execute: () => this.createChapterTable()
             },
@@ -337,6 +341,153 @@ export default class DBManager {
     }
 
     /**
+     * Reconstrói o banco de dados executando sequencialmente
+     * as operações de criação e população das tabelas.
+     *
+     * @param {Object} options - Opções da construção.
+     * @param {boolean} options.commit - Indica se a transação deve ser confirmada ao final da construção.
+     * @param {Function} options.onProgress - Callback de progresso.
+     * @returns {Promise<boolean}} Resultado da construção.
+    */
+    async repareDatabase({ commit = true, onProgress = null, missingTables = [] } = {}) {
+        const steps = [
+            {
+                label: 'Criando tabela de tipos de Entrada.',
+                execute: () => this.createEntryTypeTable(false)
+            },
+            {
+                label: 'Criando tabela de Relevâncias.',
+                execute: () => this.createRelevanceTable(false)
+            },
+            {
+                label: 'Criando tabela de imagens.',
+                execute: () => this.createTextImagesTable()
+            },
+            {
+                label: 'Criando tabela de Tomos.',
+                execute: () => this.createTomeTable()
+            },
+            {
+                label: 'Criando tabela de Mundos.',
+                execute: () => this.createWorldsTable()
+            },
+            {
+                label: 'Criando tabela de Capítulos.',
+                execute: () => this.createChapterTable()
+            },
+            {
+                label: 'Criando tabela de tipos de Capítulos.',
+                execute: () => this.createChapterTypeTable()
+            },
+            {
+                label: 'Criando tabela de Seções.',
+                execute: () => this.createSectionTable()
+            },
+            {
+                label: 'Criando tabela de Entradas.',
+                execute: () => this.createEntryTable()
+            },
+            {
+                label: 'Criando tabela de Eventos.',
+                execute: () => this.createEventTable()
+            },
+            {
+                label: 'Criando tabela de Linhagens.',
+                execute: () => this.createLineageTreeTable()
+            },
+            {
+                label: 'Criando tabela de tipos de Linhagens.',
+                execute: () => this.createLineageTypeTable()
+            },
+            {
+                label: 'Criando tabela de entradas de Linhagens.',
+                execute: () => this.createLineageTreeEntriesTable()
+            },
+            {
+                label: 'Criando tabela de Mapas.',
+                execute: () => this.createMapTable()
+            },
+            {
+                label: 'Criando tabela de Elementos de Mapas.',
+                execute: () => this.createMapElementsTable()
+            },
+            {
+                label: 'Criando tabela de Linhas do Tempo.',
+                execute: () => this.createTimelineTable()
+            },
+            {
+                label: 'Criando tabela de Eventos da Linha do Tempo.',
+                execute: () => this.createTimelineEventsTable()
+            },
+
+
+            {
+                label: 'Criando tabela de Calendários.',
+                execute: () => this.createCalendarTable()
+            },
+            {
+                label: 'Criando tabela de Dias dos Calendários.',
+                execute: () => this.createDaysTable()
+            },
+            {
+                label: 'Criando tabela de Meses dos Calendários.',
+                execute: () => this.createMonthsTable()
+            },
+
+
+            {
+                label: 'Populando tabela de Tomos.',
+                execute: () => { if (missingTables.includes('tome')) this.populateTomeTable(); }
+            },
+            {
+                label: 'Populando tabela de tipos de Capítulos.',
+                execute: () => { if (missingTables.includes('chapter')) this.populateChapterType(); }
+            },
+            {
+                label: 'Populando tabela de tipos de Entradas.',
+                execute: () => { if (missingTables.includes('entryType')) this.populateEntryTypeTable(); }
+            },
+            {
+                label: 'Populando tabela de Relevâncias.',
+                execute: () => { if (missingTables.includes('relevance')) this.populateRelevanceTable(); }
+            }
+        ];
+
+        const total = steps.length;
+
+        try {
+            if (commit) await this.beginTransaction(); // Abre transação.
+
+            for (let index = 0; index < total; index++) {
+                const step = steps[index];
+
+                onProgress?.({
+                    value: Math.round((index / total) * 100),
+                    message: step.label,
+                    current: index + 1,
+                    total
+                });
+
+                await step.execute();
+            }
+
+            if (commit) await this.commitTransaction(); // Comita a transação.
+
+            await onProgress?.({
+                value: 100,
+                message: 'Banco de dados configurado com sucesso.',
+                current: total,
+                total
+            });
+
+            return true;
+        } catch (error) {
+            await this.rollbackTransaction(error);
+            throw error;
+        }
+    }
+
+    /**
      * Reseta o banco de dados, deletando todas as tabelas e recriando-as com seus índices e constraints.
      * @returns {Promise<boolean>} - true se a operação for bem sucedida, false caso contrário.
     */
@@ -349,6 +500,7 @@ export default class DBManager {
             'DROP TABLE IF EXISTS _textImages',
             'DROP TABLE IF EXISTS _timelineEvent',
             'DROP TABLE IF EXISTS tome',
+            'DROP TABLE IF EXISTS worlds',
             'DROP TABLE IF EXISTS chapter',
             'DROP TABLE IF EXISTS section',
             'DROP TABLE IF EXISTS entry',
@@ -404,7 +556,7 @@ export default class DBManager {
      * @returns {Promise<Object>} - Resultado da execução do comando, incluindo o ID da Seção adicionada.
     */
     async addWorld(data) {
-        let query = 'INSERT INTO worlds (wid, title, description, hasMap) VALUES (?,?,?,?);';
+        let query = 'INSERT INTO worlds (wid, title, description, theme, hasMap) VALUES (?,?,?,?,?);';
         const params = [];
 
         const wid = (!data.wid || data.wid.isEmpty()) ? this.generateID() : data.wid;
@@ -412,6 +564,7 @@ export default class DBManager {
         params.push(wid);
         params.push(data.title);
         params.push(data.description);
+        params.push(data.theme);
         params.push(Number(data.hasMap));
 
         const result = await this.execQuery(query, params);
@@ -835,6 +988,7 @@ export default class DBManager {
         const updateSet = this.buildUpdateSet([
             ['title', data.title],
             ['description', data.description],
+            ['theme', data.theme],
             ['hasMap', Number(data.hasMap)],
         ]);
 
@@ -1777,7 +1931,6 @@ export default class DBManager {
         try {
             const query = 'SELECT * FROM worlds ORDER BY title';
 
-
             this.results = await uniforge.sql.query(query);
             return this.result.map(row => ({
                 _id: row.wid,
@@ -2380,6 +2533,7 @@ export default class DBManager {
             '`wid` VARCHAR(16) NOT NULL,' +                             // Identificador do Mundo.
             '`title` VARCHAR(255) NOT NULL DEFAULT "Novo Mundo",' +     // Título do Mundo (Padrão 'Novo Mundo').
             '`description` TEXT NULL,' +                                // Descrição do Mundo.           
+            '`theme` VARCHAR(255) NOT NULL DEFAULT "theme-neutral",' +  // Título do Mundo (Padrão 'Neutro').
             '`hasMap` BOOLEAN NULL DEFAULT 1,' +   // A Entrada é um rascunho (verdadeiro por padrão).
             'PRIMARY KEY (`wid`))';
 
@@ -2685,11 +2839,13 @@ export default class DBManager {
      * Essa tabela é usada para armazenar informações sobre os Tipos de Entrada.
      * Primeiro, remove a tabela existente caso ela exista, e então cria uma nova tabela.
      * 
+     * @param {boolean} [dropFirst=true] - Indica se a tabela deve ser destruída antes de construída.
+     * 
      * @returns {Promise<Object>} Uma promessa que informa as alterações realizadas no banco de dados.
     */
-    async createEntryTypeTable() {
+    async createEntryTypeTable(dropFirst = true) {
         let query = 'DROP TABLE IF EXISTS entryType';
-        this.results = await this.execQuery(query);
+        if (dropFirst) this.results = await this.execQuery(query);
 
         query = 'CREATE TABLE IF NOT EXISTS `entryType` (' +
             '`etid` INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,' +  // Identificador dos Tipos de Entrada.        
@@ -2713,10 +2869,10 @@ export default class DBManager {
      * 
      * @returns {Promise<Object>} Uma promessa que informa as alterações realizadas no banco de dados.
     */
-    async createRelevanceTable() {
+    async createRelevanceTable(dropFirst = true) {
         let query = 'DROP TABLE IF EXISTS relevance';
         let changes = 0;
-        this.results = await this.execQuery(query);
+        if (dropFirst) this.results = await this.execQuery(query);
 
         query = 'CREATE TABLE IF NOT EXISTS `relevance` (' +
             '`rid` INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,' +   // Identificador da Relevância.        

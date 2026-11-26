@@ -10,6 +10,7 @@
         <h4>Mundos</h4>
         <a id="newWorldButton" class="flyer-button"><i class="fas fa-globe"></i> Novo Mundo</a>
         <list id="worldList" value="worlds" class="worlds-list"></list>
+        <span class="version-label">Versão {{version}}</span>
     </div>
     <div class="content flexrow">
         <div class="world-info flexcol hidden">
@@ -31,6 +32,12 @@
                             <switch id="defaultWorldSwitch" />
                         </div>
                     </div>
+                </div>
+            </fieldset>
+            <fieldset disabled>
+                <div id="world-theme" class="data-group combo">
+                    <span class="data-label">Tema: </span>
+                    <combo id="worldTheme" value="themes" grouped="true" />
                 </div>
             </fieldset>
         </div>
